@@ -640,6 +640,7 @@
     <button class="nav-tab" onclick="showPage('financials',this)">💰 Financials</button>
     <button class="nav-tab" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
+    <button class="nav-tab" onclick="showPage('dev',this)">💻 Dev Dashboard</button>
 </nav>
 
 <!-- OPEN PLAY PAGE -->
@@ -910,6 +911,41 @@
             <input type="text" id="hFPlayer" placeholder="🔍 Player..." oninput="renderHistory()" style="padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.8rem;flex:1;">
         </div>
         <div id="historyList"></div>
+    </div>
+</div>
+
+<!-- DEV DASHBOARD -->
+<div class="page" id="page-dev">
+    <div class="card" id="devGate" style="text-align:center;padding:40px;">
+        <div style="font-size:3rem;margin-bottom:16px;">🔐</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:6px;">Developer Access</div>
+        <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Enter your developer access code to view all venues.</div>
+        <input type="password" id="devAccessInput" placeholder="Enter dev code" style="padding:10px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:1rem;text-align:center;max-width:250px;margin:0 auto 12px;display:block;">
+        <button class="btn btn-primary" onclick="unlockDevDashboard()">🔓 Unlock</button>
+    </div>
+    <div id="devContent" style="display:none;">
+        <div class="card">
+            <div class="card-title"><span>💻 Dev Dashboard</span><button class="btn btn-outline btn-sm" onclick="lockDevDashboard()">🔒 Lock</button></div>
+            <div id="devSummary" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Venues</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;margin-top:4px;" id="devVenueCount">0</div>
+                </div>
+                <div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Dev Fees</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#f39c12;margin-top:4px;" id="devTotalFees">₱0</div>
+                </div>
+                <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Unpaid</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="devUnpaid">₱0</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+                <select id="devMonth" onchange="renderDevDashboard()" style="padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.8rem;"></select>
+                <span style="font-size:0.78rem;color:#aaa;align-self:center;">Filter by month</span>
+            </div>
+            <div id="devVenuesList"></div>
+        </div>
     </div>
 </div>
 
@@ -1336,6 +1372,7 @@ function showPage(id,el){
         history:renderHistory,
         confirmations:renderConfirmations,
         financials:()=>{if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();},
+        dev:()=>{if(document.getElementById('devContent').style.display!=='none')renderDevDashboard();},
     };
     if(actions[id]) actions[id]();
 }
@@ -2090,7 +2127,80 @@ function markDevPaid(){
     showNotif('✅ Dev fee marked as paid!');
 }
 
-// ===================== ONLINE BOOKING PORTAL =====================
+// ===================== DEV DASHBOARD =====================
+const DEV_CODE = 'dev2024';
+function unlockDevDashboard(){
+    const code=document.getElementById('devAccessInput').value.trim();
+    if(!code){showNotif('Enter the dev access code!','error');return;}
+    if(code!==DEV_CODE){showNotif('Wrong code!','error');return;}
+    document.getElementById('devGate').style.display='none';
+    document.getElementById('devContent').style.display='block';
+    populateDevMonth();
+    renderDevDashboard();
+}
+function lockDevDashboard(){
+    document.getElementById('devGate').style.display='block';
+    document.getElementById('devContent').style.display='none';
+    document.getElementById('devAccessInput').value='';
+}
+function populateDevMonth(){
+    const sel=document.getElementById('devMonth');
+    const now=new Date();
+    for(let i=0;i<12;i++){
+        const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+        const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+        const label=d.toLocaleDateString('en-US',{year:'numeric',month:'short'});
+        const opt=document.createElement('option');
+        opt.value=key;opt.textContent=label;
+        if(i===0) opt.selected=true;
+        sel.appendChild(opt);
+    }
+}
+async function renderDevDashboard(){
+    const sel=document.getElementById('devMonth');
+    const periodKey=sel.value;
+    document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading venues...</p></div>';
+    try {
+        const slugsSnap=await db.collection('slugs').get();
+        const venues=[];
+        for(const slugDoc of slugsSnap.docs){
+            const venueId=slugDoc.data().venueId;
+            if(!venueId) continue;
+            const vDoc=await db.collection('venues').doc(venueId).get();
+            if(!vDoc.exists) continue;
+            const data=vDoc.data();
+            const devFees=(data.devFees||[]).filter(d=>d.period===periodKey);
+            const total=devFees.reduce((s,d)=>s+d.amount,0);
+            const pending=devFees.filter(d=>d.status==='pending').reduce((s,d)=>s+d.amount,0);
+            const paid=devFees.filter(d=>d.status==='paid').reduce((s,d)=>s+d.amount,0);
+            venues.push({slug:slugDoc.id,venueId,name:data.venueName||'Unnamed',total,pending,paid});
+        }
+        const allTotal=venues.reduce((s,v)=>s+v.total,0);
+        const allUnpaid=venues.reduce((s,v)=>s+v.pending,0);
+        document.getElementById('devVenueCount').textContent=venues.length;
+        document.getElementById('devTotalFees').textContent='₱'+allTotal.toLocaleString();
+        document.getElementById('devUnpaid').textContent='₱'+allUnpaid.toLocaleString();
+        if(venues.length===0){
+            document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No venues found.</p></div>';
+            return;
+        }
+        document.getElementById('devVenuesList').innerHTML=venues.map(v=>`
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <div style="font-weight:700;">🏟️ ${v.name}</div>
+                        <div style="font-size:0.72rem;color:#aaa;">/${v.slug} · ${v.venueId.slice(0,12)}...</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:800;color:#f39c12;">₱${v.total.toLocaleString()}</div>
+                        <div style="font-size:0.72rem;color:${v.pending>0?'#f39c12':'#2ecc71'};">${v.pending>0?'pending (₱'+v.pending+'):':'paid (₱'+v.paid+')'}</div>
+                    </div>
+                </div>
+            </div>`).join('');
+    } catch(e){
+        document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Error loading venues. Check Firestore permissions.</p></div>';
+    }
+}
 function copyPortalLink(){
     const url = window.location.origin + '/' + S.venueSlug;
     navigator.clipboard.writeText(url).then(()=>showNotif('Portal link copied! Share it with customers.')).catch(()=>{
