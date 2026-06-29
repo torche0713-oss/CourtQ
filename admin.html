@@ -640,7 +640,7 @@
     <button class="nav-tab" onclick="showPage('financials',this)">💰 Financials</button>
     <button class="nav-tab" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
-    <button class="nav-tab" onclick="showPage('dev',this)">💻 Dev Dashboard</button>
+    <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
 </nav>
 
 <!-- OPEN PLAY PAGE -->
@@ -916,16 +916,9 @@
 
 <!-- DEV DASHBOARD -->
 <div class="page" id="page-dev">
-    <div class="card" id="devGate" style="text-align:center;padding:40px;">
-        <div style="font-size:3rem;margin-bottom:16px;">🔐</div>
-        <div style="font-size:1.1rem;font-weight:700;margin-bottom:6px;">Developer Access</div>
-        <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Enter your developer access code to view all venues.</div>
-        <input type="password" id="devAccessInput" placeholder="Enter dev code" style="padding:10px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:1rem;text-align:center;max-width:250px;margin:0 auto 12px;display:block;">
-        <button class="btn btn-primary" onclick="unlockDevDashboard()">🔓 Unlock</button>
-    </div>
-    <div id="devContent" style="display:none;">
+    <div id="devContent">
         <div class="card">
-            <div class="card-title"><span>💻 Dev Dashboard</span><button class="btn btn-outline btn-sm" onclick="lockDevDashboard()">🔒 Lock</button></div>
+            <div class="card-title"><span>💻 Dev Dashboard</span></div>
             <div id="devSummary" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
                 <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Venues</div>
@@ -1372,7 +1365,7 @@ function showPage(id,el){
         history:renderHistory,
         confirmations:renderConfirmations,
         financials:()=>{if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();},
-        dev:()=>{if(document.getElementById('devContent').style.display!=='none')renderDevDashboard();},
+        dev:renderDevDashboard,
     };
     if(actions[id]) actions[id]();
 }
@@ -2128,21 +2121,6 @@ function markDevPaid(){
 }
 
 // ===================== DEV DASHBOARD =====================
-const DEV_CODE = 'dev2024';
-function unlockDevDashboard(){
-    const code=document.getElementById('devAccessInput').value.trim();
-    if(!code){showNotif('Enter the dev access code!','error');return;}
-    if(code!==DEV_CODE){showNotif('Wrong code!','error');return;}
-    document.getElementById('devGate').style.display='none';
-    document.getElementById('devContent').style.display='block';
-    populateDevMonth();
-    renderDevDashboard();
-}
-function lockDevDashboard(){
-    document.getElementById('devGate').style.display='block';
-    document.getElementById('devContent').style.display='none';
-    document.getElementById('devAccessInput').value='';
-}
 function populateDevMonth(){
     const sel=document.getElementById('devMonth');
     const now=new Date();
@@ -2157,6 +2135,7 @@ function populateDevMonth(){
     }
 }
 async function renderDevDashboard(){
+    populateDevMonth();
     const sel=document.getElementById('devMonth');
     const periodKey=sel.value;
     document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading venues...</p></div>';
@@ -2823,6 +2802,10 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
             if (!user || user.uid !== VENUE_OWNER_ID) {
                 window.location.href = 'index.html';
                 return;
+            }
+            // Show dev tab only for developer's email
+            if (user.email === 'pinoymemesforever@gmail.com') {
+                document.getElementById('devTabBtn').style.display = '';
             }
         }
 
