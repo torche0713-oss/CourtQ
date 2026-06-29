@@ -555,7 +555,11 @@ function processPortalPayment(){
 // ===================== INIT =====================
 (async () => {
     const params = new URLSearchParams(window.location.search);
-    const venueSlug = params.get('venue');
+    let venueSlug = params.get('venue');
+    if (!venueSlug) {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        venueSlug = pathParts[0] || null;
+    }
     if (!venueSlug) { document.getElementById('heroVenueName').textContent = 'No venue specified'; return; }
     try {
         const slugDoc = await db.collection('slugs').doc(venueSlug).get();

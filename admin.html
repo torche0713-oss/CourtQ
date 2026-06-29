@@ -2607,7 +2607,11 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
 // ===================== INIT =====================
 (async () => {
     const params = new URLSearchParams(window.location.search);
-    const venueSlug = params.get('venue');
+    let venueSlug = params.get('venue');
+    if (!venueSlug) {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        if (pathParts.length >= 2 && pathParts[1] === 'admin') venueSlug = pathParts[0];
+    }
     if (!venueSlug) { window.location.href = 'index.html'; return; }
 
     try {
