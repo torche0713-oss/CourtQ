@@ -503,8 +503,8 @@ function selPortalPay(btn,method){
 function retryBooking(){
     S.portal = {step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{},ref:''};
     document.getElementById('pDate').value=getTodayISO();
-    goPortalStep(2);
-    renderSlots();
+    goPortalStep(1);
+    renderCourtPicker();
 }
 
 function processPortalPayment(){
