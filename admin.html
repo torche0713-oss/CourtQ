@@ -625,6 +625,7 @@
             <span style="font-size:0.6rem;opacity:0.5;">✏️</span>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openPortal()">🌐 Book Online</button>
+        <button class="btn btn-outline btn-sm" onclick="copyPortalLink()">🔗 Share Link</button>
         <button class="btn btn-outline btn-sm" onclick="setGeminiKey()">🔮 AI</button>
         <button class="btn btn-outline btn-sm" onclick="logout()" style="color:#e74c3c;border-color:rgba(231,76,60,0.3);">🚪 Logout</button>
     </div>
@@ -1217,6 +1218,7 @@ let S = {
     posCourtId:null,
     posPayMethod:'Cash',
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
+    venueSlug:'',
 };
 
 // ===================== HELPERS =====================
@@ -1932,6 +1934,13 @@ function renderSalesSummary(){
 }
 
 // ===================== ONLINE BOOKING PORTAL =====================
+function copyPortalLink(){
+    const url = window.location.origin + '/' + S.venueSlug;
+    navigator.clipboard.writeText(url).then(()=>showNotif('Portal link copied! Share it with customers.')).catch(()=>{
+        const input=document.createElement('input');input.value=url;document.body.appendChild(input);input.select();document.execCommand('copy');document.body.removeChild(input);
+        showNotif('Portal link copied!');
+    });
+}
 function openPortal(){
     S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
     document.getElementById('portalVenueName').textContent=S.venueName;
@@ -2616,6 +2625,7 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
         PERSISTENT_KEYS.forEach(k => {
             if (data[k] !== undefined) S[k] = data[k];
         });
+        S.venueSlug = venueSlug;
 
         // Auth check for non-demo venues
         if (VENUE_OWNER_ID !== 'demo') {
