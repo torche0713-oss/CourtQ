@@ -626,6 +626,7 @@
         </div>
         <button class="btn btn-primary btn-sm" onclick="openPortal()">🌐 Book Online</button>
         <button class="btn btn-outline btn-sm" onclick="copyPortalLink()">🔗 Share Link</button>
+        <button class="btn btn-outline btn-sm" onclick="openSettings()">⚙️ Settings</button>
         <button class="btn btn-outline btn-sm" onclick="setGeminiKey()">🔮 AI</button>
         <button class="btn btn-outline btn-sm" onclick="logout()" style="color:#e74c3c;border-color:rgba(231,76,60,0.3);">🚪 Logout</button>
     </div>
@@ -635,8 +636,8 @@
     <button class="nav-tab active" onclick="showPage('openplay',this)">🏓 Open Play</button>
     <button class="nav-tab" onclick="showPage('courts',this)">🏟️ Courts</button>
     <button class="nav-tab" onclick="showPage('booking',this)">📅 Bookings</button>
-    <button class="nav-tab" onclick="showPage('pos',this)">💳 POS</button>
-    <button class="nav-tab" onclick="showPage('timeline',this)">📊 Timeline</button>
+    <button class="nav-tab" onclick="showPage('confirmations',this)">✅ Confirmations</button>
+    <button class="nav-tab" onclick="showPage('financials',this)">💰 Financials</button>
     <button class="nav-tab" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
 </nav>
@@ -712,6 +713,17 @@
 
 <!-- BOOKING PAGE -->
 <div class="page" id="page-booking">
+    <div class="card">
+        <div class="card-title">
+            <span>📅 Court Schedule</span>
+            <div style="display:flex;gap:6px;">
+                <input type="date" id="tlDate" onchange="renderBookingTimeline()" style="padding:5px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('tlDate').value=getTodayISO();renderBookingTimeline()">Today</button>
+            </div>
+        </div>
+        <div class="timeline-wrap"><div class="timeline-grid" id="tlGrid"></div></div>
+    </div>
+    <div class="card"><div class="card-title">⚠️ Conflicts</div><div id="conflictsList"></div></div>
     <div class="two-col">
         <div>
             <div class="card">
@@ -755,9 +767,6 @@
                         <option value="Cash">💵 Cash</option>
                         <option value="GCash">📱 GCash</option>
                         <option value="Maya">💜 Maya</option>
-                        <option value="Card">💳 Card</option>
-                        <option value="Stripe">🔷 Stripe</option>
-                        <option value="Pending">⏳ Pending</option>
                     </select>
                 </div>
                 <button class="btn btn-primary btn-full" onclick="createBooking()">📅 Create Booking</button>
@@ -775,6 +784,7 @@
                         </select>
                         <select id="bFilterStatus" onchange="renderBookings()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.75rem;">
                             <option value="all">All</option>
+                            <option value="pending">Pending</option>
                             <option value="confirmed">Confirmed</option>
                             <option value="checkedin">Checked In</option>
                             <option value="completed">Completed</option>
@@ -788,72 +798,97 @@
     </div>
 </div>
 
-<!-- POS PAGE -->
-<div class="page" id="page-pos">
-    <div class="pos-grid">
-        <div>
-            <div class="card">
-                <div class="card-title">💳 Quick Sale (Walk-in)</div>
-                <div class="form-row">
-                    <div class="form-group"><label>Customer *</label><input type="text" id="posName" placeholder="Name"></div>
-                    <div class="form-group"><label>Phone</label><input type="text" id="posPhone" placeholder="Optional"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>Game Type</label>
-                        <select id="posGT">
-                            <option value="singles">Singles</option>
-                            <option value="doubles">Doubles</option>
-                            <option value="private">Private</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Duration</label>
-                        <select id="posDur">
-                            <option value="60">1 hour</option>
-                            <option value="90">1.5 hours</option>
-                            <option value="120" selected>2 hours</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group"><label>Select Court</label><div class="pos-courts" id="posCourts"></div></div>
-                <div class="form-group"><label>Payment Method</label>
-                    <div class="pay-methods-sm">
-                        <div class="pay-btn-sm selected" onclick="selPay(this,'Cash')">💵 Cash</div>
-                        <div class="pay-btn-sm" onclick="selPay(this,'GCash')">📱 GCash</div>
-                        <div class="pay-btn-sm" onclick="selPay(this,'Maya')">💜 Maya</div>
-                        <div class="pay-btn-sm" onclick="selPay(this,'Card')">💳 Card</div>
-                        <div class="pay-btn-sm" onclick="selPay(this,'Stripe')">🔷 Stripe</div>
-                        <div class="pay-btn-sm" onclick="selPay(this,'PayPal')">🅿️ PayPal</div>
-                    </div>
-                </div>
-                <button class="btn btn-success btn-full" onclick="processPOS()">✅ Process Payment</button>
-            </div>
-            <div class="card">
-                <div class="card-title">📊 Today's Sales</div>
-                <div id="salesSummary"></div>
+<!-- CONFIRMATIONS PAGE -->
+<div class="page" id="page-confirmations">
+    <div class="card">
+        <div class="card-title">
+            <span>✅ Booking Confirmations</span>
+            <div style="display:flex;gap:6px;">
+                <select id="cFilter" onchange="renderConfirmations()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
+                    <option value="all">All Methods</option>
+                    <option value="GCash">📱 GCash</option>
+                    <option value="Maya">💜 Maya</option>
+                </select>
             </div>
         </div>
-        <div>
-            <div class="card">
-                <div class="card-title">🧾 Receipt</div>
-                <div id="receiptDisplay"><div class="empty-state"><div class="ei">🧾</div><p>No sale yet.</p></div></div>
-            </div>
-        </div>
+        <div style="font-size:0.8rem;color:#aaa;margin-bottom:12px;">Review pending bookings. Verify the customer's payment reference number, then confirm.</div>
+        <div id="confirmationList"></div>
     </div>
 </div>
 
-<!-- TIMELINE PAGE -->
-<div class="page" id="page-timeline">
-    <div class="card">
-        <div class="card-title">
-            <span>📊 Timeline</span>
-            <div style="display:flex;gap:6px;">
-                <input type="date" id="tlDate" onchange="renderTimeline()" style="padding:5px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
-                <button class="btn btn-outline btn-sm" onclick="document.getElementById('tlDate').value=getTodayISO();renderTimeline()">Today</button>
+<!-- FINANCIALS PAGE -->
+<div class="page" id="page-financials">
+    <div class="card" id="financialsGate" style="text-align:center;padding:40px;">
+        <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:6px;">Access Code Required</div>
+        <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Enter the owner access code to view financials.</div>
+        <input type="password" id="finAccessInput" placeholder="Enter access code" style="padding:10px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:1rem;text-align:center;max-width:250px;margin:0 auto 12px;display:block;">
+        <button class="btn btn-primary" onclick="unlockFinancials()">🔓 Unlock</button>
+    </div>
+    <div id="financialsContent" style="display:none;">
+        <div class="card">
+            <div class="card-title">
+                <span>💰 Financial Summary</span>
+                <div style="display:flex;gap:6px;">
+                    <select id="finPeriod" onchange="renderFinancials()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="lockFinancials()">🔒 Lock</button>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+                <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">GCash</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;margin-top:4px;" id="finGCash">₱0</div>
+                </div>
+                <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Maya</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#9b59b6;margin-top:4px;" id="finMaya">₱0</div>
+                </div>
+                <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Cash</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finCash">₱0</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                    <div class="card-title" style="font-size:0.8rem;">📊 Transactions</div>
+                    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;">
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#aaa;">Booking Payments</span>
+                            <span style="font-weight:700;" id="finTxBooking">0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;">
+                            <span style="color:#aaa;">Drop-in Fees</span>
+                            <span style="font-weight:700;" id="finTxDropin">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="card-title" style="font-size:0.8rem;">💻 Developer Fee (5%)</div>
+                    <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.15);border-radius:10px;padding:12px;">
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <span style="color:#aaa;">5% of GCash + Maya</span>
+                            <span style="font-weight:700;color:#f39c12;" id="finDevFee">₱0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;">
+                            <span style="color:#aaa;">Status</span>
+                            <span id="finDevStatus" style="font-weight:700;color:#f39c12;">pending</span>
+                        </div>
+                        <div style="margin-top:8px;display:flex;gap:6px;">
+                            <button class="btn btn-success btn-sm" style="flex:1;" onclick="markDevPaid()">✅ Mark Paid</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="timeline-wrap"><div class="timeline-grid" id="tlGrid"></div></div>
+        <div class="card">
+            <div class="card-title">📈 Detailed Breakdown</div>
+            <div id="finBreakdown"></div>
+        </div>
     </div>
-    <div class="card"><div class="card-title">⚠️ Conflicts</div><div id="conflictsList"></div></div>
 </div>
 
 <!-- LEADERBOARD -->
@@ -972,7 +1007,7 @@
             <!-- STEP 4: PAYMENT -->
             <div class="portal-page" id="pStep4">
                 <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Payment</div>
-                <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Choose how you'd like to pay.</div>
+                <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Send payment to the details below, then enter your reference number.</div>
 
                 <!-- Booking Summary -->
                 <div id="bookingSummaryBox" style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:14px;margin-bottom:16px;"></div>
@@ -982,27 +1017,12 @@
                     <div class="pay-btn" onclick="selPortalPay(this,'GCash')">
                         <span class="pay-icon">📱</span>
                         <div class="pay-name">GCash</div>
-                        <div class="pay-desc">Scan QR to pay</div>
+                        <div class="pay-desc">Send payment via GCash</div>
                     </div>
                     <div class="pay-btn" onclick="selPortalPay(this,'Maya')">
                         <span class="pay-icon">💜</span>
                         <div class="pay-name">Maya</div>
-                        <div class="pay-desc">Scan QR to pay</div>
-                    </div>
-                    <div class="pay-btn" onclick="selPortalPay(this,'Card')">
-                        <span class="pay-icon">💳</span>
-                        <div class="pay-name">Credit/Debit</div>
-                        <div class="pay-desc">Visa, Mastercard</div>
-                    </div>
-                    <div class="pay-btn" onclick="selPortalPay(this,'Stripe')">
-                        <span class="pay-icon">🔷</span>
-                        <div class="pay-name">Stripe</div>
-                        <div class="pay-desc">Secure online</div>
-                    </div>
-                    <div class="pay-btn" onclick="selPortalPay(this,'PayPal')">
-                        <span class="pay-icon">🅿️</span>
-                        <div class="pay-name">PayPal</div>
-                        <div class="pay-desc">Pay with PayPal</div>
+                        <div class="pay-desc">Send payment via Maya</div>
                     </div>
                     <div class="pay-btn" onclick="selPortalPay(this,'PayLater')">
                         <span class="pay-icon">🏦</span>
@@ -1156,6 +1176,28 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal" style="max-width:500px;">
+        <div class="modal-title">⚙️ Settings</div>
+        <div style="margin-bottom:14px;">
+            <div style="font-weight:700;font-size:0.85rem;color:#4ecdc4;margin-bottom:10px;">📱 Payment Details (for customer reference)</div>
+            <div class="form-group"><label>GCash Number</label><input type="text" id="sGcashNum" placeholder="09171234567"></div>
+            <div class="form-group"><label>GCash Name</label><input type="text" id="sGcashName" placeholder="Juan dela Cruz"></div>
+            <div class="form-group"><label>Maya Number</label><input type="text" id="sMayaNum" placeholder="09171234567"></div>
+            <div class="form-group"><label>Maya Name</label><input type="text" id="sMayaName" placeholder="Juan dela Cruz"></div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="font-weight:700;font-size:0.85rem;color:#f39c12;margin-bottom:10px;">🔒 Financials Access Code</div>
+            <div class="form-group"><label>Set Access Code (4-6 digits)</label><input type="text" id="sAccessCode" placeholder="e.g. 1234" maxlength="6" inputmode="numeric"></div>
+            <div style="font-size:0.72rem;color:#aaa;">Share this code with the venue owner to access the Financials page.</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+            <button class="btn btn-outline" onclick="closeModal('settingsModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="confirmModal">
     <div class="modal">
         <div class="modal-title" id="confirmTitle">⚠️ Confirm</div>
@@ -1215,10 +1257,11 @@ let S = {
     sales:[],
     nextId:100,
     nextBId:3,
-    posCourtId:null,
-    posPayMethod:'Cash',
-    portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
+    portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{},ref:''},
     venueSlug:'',
+    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+    accessCode:'',
+    devFees:[],
 };
 
 // ===================== HELPERS =====================
@@ -1234,7 +1277,7 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId'];
+const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','devFees'];
 function saveState(){
     if (!VENUE_ID) return;
     try {
@@ -1288,12 +1331,11 @@ function showPage(id,el){
     document.getElementById('page-'+id).classList.add('active');
     if(el) el.classList.add('active');
     const actions={
-        timeline:()=>{document.getElementById('tlDate').value=getTodayISO();renderTimeline();},
-        pos:renderPOSCourts,
-        booking:()=>{renderBookings();renderBookingCourtSelect();},
+        booking:()=>{document.getElementById('tlDate').value=getTodayISO();renderBookingTimeline();renderConflicts();renderBookings();renderBookingCourtSelect();},
         leaderboard:renderLeaderboard,
         history:renderHistory,
-        courts:renderCourtsManage,
+        confirmations:renderConfirmations,
+        financials:()=>{if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();},
     };
     if(actions[id]) actions[id]();
 }
@@ -1809,6 +1851,9 @@ function createBooking(){
         status:'confirmed',notes:'',bookedAt:Date.now(),source:'admin',
     };
     S.bookings.push(b);
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
+    const fee=Math.round(b.amount*0.05);
+    S.devFees.push({bookingId:b.id,amount:fee,period:getPeriodKey(),status:'pending',createdAt:Date.now()});
     ['bCustomer','bPhone','bEmail','bDate','bStart','bPlayers'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bConflict').innerHTML='';
     document.getElementById('bPricePreview').style.display='none';
@@ -1834,6 +1879,7 @@ function openBookingDetail(bId){
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Type:</span><span>${b.gameType}</span></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Amount:</span><strong style="color:#4ecdc4;">₱${b.amount}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Payment:</span><span>${b.paymentMethod}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Ref#:</span><strong style="color:#f39c12;">${b.reference||'N/A'}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Source:</span><span style="color:${b.source==='online'?'#2ecc71':'#4ecdc4'};">${b.source==='online'?'🌐 Online':'🏢 Admin'}</span></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Status:</span><span class="bk-status bk-${b.status}">${b.status}</span></div>
         </div>`;
@@ -1856,81 +1902,192 @@ function openBookingDetail(bId){
     document.getElementById('bookingDetailModal').classList.add('active');
 }
 
-// ===================== POS =====================
-function renderPOSCourts(){
-    const div=document.getElementById('posCourts');
-    div.innerHTML='';
+// ===================== SETTINGS =====================
+function openSettings(){
+    document.getElementById('sGcashNum').value=S.paymentInfo.gcash.number||'';
+    document.getElementById('sGcashName').value=S.paymentInfo.gcash.name||'';
+    document.getElementById('sMayaNum').value=S.paymentInfo.maya.number||'';
+    document.getElementById('sMayaName').value=S.paymentInfo.maya.name||'';
+    document.getElementById('sAccessCode').value=S.accessCode||'';
+    document.getElementById('settingsModal').classList.add('active');
+}
+function saveSettings(){
+    S.paymentInfo.gcash.number=document.getElementById('sGcashNum').value.trim();
+    S.paymentInfo.gcash.name=document.getElementById('sGcashName').value.trim();
+    S.paymentInfo.maya.number=document.getElementById('sMayaNum').value.trim();
+    S.paymentInfo.maya.name=document.getElementById('sMayaName').value.trim();
+    S.accessCode=document.getElementById('sAccessCode').value.trim();
+    closeModal('settingsModal');saveState();showNotif('Settings saved!');
+}
+
+// ===================== BOOKING TIMELINE & CONFLICTS =====================
+function renderBookingTimeline(){
+    const date=document.getElementById('tlDate').value||getTodayISO();
+    const grid=document.getElementById('tlGrid');
+    if(!grid) return;
+    const sH=6,eH=22,total=eH-sH;
+    const nowM=nowMin(),isToday=date===getTodayISO();
+    let html=`<div class="tl-hours">`;
+    for(let h=sH;h<=eH;h++) html+=`<div class="tl-hour">${h%12||12}${h<12?'am':'pm'}</div>`;
+    html+='</div>';
+    const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
     S.courts.forEach(court=>{
-        const avail=getCourtStatus(court.id)==='available';
-        const btn=document.createElement('div');
-        btn.className=`pos-court-btn ${!avail?'unavail':''} ${S.posCourtId===court.id?'selected':''}`;
-        btn.innerHTML=`<div style="font-size:1rem;margin-bottom:4px;">🏟️</div><div style="font-weight:700;font-size:0.82rem;">${court.name}</div><div style="font-size:0.68rem;color:#aaa;">₱${court.rate}/hr</div><div style="font-size:0.62rem;margin-top:3px;color:${avail?'#2ecc71':'#e74c3c'};">${avail?'✅ Open':'🔴 Unavailable'}</div>`;
-        if(avail) btn.onclick=()=>{S.posCourtId=court.id;renderPOSCourts();};
-        div.appendChild(btn);
+        let slots='';
+        if(S.session&&S.session.active&&isToday){
+            const ss=timeToMin(S.session.start),se=timeToMin(S.session.end);
+            const bks=getBookingsForCourt(court.id,date,ss,se).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+            let cur=ss;
+            bks.forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((bs-cur)/(total*60))*100}%;">Open Play</div>`;
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
+                cur=be;
+            });
+            if(cur<se) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((se-cur)/(total*60))*100}%;">Open Play</div>`;
+        } else {
+            S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
+            });
+        }
+        if(court.status==='occupied'&&court.startTime&&isToday){
+            const el=Math.floor((Date.now()-court.startTime)/60000);
+            const ps=nowM-el;
+            const l=((ps-sH*60)/(total*60))*100;
+            const w=(el/(total*60))*100;
+            if(l>=0) slots+=`<div class="tl-slot tl-playing" style="left:${l}%;width:${Math.max(w,0.5)}%;">Playing</div>`;
+        }
+        const nowLine=isToday?`<div class="tl-now" style="left:${((nowM-sH*60)/(total*60))*100}%;"><span class="tl-now-lbl">NOW</span></div>`:'';
+        html+=`<div class="tl-row"><div class="tl-label" style="color:${court.color};">🏟️ ${court.name}</div><div class="tl-slots">${slots}${nowLine}</div></div>`;
     });
+    grid.innerHTML=html;
 }
 
-function selPay(btn,m){document.querySelectorAll('.pay-btn-sm').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');S.posPayMethod=m;}
+function renderConflicts(){
+    const date=document.getElementById('tlDate').value||getTodayISO();
+    const div=document.getElementById('conflictsList');
+    if(!div) return;
+    const conflicts=[];
+    S.courts.forEach(court=>{
+        const bks=S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled');
+        for(let i=0;i<bks.length;i++){
+            for(let j=i+1;j<bks.length;j++){
+                const a=bks[i],b=bks[j];
+                if(timeToMin(a.startTime)<timeToMin(b.endTime)&&timeToMin(a.endTime)>timeToMin(b.startTime))
+                    conflicts.push({court:court.name,a,b});
+            }
+        }
+        if(S.session&&S.session.active) bks.forEach(b=>conflicts.push({type:'op',court:court.name,b,ses:S.session}));
+    });
+    if(conflicts.length===0){div.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No conflicts!</p></div>';return;}
+    div.innerHTML=conflicts.map(c=>c.type==='op'?`
+        <div class="overlap-box" style="margin-bottom:8px;">⚠️ Open Play Overlap — ${c.court}: ${c.b.customer} (${c.b.startTime}–${c.b.endTime}) overlaps Open Play (${c.ses.start}–${c.ses.end})<br><span style="font-size:0.72rem;">→ Court auto-excluded during booking.</span></div>`:
+        `<div class="conflict-box" style="margin-bottom:8px;">🔴 Double Booking — ${c.court}: ${c.a.customer} (${c.a.startTime}–${c.a.endTime}) vs ${c.b.customer} (${c.b.startTime}–${c.b.endTime})
+        <div style="margin-top:6px;display:flex;gap:6px;"><button class="btn btn-danger btn-sm" onclick="cancelB('${c.b.id}')">Cancel ${c.b.customer}</button><button class="btn btn-danger btn-sm" onclick="cancelB('${c.a.id}')">Cancel ${c.a.customer}</button></div></div>`
+    ).join('');
+}
 
-function processPOS(){
-    const name=document.getElementById('posName').value.trim();
-    const dur=parseInt(document.getElementById('posDur').value);
-    if(!name){showNotif('Enter customer name!','error');return;}
-    if(!S.posCourtId){showNotif('Select a court!','error');return;}
-    const court=S.courts.find(c=>c.id===S.posCourtId);
-    const total=Math.round(court.rate*(dur/60));
-    const now=new Date();
-    const startTime=now.toTimeString().slice(0,5);
-    const b={
-        id:genId(),customer:name,phone:document.getElementById('posPhone').value.trim(),email:'',
-        courtId:court.id,date:getTodayISO(),startTime,endTime:minToTime(timeToMin(startTime)+dur),
-        duration:dur,gameType:document.getElementById('posGT').value,players:name,
-        amount:total,paymentMethod:S.posPayMethod,status:'checkedin',notes:'',bookedAt:Date.now(),source:'pos',
-    };
-    S.bookings.push(b);
-    S.sales.push({id:b.id,amount:total,method:S.posPayMethod,customer:name,court:court.name,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
-    document.getElementById('receiptDisplay').innerHTML=`
-        <div class="receipt-box">
-            <div style="text-align:center;margin-bottom:12px;">
-                <div style="font-size:1rem;font-weight:700;color:#4ecdc4;">🏓 ${S.venueName}</div>
-                <div style="font-size:0.68rem;color:#aaa;">${now.toLocaleString()} · ${b.id}</div>
+function cancelB(id){const b=S.bookings.find(x=>x.id===id);if(b){b.status='cancelled';showNotif(`Cancelled: ${b.customer}.`,'warning');renderBookingTimeline();renderConflicts();renderBookings();saveState();}}
+
+// ===================== CONFIRMATIONS =====================
+function renderConfirmations(){
+    const filter=document.getElementById('cFilter').value;
+    const list=document.getElementById('confirmationList');
+    const pending=S.bookings.filter(b=>b.status==='pending'&&b.paymentMethod!=='PayLater'&&b.source==='online'&&(filter==='all'||b.paymentMethod===filter));
+    if(pending.length===0){list.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No pending confirmations.</p></div>';return;}
+    list.innerHTML=pending.map(b=>{
+        const court=S.courts.find(c=>c.id===b.courtId);
+        return `<div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div><div style="font-weight:700;">${b.customer}</div>
+                <div style="font-size:0.75rem;color:#aaa;margin-top:3px;">📅 ${b.date} · ${b.startTime}–${b.endTime} · ${court?court.name:''}</div>
+                <div style="font-size:0.75rem;color:#aaa;">💳 ${b.paymentMethod} · ₱${b.amount}</div>
+                <div style="margin-top:8px;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;font-size:0.82rem;">
+                    <div><span style="color:#f39c12;">🔑 Ref:</span> <strong>${b.reference||b.ref||'N/A'}</strong></div>
+                    <div style="font-size:0.72rem;color:#aaa;margin-top:3px;">Send payment to ${b.paymentMethod==='GCash'?'📱 '+S.paymentInfo.gcash.number+' ('+S.paymentInfo.gcash.name+')':'💜 '+S.paymentInfo.maya.number+' ('+S.paymentInfo.maya.name+')'}</div>
+                    <div style="font-size:0.72rem;color:#aaa;">Amount: <strong>₱${b.amount}</strong></div>
+                </div></div>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                    <button class="btn btn-success btn-sm" onclick="confirmBookingPayment('${b.id}')">✅ Confirm</button>
+                    <button class="btn btn-danger btn-sm" onclick="cancelB('${b.id}')">✕ Reject</button>
+                </div>
             </div>
-            <div class="receipt-line"><span>Customer</span><span>${name}</span></div>
-            <div class="receipt-line"><span>Court</span><span>${court.name}</span></div>
-            <div class="receipt-line"><span>Type</span><span>${b.gameType}</span></div>
-            <div class="receipt-line"><span>Duration</span><span>${dur}min</span></div>
-            <div class="receipt-line"><span>Time</span><span>${startTime}–${b.endTime}</span></div>
-            <div class="receipt-line"><span>Rate</span><span>₱${court.rate}/hr</span></div>
-            <hr style="border-color:rgba(255,255,255,0.08);margin:8px 0;">
-            <div class="receipt-total"><span>TOTAL</span><span>₱${total}</span></div>
-            <div class="receipt-line"><span>Payment</span><span>${S.posPayMethod}</span></div>
-            <div style="text-align:center;margin-top:10px;font-size:0.72rem;color:#2ecc71;font-weight:700;">✅ PAID — Thank you!</div>
         </div>`;
-    document.getElementById('posName').value='';document.getElementById('posPhone').value='';
-    S.posCourtId=null;renderPOSCourts();renderSalesSummary();
-    saveState();
-    showNotif(`💳 ₱${total} from ${name}!`,'success');
+    }).join('');
 }
 
-function renderSalesSummary(){
-    const div=document.getElementById('salesSummary');
-    const total=S.sales.reduce((a,s)=>a+s.amount,0);
-    div.innerHTML=`
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-            <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:12px;text-align:center;">
-                <div style="font-size:1.4rem;font-weight:800;color:#4ecdc4;">₱${total.toLocaleString()}</div>
-                <div style="font-size:0.68rem;color:#aaa;">Total Revenue</div>
-            </div>
-            <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:10px;padding:12px;text-align:center;">
-                <div style="font-size:1.4rem;font-weight:800;color:#2ecc71;">${S.sales.length}</div>
-                <div style="font-size:0.68rem;color:#aaa;">Transactions</div>
-            </div>
-        </div>
-        ${S.sales.length===0?'<div class="empty-state"><div class="ei">💳</div><p>No sales yet.</p></div>':S.sales.slice().reverse().map(s=>`
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
-                <div><div style="font-weight:600;">${s.customer}</div><div style="color:#aaa;font-size:0.7rem;">${s.court}·${s.method}·${s.time}</div></div>
-                <div style="font-weight:800;color:#4ecdc4;">₱${s.amount}</div>
-            </div>`).join('')}`;
+function confirmBookingPayment(bId){
+    const b=S.bookings.find(x=>x.id===bId);
+    if(!b) return;
+    b.status='confirmed';
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
+    const fee=Math.round(b.amount*0.05);
+    S.devFees.push({bookingId:b.id,amount:fee,period:getPeriodKey(),status:'pending',createdAt:Date.now()});
+    saveState();renderConfirmations();renderBookings();
+    showNotif(`✅ ${b.customer}'s payment confirmed! Dev fee: ₱${fee}`,'success');
+}
+
+function getPeriodKey(){
+    const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+
+// ===================== FINANCIALS =====================
+function unlockFinancials(){
+    const code=document.getElementById('finAccessInput').value.trim();
+    if(!code){showNotif('Enter the access code!','error');return;}
+    if(code!==S.accessCode){showNotif('Wrong access code!','error');return;}
+    document.getElementById('financialsGate').style.display='none';
+    document.getElementById('financialsContent').style.display='block';
+    renderFinancials();
+}
+function lockFinancials(){
+    document.getElementById('financialsGate').style.display='block';
+    document.getElementById('financialsContent').style.display='none';
+    document.getElementById('finAccessInput').value='';
+}
+function renderFinancials(){
+    const period=document.getElementById('finPeriod').value;
+    const now=new Date();
+    let startDate;
+    if(period==='today'){startDate=new Date(now.getFullYear(),now.getMonth(),now.getDate());}
+    else if(period==='week'){const d=new Date(now);d.setDate(d.getDate()-d.getDay());startDate=new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+    else{startDate=new Date(now.getFullYear(),now.getMonth(),1);}
+    const billings=S.bookings.filter(b=>b.status==='confirmed'||b.status==='checkedin'||b.status==='completed');
+    const filtered=billings.filter(b=>new Date(b.bookedAt||0)>=startDate);
+    const gcash=filtered.filter(b=>b.paymentMethod==='GCash').reduce((s,b)=>s+(b.amount||0),0);
+    const maya=filtered.filter(b=>b.paymentMethod==='Maya').reduce((s,b)=>s+(b.amount||0),0);
+    const cash=filtered.filter(b=>b.paymentMethod==='Cash').reduce((s,b)=>s+(b.amount||0),0);
+    const bookTx=filtered.filter(b=>b.source==='online'||b.source==='admin').length;
+    const dropTx=filtered.filter(b=>b.source==='pos'||b.source==='openplay').length;
+    const devFeeTotal=Math.round((gcash+maya)*0.05);
+    const periodKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const devFeesForPeriod=S.devFees.filter(d=>d.period===periodKey);
+    const devPaid=devFeesForPeriod.filter(d=>d.status==='paid').reduce((s,d)=>s+d.amount,0);
+    const devPending=devFeesForPeriod.filter(d=>d.status==='pending').reduce((s,d)=>s+d.amount,0);
+    document.getElementById('finGCash').textContent='₱'+gcash.toLocaleString();
+    document.getElementById('finMaya').textContent='₱'+maya.toLocaleString();
+    document.getElementById('finCash').textContent='₱'+cash.toLocaleString();
+    document.getElementById('finTxBooking').textContent=bookTx;
+    document.getElementById('finTxDropin').textContent=dropTx;
+    const totalDev=devPaid+devPending;
+    document.getElementById('finDevFee').textContent='₱'+totalDev.toLocaleString();
+    document.getElementById('finDevStatus').textContent=devPending>0?'pending ('+devPending+' unpaid)':'paid (₱'+devPaid+')';
+    document.getElementById('finDevStatus').style.color=devPending>0?'#f39c12':'#2ecc71';
+    // Detailed breakdown
+    const div=document.getElementById('finBreakdown');
+    if(filtered.length===0){div.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No transactions this period.</p></div>';return;}
+    div.innerHTML=filtered.slice().reverse().map(b=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
+            <div><div style="font-weight:600;">${b.customer}</div>
+            <div style="color:#aaa;font-size:0.7rem;">${b.date}·${b.paymentMethod}·${b.source}</div></div>
+            <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
+        </div>`).join('');
+}
+function markDevPaid(){
+    const periodKey=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+    S.devFees.filter(d=>d.period===periodKey&&d.status==='pending').forEach(d=>d.status='paid');
+    saveState();renderFinancials();
+    showNotif('✅ Dev fee marked as paid!');
 }
 
 // ===================== ONLINE BOOKING PORTAL =====================
@@ -2064,33 +2221,19 @@ function selPortalPay(btn,method){
     document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));
     btn.classList.add('selected');
     S.portal.payMethod=method;
-
     const area=document.getElementById('payInputArea');
-    if(method==='Card'||method==='Stripe'){
+    if(method==='GCash'||method==='Maya'){
+        const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
         area.innerHTML=`
             <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
-                <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">💳 Card Details</div>
-                <div class="form-group"><label>Card Number</label><input type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"></div>
-                <div class="form-row">
-                    <div class="form-group"><label>Expiry</label><input type="text" placeholder="MM/YY" maxlength="5"></div>
-                    <div class="form-group"><label>CVV</label><input type="text" placeholder="123" maxlength="4"></div>
+                <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${method==='GCash'?'📱 Send to GCash':'💜 Send to Maya'}</div>
+                <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${info.number||'Not set'}</strong></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${info.name||'Not set'}</strong></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Amount:</span><strong style="color:#4ecdc4;">₱${S.portal.total||0}</strong></div>
                 </div>
-                <div class="form-group"><label>Cardholder Name</label><input type="text" placeholder="Juan dela Cruz"></div>
-            </div>`;
-    } else if(method==='GCash'||method==='Maya'){
-        area.innerHTML=`
-            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;text-align:center;">
-                <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">${method==='GCash'?'📱 GCash':'💜 Maya'} QR Payment</div>
-                <div class="qr-code"><div class="qr-inner"></div></div>
-                <div style="font-size:0.78rem;color:#aaa;margin-top:8px;">Scan QR with your ${method} app</div>
-                <div style="font-size:1.1rem;font-weight:800;color:#4ecdc4;margin-top:6px;">₱${S.portal.total||0}</div>
-                <div style="font-size:0.72rem;color:#f39c12;margin-top:4px;">⏳ QR expires in 10:00</div>
-            </div>`;
-    } else if(method==='PayPal'){
-        area.innerHTML=`
-            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
-                <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">🅿️ PayPal</div>
-                <div class="form-group"><label>PayPal Email</label><input type="email" placeholder="you@paypal.com"></div>
+                <div class="form-group"><label>Reference Number *</label><input type="text" id="portalRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
+                <div style="font-size:0.72rem;color:#aaa;">Send the exact amount shown above. Enter the reference number after payment.</div>
             </div>`;
     } else if(method==='PayLater'){
         area.innerHTML=`
@@ -2104,10 +2247,12 @@ function selPortalPay(btn,method){
     }
 }
 
-function fmtCard(inp){let v=inp.value.replace(/\D/g,'').substring(0,16);inp.value=v.match(/.{1,4}/g)?.join(' ')||v;}
-
 function processPortalPayment(){
     if(!S.portal.payMethod){showNotif('Select payment method!','error');return;}
+    if(S.portal.payMethod!=='PayLater'){
+        const ref=document.getElementById('portalRef');
+        if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
+    }
     goPortalStep(5);
     const conf=document.getElementById('confirmationContent');
     conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#4ecdc4;">Processing Payment...</div><div style="font-size:0.82rem;color:#aaa;margin-top:6px;">Please wait while we confirm your booking.</div></div>`;
@@ -2117,20 +2262,19 @@ function processPortalPayment(){
         const dur=S.portal.duration;
         const total=S.portal.total||Math.round(court.rate*(dur/60));
         const bId=genId();
+        const refNum=S.portal.payMethod!=='PayLater'?(document.getElementById('portalRef')?.value.trim()||''):'';
         const b={
             id:bId,customer:`${S.portal.data.first} ${S.portal.data.last}`,
             phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,
             date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),
             duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,
             amount:total,paymentMethod:S.portal.payMethod,
-            status:S.portal.payMethod==='PayLater'?'pending':'confirmed',
-            notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref,
+            status:S.portal.payMethod==='PayLater'?'pending':'pending',
+            reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref,
         };
         S.bookings.push(b);
-        if(S.portal.payMethod!=='PayLater'){
-            S.sales.push({id:bId,amount:total,method:S.portal.payMethod,customer:b.customer,court:court.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
-        }
-        announce(`New online booking: ${b.customer} → ${court.name} on ${b.date} at ${b.startTime}.`);
+        announce(`New online booking: ${b.customer} → ${court.name} on ${b.date} at ${b.startTime}. Ref: ${refNum||'Pay on Arrival'}`);
+        S.portal={step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{},ref:''};
 
         conf.innerHTML=`
             <div class="payment-success">
@@ -2170,77 +2314,9 @@ function processPortalPayment(){
                     <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
                 </div>
             </div>`;
-        renderSalesSummary();
         saveState();
     }, 2000);
 }
-
-// ===================== TIMELINE =====================
-function renderTimeline(){
-    const date=document.getElementById('tlDate').value||getTodayISO();
-    const grid=document.getElementById('tlGrid');
-    const sH=6,eH=22,total=eH-sH;
-    const nowM=nowMin(),isToday=date===getTodayISO();
-    let html=`<div class="tl-hours">`;
-    for(let h=sH;h<=eH;h++) html+=`<div class="tl-hour">${h%12||12}${h<12?'am':'pm'}</div>`;
-    html+='</div>';
-    const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
-    S.courts.forEach(court=>{
-        let slots='';
-        if(S.session&&S.session.active&&isToday){
-            const ss=timeToMin(S.session.start),se=timeToMin(S.session.end);
-            const bks=getBookingsForCourt(court.id,date,ss,se).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
-            let cur=ss;
-            bks.forEach(b=>{
-                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
-                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((bs-cur)/(total*60))*100}%;">Open Play</div>`;
-                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
-                cur=be;
-            });
-            if(cur<se) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((se-cur)/(total*60))*100}%;">Open Play</div>`;
-        } else {
-            S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
-                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
-                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
-            });
-        }
-        if(court.status==='occupied'&&court.startTime&&isToday){
-            const el=Math.floor((Date.now()-court.startTime)/60000);
-            const ps=nowM-el;
-            const l=((ps-sH*60)/(total*60))*100;
-            const w=(el/(total*60))*100;
-            if(l>=0) slots+=`<div class="tl-slot tl-playing" style="left:${l}%;width:${Math.max(w,0.5)}%;">Playing</div>`;
-        }
-        const nowLine=isToday?`<div class="tl-now" style="left:${((nowM-sH*60)/(total*60))*100}%;"><span class="tl-now-lbl">NOW</span></div>`:'';
-        html+=`<div class="tl-row"><div class="tl-label" style="color:${court.color};">🏟️ ${court.name}</div><div class="tl-slots">${slots}${nowLine}</div></div>`;
-    });
-    grid.innerHTML=html;
-    renderConflicts(date);
-}
-
-function renderConflicts(date){
-    const div=document.getElementById('conflictsList');
-    const conflicts=[];
-    S.courts.forEach(court=>{
-        const bks=S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled');
-        for(let i=0;i<bks.length;i++){
-            for(let j=i+1;j<bks.length;j++){
-                const a=bks[i],b=bks[j];
-                if(timeToMin(a.startTime)<timeToMin(b.endTime)&&timeToMin(a.endTime)>timeToMin(b.startTime))
-                    conflicts.push({court:court.name,a,b});
-            }
-        }
-        if(S.session&&S.session.active) bks.forEach(b=>conflicts.push({type:'op',court:court.name,b,ses:S.session}));
-    });
-    if(conflicts.length===0){div.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No conflicts!</p></div>';return;}
-    div.innerHTML=conflicts.map(c=>c.type==='op'?`
-        <div class="overlap-box" style="margin-bottom:8px;">⚠️ Open Play Overlap — ${c.court}: ${c.b.customer} (${c.b.startTime}–${c.b.endTime}) overlaps Open Play (${c.ses.start}–${c.ses.end})<br><span style="font-size:0.72rem;">→ Court auto-excluded during booking.</span></div>`:
-        `<div class="conflict-box" style="margin-bottom:8px;">🔴 Double Booking — ${c.court}: ${c.a.customer} (${c.a.startTime}–${c.a.endTime}) vs ${c.b.customer} (${c.b.startTime}–${c.b.endTime})
-        <div style="margin-top:6px;display:flex;gap:6px;"><button class="btn btn-danger btn-sm" onclick="cancelB('${c.b.id}')">Cancel ${c.b.customer}</button><button class="btn btn-danger btn-sm" onclick="cancelB('${c.a.id}')">Cancel ${c.a.customer}</button></div></div>`
-    ).join('');
-}
-
-function cancelB(id){const b=S.bookings.find(x=>x.id===id);if(b){b.status='cancelled';showNotif(`Cancelled: ${b.customer}.`,'warning');renderTimeline();renderBookings();saveState();}}
 
 // ===================== RENDER ALL =====================
 function renderAll(){
@@ -2250,8 +2326,6 @@ function renderAll(){
     renderQueueList();
     renderOpStats();
     renderBookingCourtSelect();
-    renderPOSCourts();
-    renderSalesSummary();
     updatePairAlert();
     saveState();
 }
@@ -2485,7 +2559,7 @@ function renderBookings(){
                 <div>
                     <div style="font-weight:700;font-size:0.9rem;">👤 ${b.customer}</div>
                     <div style="font-size:0.75rem;color:#4ecdc4;">🏟️ ${court?court.name:'N/A'} · ${b.gameType}</div>
-                    <div style="font-size:0.7rem;color:#666;">${b.source==='online'?'🌐 Online':'🏢 Admin/POS'} ${b.ref?`· ${b.ref}`:''}</div>
+                    <div style="font-size:0.7rem;color:#666;">${b.source==='online'?'🌐 Online':'🏢 Admin'} ${b.ref?`· ${b.ref}`:''}${b.reference?`· 🔑 Ref: ${b.reference}`:''}</div>
                 </div>
                 <span class="bk-status bk-${b.status}">${b.status}</span>
             </div>
