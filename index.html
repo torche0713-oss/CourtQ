@@ -1,0 +1,2512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CourtQ Pro - Venue Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        header {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.4rem; font-weight: 800; color: #4ecdc4;
+        }
+
+        .pro-badge {
+            background: linear-gradient(135deg,#f39c12,#d68910);
+            color:#fff; font-size:0.6rem; padding:2px 6px;
+            border-radius:6px; font-weight:800; letter-spacing:1px;
+        }
+
+        .header-right {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+
+        .venue-editable {
+            background: rgba(78,205,196,0.15);
+            border: 1px solid rgba(78,205,196,0.3);
+            border-radius: 20px; padding: 5px 12px;
+            font-size: 0.8rem; font-weight: 600; color: #4ecdc4;
+            cursor: pointer; display: flex; align-items: center; gap: 5px;
+        }
+
+        .venue-editable:hover { background: rgba(78,205,196,0.25); }
+        .venue-editable input {
+            background: transparent; border: none; color: #4ecdc4;
+            font-size: 0.8rem; font-weight: 600; width: 180px; outline: none;
+        }
+
+        .date-time { font-size: 0.78rem; color: #aaa; display: flex; flex-direction: column; align-items: flex-end; }
+
+        .main-nav {
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 0 20px;
+            display: flex; gap: 0; overflow-x: auto;
+        }
+
+        .nav-tab {
+            padding: 12px 18px; border: none;
+            background: transparent; color: #888;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; border-bottom: 3px solid transparent;
+            white-space: nowrap; display: flex; align-items: center; gap: 5px;
+        }
+
+        .nav-tab:hover { color: #ccc; }
+        .nav-tab.active { color: #4ecdc4; border-bottom-color: #4ecdc4; background: rgba(78,205,196,0.05); }
+
+        .page { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
+        .page.active { display: block; }
+
+        .card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 20px; margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 0.95rem; font-weight: 700; color: #4ecdc4;
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 16px; display: flex;
+            align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 8px;
+        }
+
+        .two-col { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+        .three-col { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+        .four-col { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+
+        .stat-card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px; padding: 16px; text-align: center;
+        }
+
+        .stat-number { font-size: 1.8rem; font-weight: 800; color: #4ecdc4; }
+        .stat-label { font-size: 0.72rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label {
+            display: block; font-size: 0.75rem; color: #aaa;
+            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%; padding: 9px 12px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 9px; color: #fff; font-size: 0.88rem; transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none; border-color: #4ecdc4; background: rgba(78,205,196,0.08);
+        }
+
+        .form-group input::placeholder, .form-group textarea::placeholder { color: #555; }
+        .form-group select option { background: #1a1a2e; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+        .btn {
+            padding: 9px 16px; border: none; border-radius: 9px;
+            font-size: 0.83rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s; display: inline-flex;
+            align-items: center; gap: 6px; white-space: nowrap;
+        }
+
+        .btn-primary { background: linear-gradient(135deg,#4ecdc4,#44a08d); color:#fff; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(78,205,196,0.4); }
+        .btn-success { background: linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; }
+        .btn-success:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(46,204,113,0.4); }
+        .btn-danger { background: linear-gradient(135deg,#e74c3c,#c0392b); color:#fff; }
+        .btn-danger:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(231,76,60,0.4); }
+        .btn-warning { background: linear-gradient(135deg,#f39c12,#d68910); color:#fff; }
+        .btn-warning:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(243,156,18,0.4); }
+        .btn-purple { background: linear-gradient(135deg,#9b59b6,#8e44ad); color:#fff; }
+        .btn-outline { background:transparent; border:1px solid rgba(255,255,255,0.2); color:#ccc; }
+        .btn-outline:hover { background:rgba(255,255,255,0.08); color:#fff; }
+        .btn-sm { padding:5px 10px; font-size:0.72rem; }
+        .btn-full { width:100%; justify-content:center; }
+
+        /* COURT MANAGEMENT */
+        .courts-manage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+            gap: 14px;
+        }
+
+        .court-manage-card {
+            background: rgba(255,255,255,0.06);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 14px; padding: 16px;
+            position: relative; transition: all 0.3s;
+        }
+
+        .court-manage-card:hover { border-color: rgba(255,255,255,0.2); }
+
+        .court-manage-card.occupied { border-color: rgba(78,205,196,0.4); background: rgba(78,205,196,0.06); }
+        .court-manage-card.available { border-color: rgba(46,204,113,0.3); background: rgba(46,204,113,0.05); }
+        .court-manage-card.maintenance { border-color: rgba(243,156,18,0.3); background: rgba(243,156,18,0.05); }
+        .court-manage-card.booked { border-color: rgba(231,76,60,0.3); background: rgba(231,76,60,0.05); }
+
+        .court-color-bar {
+            position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 14px 14px 0 0;
+        }
+
+        .court-manage-header {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; margin-bottom: 10px; margin-top: 8px;
+        }
+
+        .court-manage-name { font-weight: 700; font-size: 1rem; }
+        .court-manage-loc { font-size: 0.7rem; color: #666; margin-top: 2px; }
+
+        .court-status-badge {
+            font-size: 0.65rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 10px; text-transform: uppercase;
+        }
+
+        .csb-available { background:rgba(46,204,113,0.2); color:#2ecc71; }
+        .csb-occupied  { background:rgba(78,205,196,0.2); color:#4ecdc4; }
+        .csb-maintenance { background:rgba(243,156,18,0.2); color:#f39c12; }
+        .csb-booked    { background:rgba(231,76,60,0.2); color:#e74c3c; }
+
+        .court-info-row {
+            display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+        }
+
+        .court-info-tag {
+            font-size: 0.67rem; padding: 2px 8px; border-radius: 8px;
+            background: rgba(255,255,255,0.07); color: #aaa;
+        }
+
+        .court-players-mini {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;
+        }
+
+        .cpm-slot {
+            background: rgba(255,255,255,0.04); border-radius: 6px;
+            padding: 5px 7px; display: flex; align-items: center; gap: 5px;
+            font-size: 0.72rem;
+        }
+
+        .cpm-slot.empty { border: 1px dashed rgba(255,255,255,0.12); color: #444; justify-content: center; }
+
+        .mini-av {
+            width: 20px; height: 20px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.6rem; flex-shrink: 0;
+        }
+
+        .timer-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+        .timer-bar-fill { height: 100%; border-radius: 2px; transition: width 1s; }
+
+        .add-court-card {
+            background: rgba(78,205,196,0.04);
+            border: 2px dashed rgba(78,205,196,0.25);
+            border-radius: 14px; padding: 16px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 200px; cursor: pointer; transition: all 0.3s; gap: 10px;
+        }
+
+        .add-court-card:hover {
+            background: rgba(78,205,196,0.1);
+            border-color: rgba(78,205,196,0.5);
+            transform: translateY(-2px);
+        }
+
+        .add-court-icon {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(78,205,196,0.1);
+            border: 2px solid rgba(78,205,196,0.25);
+            display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+        }
+
+        /* SESSION */
+        .session-card {
+            border-radius: 16px; padding: 20px; margin-bottom: 20px;
+        }
+
+        .session-active {
+            background: linear-gradient(135deg,rgba(78,205,196,0.12),rgba(44,160,141,0.08));
+            border: 2px solid rgba(78,205,196,0.35);
+            animation: sPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes sPulse {
+            0%,100% { border-color:rgba(78,205,196,0.35); }
+            50% { border-color:rgba(78,205,196,0.7); }
+        }
+
+        .session-none {
+            background: rgba(255,255,255,0.04);
+            border: 2px dashed rgba(255,255,255,0.12);
+        }
+
+        .session-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin: 14px 0; }
+        .ss-card { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px; text-align: center; }
+        .ss-num { font-size: 1.4rem; font-weight: 800; }
+        .ss-lbl { font-size: 0.65rem; color: #aaa; text-transform: uppercase; }
+
+        .live-dot { width:10px; height:10px; border-radius:50%; background:#2ecc71; animation:ld 1.5s ease-in-out infinite; }
+        @keyframes ld { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.8);} }
+
+        /* QUEUE */
+        .queue-item {
+            background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+            border-radius:10px; padding:12px; display:flex; align-items:center;
+            gap:10px; animation:slideIn 0.3s ease-out; margin-bottom:8px;
+        }
+
+        @keyframes slideIn { from{opacity:0;transform:translateX(-15px);} to{opacity:1;transform:translateX(0);} }
+
+        .q-pos {
+            width:30px; height:30px; border-radius:50%;
+            background:linear-gradient(135deg,#4ecdc4,#44a08d);
+            display:flex; align-items:center; justify-content:center;
+            font-weight:800; font-size:0.82rem; flex-shrink:0;
+        }
+
+        .q-pos.first { background:linear-gradient(135deg,#f39c12,#d68910); }
+        .q-info { flex:1; min-width:0; }
+        .q-name { font-weight:700; font-size:0.88rem; }
+        .q-tags { display:flex; flex-wrap:wrap; gap:3px; margin-top:3px; }
+        .q-tag { background:rgba(255,255,255,0.07); padding:1px 7px; border-radius:8px; font-size:0.68rem; color:#ccc; }
+        .q-meta { display:flex; gap:6px; margin-top:4px; flex-wrap:wrap; align-items:center; }
+        .q-wait { font-size:0.7rem; color:#f39c12; }
+        .q-type { font-size:0.65rem; padding:1px 7px; border-radius:8px; }
+        .q-singles { background:rgba(155,89,182,0.2); color:#bb8fce; }
+        .q-doubles { background:rgba(52,152,219,0.2); color:#85c1e9; }
+        .q-actions { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+
+        .solo-wait-card {
+            background:rgba(243,156,18,0.06); border:1px solid rgba(243,156,18,0.2);
+            border-radius:10px; padding:10px; margin-bottom:8px;
+        }
+
+        /* BOOKING */
+        .booking-card {
+            background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+            border-radius:12px; padding:14px; margin-bottom:8px; cursor:pointer; transition:all 0.3s;
+        }
+
+        .booking-card:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2); }
+
+        .bk-status {
+            font-size:0.63rem; font-weight:700; padding:3px 8px;
+            border-radius:8px; text-transform:uppercase;
+        }
+
+        .bk-confirmed { background:rgba(46,204,113,0.2); color:#2ecc71; }
+        .bk-pending   { background:rgba(243,156,18,0.2); color:#f39c12; }
+        .bk-checkedin { background:rgba(78,205,196,0.2); color:#4ecdc4; }
+        .bk-completed { background:rgba(150,150,150,0.2); color:#888; }
+        .bk-cancelled { background:rgba(231,76,60,0.2); color:#e74c3c; }
+
+        /* ONLINE BOOKING PORTAL */
+        .portal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.85); z-index:800;
+            align-items:center; justify-content:center; padding:20px;
+            overflow-y:auto;
+        }
+
+        .portal-overlay.active { display:flex; }
+
+        .portal-container {
+            background:linear-gradient(135deg,#1a1a2e,#0f2040);
+            border:1px solid rgba(78,205,196,0.3);
+            border-radius:24px; padding:0;
+            max-width:900px; width:100%;
+            animation:portalIn 0.4s ease-out;
+            max-height:90vh; overflow-y:auto;
+        }
+
+        @keyframes portalIn { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+
+        .portal-header {
+            background:linear-gradient(135deg,rgba(78,205,196,0.15),rgba(44,160,141,0.1));
+            border-bottom:1px solid rgba(78,205,196,0.2);
+            padding:24px 28px; border-radius:24px 24px 0 0;
+            display:flex; justify-content:space-between; align-items:center;
+        }
+
+        .portal-body { padding:24px 28px; }
+
+        .portal-steps {
+            display:flex; gap:0; margin-bottom:24px;
+            border-radius:12px; overflow:hidden;
+            border:1px solid rgba(255,255,255,0.1);
+        }
+
+        .portal-step {
+            flex:1; padding:10px; text-align:center;
+            background:rgba(255,255,255,0.03);
+            font-size:0.78rem; color:#555; font-weight:600;
+            border-right:1px solid rgba(255,255,255,0.08); cursor:pointer;
+            transition:all 0.3s;
+        }
+
+        .portal-step:last-child { border-right:none; }
+        .portal-step.active { background:rgba(78,205,196,0.15); color:#4ecdc4; }
+        .portal-step.done { background:rgba(46,204,113,0.1); color:#2ecc71; }
+
+        .portal-page { display:none; }
+        .portal-page.active { display:block; }
+
+        /* COURT PICKER */
+        .court-picker-grid {
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px;
+        }
+
+        .court-picker-card {
+            background:rgba(255,255,255,0.05);
+            border:2px solid rgba(255,255,255,0.1);
+            border-radius:12px; padding:14px; cursor:pointer;
+            transition:all 0.3s; text-align:center;
+        }
+
+        .court-picker-card:hover {
+            border-color:rgba(78,205,196,0.4);
+            background:rgba(78,205,196,0.06);
+        }
+
+        .court-picker-card.selected {
+            border-color:#4ecdc4;
+            background:rgba(78,205,196,0.12);
+        }
+
+        .court-picker-card.unavailable {
+            opacity:0.4; cursor:not-allowed;
+        }
+
+        .court-picker-card.unavailable:hover {
+            border-color:rgba(255,255,255,0.1);
+            background:rgba(255,255,255,0.05);
+        }
+
+        /* SLOT PICKER */
+        .slot-grid {
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px;
+        }
+
+        .slot-btn {
+            padding:10px 6px; border-radius:10px; text-align:center;
+            border:2px solid rgba(255,255,255,0.1);
+            background:rgba(255,255,255,0.04);
+            cursor:pointer; transition:all 0.3s; font-size:0.78rem;
+        }
+
+        .slot-btn:hover { border-color:rgba(78,205,196,0.4); background:rgba(78,205,196,0.06); }
+        .slot-btn.selected { border-color:#4ecdc4; background:rgba(78,205,196,0.15); color:#4ecdc4; font-weight:700; }
+        .slot-btn.taken { opacity:0.3; cursor:not-allowed; background:rgba(231,76,60,0.08); border-color:rgba(231,76,60,0.2); }
+        .slot-btn.taken:hover { border-color:rgba(231,76,60,0.2); background:rgba(231,76,60,0.08); }
+
+        /* PAYMENT */
+        .pay-methods { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+
+        .pay-btn {
+            padding:14px; border-radius:12px; text-align:center;
+            border:2px solid rgba(255,255,255,0.1);
+            background:rgba(255,255,255,0.04);
+            cursor:pointer; transition:all 0.3s;
+        }
+
+        .pay-btn:hover { border-color:rgba(78,205,196,0.4); }
+        .pay-btn.selected { border-color:#4ecdc4; background:rgba(78,205,196,0.12); }
+        .pay-icon { font-size:1.8rem; display:block; margin-bottom:4px; }
+        .pay-name { font-size:0.8rem; font-weight:700; }
+        .pay-desc { font-size:0.65rem; color:#aaa; }
+
+        /* PAYMENT PROCESSING */
+        .payment-processing {
+            text-align:center; padding:30px;
+        }
+
+        .payment-spinner {
+            width:60px; height:60px; border-radius:50%;
+            border:4px solid rgba(78,205,196,0.2);
+            border-top-color:#4ecdc4;
+            animation:spin 1s linear infinite;
+            margin:0 auto 16px;
+        }
+
+        @keyframes spin { to{transform:rotate(360deg);} }
+
+        .payment-success {
+            text-align:center; padding:30px;
+        }
+
+        .success-circle {
+            width:80px; height:80px; border-radius:50%;
+            background:rgba(46,204,113,0.15);
+            border:3px solid #2ecc71;
+            display:flex; align-items:center; justify-content:center;
+            font-size:2rem; margin:0 auto 16px;
+            animation:successPop 0.5s ease-out;
+        }
+
+        @keyframes successPop { from{transform:scale(0);} to{transform:scale(1);} }
+
+        .qr-code {
+            width:120px; height:120px;
+            background:#fff; border-radius:12px;
+            margin:14px auto; display:flex;
+            align-items:center; justify-content:center;
+            padding:10px;
+        }
+
+        .qr-inner {
+            width:100%; height:100%;
+            background:repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 0 0/20px 20px;
+            border-radius:4px;
+        }
+
+        /* RECEIPT */
+        .receipt-box {
+            background:rgba(0,0,0,0.3); border-radius:12px; padding:16px; font-family:monospace;
+        }
+
+        .receipt-line { display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-bottom:1px dashed rgba(255,255,255,0.07); }
+        .receipt-total { display:flex; justify-content:space-between; font-size:1rem; font-weight:800; padding:10px 0; color:#4ecdc4; }
+
+        /* TIMELINE */
+        .timeline-wrap { overflow-x:auto; margin-bottom:20px; }
+        .timeline-grid { min-width:800px; background:rgba(0,0,0,0.2); border-radius:12px; padding:16px; }
+        .tl-hours { display:flex; margin-left:110px; margin-bottom:8px; }
+        .tl-hour { flex:1; font-size:0.63rem; color:#555; text-align:center; min-width:40px; }
+        .tl-row { display:flex; align-items:center; margin-bottom:6px; height:36px; }
+        .tl-label { width:110px; font-size:0.75rem; font-weight:600; flex-shrink:0; color:#aaa; }
+        .tl-slots { flex:1; height:100%; position:relative; background:rgba(255,255,255,0.02); border-radius:6px; overflow:hidden; }
+        .tl-slot { position:absolute; top:3px; bottom:3px; border-radius:4px; display:flex; align-items:center; padding:0 6px; font-size:0.65rem; font-weight:700; white-space:nowrap; overflow:hidden; }
+        .tl-op    { background:rgba(78,205,196,0.25); color:#4ecdc4; border:1px solid rgba(78,205,196,0.4); }
+        .tl-booked{ background:rgba(231,76,60,0.3); color:#e74c3c; border:1px solid rgba(231,76,60,0.5); }
+        .tl-playing{background:rgba(46,204,113,0.25); color:#2ecc71; }
+        .tl-maint { background:rgba(150,150,150,0.2); color:#777; }
+        .tl-now   { position:absolute; top:0; bottom:0; width:2px; background:#f39c12; z-index:5; }
+        .tl-now-lbl{ position:absolute; top:-16px; font-size:0.58rem; color:#f39c12; transform:translateX(-50%); font-weight:700; }
+
+        /* POS */
+        .pos-grid { display:grid; grid-template-columns:1fr 360px; gap:20px; }
+        .pos-courts { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+        .pos-court-btn {
+            background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.1);
+            border-radius:12px; padding:14px; cursor:pointer; transition:all 0.3s; text-align:center;
+        }
+
+        .pos-court-btn:hover { background:rgba(78,205,196,0.08); border-color:rgba(78,205,196,0.3); }
+        .pos-court-btn.selected { border-color:#4ecdc4; background:rgba(78,205,196,0.12); }
+        .pos-court-btn.unavail { opacity:0.35; cursor:not-allowed; }
+        .pos-court-btn.unavail:hover { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.1); }
+
+        .pay-methods-sm { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+        .pay-btn-sm {
+            padding:9px 6px; border-radius:9px; text-align:center;
+            border:2px solid rgba(255,255,255,0.1);
+            background:rgba(255,255,255,0.04); cursor:pointer; transition:all 0.3s; font-size:0.75rem;
+        }
+
+        .pay-btn-sm:hover { border-color:rgba(78,205,196,0.4); }
+        .pay-btn-sm.selected { border-color:#4ecdc4; background:rgba(78,205,196,0.12); color:#4ecdc4; font-weight:700; }
+
+        /* NOTIFICATION */
+        .notification {
+            position:fixed; top:70px; right:20px;
+            padding:12px 18px; border-radius:12px;
+            font-weight:600; font-size:0.85rem; z-index:9999;
+            animation:nSlide 0.3s ease-out; max-width:320px; line-height:1.4;
+        }
+
+        .notification.success { background:linear-gradient(135deg,#4ecdc4,#44a08d); box-shadow:0 6px 20px rgba(78,205,196,0.4); }
+        .notification.error   { background:linear-gradient(135deg,#e74c3c,#c0392b); box-shadow:0 6px 20px rgba(231,76,60,0.4); }
+        .notification.warning { background:linear-gradient(135deg,#f39c12,#d68910); box-shadow:0 6px 20px rgba(243,156,18,0.4); }
+        .notification.info    { background:linear-gradient(135deg,#3498db,#2980b9); box-shadow:0 6px 20px rgba(52,152,219,0.4); }
+        @keyframes nSlide { from{opacity:0;transform:translateX(40px);} to{opacity:1;transform:translateX(0);} }
+
+        /* MODAL */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:500; align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.active { display:flex; }
+        .modal { background:#1a1a2e; border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:24px; max-width:500px; width:100%; animation:mIn 0.3s ease-out; max-height:90vh; overflow-y:auto; }
+        @keyframes mIn { from{opacity:0;transform:scale(0.92);} to{opacity:1;transform:scale(1);} }
+        .modal-title { font-size:1.1rem; font-weight:700; color:#4ecdc4; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+        .modal-actions { display:flex; gap:10px; margin-top:18px; }
+        .modal-actions .btn { flex:1; justify-content:center; }
+
+        .score-vs { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; margin:14px 0; }
+        .score-side { background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; text-align:center; cursor:pointer; transition:all 0.3s; }
+        .score-side:hover { border-color:rgba(78,205,196,0.4); }
+        .score-side.selected { border-color:#2ecc71; background:rgba(46,204,113,0.1); }
+        .w-crown { font-size:1.2rem; display:block; opacity:0; transition:all 0.3s; }
+        .score-side.selected .w-crown { opacity:1; animation:cPop 0.5s ease-out; }
+        @keyframes cPop { 0%{transform:scale(0) rotate(-180deg);} 60%{transform:scale(1.3) rotate(20deg);} 100%{transform:scale(1) rotate(0);} }
+        .score-vs-lbl { font-size:1.1rem; font-weight:800; color:#555; text-align:center; }
+        .score-stepper { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; }
+        .score-btn { width:28px; height:28px; border-radius:50%; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:#fff; font-size:1rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+        .score-btn:hover { background:rgba(78,205,196,0.2); border-color:#4ecdc4; }
+        .score-num { font-size:1.3rem; font-weight:800; min-width:32px; text-align:center; }
+        .tie-opt { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:10px; padding:8px; background:rgba(255,255,255,0.04); border-radius:8px; cursor:pointer; font-size:0.82rem; color:#aaa; border:1px solid transparent; transition:all 0.3s; }
+        .tie-opt:hover { background:rgba(243,156,18,0.1); border-color:rgba(243,156,18,0.3); }
+        .tie-opt.selected { background:rgba(243,156,18,0.15); border-color:#f39c12; color:#f39c12; font-weight:700; }
+
+        .announce-banner { background:linear-gradient(135deg,rgba(78,205,196,0.12),rgba(68,160,141,0.12)); border:1px solid rgba(78,205,196,0.3); border-radius:10px; padding:10px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px; font-size:0.82rem; }
+
+        .conflict-box { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); border-radius:8px; padding:10px; font-size:0.8rem; color:#e74c3c; margin-bottom:10px; }
+        .overlap-box { background:rgba(243,156,18,0.1); border:1px solid rgba(243,156,18,0.3); border-radius:8px; padding:10px; font-size:0.8rem; color:#f39c12; margin:8px 0; }
+
+        .divider { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:14px 0; }
+        .section-lbl { font-size:0.68rem; color:#aaa; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; font-weight:700; }
+        .empty-state { text-align:center; padding:32px 20px; color:#555; }
+        .empty-state .ei { font-size:2.5rem; margin-bottom:8px; }
+        .empty-state p { font-size:0.85rem; }
+
+        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:rgba(255,255,255,0.03); }
+        ::-webkit-scrollbar-thumb { background:rgba(78,205,196,0.3); border-radius:3px; }
+
+        @media(max-width:900px) {
+            .two-col{grid-template-columns:1fr;}
+            .three-col{grid-template-columns:1fr;}
+            .four-col{grid-template-columns:repeat(2,1fr);}
+            .pos-grid{grid-template-columns:1fr;}
+            .form-row{grid-template-columns:1fr;}
+            .form-row-3{grid-template-columns:1fr;}
+            .session-stats{grid-template-columns:repeat(2,1fr);}
+            .score-vs{grid-template-columns:1fr;}
+            .score-vs-lbl{display:none;}
+            .pay-methods{grid-template-columns:repeat(2,1fr);}
+        }
+
+        @media(max-width:500px) {
+            .four-col{grid-template-columns:repeat(2,1fr);}
+            header{flex-direction:column;text-align:center;}
+            .portal-header{flex-direction:column;gap:10px;}
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo"><span>🏓</span>CourtQ<span class="pro-badge">PRO</span></div>
+    <div class="header-right">
+        <div class="date-time">
+            <span id="clockDisplay">--:--:--</span>
+            <span id="dateDisplay" style="font-size:0.7rem;">--</span>
+        </div>
+        <div class="venue-editable" id="venueDisplay" onclick="editVenueName()">
+            <span id="venueText">🏟️ Riverside Pickleball</span>
+            <span style="font-size:0.6rem;opacity:0.5;">✏️</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openPortal()">🌐 Book Online</button>
+    </div>
+</header>
+
+<nav class="main-nav">
+    <button class="nav-tab active" onclick="showPage('openplay',this)">🏓 Open Play</button>
+    <button class="nav-tab" onclick="showPage('courts',this)">🏟️ Courts</button>
+    <button class="nav-tab" onclick="showPage('booking',this)">📅 Bookings</button>
+    <button class="nav-tab" onclick="showPage('pos',this)">💳 POS</button>
+    <button class="nav-tab" onclick="showPage('timeline',this)">📊 Timeline</button>
+    <button class="nav-tab" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
+    <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
+</nav>
+
+<!-- OPEN PLAY PAGE -->
+<div class="page active" id="page-openplay">
+    <div id="sessionDisplay"></div>
+    <div class="four-col" id="opStats" style="margin-bottom:16px;"></div>
+    <div class="announce-banner"><span style="font-size:1.1rem">📢</span><span id="announceText">Welcome to CourtQ Pro!</span></div>
+    <div class="two-col">
+        <div>
+            <div class="card">
+                <div class="card-title">🎯 Join Queue</div>
+                <div id="pairingAlert" style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.3);border-radius:8px;padding:10px;margin-bottom:12px;font-size:0.8rem;color:#f39c12;display:none;"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="p1" placeholder="Enter your name"></div>
+                <div class="form-group"><label>Game Type</label>
+                    <select id="gameType" onchange="onGTChange()">
+                        <option value="singles">Singles (2 players)</option>
+                        <option value="doubles">Doubles (4 players)</option>
+                    </select>
+                </div>
+                <div id="extraPlayers" style="display:none;">
+                    <div class="form-group"><label>Teammates</label>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <input type="text" id="p2" placeholder="Teammate 2">
+                            <input type="text" id="p3" placeholder="Teammate 3">
+                            <input type="text" id="p4" placeholder="Teammate 4">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group"><label>Skill Level</label>
+                    <select id="skillLevel">
+                        <option value="2">2.0 – Beginner</option>
+                        <option value="3" selected>3.0 – Intermediate</option>
+                        <option value="4">4.0 – Advanced</option>
+                        <option value="5">5.0 – Pro</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Group Name (optional)</label><input type="text" id="groupName" placeholder="e.g. Team Awesome"></div>
+                <button class="btn btn-primary btn-full" onclick="joinQueue()">🏓 Join Queue</button>
+            </div>
+            <div class="card">
+                <div class="card-title"><span>⏳ Queue</span><span id="qBadge" style="color:#f39c12;font-size:0.8rem;">(0)</span></div>
+                <div id="queueList"></div>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span>🏟️ Courts</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-primary btn-sm" onclick="openStartSession()">▶ Session</button>
+                    </div>
+                </div>
+                <div class="courts-manage-grid" id="opCourtsGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- COURTS MANAGEMENT PAGE -->
+<div class="page" id="page-courts">
+    <div class="card">
+        <div class="card-title">
+            <span>🏟️ Court Management</span>
+            <button class="btn btn-primary" onclick="openAddCourtModal()">➕ Add Court</button>
+        </div>
+        <div style="font-size:0.82rem;color:#aaa;margin-bottom:16px;">Manage your courts — add, edit, remove, or toggle maintenance. Courts with active games or bookings are protected.</div>
+        <div class="courts-manage-grid" id="courtsManageGrid"></div>
+    </div>
+</div>
+
+<!-- BOOKING PAGE -->
+<div class="page" id="page-booking">
+    <div class="two-col">
+        <div>
+            <div class="card">
+                <div class="card-title">📅 New Booking (Admin)</div>
+                <div id="bConflict"></div>
+                <div class="form-group"><label>Customer *</label><input type="text" id="bCustomer" placeholder="Full name"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Phone</label><input type="text" id="bPhone" placeholder="+63 900 000 0000"></div>
+                    <div class="form-group"><label>Email</label><input type="text" id="bEmail" placeholder="email@example.com"></div>
+                </div>
+                <div class="form-group"><label>Court *</label><select id="bCourt" onchange="onBCourtChange()"><option value="">Select court...</option></select></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Date *</label><input type="date" id="bDate" onchange="checkBConflict()"></div>
+                    <div class="form-group"><label>Start Time *</label><input type="time" id="bStart" onchange="checkBConflict()"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Duration</label>
+                        <select id="bDuration" onchange="checkBConflict()">
+                            <option value="60">1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120" selected>2 hours</option>
+                            <option value="180">3 hours</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Game Type</label>
+                        <select id="bGameType">
+                            <option value="singles">Singles</option>
+                            <option value="doubles">Doubles</option>
+                            <option value="private">Private</option>
+                            <option value="lesson">Lesson/Clinic</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group"><label>Players</label><input type="text" id="bPlayers" placeholder="Names separated by comma"></div>
+                <div id="bPricePreview" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.83rem;"><span>Rate:</span><span id="bRate">₱0/hr</span></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:800;color:#4ecdc4;margin-top:4px;"><span>Total:</span><span id="bTotal">₱0</span></div>
+                </div>
+                <div class="form-group"><label>Payment Method</label>
+                    <select id="bPayMethod">
+                        <option value="Cash">💵 Cash</option>
+                        <option value="GCash">📱 GCash</option>
+                        <option value="Maya">💜 Maya</option>
+                        <option value="Card">💳 Card</option>
+                        <option value="Stripe">🔷 Stripe</option>
+                        <option value="Pending">⏳ Pending</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="createBooking()">📅 Create Booking</button>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span>📋 Bookings</span>
+                    <div style="display:flex;gap:6px;">
+                        <select id="bFilterDate" onchange="renderBookings()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.75rem;">
+                            <option value="today">Today</option>
+                            <option value="tomorrow">Tomorrow</option>
+                            <option value="all">All</option>
+                        </select>
+                        <select id="bFilterStatus" onchange="renderBookings()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.75rem;">
+                            <option value="all">All</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="checkedin">Checked In</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="bookingList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- POS PAGE -->
+<div class="page" id="page-pos">
+    <div class="pos-grid">
+        <div>
+            <div class="card">
+                <div class="card-title">💳 Quick Sale (Walk-in)</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Customer *</label><input type="text" id="posName" placeholder="Name"></div>
+                    <div class="form-group"><label>Phone</label><input type="text" id="posPhone" placeholder="Optional"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Game Type</label>
+                        <select id="posGT">
+                            <option value="singles">Singles</option>
+                            <option value="doubles">Doubles</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Duration</label>
+                        <select id="posDur">
+                            <option value="60">1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120" selected>2 hours</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group"><label>Select Court</label><div class="pos-courts" id="posCourts"></div></div>
+                <div class="form-group"><label>Payment Method</label>
+                    <div class="pay-methods-sm">
+                        <div class="pay-btn-sm selected" onclick="selPay(this,'Cash')">💵 Cash</div>
+                        <div class="pay-btn-sm" onclick="selPay(this,'GCash')">📱 GCash</div>
+                        <div class="pay-btn-sm" onclick="selPay(this,'Maya')">💜 Maya</div>
+                        <div class="pay-btn-sm" onclick="selPay(this,'Card')">💳 Card</div>
+                        <div class="pay-btn-sm" onclick="selPay(this,'Stripe')">🔷 Stripe</div>
+                        <div class="pay-btn-sm" onclick="selPay(this,'PayPal')">🅿️ PayPal</div>
+                    </div>
+                </div>
+                <button class="btn btn-success btn-full" onclick="processPOS()">✅ Process Payment</button>
+            </div>
+            <div class="card">
+                <div class="card-title">📊 Today's Sales</div>
+                <div id="salesSummary"></div>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <div class="card-title">🧾 Receipt</div>
+                <div id="receiptDisplay"><div class="empty-state"><div class="ei">🧾</div><p>No sale yet.</p></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TIMELINE PAGE -->
+<div class="page" id="page-timeline">
+    <div class="card">
+        <div class="card-title">
+            <span>📊 Timeline</span>
+            <div style="display:flex;gap:6px;">
+                <input type="date" id="tlDate" onchange="renderTimeline()" style="padding:5px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('tlDate').value=getTodayISO();renderTimeline()">Today</button>
+            </div>
+        </div>
+        <div class="timeline-wrap"><div class="timeline-grid" id="tlGrid"></div></div>
+    </div>
+    <div class="card"><div class="card-title">⚠️ Conflicts</div><div id="conflictsList"></div></div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="page" id="page-leaderboard">
+    <div class="card">
+        <div class="card-title"><span>🏆 Leaderboard</span><button class="btn btn-danger btn-sm" onclick="confirmClear('leaderboard')">🗑️ Clear</button></div>
+        <div id="leaderboardList"></div>
+    </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+    <div class="card">
+        <div class="card-title"><span>📋 History</span><button class="btn btn-danger btn-sm" onclick="confirmClear('history')">🗑️ Clear</button></div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <select id="hFDate" onchange="renderHistory()" style="padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.8rem;">
+                <option value="all">All</option><option value="today" selected>Today</option><option value="yesterday">Yesterday</option>
+            </select>
+            <input type="text" id="hFPlayer" placeholder="🔍 Player..." oninput="renderHistory()" style="padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.8rem;flex:1;">
+        </div>
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<!-- ONLINE BOOKING PORTAL -->
+<div class="portal-overlay" id="portalOverlay">
+    <div class="portal-container">
+        <div class="portal-header">
+            <div>
+                <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;">🌐 Online Booking</div>
+                <div id="portalVenueName" style="font-size:0.85rem;color:#aaa;margin-top:2px;"></div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="closePortal()">✕ Close</button>
+        </div>
+        <div class="portal-body">
+            <div class="portal-steps" id="portalSteps">
+                <div class="portal-step active" onclick="goPortalStep(1)">1 · Pick Court</div>
+                <div class="portal-step" onclick="goPortalStep(2)">2 · Pick Time</div>
+                <div class="portal-step" onclick="goPortalStep(3)">3 · Your Info</div>
+                <div class="portal-step" onclick="goPortalStep(4)">4 · Payment</div>
+                <div class="portal-step" onclick="goPortalStep(5)">5 · Confirm</div>
+            </div>
+
+            <!-- STEP 1: PICK COURT -->
+            <div class="portal-page active" id="pStep1">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Choose a Court</div>
+                <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Select the court you'd like to book.</div>
+                <div class="court-picker-grid" id="courtPickerGrid"></div>
+                <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+                    <button class="btn btn-primary" onclick="portalNext(1)">Next →</button>
+                </div>
+            </div>
+
+            <!-- STEP 2: PICK TIME -->
+            <div class="portal-page" id="pStep2">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Choose Date & Time Slot</div>
+                <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Green = Available · Red = Booked</div>
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="pDate" onchange="renderSlots()">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <select id="pDuration" onchange="renderSlots()">
+                            <option value="60">1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120" selected>2 hours</option>
+                            <option value="180">3 hours</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="slotGrid" class="slot-grid"></div>
+                <div style="display:flex;justify-content:space-between;margin-top:16px;">
+                    <button class="btn btn-outline" onclick="portalPrev(2)">← Back</button>
+                    <button class="btn btn-primary" onclick="portalNext(2)">Next →</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: YOUR INFO -->
+            <div class="portal-page" id="pStep3">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Your Information</div>
+                <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Fill in your details to complete the booking.</div>
+                <div class="form-row">
+                    <div class="form-group"><label>First Name *</label><input type="text" id="pFirst" placeholder="Juan"></div>
+                    <div class="form-group"><label>Last Name *</label><input type="text" id="pLast" placeholder="dela Cruz"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Phone *</label><input type="text" id="pPhone" placeholder="+63 900 000 0000"></div>
+                    <div class="form-group"><label>Email *</label><input type="text" id="pEmail" placeholder="you@email.com"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Game Type</label>
+                        <select id="pGameType">
+                            <option value="singles">Singles</option>
+                            <option value="doubles">Doubles</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Number of Players</label>
+                        <select id="pPlayers">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group"><label>Special Requests (optional)</label><textarea id="pNotes" rows="2" placeholder="Anything we should know..."></textarea></div>
+                <div style="display:flex;justify-content:space-between;margin-top:16px;">
+                    <button class="btn btn-outline" onclick="portalPrev(3)">← Back</button>
+                    <button class="btn btn-primary" onclick="portalNext(3)">Next →</button>
+                </div>
+            </div>
+
+            <!-- STEP 4: PAYMENT -->
+            <div class="portal-page" id="pStep4">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Payment</div>
+                <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Choose how you'd like to pay.</div>
+
+                <!-- Booking Summary -->
+                <div id="bookingSummaryBox" style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:14px;margin-bottom:16px;"></div>
+
+                <div style="font-weight:700;margin-bottom:10px;font-size:0.9rem;">Select Payment Method:</div>
+                <div class="pay-methods">
+                    <div class="pay-btn" onclick="selPortalPay(this,'GCash')">
+                        <span class="pay-icon">📱</span>
+                        <div class="pay-name">GCash</div>
+                        <div class="pay-desc">Scan QR to pay</div>
+                    </div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'Maya')">
+                        <span class="pay-icon">💜</span>
+                        <div class="pay-name">Maya</div>
+                        <div class="pay-desc">Scan QR to pay</div>
+                    </div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'Card')">
+                        <span class="pay-icon">💳</span>
+                        <div class="pay-name">Credit/Debit</div>
+                        <div class="pay-desc">Visa, Mastercard</div>
+                    </div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'Stripe')">
+                        <span class="pay-icon">🔷</span>
+                        <div class="pay-name">Stripe</div>
+                        <div class="pay-desc">Secure online</div>
+                    </div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'PayPal')">
+                        <span class="pay-icon">🅿️</span>
+                        <div class="pay-name">PayPal</div>
+                        <div class="pay-desc">Pay with PayPal</div>
+                    </div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'PayLater')">
+                        <span class="pay-icon">🏦</span>
+                        <div class="pay-name">Pay on Arrival</div>
+                        <div class="pay-desc">Cash at venue</div>
+                    </div>
+                </div>
+
+                <!-- Payment Input Area -->
+                <div id="payInputArea" style="margin-top:16px;"></div>
+
+                <div style="display:flex;justify-content:space-between;margin-top:16px;">
+                    <button class="btn btn-outline" onclick="portalPrev(4)">← Back</button>
+                    <button class="btn btn-success" onclick="processPortalPayment()">✅ Pay & Book</button>
+                </div>
+            </div>
+
+            <!-- STEP 5: CONFIRMATION -->
+            <div class="portal-page" id="pStep5">
+                <div id="confirmationContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="sessionModal">
+    <div class="modal">
+        <div class="modal-title">▶ Start Open Play Session</div>
+        <div class="form-row">
+            <div class="form-group"><label>Start Time</label><input type="time" id="sesStart" value="17:00"></div>
+            <div class="form-group"><label>End Time</label><input type="time" id="sesEnd" value="21:00"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Rotation (min)</label>
+                <select id="sesRot"><option value="15">15</option><option value="20" selected>20</option><option value="25">25</option><option value="30">30</option></select>
+            </div>
+            <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="sesDropIn" value="100"></div>
+        </div>
+        <div id="sesConflictPreview" style="margin-top:8px;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="startSession()">▶ Start</button>
+            <button class="btn btn-outline" onclick="closeModal('sessionModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="addCourtModal">
+    <div class="modal">
+        <div class="modal-title">🏗️ Add New Court</div>
+        <div class="form-group"><label>Court Name *</label><input type="text" id="ncName" placeholder="Court 5, Pro Court, Back Court..."></div>
+        <div class="form-group"><label>Location</label><input type="text" id="ncLoc" placeholder="Main Area, East Wing..."></div>
+        <div class="form-row">
+            <div class="form-group"><label>Surface</label>
+                <select id="ncSurf"><option value="Hard">🟦 Hard</option><option value="Clay">🟫 Clay</option><option value="Grass">🟩 Grass</option></select>
+            </div>
+            <div class="form-group"><label>Environment</label>
+                <select id="ncEnv"><option value="Outdoor">☀️ Outdoor</option><option value="Indoor">🏠 Indoor</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="ncRate" value="300" min="0"></div>
+            <div class="form-group"><label>Color</label>
+                <select id="ncColor">
+                    <option value="#4ecdc4">🟦 Teal</option><option value="#e74c3c">🔴 Red</option>
+                    <option value="#3498db">🔵 Blue</option><option value="#2ecc71">🟢 Green</option>
+                    <option value="#f39c12">🟠 Orange</option><option value="#9b59b6">🟣 Purple</option>
+                    <option value="#1abc9c">🩵 Cyan</option><option value="#e67e22">🟤 Brown</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label>Description / Notes</label><input type="text" id="ncDesc" placeholder="e.g. Best court for beginners..."></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="confirmAddCourt()">➕ Add Court</button>
+            <button class="btn btn-outline" onclick="closeModal('addCourtModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editCourtModal">
+    <div class="modal">
+        <div class="modal-title">✏️ Edit Court</div>
+        <input type="hidden" id="ecId">
+        <div class="form-group"><label>Court Name *</label><input type="text" id="ecName"></div>
+        <div class="form-group"><label>Location</label><input type="text" id="ecLoc"></div>
+        <div class="form-row">
+            <div class="form-group"><label>Surface</label>
+                <select id="ecSurf"><option value="Hard">🟦 Hard</option><option value="Clay">🟫 Clay</option><option value="Grass">🟩 Grass</option></select>
+            </div>
+            <div class="form-group"><label>Environment</label>
+                <select id="ecEnv"><option value="Outdoor">☀️ Outdoor</option><option value="Indoor">🏠 Indoor</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="ecRate" min="0"></div>
+            <div class="form-group"><label>Color</label>
+                <select id="ecColor">
+                    <option value="#4ecdc4">🟦 Teal</option><option value="#e74c3c">🔴 Red</option>
+                    <option value="#3498db">🔵 Blue</option><option value="#2ecc71">🟢 Green</option>
+                    <option value="#f39c12">🟠 Orange</option><option value="#9b59b6">🟣 Purple</option>
+                    <option value="#1abc9c">🩵 Cyan</option><option value="#e67e22">🟤 Brown</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label>Description</label><input type="text" id="ecDesc"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="confirmEditCourt()">💾 Save Changes</button>
+            <button class="btn btn-outline" onclick="closeModal('editCourtModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="removeCourtModal">
+    <div class="modal">
+        <div class="modal-title">🗑️ Remove Court</div>
+        <div id="removeCourtBody"></div>
+        <div class="modal-actions">
+            <button class="btn btn-danger" style="flex:1;" id="removeCourtConfirm">Remove Court</button>
+            <button class="btn btn-outline" style="flex:1;" onclick="closeModal('removeCourtModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="assignModal">
+    <div class="modal">
+        <div class="modal-title" id="assignTitle">📋 Assign</div>
+        <div id="assignBody"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" id="assignConfirm">Confirm</button>
+            <button class="btn btn-outline" onclick="closeModal('assignModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+        <div class="modal-title">🏆 Record Result</div>
+        <div id="scoreBody"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="confirmScore()">✅ Save</button>
+            <button class="btn btn-outline" onclick="skipScore()">⏭ Skip</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="bookingDetailModal">
+    <div class="modal">
+        <div class="modal-title">📅 Booking Details</div>
+        <div id="bookingDetailBody"></div>
+        <div class="modal-actions" id="bookingDetailActions"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal">
+        <div class="modal-title" id="confirmTitle">⚠️ Confirm</div>
+        <div id="confirmBody" style="color:#aaa;margin-bottom:10px;font-size:0.9rem;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-danger" id="confirmOk" style="flex:1;">Confirm</button>
+            <button class="btn btn-outline" style="flex:1;" onclick="closeModal('confirmModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== CONSTANTS =====================
+const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+const SKILL_LABELS={2:'2.0',3:'3.0',4:'4.0',5:'5.0'};
+const SURF_ICONS={Hard:'🟦',Clay:'🟫',Grass:'🟩'};
+const ENV_ICONS={Outdoor:'☀️',Indoor:'🏠'};
+
+// ===================== STATE =====================
+let S = {
+    venueName:'🏟️ Riverside Pickleball',
+    courts:[
+        {id:1,name:'Court 1',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#4ecdc4',rate:300,status:'available',players:[],startTime:null,gameType:null,desc:''},
+        {id:2,name:'Court 2',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#3498db',rate:300,status:'available',players:[],startTime:null,gameType:null,desc:''},
+        {id:3,name:'Court 3',location:'East Wing',surface:'Clay',env:'Outdoor',color:'#2ecc71',rate:350,status:'available',players:[],startTime:null,gameType:null,desc:''},
+    ],
+    queue:[],
+    soloQueue:[],
+    session:null,
+    bookings:[
+        {id:'BK001',customer:'Maria Santos',phone:'+63917123456',email:'maria@test.com',courtId:2,date:getTodayISO(),startTime:'18:00',endTime:'19:30',duration:90,gameType:'doubles',players:'Alex, Sam',amount:450,paymentMethod:'GCash',status:'confirmed',notes:'',bookedAt:Date.now()-3600000,source:'online'},
+        {id:'BK002',customer:'Juan Cruz',phone:'+63918987654',email:'juan@test.com',courtId:3,date:getTodayISO(),startTime:'19:00',endTime:'21:00',duration:120,gameType:'private',players:'Juan, Ana',amount:700,paymentMethod:'Cash',status:'confirmed',notes:'Lesson',bookedAt:Date.now()-7200000,source:'admin'},
+    ],
+    history:[],
+    leaderboard:{},
+    sales:[],
+    nextId:100,
+    nextBId:3,
+    posCourtId:null,
+    posPayMethod:'Cash',
+    portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
+};
+
+// ===================== HELPERS =====================
+function getTodayISO(){ return new Date().toISOString().split('T')[0]; }
+function getTomorrowISO(){ const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0]; }
+function getTodayStr(){ return new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
+function getYesterdayStr(){ const d=new Date();d.setDate(d.getDate()-1);return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
+function isSameDay(str,f){ if(f==='today') return str===getTodayStr(); if(f==='yesterday') return str===getYesterdayStr(); return true; }
+function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
+function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
+function nowMin(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
+function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
+
+// ===================== CLOCK =====================
+function updateClock(){
+    const n=new Date();
+    document.getElementById('clockDisplay').textContent=n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('dateDisplay').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+setInterval(updateClock,1000); updateClock();
+
+// ===================== VENUE =====================
+function editVenueName(){
+    const c=document.getElementById('venueDisplay');
+    const cur=S.venueName.replace(/^🏟️\s*/,'');
+    c.innerHTML=`<input type="text" value="${cur}" id="venueInput" onblur="saveVenueName()" onkeydown="if(event.key==='Enter')saveVenueName()" autofocus style="width:180px;">`;
+    document.getElementById('venueInput').select();
+}
+function saveVenueName(){
+    const inp=document.getElementById('venueInput');
+    if(!inp) return;
+    const n=inp.value.trim();
+    if(n) S.venueName='🏟️ '+n;
+    document.getElementById('venueDisplay').innerHTML=`<span id="venueText">${S.venueName}</span><span style="font-size:0.6rem;opacity:0.5;">✏️</span>`;
+}
+
+// ===================== PAGE NAV =====================
+function showPage(id,el){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('page-'+id).classList.add('active');
+    if(el) el.classList.add('active');
+    const actions={
+        timeline:()=>{document.getElementById('tlDate').value=getTodayISO();renderTimeline();},
+        pos:renderPOSCourts,
+        booking:()=>{renderBookings();renderBookingCourtSelect();},
+        leaderboard:renderLeaderboard,
+        history:renderHistory,
+        courts:renderCourtsManage,
+    };
+    if(actions[id]) actions[id]();
+}
+
+// ===================== COURT MANAGEMENT =====================
+function openAddCourtModal(){ document.getElementById('addCourtModal').classList.add('active'); }
+
+function confirmAddCourt(){
+    const name=document.getElementById('ncName').value.trim();
+    if(!name){showNotif('Court name required!','error');return;}
+    if(S.courts.find(c=>c.name.toLowerCase()===name.toLowerCase())){showNotif('Name already exists!','error');return;}
+    S.courts.push({
+        id:++S.nextId,name,
+        location:document.getElementById('ncLoc').value.trim()||'Main Area',
+        surface:document.getElementById('ncSurf').value,
+        env:document.getElementById('ncEnv').value,
+        color:document.getElementById('ncColor').value,
+        rate:parseInt(document.getElementById('ncRate').value)||300,
+        desc:document.getElementById('ncDesc').value.trim(),
+        status:'available',players:[],startTime:null,gameType:null,
+    });
+    ['ncName','ncLoc','ncDesc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ncRate').value='300';
+    closeModal('addCourtModal');
+    showNotif(`🏗️ ${name} added!`,'success');
+    announce(`New court "${name}" has been added. Total: ${S.courts.length} courts.`);
+    renderAll();
+}
+
+function openEditCourt(id){
+    const c=S.courts.find(x=>x.id===id);
+    if(!c) return;
+    document.getElementById('ecId').value=c.id;
+    document.getElementById('ecName').value=c.name;
+    document.getElementById('ecLoc').value=c.location;
+    document.getElementById('ecSurf').value=c.surface;
+    document.getElementById('ecEnv').value=c.env;
+    document.getElementById('ecRate').value=c.rate;
+    document.getElementById('ecColor').value=c.color;
+    document.getElementById('ecDesc').value=c.desc||'';
+    document.getElementById('editCourtModal').classList.add('active');
+}
+
+function confirmEditCourt(){
+    const id=parseInt(document.getElementById('ecId').value);
+    const c=S.courts.find(x=>x.id===id);
+    if(!c) return;
+    const name=document.getElementById('ecName').value.trim();
+    if(!name){showNotif('Name required!','error');return;}
+    c.name=name;
+    c.location=document.getElementById('ecLoc').value.trim()||'Main Area';
+    c.surface=document.getElementById('ecSurf').value;
+    c.env=document.getElementById('ecEnv').value;
+    c.rate=parseInt(document.getElementById('ecRate').value)||300;
+    c.color=document.getElementById('ecColor').value;
+    c.desc=document.getElementById('ecDesc').value.trim();
+    closeModal('editCourtModal');
+    showNotif(`✅ ${name} updated!`,'success');
+    renderAll();
+}
+
+function promptRemoveCourt(id){
+    const c=S.courts.find(x=>x.id===id);
+    if(!c) return;
+    const hasBookings=S.bookings.filter(b=>b.courtId===id&&b.status!=='cancelled'&&b.date>=getTodayISO()).length;
+    document.getElementById('removeCourtBody').innerHTML=`
+        <p style="color:#aaa;margin-bottom:12px;">Remove <strong style="color:#fff">${c.name}</strong>?</p>
+        ${c.status==='occupied'?`<div class="conflict-box">⚠️ Court is currently occupied! Game will be force-ended.</div>`:''}
+        ${hasBookings?`<div class="overlap-box">⚠️ This court has ${hasBookings} upcoming booking(s). They will be cancelled.</div>`:''}
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px;font-size:0.83rem;">
+            📍 ${c.location} · ${SURF_ICONS[c.surface]} ${c.surface} · ${ENV_ICONS[c.env]} ${c.env} · ₱${c.rate}/hr
+        </div>`;
+    document.getElementById('removeCourtConfirm').onclick=()=>{
+        if(c.status==='occupied'&&c.players.length>0) completeRelease(c,null);
+        S.bookings.forEach(b=>{ if(b.courtId===id&&b.status!=='cancelled'&&b.date>=getTodayISO()) b.status='cancelled'; });
+        S.courts=S.courts.filter(x=>x.id!==id);
+        closeModal('removeCourtModal');
+        showNotif(`🗑️ ${c.name} removed.`,'warning');
+        announce(`${c.name} has been removed. ${S.courts.length} court(s) remaining.`);
+        renderAll();
+    };
+    document.getElementById('removeCourtModal').classList.add('active');
+}
+
+function toggleMaint(id){
+    const c=S.courts.find(x=>x.id===id);
+    if(!c) return;
+    if(c.status==='occupied'){showNotif('Cannot set maintenance while occupied!','error');return;}
+    c.status=c.status==='maintenance'?'available':'maintenance';
+    showNotif(c.status==='maintenance'?`🔧 ${c.name} under maintenance.`:`✅ ${c.name} available.`);
+    renderAll();
+}
+
+// ===================== BOOKING HELPERS =====================
+function getBookingsForCourt(cId,date,sMin,eMin,excludeId=null){
+    return S.bookings.filter(b=>{
+        if(b.id===excludeId||b.courtId!==cId||b.date!==date||b.status==='cancelled') return false;
+        const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+        return sMin<be&&eMin>bs;
+    });
+}
+
+function getBookingNow(cId){
+    const now=nowMin(),today=getTodayISO();
+    return S.bookings.find(b=>b.courtId===cId&&b.date===today&&b.status!=='cancelled'&&now>=timeToMin(b.startTime)&&now<timeToMin(b.endTime));
+}
+
+function getCourtStatus(cId){
+    const c=S.courts.find(x=>x.id===cId);
+    if(!c) return 'unknown';
+    if(c.status==='maintenance') return 'maintenance';
+    if(getBookingNow(cId)) return 'booked';
+    const now=nowMin(),today=getTodayISO();
+    const upcoming=S.bookings.find(b=>b.courtId===cId&&b.date===today&&b.status!=='cancelled'&&timeToMin(b.startTime)>now&&timeToMin(b.startTime)<=now+30);
+    if(upcoming) return 'pending';
+    if(c.status==='occupied') return 'playing';
+    return 'available';
+}
+
+function getAvailableCourts(){ return S.courts.filter(c=>getCourtStatus(c.id)==='available'); }
+
+// ===================== SESSION =====================
+function openStartSession(){
+    const today=getTodayISO();
+    const sesS=timeToMin(document.getElementById('sesStart').value||'17:00');
+    const sesE=timeToMin(document.getElementById('sesEnd').value||'21:00');
+    let conflicts=[];
+    S.courts.forEach(c=>{
+        getBookingsForCourt(c.id,today,sesS,sesE).forEach(b=>conflicts.push({court:c.name,b}));
+    });
+    const prev=document.getElementById('sesConflictPreview');
+    prev.innerHTML=conflicts.length>0?`
+        <div class="overlap-box">
+            <strong>⚠️ ${conflicts.length} overlap(s) with existing bookings:</strong>
+            ${conflicts.map(c=>`<div style="margin-top:3px;">• ${c.court}: ${c.b.customer} (${c.b.startTime}–${c.b.endTime})</div>`).join('')}
+            <div style="margin-top:6px;font-size:0.75rem;">These courts will be auto-excluded during their booked times.</div>
+        </div>`
+    :`<div style="color:#2ecc71;font-size:0.8rem;padding:6px;">✅ No conflicts found!</div>`;
+    document.getElementById('sessionModal').classList.add('active');
+}
+
+function startSession(){
+    const start=document.getElementById('sesStart').value;
+    const end=document.getElementById('sesEnd').value;
+    const rot=parseInt(document.getElementById('sesRot').value);
+    const fee=parseInt(document.getElementById('sesDropIn').value)||0;
+    if(!start||!end){showNotif('Set start and end times!','error');return;}
+    if(timeToMin(start)>=timeToMin(end)){showNotif('End must be after start!','error');return;}
+    S.session={id:'SES'+Date.now(),start,end,rot,fee,startedAt:Date.now(),active:true};
+    closeModal('sessionModal');
+    showNotif(`▶ Open Play started! ${start}–${end}·${rot}min rotations`,'success');
+    announce(`Open Play started! ${start}–${end}. Drop-in: ₱${fee}. Rotation: ${rot}min.`);
+    renderAll();
+}
+
+function endSession(){
+    if(!S.session) return;
+    S.session.active=false; S.session=null;
+    S.courts.forEach(c=>{ if(c.status==='occupied') completeRelease(c,null); });
+    showNotif('⏹ Session ended.','warning');
+    announce('Open Play session ended. Thank you!');
+    renderAll();
+}
+
+// ===================== QUEUE =====================
+function onGTChange(){
+    document.getElementById('extraPlayers').style.display=document.getElementById('gameType').value==='doubles'?'block':'none';
+}
+
+function joinQueue(){
+    if(!S.session||!S.session.active){showNotif('No active session! Start one first.','error');return;}
+    const p1n=document.getElementById('p1').value.trim();
+    const gt=document.getElementById('gameType').value;
+    const sk=parseInt(document.getElementById('skillLevel').value);
+    const gn=document.getElementById('groupName').value.trim();
+    if(!p1n){showNotif('Enter your name!','error');return;}
+
+    const allEx=[...S.soloQueue.map(s=>s.players.map(p=>p.name.toLowerCase())).flat(),...S.queue.map(g=>g.players.map(p=>p.name.toLowerCase())).flat()];
+    if(allEx.includes(p1n.toLowerCase())){showNotif(`"${p1n}" already in queue!`,'error');return;}
+
+    const p1={name:p1n,skill:sk,color:COLORS[0]};
+
+    if(gt==='singles'){
+        const si=S.soloQueue.findIndex(s=>s.gameType==='singles');
+        if(si!==-1){
+            const solo=S.soloQueue.splice(si,1)[0];
+            p1.color=COLORS[1]; solo.players[0].color=COLORS[0];
+            const paired={id:++S.nextId,groupName:gn||`${solo.players[0].name} & ${p1n}`,gameType:'singles',skillLevel:Math.round((solo.skillLevel+sk)/2),players:[solo.players[0],p1],joinedAt:solo.joinedAt};
+            [paired.players[0],p1].forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+            S.queue.push(paired);
+            clearJoinForm();
+            showNotif(`🎉 Paired! ${solo.players[0].name} & ${p1n}`,'success');
+            announce(`${solo.players[0].name} and ${p1n} paired for singles!`);
+            renderAll(); setTimeout(()=>tryAutoAssign(),400);
+        } else {
+            S.soloQueue.push({id:++S.nextId,gameType:'singles',skillLevel:sk,players:[p1],joinedAt:Date.now()});
+            clearJoinForm();
+            showNotif(`⏳ ${p1n} waiting for partner...`,'warning');
+            renderAll();
+        }
+    } else {
+        const extras=[];
+        for(let i=2;i<=4;i++){const el=document.getElementById('p'+i);if(el&&el.value.trim()&&!allEx.includes(el.value.trim().toLowerCase()))extras.push({name:el.value.trim(),skill:sk,color:COLORS[extras.length+1]});}
+        const all=[p1,...extras];
+        all.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+        if(all.length>=4){
+            const g={id:++S.nextId,groupName:gn||`${p1n}'s Team`,gameType:'doubles',skillLevel:sk,players:all.slice(0,4),joinedAt:Date.now()};
+            g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+            S.queue.push(g);
+            clearJoinForm();
+            showNotif(`✅ Full doubles team joined!`,'success');
+            renderAll(); setTimeout(()=>tryAutoAssign(),400);
+        } else {
+            const dSolo=S.soloQueue.filter(s=>s.gameType==='doubles');
+            const exCount=dSolo.reduce((a,s)=>a+s.players.length,0);
+            if(all.length+exCount>=4){
+                let comb=[...all]; const toRm=[];
+                for(let i=0;i<dSolo.length&&comb.length<4;i++){dSolo[i].players.forEach(p=>{if(comb.length<4)comb.push(p);});toRm.push(dSolo[i].id);}
+                S.soloQueue=S.soloQueue.filter(s=>!toRm.includes(s.id));
+                comb.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+                const avg=Math.round(comb.reduce((a,p)=>a+p.skill,0)/comb.length);
+                const g={id:++S.nextId,groupName:gn||comb.slice(0,2).map(p=>p.name).join(' & ')+' Team',gameType:'doubles',skillLevel:avg,players:comb,joinedAt:Date.now()};
+                comb.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+                S.queue.push(g);
+                clearJoinForm();
+                showNotif(`🎉 Full doubles team assembled!`,'success');
+                renderAll(); setTimeout(()=>tryAutoAssign(),400);
+            } else {
+                S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:sk,players:all,joinedAt:Date.now(),groupName:gn});
+                all.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+                clearJoinForm();
+                showNotif(`⏳ Added ${all.length} player(s). Need ${4-all.length-exCount} more.`,'warning');
+                renderAll();
+            }
+        }
+    }
+}
+
+function clearJoinForm(){['p1','p2','p3','p4','groupName'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
+
+function pairSolos(i1,i2){
+    const e1=S.soloQueue.find(s=>s.id===i1),e2=S.soloQueue.find(s=>s.id===i2);
+    if(!e1||!e2) return;
+    const comb=[...e1.players,...e2.players];
+    const needed=e1.gameType==='singles'?2:4;
+    if(comb.length<needed){showNotif(`Need ${needed-comb.length} more!`,'warning');return;}
+    comb.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+    const avg=Math.round(comb.reduce((a,p)=>a+p.skill,0)/comb.length);
+    const g={id:++S.nextId,groupName:comb.slice(0,2).map(p=>p.name).join(' & '),gameType:e1.gameType,skillLevel:avg,players:comb,joinedAt:Math.min(e1.joinedAt,e2.joinedAt)};
+    S.soloQueue=S.soloQueue.filter(s=>s.id!==i1&&s.id!==i2);
+    S.queue.push(g);
+    comb.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+    showNotif(`🎉 Paired: ${g.groupName}!`,'success');
+    renderAll(); setTimeout(()=>tryAutoAssign(),400);
+}
+
+function removeSolo(id){S.soloQueue=S.soloQueue.filter(s=>s.id!==id);showNotif('Removed.');renderAll();}
+function removeFromQueue(id){const i=S.queue.findIndex(g=>g.id===id);if(i!==-1){const g=S.queue.splice(i,1)[0];showNotif(`${g.groupName} removed.`);renderAll();}}
+
+// ===================== ASSIGN =====================
+function tryAutoAssign(){
+    if(S.queue.length===0) return;
+    const avail=getAvailableCourts();
+    if(avail.length===0) return;
+    showAssignModal(avail[0],S.queue[0]);
+}
+
+function showAssignModal(court,group){
+    document.getElementById('assignTitle').textContent='📋 Assign to Court';
+    const avail=getAvailableCourts();
+    document.getElementById('assignBody').innerHTML=`
+        <p style="color:#aaa;margin-bottom:10px;">Assign <strong style="color:#fff">${group.groupName}</strong>:</p>
+        ${avail.length>1?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
+            ${avail.map((c,i)=>`<div class="copt ${c.id===court.id?'copt-sel':''}" onclick="selCourtOpt(this,${c.id})" style="padding:8px;border:2px solid ${c.id===court.id?'#4ecdc4':'rgba(255,255,255,0.1)'};border-radius:8px;cursor:pointer;text-align:center;font-size:0.8rem;background:${c.id===court.id?'rgba(78,205,196,0.12)':'transparent'};transition:all 0.2s;">🏟️ ${c.name}</div>`).join('')}
+        </div>`:`<p style="color:#4ecdc4;margin-bottom:10px;">🏟️ ${court.name}</p>`}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+            ${group.players.map(p=>`<div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);padding:5px 10px;border-radius:8px;"><div style="width:22px;height:22px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;">${p.name[0]}</div><span style="font-size:0.8rem;">${p.name}</span></div>`).join('')}
+        </div>
+        <div style="font-size:0.75rem;color:#aaa;">${group.gameType} · ⭐ ${SKILL_LABELS[group.skillLevel]}</div>`;
+    document.getElementById('assignBody').dataset.cId=court.id;
+    document.getElementById('assignBody').dataset.gId=group.id;
+    document.getElementById('assignConfirm').onclick=()=>{
+        const c=S.courts.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.cId));
+        const g=S.queue.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.gId));
+        if(c&&g){doAssign(c,g);showNotif(`✅ ${g.groupName} → ${c.name}`,'success');announce(`${g.groupName} now playing on ${c.name}!`);renderAll();}
+        closeModal('assignModal');
+    };
+    document.getElementById('assignModal').classList.add('active');
+}
+
+function selCourtOpt(el,id){
+    document.querySelectorAll('.copt').forEach(o=>{o.style.borderColor='rgba(255,255,255,0.1)';o.style.background='transparent';});
+    el.style.borderColor='#4ecdc4';el.style.background='rgba(78,205,196,0.12)';
+    document.getElementById('assignBody').dataset.cId=id;
+}
+
+function manualAssignToCourt(cId){
+    if(S.queue.length===0){showNotif('No paired groups!','error');return;}
+    const court=S.courts.find(c=>c.id===cId);
+    document.getElementById('assignTitle').textContent=`📋 Assign to ${court.name}`;
+    document.getElementById('assignBody').innerHTML=`
+        <p style="color:#aaa;margin-bottom:10px;">Choose group for <strong style="color:#fff">${court.name}</strong>:</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+            ${S.queue.map((g,i)=>`<div class="gopt ${i===0?'gopt-sel':''}" onclick="selGroupOpt(this,${g.id})" style="padding:10px;border:2px solid ${i===0?'#4ecdc4':'rgba(255,255,255,0.1)'};border-radius:8px;cursor:pointer;transition:all 0.2s;background:${i===0?'rgba(78,205,196,0.08)':'transparent'};">
+                <div style="display:flex;justify-content:space-between;"><strong>${g.groupName}</strong><span style="font-size:0.72rem;color:#f39c12;">⏳${Math.floor((Date.now()-g.joinedAt)/60000)}m</span></div>
+                <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">${g.players.map(p=>p.name).join(', ')} · ${g.gameType}</div>
+            </div>`).join('')}
+        </div>`;
+    document.getElementById('assignBody').dataset.cId=cId;
+    document.getElementById('assignBody').dataset.gId=S.queue[0].id;
+    document.getElementById('assignConfirm').onclick=()=>{
+        const c=S.courts.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.cId));
+        const g=S.queue.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.gId));
+        if(c&&g){doAssign(c,g);showNotif(`✅ ${g.groupName} → ${c.name}`,'success');announce(`${g.groupName} now on ${c.name}!`);renderAll();}
+        closeModal('assignModal');
+    };
+    document.getElementById('assignModal').classList.add('active');
+}
+
+function selGroupOpt(el,id){
+    document.querySelectorAll('.gopt').forEach(o=>{o.style.borderColor='rgba(255,255,255,0.1)';o.style.background='transparent';});
+    el.style.borderColor='#4ecdc4';el.style.background='rgba(78,205,196,0.08)';
+    document.getElementById('assignBody').dataset.gId=id;
+}
+
+function promptAssignGroup(gId){
+    const g=S.queue.find(x=>x.id===gId);
+    if(!g) return;
+    const av=getAvailableCourts();
+    if(av.length===0){showNotif('No courts available!','error');return;}
+    showAssignModal(av[0],g);
+}
+
+function doAssign(court,group){
+    court.status='occupied';court.players=group.players;court.startTime=Date.now();court.gameType=group.gameType;
+    group.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].games++;S.leaderboard[p.name].points+=10;});
+    const i=S.queue.findIndex(g=>g.id===group.id);
+    if(i!==-1) S.queue.splice(i,1);
+}
+
+// ===================== END GAME =====================
+function freeCourt(cId){
+    const c=S.courts.find(x=>x.id===cId);
+    if(!c||c.status!=='occupied'){showNotif('Court not occupied!','error');return;}
+    const gt=c.gameType||(c.players.length>2?'doubles':'singles');
+    const tA=gt==='singles'?[c.players[0]]:[c.players[0],c.players[1]];
+    const tB=gt==='singles'?[c.players[1]||{name:'P2',color:'#888',skill:3}]:[c.players[2],c.players[3]].filter(Boolean);
+    S.currentScore={courtId:c.id,players:[...c.players],gameType:gt,teamA:{players:tA,score:11},teamB:{players:tB,score:0},isTie:false,winner:'A'};
+    renderScoreModal();
+    document.getElementById('scoreModal').classList.add('active');
+}
+
+function renderScoreModal(){
+    const sd=S.currentScore;
+    const court=S.courts.find(c=>c.id===sd.courtId);
+    const tAN=sd.teamA.players.map(p=>p.name).join(' & ');
+    const tBN=(sd.teamB.players||[]).map(p=>p.name).join(' & ');
+    document.getElementById('scoreBody').innerHTML=`
+        <p style="text-align:center;color:#aaa;font-size:0.82rem;margin-bottom:12px;">🏟️ <strong style="color:#fff">${court?court.name:''}</strong> · ${sd.gameType}</p>
+        <div class="score-vs">
+            <div class="score-side ${sd.winner==='A'&&!sd.isTie?'selected':''}" onclick="selW('A')">
+                <span class="w-crown">👑</span>
+                <div style="font-weight:700;font-size:0.88rem;">${sd.gameType==='singles'?tAN:'Team A'}</div>
+                ${sd.gameType==='doubles'?`<div style="font-size:0.7rem;color:#aaa;">${tAN}</div>`:''}
+                <div class="score-num" style="margin:6px 0;">${sd.teamA.score}</div>
+                <div class="score-stepper">
+                    <button class="score-btn" onclick="event.stopPropagation();aS('A',-1)">−</button>
+                    <span style="font-size:0.6rem;color:#555;">PTS</span>
+                    <button class="score-btn" onclick="event.stopPropagation();aS('A',1)">+</button>
+                </div>
+            </div>
+            <div class="score-vs-lbl">VS</div>
+            <div class="score-side ${sd.winner==='B'&&!sd.isTie?'selected':''}" onclick="selW('B')">
+                <span class="w-crown">👑</span>
+                <div style="font-weight:700;font-size:0.88rem;">${sd.gameType==='singles'?tBN:'Team B'}</div>
+                ${sd.gameType==='doubles'?`<div style="font-size:0.7rem;color:#aaa;">${tBN}</div>`:''}
+                <div class="score-num" style="margin:6px 0;">${sd.teamB.score}</div>
+                <div class="score-stepper">
+                    <button class="score-btn" onclick="event.stopPropagation();aS('B',-1)">−</button>
+                    <span style="font-size:0.6rem;color:#555;">PTS</span>
+                    <button class="score-btn" onclick="event.stopPropagation();aS('B',1)">+</button>
+                </div>
+            </div>
+        </div>
+        <div class="tie-opt ${sd.isTie?'selected':''}" onclick="togTie()">🤝 Tie / No winner</div>`;
+}
+
+function selW(s){S.currentScore.winner=s;S.currentScore.isTie=false;renderScoreModal();}
+function togTie(){S.currentScore.isTie=!S.currentScore.isTie;if(S.currentScore.isTie)S.currentScore.winner='tie';renderScoreModal();}
+function aS(s,d){const k=s==='A'?'teamA':'teamB';S.currentScore[k].score=Math.max(0,Math.min(99,S.currentScore[k].score+d));renderScoreModal();}
+
+function confirmScore(){
+    const c=S.courts.find(x=>x.id===S.currentScore.courtId);
+    if(!c){closeModal('scoreModal');return;}
+    completeRelease(c,S.currentScore);
+    const sd=S.currentScore;
+    if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
+    else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=wt.players.map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
+    closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
+}
+
+function skipScore(){
+    const c=S.courts.find(x=>x.id===S.currentScore.courtId);
+    if(c){completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);}
+    closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
+}
+
+function completeRelease(court,sd){
+    const dur=Math.floor((Date.now()-(court.startTime||Date.now()))/60000)||1;
+    const now=new Date();
+    const mid=Math.ceil(court.players.length/2);
+    const entry={court:court.name,players:[...court.players],teamA:court.players.slice(0,mid),teamB:court.players.slice(mid),duration:dur,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),date:getTodayStr(),gameType:court.gameType||(court.players.length>2?'doubles':'singles'),winner:null,scoreA:null,scoreB:null,isTie:false};
+    if(sd){
+        entry.teamA=sd.teamA.players;entry.teamB=sd.teamB.players||[];
+        entry.scoreA=sd.teamA.score;entry.scoreB=sd.teamB.score;
+        entry.winner=sd.winner;entry.isTie=sd.isTie;
+        if(sd.isTie){[...sd.teamA.players,...(sd.teamB.players||[])].forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=25;});}
+        else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const lt=sd.winner==='A'?sd.teamB:sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});(lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});}
+    }
+    S.history.unshift(entry);if(S.history.length>100)S.history.pop();
+    court.status='available';court.players=[];court.startTime=null;court.gameType=null;
+}
+
+// ===================== BOOKINGS =====================
+function onBCourtChange(){
+    const cId=parseInt(document.getElementById('bCourt').value);
+    const c=S.courts.find(x=>x.id===cId);
+    const dur=parseInt(document.getElementById('bDuration').value)||120;
+    if(c){
+        document.getElementById('bRate').textContent=`₱${c.rate}/hr`;
+        document.getElementById('bTotal').textContent=`₱${Math.round(c.rate*(dur/60))}`;
+        document.getElementById('bPricePreview').style.display='block';
+    } else {
+        document.getElementById('bPricePreview').style.display='none';
+    }
+    checkBConflict();
+}
+
+function checkBConflict(){
+    const cId=parseInt(document.getElementById('bCourt').value);
+    const date=document.getElementById('bDate').value;
+    const start=document.getElementById('bStart').value;
+    const dur=parseInt(document.getElementById('bDuration').value);
+    const el=document.getElementById('bConflict');
+    if(!cId||!date||!start||!dur){el.innerHTML='';return;}
+    const sM=timeToMin(start),eM=sM+dur;
+    const conflicts=getBookingsForCourt(cId,date,sM,eM);
+    if(conflicts.length>0){
+        el.innerHTML=`<div class="conflict-box">⚠️ Conflict! ${conflicts.map(b=>`${b.customer} (${b.startTime}–${b.endTime})`).join(', ')} already booked.</div>`;
+    } else if(S.session&&S.session.active&&date===getTodayISO()){
+        const ss=timeToMin(S.session.start),se=timeToMin(S.session.end);
+        if(sM<se&&eM>ss) el.innerHTML=`<div class="overlap-box">⚠️ Overlaps with Open Play (${S.session.start}–${S.session.end}). Court auto-excluded during booking.</div>`;
+        else el.innerHTML='';
+    } else el.innerHTML='';
+
+    // Update price
+    const c=S.courts.find(x=>x.id===cId);
+    if(c&&dur){document.getElementById('bTotal').textContent=`₱${Math.round(c.rate*(dur/60))}`;document.getElementById('bPricePreview').style.display='block';}
+}
+
+function createBooking(){
+    const customer=document.getElementById('bCustomer').value.trim();
+    const cId=parseInt(document.getElementById('bCourt').value);
+    const date=document.getElementById('bDate').value;
+    const start=document.getElementById('bStart').value;
+    const dur=parseInt(document.getElementById('bDuration').value);
+    if(!customer||!cId||!date||!start||!dur){showNotif('Fill all required fields!','error');return;}
+    const sM=timeToMin(start),eM=sM+dur;
+    if(getBookingsForCourt(cId,date,sM,eM).length>0){showNotif('Slot conflict!','error');return;}
+    const c=S.courts.find(x=>x.id===cId);
+    const b={
+        id:genId(),customer,phone:document.getElementById('bPhone').value.trim(),email:document.getElementById('bEmail').value.trim(),
+        courtId:cId,date,startTime:start,endTime:minToTime(eM),duration:dur,
+        gameType:document.getElementById('bGameType').value,players:document.getElementById('bPlayers').value.trim(),
+        amount:Math.round(c.rate*(dur/60)),paymentMethod:document.getElementById('bPayMethod').value,
+        status:'confirmed',notes:'',bookedAt:Date.now(),source:'admin',
+    };
+    S.bookings.push(b);
+    ['bCustomer','bPhone','bEmail','bDate','bStart','bPlayers'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('bConflict').innerHTML='';
+    document.getElementById('bPricePreview').style.display='none';
+    showNotif(`📅 Booking confirmed for ${customer}!`,'success');
+    announce(`New booking: ${customer} → ${c.name} on ${date} at ${start}.`);
+    renderBookings();
+}
+
+function openBookingDetail(bId){
+    const b=S.bookings.find(x=>x.id===bId);
+    if(!b) return;
+    const court=S.courts.find(c=>c.id===b.courtId);
+    document.getElementById('bookingDetailBody').innerHTML=`
+        <div style="display:grid;gap:8px;font-size:0.85rem;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">ID:</span><strong>${b.id}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Customer:</span><strong>${b.customer}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Phone:</span><span>${b.phone||'—'}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Email:</span><span>${b.email||'—'}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Court:</span><span style="color:#4ecdc4;">${court?court.name:'N/A'}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Date:</span><span>${b.date}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Time:</span><span>${b.startTime}–${b.endTime} (${b.duration}min)</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Type:</span><span>${b.gameType}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Amount:</span><strong style="color:#4ecdc4;">₱${b.amount}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Payment:</span><span>${b.paymentMethod}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Source:</span><span style="color:${b.source==='online'?'#2ecc71':'#4ecdc4'};">${b.source==='online'?'🌐 Online':'🏢 Admin'}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Status:</span><span class="bk-status bk-${b.status}">${b.status}</span></div>
+        </div>`;
+    const acts=document.getElementById('bookingDetailActions');
+    acts.innerHTML='';
+    if(b.status==='confirmed'){
+        const ci=document.createElement('button');
+        ci.className='btn btn-success';ci.textContent='✅ Check In';
+        ci.onclick=()=>{b.status='checkedin';closeModal('bookingDetailModal');showNotif(`${b.customer} checked in!`,'success');renderBookings();renderAll();};
+        acts.appendChild(ci);
+    }
+    if(b.status!=='cancelled'&&b.status!=='completed'){
+        const cc=document.createElement('button');
+        cc.className='btn btn-danger';cc.textContent='✕ Cancel';
+        cc.onclick=()=>{b.status='cancelled';closeModal('bookingDetailModal');showNotif(`Cancelled for ${b.customer}.`,'warning');renderBookings();renderAll();};
+        acts.appendChild(cc);
+    }
+    const cl=document.createElement('button');cl.className='btn btn-outline';cl.textContent='Close';cl.onclick=()=>closeModal('bookingDetailModal');
+    acts.appendChild(cl);
+    document.getElementById('bookingDetailModal').classList.add('active');
+}
+
+// ===================== POS =====================
+function renderPOSCourts(){
+    const div=document.getElementById('posCourts');
+    div.innerHTML='';
+    S.courts.forEach(court=>{
+        const avail=getCourtStatus(court.id)==='available';
+        const btn=document.createElement('div');
+        btn.className=`pos-court-btn ${!avail?'unavail':''} ${S.posCourtId===court.id?'selected':''}`;
+        btn.innerHTML=`<div style="font-size:1rem;margin-bottom:4px;">🏟️</div><div style="font-weight:700;font-size:0.82rem;">${court.name}</div><div style="font-size:0.68rem;color:#aaa;">₱${court.rate}/hr</div><div style="font-size:0.62rem;margin-top:3px;color:${avail?'#2ecc71':'#e74c3c'};">${avail?'✅ Open':'🔴 Unavailable'}</div>`;
+        if(avail) btn.onclick=()=>{S.posCourtId=court.id;renderPOSCourts();};
+        div.appendChild(btn);
+    });
+}
+
+function selPay(btn,m){document.querySelectorAll('.pay-btn-sm').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');S.posPayMethod=m;}
+
+function processPOS(){
+    const name=document.getElementById('posName').value.trim();
+    const dur=parseInt(document.getElementById('posDur').value);
+    if(!name){showNotif('Enter customer name!','error');return;}
+    if(!S.posCourtId){showNotif('Select a court!','error');return;}
+    const court=S.courts.find(c=>c.id===S.posCourtId);
+    const total=Math.round(court.rate*(dur/60));
+    const now=new Date();
+    const startTime=now.toTimeString().slice(0,5);
+    const b={
+        id:genId(),customer:name,phone:document.getElementById('posPhone').value.trim(),email:'',
+        courtId:court.id,date:getTodayISO(),startTime,endTime:minToTime(timeToMin(startTime)+dur),
+        duration:dur,gameType:document.getElementById('posGT').value,players:name,
+        amount:total,paymentMethod:S.posPayMethod,status:'checkedin',notes:'',bookedAt:Date.now(),source:'pos',
+    };
+    S.bookings.push(b);
+    S.sales.push({id:b.id,amount:total,method:S.posPayMethod,customer:name,court:court.name,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
+    document.getElementById('receiptDisplay').innerHTML=`
+        <div class="receipt-box">
+            <div style="text-align:center;margin-bottom:12px;">
+                <div style="font-size:1rem;font-weight:700;color:#4ecdc4;">🏓 ${S.venueName}</div>
+                <div style="font-size:0.68rem;color:#aaa;">${now.toLocaleString()} · ${b.id}</div>
+            </div>
+            <div class="receipt-line"><span>Customer</span><span>${name}</span></div>
+            <div class="receipt-line"><span>Court</span><span>${court.name}</span></div>
+            <div class="receipt-line"><span>Type</span><span>${b.gameType}</span></div>
+            <div class="receipt-line"><span>Duration</span><span>${dur}min</span></div>
+            <div class="receipt-line"><span>Time</span><span>${startTime}–${b.endTime}</span></div>
+            <div class="receipt-line"><span>Rate</span><span>₱${court.rate}/hr</span></div>
+            <hr style="border-color:rgba(255,255,255,0.08);margin:8px 0;">
+            <div class="receipt-total"><span>TOTAL</span><span>₱${total}</span></div>
+            <div class="receipt-line"><span>Payment</span><span>${S.posPayMethod}</span></div>
+            <div style="text-align:center;margin-top:10px;font-size:0.72rem;color:#2ecc71;font-weight:700;">✅ PAID — Thank you!</div>
+        </div>`;
+    document.getElementById('posName').value='';document.getElementById('posPhone').value='';
+    S.posCourtId=null;renderPOSCourts();renderSalesSummary();
+    showNotif(`💳 ₱${total} from ${name}!`,'success');
+}
+
+function renderSalesSummary(){
+    const div=document.getElementById('salesSummary');
+    const total=S.sales.reduce((a,s)=>a+s.amount,0);
+    div.innerHTML=`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:1.4rem;font-weight:800;color:#4ecdc4;">₱${total.toLocaleString()}</div>
+                <div style="font-size:0.68rem;color:#aaa;">Total Revenue</div>
+            </div>
+            <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:1.4rem;font-weight:800;color:#2ecc71;">${S.sales.length}</div>
+                <div style="font-size:0.68rem;color:#aaa;">Transactions</div>
+            </div>
+        </div>
+        ${S.sales.length===0?'<div class="empty-state"><div class="ei">💳</div><p>No sales yet.</p></div>':S.sales.slice().reverse().map(s=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
+                <div><div style="font-weight:600;">${s.customer}</div><div style="color:#aaa;font-size:0.7rem;">${s.court}·${s.method}·${s.time}</div></div>
+                <div style="font-weight:800;color:#4ecdc4;">₱${s.amount}</div>
+            </div>`).join('')}`;
+}
+
+// ===================== ONLINE BOOKING PORTAL =====================
+function openPortal(){
+    S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
+    document.getElementById('portalVenueName').textContent=S.venueName;
+    document.getElementById('pDate').value=getTodayISO();
+    goPortalStep(1);
+    renderCourtPicker();
+    document.getElementById('portalOverlay').classList.add('active');
+}
+
+function closePortal(){ document.getElementById('portalOverlay').classList.remove('active'); }
+
+function goPortalStep(step){
+    document.querySelectorAll('.portal-page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.portal-step').forEach((s,i)=>{
+        s.classList.remove('active','done');
+        if(i+1<step) s.classList.add('done');
+        if(i+1===step) s.classList.add('active');
+    });
+    document.getElementById('pStep'+step).classList.add('active');
+    S.portal.step=step;
+}
+
+function portalNext(step){
+    if(step===1){
+        if(!S.portal.courtId){showNotif('Please select a court!','error');return;}
+        renderSlots();
+    }
+    if(step===2){
+        if(!S.portal.slot){showNotif('Please select a time slot!','error');return;}
+    }
+    if(step===3){
+        const first=document.getElementById('pFirst').value.trim();
+        const last=document.getElementById('pLast').value.trim();
+        const phone=document.getElementById('pPhone').value.trim();
+        const email=document.getElementById('pEmail').value.trim();
+        if(!first||!last||!phone||!email){showNotif('Fill all required fields!','error');return;}
+        S.portal.data={first,last,phone,email,gameType:document.getElementById('pGameType').value,players:document.getElementById('pPlayers').value,notes:document.getElementById('pNotes').value};
+        renderBookingSummary();
+    }
+    if(step===4){
+        if(!S.portal.payMethod){showNotif('Select a payment method!','error');return;}
+    }
+    goPortalStep(step+1);
+}
+
+function portalPrev(step){ goPortalStep(step-1); }
+
+function renderCourtPicker(){
+    const grid=document.getElementById('courtPickerGrid');
+    grid.innerHTML='';
+    S.courts.forEach(court=>{
+        const avail=court.status!=='maintenance';
+        const card=document.createElement('div');
+        card.className=`court-picker-card ${!avail?'unavailable':''} ${S.portal.courtId===court.id?'selected':''}`;
+        card.innerHTML=`
+            <div style="font-size:2rem;margin-bottom:8px;">🏟️</div>
+            <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${court.name}</div>
+            <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;">📍 ${court.location}</div>
+            <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">
+                <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${SURF_ICONS[court.surface]} ${court.surface}</span>
+                <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${ENV_ICONS[court.env]} ${court.env}</span>
+            </div>
+            <div style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">₱${court.rate}<span style="font-size:0.7rem;color:#aaa;font-weight:400;">/hr</span></div>
+            ${!avail?`<div style="font-size:0.7rem;color:#e74c3c;margin-top:6px;">🔧 Unavailable</div>`:''}
+            ${court.desc?`<div style="font-size:0.7rem;color:#888;margin-top:4px;">${court.desc}</div>`:''}`;
+        if(avail){
+            card.onclick=()=>{
+                S.portal.courtId=court.id;
+                document.querySelectorAll('.court-picker-card').forEach(c=>c.classList.remove('selected'));
+                card.classList.add('selected');
+            };
+        }
+        grid.appendChild(card);
+    });
+}
+
+function renderSlots(){
+    const date=document.getElementById('pDate').value;
+    const dur=parseInt(document.getElementById('pDuration').value);
+    S.portal.date=date; S.portal.duration=dur;
+    const grid=document.getElementById('slotGrid');
+    grid.innerHTML='';
+    const open=7*60, close=22*60, step=30;
+    for(let t=open;t<close-dur+step;t+=step){
+        const conflicts=getBookingsForCourt(S.portal.courtId,date,t,t+dur);
+        const taken=conflicts.length>0;
+        const btn=document.createElement('div');
+        btn.className=`slot-btn ${taken?'taken':''} ${S.portal.slot===t?'selected':''}`;
+        btn.innerHTML=`<div style="font-weight:700;">${minToTime(t)}</div><div style="font-size:0.65rem;color:${taken?'#e74c3c':'#aaa'};">${taken?'Booked':'Available'}</div>`;
+        if(!taken){
+            btn.onclick=()=>{
+                S.portal.slot=t;
+                document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));
+                btn.classList.add('selected');
+            };
+        }
+        grid.appendChild(btn);
+    }
+}
+
+function renderBookingSummary(){
+    const court=S.courts.find(c=>c.id===S.portal.courtId);
+    const dur=S.portal.duration;
+    const total=Math.round(court.rate*(dur/60));
+    S.portal.total=total;
+    document.getElementById('bookingSummaryBox').innerHTML=`
+        <div style="font-weight:700;margin-bottom:8px;color:#4ecdc4;">📋 Booking Summary</div>
+        <div style="display:grid;gap:4px;font-size:0.82rem;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Court:</span><strong>${court.name}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Date:</span><strong>${S.portal.date}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Time:</span><strong>${minToTime(S.portal.slot)} – ${minToTime(S.portal.slot+dur)}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Duration:</span><strong>${dur}min</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Customer:</span><strong>${S.portal.data.first} ${S.portal.data.last}</strong></div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#4ecdc4;font-size:1rem;">Total:</span><strong style="color:#4ecdc4;font-size:1rem;">₱${total}</strong></div>
+        </div>`;
+}
+
+function selPortalPay(btn,method){
+    document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    S.portal.payMethod=method;
+
+    const area=document.getElementById('payInputArea');
+    if(method==='Card'||method==='Stripe'){
+        area.innerHTML=`
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
+                <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">💳 Card Details</div>
+                <div class="form-group"><label>Card Number</label><input type="text" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Expiry</label><input type="text" placeholder="MM/YY" maxlength="5"></div>
+                    <div class="form-group"><label>CVV</label><input type="text" placeholder="123" maxlength="4"></div>
+                </div>
+                <div class="form-group"><label>Cardholder Name</label><input type="text" placeholder="Juan dela Cruz"></div>
+            </div>`;
+    } else if(method==='GCash'||method==='Maya'){
+        area.innerHTML=`
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;text-align:center;">
+                <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">${method==='GCash'?'📱 GCash':'💜 Maya'} QR Payment</div>
+                <div class="qr-code"><div class="qr-inner"></div></div>
+                <div style="font-size:0.78rem;color:#aaa;margin-top:8px;">Scan QR with your ${method} app</div>
+                <div style="font-size:1.1rem;font-weight:800;color:#4ecdc4;margin-top:6px;">₱${S.portal.total||0}</div>
+                <div style="font-size:0.72rem;color:#f39c12;margin-top:4px;">⏳ QR expires in 10:00</div>
+            </div>`;
+    } else if(method==='PayPal'){
+        area.innerHTML=`
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
+                <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">🅿️ PayPal</div>
+                <div class="form-group"><label>PayPal Email</label><input type="email" placeholder="you@paypal.com"></div>
+            </div>`;
+    } else if(method==='PayLater'){
+        area.innerHTML=`
+            <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:16px;text-align:center;">
+                <div style="font-size:1.5rem;margin-bottom:6px;">🏦</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#2ecc71;">Pay on Arrival</div>
+                <div style="font-size:0.78rem;color:#aaa;margin-top:6px;">Present your booking ID at the venue. Payment due at check-in.</div>
+            </div>`;
+    } else {
+        area.innerHTML='';
+    }
+}
+
+function fmtCard(inp){let v=inp.value.replace(/\D/g,'').substring(0,16);inp.value=v.match(/.{1,4}/g)?.join(' ')||v;}
+
+function processPortalPayment(){
+    if(!S.portal.payMethod){showNotif('Select payment method!','error');return;}
+    goPortalStep(5);
+    const conf=document.getElementById('confirmationContent');
+    conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#4ecdc4;">Processing Payment...</div><div style="font-size:0.82rem;color:#aaa;margin-top:6px;">Please wait while we confirm your booking.</div></div>`;
+    setTimeout(()=>{
+        const ref=genRef();
+        const court=S.courts.find(c=>c.id===S.portal.courtId);
+        const dur=S.portal.duration;
+        const total=S.portal.total||Math.round(court.rate*(dur/60));
+        const bId=genId();
+        const b={
+            id:bId,customer:`${S.portal.data.first} ${S.portal.data.last}`,
+            phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,
+            date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),
+            duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,
+            amount:total,paymentMethod:S.portal.payMethod,
+            status:S.portal.payMethod==='PayLater'?'pending':'confirmed',
+            notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref,
+        };
+        S.bookings.push(b);
+        if(S.portal.payMethod!=='PayLater'){
+            S.sales.push({id:bId,amount:total,method:S.portal.payMethod,customer:b.customer,court:court.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
+        }
+        announce(`New online booking: ${b.customer} → ${court.name} on ${b.date} at ${b.startTime}.`);
+
+        conf.innerHTML=`
+            <div class="payment-success">
+                <div class="success-circle">✅</div>
+                <div style="font-size:1.2rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
+                <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Your court has been successfully reserved.</div>
+
+                <div class="qr-code" title="Booking QR Code">
+                    <div class="qr-inner"></div>
+                </div>
+                <div style="font-size:0.72rem;color:#aaa;margin-bottom:16px;">Scan this QR at check-in</div>
+
+                <div class="receipt-box" style="text-align:left;">
+                    <div style="text-align:center;margin-bottom:10px;">
+                        <div style="font-weight:700;color:#4ecdc4;">${S.venueName}</div>
+                        <div style="font-size:0.68rem;color:#aaa;">Booking ID: ${bId} · Ref: ${ref}</div>
+                    </div>
+                    <div class="receipt-line"><span>Name</span><span>${b.customer}</span></div>
+                    <div class="receipt-line"><span>Court</span><span>${court.name}</span></div>
+                    <div class="receipt-line"><span>Date</span><span>${b.date}</span></div>
+                    <div class="receipt-line"><span>Time</span><span>${b.startTime} – ${b.endTime}</span></div>
+                    <div class="receipt-line"><span>Type</span><span>${b.gameType}</span></div>
+                    <div class="receipt-line"><span>Payment</span><span>${b.paymentMethod}</span></div>
+                    <div class="receipt-total"><span>Total Paid</span><span>${S.portal.payMethod==='PayLater'?'Pay on Arrival':'₱'+total}</span></div>
+                </div>
+
+                <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:10px;padding:12px;margin-top:14px;font-size:0.78rem;text-align:left;">
+                    <div style="font-weight:700;color:#2ecc71;margin-bottom:4px;">📧 Confirmation Details</div>
+                    <div>• A confirmation has been sent to <strong>${b.email}</strong></div>
+                    <div>• SMS sent to <strong>${b.phone}</strong></div>
+                    <div>• Show your QR code or booking ID at the venue</div>
+                    ${S.portal.payMethod==='PayLater'?`<div style="color:#f39c12;margin-top:4px;">• Please pay ₱${total} upon arrival</div>`:''}
+                </div>
+
+                <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
+                    <button class="btn btn-primary" onclick="closePortal();renderBookings();">✅ Done</button>
+                    <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
+                </div>
+            </div>`;
+        renderSalesSummary();
+    }, 2000);
+}
+
+// ===================== TIMELINE =====================
+function renderTimeline(){
+    const date=document.getElementById('tlDate').value||getTodayISO();
+    const grid=document.getElementById('tlGrid');
+    const sH=6,eH=22,total=eH-sH;
+    const nowM=nowMin(),isToday=date===getTodayISO();
+    let html=`<div class="tl-hours">`;
+    for(let h=sH;h<=eH;h++) html+=`<div class="tl-hour">${h%12||12}${h<12?'am':'pm'}</div>`;
+    html+='</div>';
+    const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
+    S.courts.forEach(court=>{
+        let slots='';
+        if(S.session&&S.session.active&&isToday){
+            const ss=timeToMin(S.session.start),se=timeToMin(S.session.end);
+            const bks=getBookingsForCourt(court.id,date,ss,se).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+            let cur=ss;
+            bks.forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((bs-cur)/(total*60))*100}%;">Open Play</div>`;
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
+                cur=be;
+            });
+            if(cur<se) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((se-cur)/(total*60))*100}%;">Open Play</div>`;
+        } else {
+            S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
+            });
+        }
+        if(court.status==='occupied'&&court.startTime&&isToday){
+            const el=Math.floor((Date.now()-court.startTime)/60000);
+            const ps=nowM-el;
+            const l=((ps-sH*60)/(total*60))*100;
+            const w=(el/(total*60))*100;
+            if(l>=0) slots+=`<div class="tl-slot tl-playing" style="left:${l}%;width:${Math.max(w,0.5)}%;">Playing</div>`;
+        }
+        const nowLine=isToday?`<div class="tl-now" style="left:${((nowM-sH*60)/(total*60))*100}%;"><span class="tl-now-lbl">NOW</span></div>`:'';
+        html+=`<div class="tl-row"><div class="tl-label" style="color:${court.color};">🏟️ ${court.name}</div><div class="tl-slots">${slots}${nowLine}</div></div>`;
+    });
+    grid.innerHTML=html;
+    renderConflicts(date);
+}
+
+function renderConflicts(date){
+    const div=document.getElementById('conflictsList');
+    const conflicts=[];
+    S.courts.forEach(court=>{
+        const bks=S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled');
+        for(let i=0;i<bks.length;i++){
+            for(let j=i+1;j<bks.length;j++){
+                const a=bks[i],b=bks[j];
+                if(timeToMin(a.startTime)<timeToMin(b.endTime)&&timeToMin(a.endTime)>timeToMin(b.startTime))
+                    conflicts.push({court:court.name,a,b});
+            }
+        }
+        if(S.session&&S.session.active) bks.forEach(b=>conflicts.push({type:'op',court:court.name,b,ses:S.session}));
+    });
+    if(conflicts.length===0){div.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No conflicts!</p></div>';return;}
+    div.innerHTML=conflicts.map(c=>c.type==='op'?`
+        <div class="overlap-box" style="margin-bottom:8px;">⚠️ Open Play Overlap — ${c.court}: ${c.b.customer} (${c.b.startTime}–${c.b.endTime}) overlaps Open Play (${c.ses.start}–${c.ses.end})<br><span style="font-size:0.72rem;">→ Court auto-excluded during booking.</span></div>`:
+        `<div class="conflict-box" style="margin-bottom:8px;">🔴 Double Booking — ${c.court}: ${c.a.customer} (${c.a.startTime}–${c.a.endTime}) vs ${c.b.customer} (${c.b.startTime}–${c.b.endTime})
+        <div style="margin-top:6px;display:flex;gap:6px;"><button class="btn btn-danger btn-sm" onclick="cancelB('${c.b.id}')">Cancel ${c.b.customer}</button><button class="btn btn-danger btn-sm" onclick="cancelB('${c.a.id}')">Cancel ${c.a.customer}</button></div></div>`
+    ).join('');
+}
+
+function cancelB(id){const b=S.bookings.find(x=>x.id===id);if(b){b.status='cancelled';showNotif(`Cancelled: ${b.customer}.`,'warning');renderTimeline();renderBookings();}}
+
+// ===================== RENDER ALL =====================
+function renderAll(){
+    renderSession();
+    renderOpCourts();
+    renderCourtsManage();
+    renderQueueList();
+    renderOpStats();
+    renderBookingCourtSelect();
+    renderPOSCourts();
+    renderSalesSummary();
+    updatePairAlert();
+}
+
+function renderSession(){
+    const div=document.getElementById('sessionDisplay');
+    if(!S.session||!S.session.active){
+        div.innerHTML=`<div class="session-card session-none" style="text-align:center;padding:24px;margin-bottom:16px;">
+            <div style="font-size:2rem;margin-bottom:8px;">🏓</div>
+            <div style="font-weight:700;color:#aaa;margin-bottom:4px;">No Active Open Play Session</div>
+            <div style="font-size:0.8rem;color:#555;margin-bottom:14px;">Start a session to manage open play rotations.</div>
+            <button class="btn btn-primary" onclick="openStartSession()">▶ Start Open Play Session</button>
+        </div>`;
+        return;
+    }
+    const ses=S.session;
+    const pool=getAvailableCourts().length;
+    const playing=S.courts.filter(c=>c.status==='occupied').length;
+    const locked=S.courts.filter(c=>getBookingNow(c.id)).length;
+    const inQ=S.queue.length+S.soloQueue.length;
+    const elapsed=Math.floor((Date.now()-ses.startedAt)/60000);
+    div.innerHTML=`
+        <div class="session-card session-active" style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="live-dot"></div>
+                    <div>
+                        <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${ses.start} to ${ses.end}</div>
+                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in</div>
+                    </div>
+                </div>
+                <button class="btn btn-warning btn-sm" onclick="endSession()">⏹ End Session</button>
+            </div>
+            <div class="session-stats">
+                <div class="ss-card"><div class="ss-num" style="color:#2ecc71;">${pool}</div><div class="ss-lbl">Available</div></div>
+                <div class="ss-card"><div class="ss-num" style="color:#4ecdc4;">${playing}</div><div class="ss-lbl">Playing</div></div>
+                <div class="ss-card"><div class="ss-num" style="color:#e74c3c;">${locked}</div><div class="ss-lbl">Booked/Locked</div></div>
+                <div class="ss-card"><div class="ss-num" style="color:#f39c12;">${inQ}</div><div class="ss-lbl">In Queue</div></div>
+            </div>
+            ${locked>0?`<div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:8px 12px;font-size:0.78rem;color:#e74c3c;">🔒 Locked: ${S.courts.filter(c=>getBookingNow(c.id)).map(c=>c.name).join(', ')}</div>`:''}
+        </div>`;
+}
+
+function renderOpCourts(){
+    const grid=document.getElementById('opCourtsGrid');
+    if(!grid) return;
+    grid.innerHTML='';
+    S.courts.forEach(court=>{
+        const opS=getCourtStatus(court.id);
+        const bk=getBookingNow(court.id);
+        const elapsed=court.startTime?Math.floor((Date.now()-court.startTime)/60000):0;
+        const rotMs=(S.session?.rot||20)*60000;
+        const pct=court.startTime?Math.min((Date.now()-court.startTime)/rotMs*100,100):0;
+        const remaining=court.startTime?Math.max(0,Math.round((rotMs-(Date.now()-court.startTime))/60000)):0;
+        const c=document.createElement('div');
+        c.className=`court-manage-card ${opS==='playing'?'occupied':opS==='booked'?'booked':opS==='available'?'available':opS==='maintenance'?'maintenance':''}`;
+        c.innerHTML=`
+            <div class="court-color-bar" style="background:${court.color};"></div>
+            <div class="court-manage-header">
+                <div><div class="court-manage-name">🏟️ ${court.name}</div><div class="court-manage-loc">📍 ${court.location} · ₱${court.rate}/hr</div></div>
+                <span class="court-status-badge csb-${opS==='playing'?'occupied':opS}">${opS==='playing'?'🟢 Playing':opS==='booked'?'🔒 Booked':opS==='pending'?'⏳ Soon':opS==='maintenance'?'🔧 Maint.':'⚪ Open'}</span>
+            </div>
+            <div class="court-info-row">
+                <span class="court-info-tag">${SURF_ICONS[court.surface]} ${court.surface}</span>
+                <span class="court-info-tag">${ENV_ICONS[court.env]} ${court.env}</span>
+            </div>
+            ${opS==='playing'?`
+                <div class="court-players-mini">
+                    ${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                    ${[...Array(Math.max(0,4-court.players.length))].map(()=>`<div class="cpm-slot empty">+</div>`).join('')}
+                </div>
+                <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;text-align:center;">⏱ ${elapsed}m played · ${remaining}m left</div>
+                <div class="timer-bar"><div class="timer-bar-fill" style="width:${pct}%;background:${pct>80?'#e74c3c':pct>60?'#f39c12':'#4ecdc4'};"></div></div>
+            `:''}
+            ${opS==='booked'&&bk?`<div style="background:rgba(231,76,60,0.08);border-radius:8px;padding:8px;font-size:0.78rem;margin-bottom:8px;"><div style="font-weight:700;">👤 ${bk.customer}</div><div style="color:#e74c3c;">🕐 ${bk.startTime}–${bk.endTime}</div></div>`:''}
+            ${opS==='available'?`<div style="text-align:center;padding:14px 0;color:#444;font-size:0.8rem;">🏓 Court Ready</div>`:''}
+            ${opS==='maintenance'?`<div style="background:rgba(243,156,18,0.08);border-radius:8px;padding:10px;text-align:center;color:#f39c12;font-size:0.8rem;margin-bottom:8px;">🔧 Under Maintenance</div>`:''}
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">🏁 End Game</button>`:''}
+                ${opS==='available'?`<button class="btn btn-success btn-sm" onclick="manualAssignToCourt(${court.id})">📋 Assign</button><button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">🔧</button>`:''}
+                ${opS==='maintenance'?`<button class="btn btn-success btn-sm" onclick="toggleMaint(${court.id})">✅ Open</button>`:''}
+            </div>`;
+        grid.appendChild(c);
+    });
+}
+
+function renderCourtsManage(){
+    const grid=document.getElementById('courtsManageGrid');
+    if(!grid) return;
+    grid.innerHTML='';
+    S.courts.forEach(court=>{
+        const opS=getCourtStatus(court.id);
+        const isOcc=court.status==='occupied';
+        const hasBk=S.bookings.filter(b=>b.courtId===court.id&&b.status!=='cancelled'&&b.date>=getTodayISO()).length;
+        const card=document.createElement('div');
+        card.className=`court-manage-card ${isOcc?'occupied':opS==='booked'?'booked':court.status==='maintenance'?'maintenance':'available'}`;
+        card.innerHTML=`
+            <div class="court-color-bar" style="background:${court.color};"></div>
+            <div class="court-manage-header">
+                <div>
+                    <div class="court-manage-name">🏟️ ${court.name}</div>
+                    <div class="court-manage-loc">📍 ${court.location} · ${SURF_ICONS[court.surface]} ${court.surface} · ${ENV_ICONS[court.env]} ${court.env}</div>
+                </div>
+                <span class="court-status-badge csb-${isOcc?'occupied':court.status==='maintenance'?'maintenance':opS==='booked'?'booked':'available'}">${isOcc?'🟢 In Use':court.status==='maintenance'?'🔧 Maint.':opS==='booked'?'🔒 Booked':'⚪ Open'}</span>
+            </div>
+            <div class="court-info-row">
+                <span class="court-info-tag">₱${court.rate}/hr</span>
+                <span class="court-info-tag">${hasBk} booking(s)</span>
+                ${court.desc?`<span class="court-info-tag">${court.desc.slice(0,20)}...</span>`:''}
+            </div>
+            ${isOcc?`
+                <div class="court-players-mini">
+                    ${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                </div>
+                <div style="font-size:0.72rem;color:#f39c12;margin-bottom:8px;">⚠️ Game in progress — cannot remove</div>
+            `:''}
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="openEditCourt(${court.id})">✏️ Edit</button>
+                ${court.status!=='occupied'?`<button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">${court.status==='maintenance'?'✅ Open':'🔧 Maint.'}</button>`:''}
+                ${!isOcc?`<button class="btn btn-danger btn-sm" onclick="promptRemoveCourt(${court.id})">🗑️ Remove</button>`:`<button class="btn btn-sm" style="background:rgba(78,205,196,0.1);color:#4ecdc4;" disabled>🔒 In Use</button>`}
+            </div>`;
+        grid.appendChild(card);
+    });
+
+    // Add court card
+    const add=document.createElement('div');
+    add.className='add-court-card';
+    add.onclick=openAddCourtModal;
+    add.innerHTML=`<div class="add-court-icon">➕</div><div style="font-weight:700;color:#4ecdc4;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;">Add Court</div><div style="font-size:0.75rem;color:#555;text-align:center;">Click to add a new court<br>to this venue</div>`;
+    grid.appendChild(add);
+}
+
+function renderQueueList(){
+    const list=document.getElementById('queueList');
+    const badge=document.getElementById('qBadge');
+    const total=S.queue.length+S.soloQueue.length;
+    badge.textContent=`(${total})`;
+    if(total===0){list.innerHTML='<div class="empty-state"><div class="ei">🏓</div><p>Queue is empty.<br>Join to get a court.</p></div>';return;}
+    list.innerHTML='';
+    if(S.soloQueue.length>0){
+        const sec=document.createElement('div');
+        sec.innerHTML='<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⏳ Waiting for Partner</div>';
+        S.soloQueue.forEach(entry=>{
+            const wait=Math.floor((Date.now()-entry.joinedAt)/60000);
+            const canPair=S.soloQueue.filter(s=>s.id!==entry.id&&s.gameType===entry.gameType);
+            const card=document.createElement('div');
+            card.className='solo-wait-card';
+            card.innerHTML=`
+                <div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;margin-bottom:6px;">⏳ ${entry.gameType}·${wait}m·needs ${entry.gameType==='singles'?1:4-entry.players.length} more</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        ${entry.players.map(p=>`<div style="width:26px;height:26px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.72rem;">${p.name[0]}</div>`).join('')}
+                        <div><div style="font-weight:700;font-size:0.85rem;">${entry.players.map(p=>p.name).join(' & ')}</div><div style="font-size:0.68rem;color:#aaa;">⭐${SKILL_LABELS[entry.skillLevel]}</div></div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeSolo(${entry.id})">✕</button>
+                </div>
+                ${canPair.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size:0.65rem;color:#4ecdc4;font-weight:700;margin-bottom:4px;">🔗 Pair with:</div>
+                    ${canPair.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(78,205,196,0.05);border-radius:7px;margin-bottom:3px;cursor:pointer;" onclick="pairSolos(${entry.id},${s.id})">
+                        <span style="font-size:0.75rem;">${s.players.map(p=>p.name).join(' & ')}</span>
+                        <button class="btn btn-primary btn-sm">Pair ↗</button>
+                    </div>`).join('')}
+                </div>`:''}`;
+            sec.appendChild(card);
+        });
+        list.appendChild(sec);
+        if(S.queue.length>0){
+            const sep=document.createElement('div');
+            sep.innerHTML='<div style="border-top:1px solid rgba(255,255,255,0.07);margin:10px 0;"></div><div style="font-size:0.68rem;color:#4ecdc4;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">✅ Ready to Play</div>';
+            list.appendChild(sep);
+        }
+    }
+    S.queue.forEach((g,idx)=>{
+        const wait=Math.floor((Date.now()-g.joinedAt)/60000);
+        const item=document.createElement('div');
+        item.className='queue-item';
+        item.innerHTML=`
+            <div class="q-pos ${idx===0?'first':''}">${idx+1}</div>
+            <div class="q-info">
+                <div class="q-name">${g.groupName}</div>
+                <div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}</div>
+                <div class="q-meta"><span class="q-wait">⏳${wait}m</span><span class="q-type ${g.gameType==='singles'?'q-singles':'q-doubles'}">${g.gameType}</span><span style="font-size:0.65rem;color:#666;">⭐${SKILL_LABELS[g.skillLevel]}</span></div>
+            </div>
+            <div class="q-actions">
+                <button class="btn btn-purple btn-sm" onclick="promptAssignGroup(${g.id})">📋</button>
+                <button class="btn btn-danger btn-sm" onclick="removeFromQueue(${g.id})">✕</button>
+            </div>`;
+        list.appendChild(item);
+    });
+}
+
+function renderOpStats(){
+    const div=document.getElementById('opStats');
+    if(!div) return;
+    const avail=getAvailableCourts().length;
+    const playing=S.courts.filter(c=>c.status==='occupied').length;
+    const locked=S.courts.filter(c=>getBookingNow(c.id)).length;
+    const inQ=S.queue.reduce((a,g)=>a+g.players.length,0)+S.soloQueue.reduce((a,s)=>a+s.players.length,0);
+    div.innerHTML=`
+        <div class="stat-card"><div class="stat-number">${S.courts.length}</div><div class="stat-label">Total Courts</div></div>
+        <div class="stat-card"><div class="stat-number" style="color:#2ecc71;">${avail}</div><div class="stat-label">Available</div></div>
+        <div class="stat-card"><div class="stat-number" style="color:#4ecdc4;">${playing}</div><div class="stat-label">Playing</div></div>
+        <div class="stat-card"><div class="stat-number" style="color:#f39c12;">${inQ}</div><div class="stat-label">In Queue</div></div>`;
+}
+
+function renderBookingCourtSelect(){
+    const sel=document.getElementById('bCourt');
+    if(!sel) return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Select court...</option>';
+    S.courts.forEach(c=>{const opt=document.createElement('option');opt.value=c.id;opt.textContent=`${c.name} — ₱${c.rate}/hr`;if(String(c.id)===cur)opt.selected=true;sel.appendChild(opt);});
+}
+
+function renderBookings(){
+    const list=document.getElementById('bookingList');
+    if(!list) return;
+    const fd=document.getElementById('bFilterDate').value;
+    const fs=document.getElementById('bFilterStatus').value;
+    const today=getTodayISO(),tomorrow=getTomorrowISO();
+    let filtered=S.bookings.filter(b=>{
+        if(fd==='today'&&b.date!==today) return false;
+        if(fd==='tomorrow'&&b.date!==tomorrow) return false;
+        if(fs!=='all'&&b.status!==fs) return false;
+        return true;
+    }).sort((a,b)=>a.startTime.localeCompare(b.startTime));
+    if(filtered.length===0){list.innerHTML='<div class="empty-state"><div class="ei">📅</div><p>No bookings found.</p></div>';return;}
+    list.innerHTML=filtered.map(b=>{
+        const court=S.courts.find(c=>c.id===b.courtId);
+        return `<div class="booking-card" onclick="openBookingDetail('${b.id}')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+                <div>
+                    <div style="font-weight:700;font-size:0.9rem;">👤 ${b.customer}</div>
+                    <div style="font-size:0.75rem;color:#4ecdc4;">🏟️ ${court?court.name:'N/A'} · ${b.gameType}</div>
+                    <div style="font-size:0.7rem;color:#666;">${b.source==='online'?'🌐 Online':'🏢 Admin/POS'} ${b.ref?`· ${b.ref}`:''}</div>
+                </div>
+                <span class="bk-status bk-${b.status}">${b.status}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                <div style="font-size:0.75rem;color:#aaa;">📅 ${b.date} · 🕐 ${b.startTime}–${b.endTime}</div>
+                <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderLeaderboard(){
+    const list=document.getElementById('leaderboardList');
+    if(!list) return;
+    const sorted=Object.entries(S.leaderboard).filter(([n,d])=>d.games>0||d.points>0).sort((a,b)=>b[1].points-a[1].points).slice(0,15);
+    if(sorted.length===0){list.innerHTML='<div class="empty-state"><div class="ei">🏆</div><p>No players yet.</p></div>';return;}
+    list.innerHTML=sorted.map(([name,data],i)=>{
+        const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+        const wr=data.games>0?Math.round((data.wins/data.games)*100):0;
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.05);border-radius:10px;margin-bottom:8px;">
+            <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;background:${rc==='gold'?'linear-gradient(135deg,#f39c12,#d68910)':rc==='silver'?'linear-gradient(135deg,#bdc3c7,#95a5a6)':rc==='bronze'?'linear-gradient(135deg,#cd7f32,#a0522d)':'rgba(255,255,255,0.1)'};">${i+1}</div>
+            <div style="width:36px;height:36px;border-radius:50%;background:${COLORS[i%COLORS.length]};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;">${name[0].toUpperCase()}</div>
+            <div style="flex:1;"><div style="font-weight:600;">${name}</div><div style="font-size:0.72rem;color:#aaa;">${data.games} games·${data.wins} wins·${wr}% WR</div></div>
+            <div style="font-weight:800;color:#4ecdc4;">${data.points}pts</div>
+        </div>`;
+    }).join('');
+}
+
+function renderHistory(){
+    const list=document.getElementById('historyList');
+    if(!list) return;
+    const fd=document.getElementById('hFDate').value;
+    const fp=document.getElementById('hFPlayer').value.toLowerCase().trim();
+    let filtered=S.history.filter(h=>{
+        if(!isSameDay(h.date,fd)) return false;
+        if(fp&&!h.players.some(p=>p.name.toLowerCase().includes(fp))) return false;
+        return true;
+    });
+    if(filtered.length===0){list.innerHTML='<div class="empty-state"><div class="ei">📋</div><p>No records.</p></div>';return;}
+    const grouped={};
+    filtered.forEach(h=>{const k=h.date||'?';if(!grouped[k])grouped[k]=[];grouped[k].push(h);});
+    list.innerHTML='';
+    Object.entries(grouped).forEach(([date,items])=>{
+        const label=date===getTodayStr()?'📅 Today':date===getYesterdayStr()?'📅 Yesterday':`📅 ${date}`;
+        const hdr=document.createElement('div');
+        hdr.style.cssText='font-size:0.78rem;color:#4ecdc4;font-weight:700;padding:8px 12px;background:rgba(78,205,196,0.08);border-radius:8px;margin-bottom:8px;';
+        hdr.textContent=`${label} · ${items.length} game${items.length>1?'s':''}`;
+        list.appendChild(hdr);
+        items.forEach(h=>{
+            const wt=h.winner==='A'?h.teamA:h.winner==='B'?h.teamB:null;
+            const wn=wt?(Array.isArray(wt)?wt.map(p=>p.name):[]):[];
+            let badge='';
+            if(h.isTie) badge=`<span style="background:rgba(243,156,18,0.2);color:#f39c12;padding:2px 8px;border-radius:8px;font-size:0.7rem;font-weight:700;">🤝 Tie</span>`;
+            else if(wt) badge=`<span style="background:rgba(46,204,113,0.2);color:#2ecc71;padding:2px 8px;border-radius:8px;font-size:0.7rem;font-weight:700;">🏆 ${wn.join(' & ')}</span>`;
+            const div=document.createElement('div');
+            div.style.cssText='background:rgba(255,255,255,0.05);border-radius:10px;padding:12px;margin-bottom:8px;';
+            div.innerHTML=`
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+                    <strong>🏟️ ${h.court}</strong>
+                    <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+                        <span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:8px;font-size:0.72rem;">🕐 ${h.time}</span>
+                        <span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:8px;font-size:0.72rem;">⏱ ${h.duration}min</span>
+                        ${h.scoreA!==null&&h.scoreA!==undefined?`<span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:8px;font-size:0.72rem;">📊 ${h.scoreA}-${h.scoreB}</span>`:''}
+                        ${badge}
+                    </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    ${h.players.map(p=>{const isW=wn.includes(p.name);return`<div style="display:flex;align-items:center;gap:4px;background:${isW?'rgba(46,204,113,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${isW?'rgba(46,204,113,0.4)':'transparent'};padding:4px 8px;border-radius:8px;font-size:0.78rem;"><div style="width:18px;height:18px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;">${p.name[0]}</div>${p.name}${isW?' 🏆':''}</div>`;}).join('')}
+                </div>`;
+            list.appendChild(div);
+        });
+    });
+}
+
+function updatePairAlert(){
+    const div=document.getElementById('pairingAlert');
+    if(!div) return;
+    if(S.soloQueue.length>0){
+        const ss=S.soloQueue.filter(s=>s.gameType==='singles');
+        const ds=S.soloQueue.filter(s=>s.gameType==='doubles');
+        const msgs=[];
+        if(ss.length) msgs.push(`${ss.map(s=>s.players[0].name).join(', ')} waiting for singles partner`);
+        if(ds.length) msgs.push(`${ds.reduce((a,s)=>a+s.players.length,0)} player(s) waiting for doubles`);
+        div.textContent='⚠️ '+msgs.join(' · ');
+        div.style.display='block';
+    } else div.style.display='none';
+}
+
+// ===================== CONFIRM CLEAR =====================
+function confirmClear(type){
+    document.getElementById('confirmTitle').textContent=type==='leaderboard'?'🏆 Clear Leaderboard':'📋 Clear History';
+    document.getElementById('confirmBody').textContent='This cannot be undone.';
+    document.getElementById('confirmOk').onclick=()=>{
+        if(type==='leaderboard') Object.keys(S.leaderboard).forEach(n=>{S.leaderboard[n]={games:0,wins:0,points:0};});
+        if(type==='history') S.history=[];
+        closeModal('confirmModal');
+        showNotif(`${type==='leaderboard'?'Leaderboard':'History'} cleared!`,'warning');
+        if(type==='leaderboard') renderLeaderboard();
+        if(type==='history') renderHistory();
+    };
+    document.getElementById('confirmModal').classList.add('active');
+}
+
+// ===================== MODALS =====================
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('active');});});
+document.getElementById('portalOverlay').addEventListener('click',function(e){if(e.target===this)closePortal();});
+
+// ===================== NOTIFY =====================
+function showNotif(msg,type='success'){
+    const e=document.querySelector('.notification');if(e)e.remove();
+    const n=document.createElement('div');n.className=`notification ${type}`;n.textContent=msg;
+    document.body.appendChild(n);
+    setTimeout(()=>{n.style.opacity='0';n.style.transition='opacity 0.4s';setTimeout(()=>n.remove(),400);},3500);
+}
+function announce(t){const el=document.getElementById('announceText');if(el)el.textContent=t;}
+
+// ===================== INIT =====================
+document.getElementById('tlDate').value=getTodayISO();
+document.getElementById('bDate').value=getTodayISO();
+setInterval(()=>{renderOpCourts();renderOpStats();renderSession();},30000);
+renderAll();
+</script>
+</body>
+</html>
