@@ -248,7 +248,7 @@
                 });
                 await db.collection('users').doc(uid).set({ email, name, venueId, createdAt: Date.now() });
                 await db.collection('slugs').doc(finalSlug).set({ venueId });
-                window.location.href = '/' + finalSlug + '/admin';
+                window.location.href = 'admin.html?venue=' + finalSlug;
             } catch (e) {
                 document.getElementById('authCard').style.display = 'block';
                 document.getElementById('loadingScreen').style.display = 'none';
@@ -275,7 +275,7 @@
                     nextId: 100, nextBId: 1
                 });
                 await db.collection('slugs').doc(slug).set({ venueId });
-                window.location.href = '/' + slug + '/admin';
+                window.location.href = 'admin.html?venue=' + slug;
             } catch (e) {
                 document.getElementById('authCard').style.display = 'block';
                 document.getElementById('loadingScreen').style.display = 'none';
@@ -293,7 +293,7 @@
                         if (data.venueId) {
                             const venueDoc = await db.collection('venues').doc(data.venueId).get();
                             if (venueDoc.exists) {
-                                window.location.href = '/' + venueDoc.data().slug + '/admin';
+                                window.location.href = 'admin.html?venue=' + venueDoc.data().slug;
                                 return;
                             }
                         }
