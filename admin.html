@@ -2269,7 +2269,7 @@ function processPortalPayment(){
             date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),
             duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,
             amount:total,paymentMethod:S.portal.payMethod,
-            status:S.portal.payMethod==='PayLater'?'pending':'pending',
+            status:'confirmed',
             reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref,
         };
         S.bookings.push(b);
