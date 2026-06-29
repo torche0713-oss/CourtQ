@@ -1163,12 +1163,23 @@
     </div>
 </div>
 
+<!-- PUBLIC LANDING -->
+<div id="publicLanding" style="display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;">
+    <div style="text-align:center;">
+        <div style="font-size:4rem;margin-bottom:16px;">🏓</div>
+        <div style="font-size:2rem;font-weight:800;color:#4ecdc4;margin-bottom:6px;" id="publicVenueName">CourtQ Pro</div>
+        <div style="font-size:0.95rem;color:#aaa;margin-bottom:30px;">Book your court in seconds</div>
+        <button class="btn btn-primary" style="font-size:1.1rem;padding:16px 44px;border-radius:16px;cursor:pointer;" onclick="openPortal()">📅 Book a Court</button>
+    </div>
+</div>
+
 <script>
 // ===================== CONSTANTS =====================
 const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
 const SKILL_LABELS={2:'2.0',3:'3.0',4:'4.0',5:'5.0'};
 const SURF_ICONS={Hard:'🟦',Clay:'🟫',Grass:'🟩'};
 const ENV_ICONS={Outdoor:'☀️',Indoor:'🏠'};
+const IS_ADMIN = window.location.search.includes('admin') || window.location.hash.includes('admin');
 
 // ===================== STATE =====================
 let S = {
@@ -1206,6 +1217,27 @@ function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).pad
 function nowMin(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
+
+// ===================== PERSISTENCE =====================
+const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId'];
+function saveState(){
+    try {
+        const state = {};
+        PERSISTENT_KEYS.forEach(k => state[k] = S[k]);
+        localStorage.setItem('courtq_state', JSON.stringify(state));
+    } catch(e){}
+}
+function loadState(){
+    try {
+        const raw = localStorage.getItem('courtq_state');
+        if (raw) {
+            const state = JSON.parse(raw);
+            PERSISTENT_KEYS.forEach(k => {
+                if (state[k] !== undefined) S[k] = state[k];
+            });
+        }
+    } catch(e){}
+}
 
 // ===================== CLOCK =====================
 function updateClock(){
@@ -1727,6 +1759,7 @@ function createBooking(){
     showNotif(`📅 Booking confirmed for ${customer}!`,'success');
     announce(`New booking: ${customer} → ${c.name} on ${date} at ${start}.`);
     renderBookings();
+    saveState();
 }
 
 function openBookingDetail(bId){
@@ -1819,6 +1852,7 @@ function processPOS(){
         </div>`;
     document.getElementById('posName').value='';document.getElementById('posPhone').value='';
     S.posCourtId=null;renderPOSCourts();renderSalesSummary();
+    saveState();
     showNotif(`💳 ₱${total} from ${name}!`,'success');
 }
 
@@ -1851,9 +1885,13 @@ function openPortal(){
     goPortalStep(1);
     renderCourtPicker();
     document.getElementById('portalOverlay').classList.add('active');
+    if (!IS_ADMIN) document.getElementById('publicLanding').style.display = 'none';
 }
 
-function closePortal(){ document.getElementById('portalOverlay').classList.remove('active'); }
+function closePortal(){
+    document.getElementById('portalOverlay').classList.remove('active');
+    if (!IS_ADMIN) document.getElementById('publicLanding').style.display = 'flex';
+}
 
 function goPortalStep(step){
     document.querySelectorAll('.portal-page').forEach(p=>p.classList.remove('active'));
@@ -2072,6 +2110,7 @@ function processPortalPayment(){
                 </div>
             </div>`;
         renderSalesSummary();
+        saveState();
     }, 2000);
 }
 
@@ -2140,7 +2179,7 @@ function renderConflicts(date){
     ).join('');
 }
 
-function cancelB(id){const b=S.bookings.find(x=>x.id===id);if(b){b.status='cancelled';showNotif(`Cancelled: ${b.customer}.`,'warning');renderTimeline();renderBookings();}}
+function cancelB(id){const b=S.bookings.find(x=>x.id===id);if(b){b.status='cancelled';showNotif(`Cancelled: ${b.customer}.`,'warning');renderTimeline();renderBookings();saveState();}}
 
 // ===================== RENDER ALL =====================
 function renderAll(){
@@ -2153,6 +2192,7 @@ function renderAll(){
     renderPOSCourts();
     renderSalesSummary();
     updatePairAlert();
+    saveState();
 }
 
 function renderSession(){
@@ -2484,6 +2524,7 @@ function confirmClear(type){
         showNotif(`${type==='leaderboard'?'Leaderboard':'History'} cleared!`,'warning');
         if(type==='leaderboard') renderLeaderboard();
         if(type==='history') renderHistory();
+        saveState();
     };
     document.getElementById('confirmModal').classList.add('active');
 }
@@ -2503,10 +2544,20 @@ function showNotif(msg,type='success'){
 function announce(t){const el=document.getElementById('announceText');if(el)el.textContent=t;}
 
 // ===================== INIT =====================
+loadState();
 document.getElementById('tlDate').value=getTodayISO();
 document.getElementById('bDate').value=getTodayISO();
 setInterval(()=>{renderOpCourts();renderOpStats();renderSession();},30000);
 renderAll();
+
+// Public view
+if (!IS_ADMIN) {
+    document.querySelector('nav.main-nav').style.display = 'none';
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.querySelector('.header-right').style.display = 'none';
+    document.getElementById('publicLanding').style.display = 'flex';
+    document.getElementById('publicVenueName').textContent = S.venueName;
+}
 </script>
 </body>
 </html>
