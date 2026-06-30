@@ -877,6 +877,41 @@
             </div>
             <div class="card-title" style="font-size:0.8rem;">🏟️ Revenue by Court</div>
             <div id="finCourtRev" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;"></div>
+            <div class="card-title" style="font-size:0.8rem;">⏰ Peak Hours</div>
+            <div id="finPeakHours" style="margin-bottom:16px;"></div>
+            <div class="card-title" style="font-size:0.8rem;">💰 Net Position</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+                <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Gross Revenue</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finGrossRev">₱0</div>
+                </div>
+                <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Costs</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="finTotalCosts">₱0</div>
+                </div>
+                <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Net Profit</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#3498db;margin-top:4px;" id="finNetProfit">₱0</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finNetMargin">0% margin</div>
+                </div>
+            </div>
+            <div class="card-title" style="font-size:0.8rem;">📋 Expenses</div>
+            <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;margin-bottom:16px;">
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+                    <select id="costCategory" style="padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.78rem;">
+                        <option value="Utilities">⚡ Utilities</option>
+                        <option value="Wages">👥 Wages</option>
+                        <option value="Maintenance">🔧 Maintenance</option>
+                        <option value="Rent">🏠 Rent</option>
+                        <option value="Supplies">📦 Supplies</option>
+                        <option value="Other">📋 Other</option>
+                    </select>
+                    <input type="number" id="costAmount" placeholder="Amount" min="0" style="width:90px;padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.78rem;">
+                    <input type="text" id="costDesc" placeholder="Description" style="flex:1;min-width:120px;padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.78rem;">
+                    <button class="btn btn-primary btn-sm" onclick="addCost()">+ Add</button>
+                </div>
+                <div id="finCostList"></div>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
                     <div class="card-title" style="font-size:0.8rem;">📊 Transactions</div>
@@ -1325,6 +1360,7 @@ let S = {
     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     accessCode:'',
     staffEmails:[],
+    costs:[],
     devFees:[],
 };
 
@@ -1341,7 +1377,7 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','devFees'];
+const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','devFees'];
 function saveState(){
     if (!VENUE_ID) return;
     try {
@@ -2227,6 +2263,53 @@ function renderFinancials(){
             <div style="font-size:0.65rem;color:#555;">${util}% utilized</div>
         </div>`;
     }).join('');
+    // Peak hours
+    const phDiv=document.getElementById('finPeakHours');
+    const hourBuckets={};
+    for(let h=6;h<22;h++) hourBuckets[h]=0;
+    filtered.forEach(b=>{
+        const h=parseInt(b.startTime.split(':')[0]);
+        if(hourBuckets[h]!==undefined) hourBuckets[h]++;
+    });
+    const maxH=Math.max(...Object.values(hourBuckets),1);
+    const hourLabels=['6am','7am','8am','9am','10am','11am','12pm','1pm','2pm','3pm','4pm','5pm','6pm','7pm','8pm','9pm'];
+    const barMaxH=60;
+    phDiv.innerHTML=`<div style="display:flex;gap:4px;align-items:flex-end;min-height:80px;padding:0 4px;">`+
+        Object.entries(hourBuckets).map(([h,c])=>{
+            const barH=c>0?Math.max(Math.round(c/maxH*barMaxH),4):1;
+            const label=hourLabels[parseInt(h)-6]||h;
+            return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+                <div style="font-size:0.6rem;color:#aaa;margin-bottom:2px;">${c}</div>
+                <div style="width:100%;height:${barH}px;background:#4ecdc4;border-radius:4px 4px 0 0;transition:height 0.3s;"></div>
+                <div style="font-size:0.55rem;color:#666;margin-top:3px;">${label}</div>
+            </div>`;
+        }).join('')+'</div>';
+    // Costs
+    const periodCosts=(S.costs||[]).filter(c=>{
+        const d=new Date(c.date);
+        return d>=startDate;
+    });
+    const totalCosts=periodCosts.reduce((s,c)=>s+(c.amount||0),0);
+    const netProfit=totalRev-totalCosts;
+    const netMargin=totalRev>0?Math.round(netProfit/totalRev*100):0;
+    document.getElementById('finGrossRev').textContent='₱'+totalRev.toLocaleString();
+    document.getElementById('finTotalCosts').textContent='₱'+totalCosts.toLocaleString();
+    document.getElementById('finNetProfit').textContent='₱'+netProfit.toLocaleString();
+    document.getElementById('finNetProfit').style.color=netProfit>=0?'#2ecc71':'#e74c3c';
+    document.getElementById('finNetMargin').textContent=netMargin+'% margin';
+    document.getElementById('finNetMargin').style.color=netMargin>=0?'#2ecc71':'#e74c3c';
+    const clDiv=document.getElementById('finCostList');
+    if(periodCosts.length===0){
+        clDiv.innerHTML='<div style="font-size:0.78rem;color:#666;font-style:italic;">No expenses recorded this period.</div>';
+    } else {
+        clDiv.innerHTML=periodCosts.slice().reverse().map((c,i)=>{
+            const origIdx=S.costs.indexOf(c);
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:3px;font-size:0.75rem;">
+                <div><span style="color:#aaa;">${c.category}</span> ${c.desc?'· '+c.desc:''} <span style="color:#555;font-size:0.65rem;">${c.date}</span></div>
+                <div style="display:flex;align-items:center;gap:6px;"><span style="font-weight:700;color:#e74c3c;">₱${(c.amount||0).toLocaleString()}</span><button class="btn btn-danger btn-sm" onclick="removeCost(${origIdx})" style="padding:2px 6px;font-size:0.6rem;">✕</button></div>
+            </div>`;
+        }).join('');
+    }
     // Detailed breakdown
     const div=document.getElementById('finBreakdown');
     if(filtered.length===0){div.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No transactions this period.</p></div>';return;}
@@ -2238,6 +2321,25 @@ function renderFinancials(){
             <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
         </div>`;
     }).join('');
+}
+function addCost(){
+    const amt=parseFloat(document.getElementById('costAmount').value);
+    if(!amt||amt<=0){showNotif('Enter a valid amount!','error');return;}
+    const category=document.getElementById('costCategory').value;
+    const desc=document.getElementById('costDesc').value.trim();
+    if(!S.costs) S.costs=[];
+    S.costs.push({category,amount:amt,desc,date:getTodayISO(),createdAt:Date.now()});
+    document.getElementById('costAmount').value='';
+    document.getElementById('costDesc').value='';
+    saveState();
+    renderFinancials();
+    showNotif('Expense added!');
+}
+function removeCost(idx){
+    S.costs=(S.costs||[]).filter((_,i)=>i!==idx);
+    saveState();
+    renderFinancials();
+    showNotif('Expense removed!');
 }
 function markDevPaid(){
     const periodKey=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
