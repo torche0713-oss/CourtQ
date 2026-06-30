@@ -1783,7 +1783,7 @@ Queue: ${S.queue.map((g,i)=>i+1+'. "'+g.groupName+'" – '+g.gameType+', skill '
 
 Recommend which group goes to which court in 1 short sentence. Consider wait time, skill, and court features.`;
     try {
-        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+GEMINI_API_KEY,{
+        const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key='+GEMINI_API_KEY,{
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:200}})
         });
@@ -1803,7 +1803,7 @@ async function callGemini(prompt,title='🔮 AI'){
         if (!GEMINI_API_KEY) { showNotif('Set Gemini key first via 🔮 AI button','error'); return null; }
     }
     try {
-        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+GEMINI_API_KEY,{
+        const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key='+GEMINI_API_KEY,{
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.4,maxOutputTokens:800}})
         });
