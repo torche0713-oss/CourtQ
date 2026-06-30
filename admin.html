@@ -836,6 +836,7 @@
                         <option value="week">This Week</option>
                         <option value="month">This Month</option>
                     </select>
+                    <button class="btn btn-outline btn-sm" onclick="seedJuneData()" title="Add dummy June data for testing">🌱</button>
                     <button class="btn btn-outline btn-sm" onclick="lockFinancials()">🔒 Lock</button>
                 </div>
             </div>
@@ -2346,6 +2347,47 @@ function markDevPaid(){
     S.devFees.filter(d=>d.period===periodKey&&d.status==='pending').forEach(d=>d.status='paid');
     saveState();renderFinancials();
     showNotif('✅ Dev fee marked as paid!');
+}
+function seedJuneData(){
+    if(!confirm('Add dummy June data to this venue? Existing bookings/costs will be kept.'))return;
+    const j=(d,h=12,m=0)=>new Date(2026,5,d,h,m).getTime();
+    const bk=[
+        {id:'SEED01',customer:'Maria Santos',phone:'+63917123456',email:'maria@test.com',courtId:1,date:'2026-06-02',startTime:'08:00',endTime:'09:30',duration:90,gameType:'doubles',players:'Alex, Sam',amount:450,paymentMethod:'GCash',status:'confirmed',notes:'',bookedAt:j(2,8),source:'online'},
+        {id:'SEED02',customer:'Juan Cruz',phone:'+63918987654',email:'juan@test.com',courtId:2,date:'2026-06-03',startTime:'14:00',endTime:'16:00',duration:120,gameType:'private',players:'Juan, Ana',amount:600,paymentMethod:'Cash',status:'confirmed',notes:'Lesson',bookedAt:j(3,14),source:'admin'},
+        {id:'SEED03',customer:'Ana Reyes',courtId:3,date:'2026-06-05',startTime:'09:00',endTime:'10:30',duration:90,gameType:'singles',players:'Ana',amount:350,paymentMethod:'Maya',status:'confirmed',bookedAt:j(5,9),source:'online'},
+        {id:'SEED04',customer:'Pedro Lim',courtId:1,date:'2026-06-07',startTime:'16:00',endTime:'17:30',duration:90,gameType:'doubles',players:'Pedro, Beth',amount:500,paymentMethod:'GCash',status:'confirmed',bookedAt:j(7,16),source:'online'},
+        {id:'SEED05',customer:'Lisa Tan',courtId:2,date:'2026-06-08',startTime:'10:00',endTime:'12:00',duration:120,gameType:'singles',players:'Lisa',amount:700,paymentMethod:'Cash',status:'confirmed',bookedAt:j(8,10),source:'admin'},
+        {id:'SEED06',customer:'Mark Go',courtId:3,date:'2026-06-10',startTime:'07:00',endTime:'08:30',duration:90,gameType:'doubles',players:'Mark, Jay',amount:400,paymentMethod:'GCash',status:'confirmed',bookedAt:j(10,7),source:'online'},
+        {id:'SEED07',customer:'Sarah Yap',courtId:1,date:'2026-06-12',startTime:'18:00',endTime:'19:30',duration:90,gameType:'singles',players:'Sarah',amount:550,paymentMethod:'Maya',status:'confirmed',bookedAt:j(12,18),source:'online'},
+        {id:'SEED08',customer:'Tom Cruz',courtId:2,date:'2026-06-14',startTime:'06:00',endTime:'07:30',duration:90,gameType:'doubles',players:'Tom, Ben',amount:450,paymentMethod:'GCash',status:'confirmed',bookedAt:j(14,6),source:'admin'},
+        {id:'SEED09',customer:'Kate Diaz',courtId:3,date:'2026-06-15',startTime:'15:00',endTime:'17:00',duration:120,gameType:'private',players:'Kate, Ian',amount:600,paymentMethod:'Cash',status:'confirmed',notes:'Coaching',bookedAt:j(15,15),source:'online'},
+        {id:'SEED10',customer:'Alex King',courtId:1,date:'2026-06-17',startTime:'11:00',endTime:'12:30',duration:90,gameType:'doubles',players:'Alex, Joy',amount:500,paymentMethod:'Maya',status:'confirmed',bookedAt:j(17,11),source:'admin'},
+        {id:'SEED11',customer:'Ryan Ola',courtId:2,date:'2026-06-19',startTime:'13:00',endTime:'14:30',duration:90,gameType:'singles',players:'Ryan',amount:350,paymentMethod:'GCash',status:'confirmed',bookedAt:j(19,13),source:'online'},
+        {id:'SEED12',customer:'Emma Yu',courtId:3,date:'2026-06-21',startTime:'17:00',endTime:'19:00',duration:120,gameType:'doubles',players:'Emma, Sam',amount:700,paymentMethod:'Cash',status:'confirmed',bookedAt:j(21,17),source:'online'},
+        {id:'SEED13',customer:'David Roa',courtId:1,date:'2026-06-22',startTime:'09:00',endTime:'10:30',duration:90,gameType:'singles',players:'David',amount:450,paymentMethod:'GCash',status:'confirmed',bookedAt:j(22,9),source:'admin'},
+        {id:'SEED14',customer:'Nina Vega',courtId:2,date:'2026-06-24',startTime:'19:00',endTime:'20:30',duration:90,gameType:'doubles',players:'Nina, Tom',amount:550,paymentMethod:'Maya',status:'confirmed',bookedAt:j(24,19),source:'online'},
+        {id:'SEED15',customer:'Chris Pal',courtId:3,date:'2026-06-26',startTime:'08:00',endTime:'09:30',duration:90,gameType:'singles',players:'Chris',amount:400,paymentMethod:'GCash',status:'confirmed',bookedAt:j(26,8),source:'online'},
+        {id:'SEED16',customer:'Bella Soto',courtId:1,date:'2026-06-28',startTime:'14:00',endTime:'16:00',duration:120,gameType:'doubles',players:'Bella, Kai',amount:600,paymentMethod:'Cash',status:'confirmed',bookedAt:j(28,14),source:'admin'},
+        {id:'SEED17',customer:'Jake Lim',courtId:2,date:'2026-06-29',startTime:'10:00',endTime:'11:30',duration:90,gameType:'singles',players:'Jake',amount:500,paymentMethod:'GCash',status:'confirmed',bookedAt:j(29,10),source:'online'},
+        {id:'SEED18',customer:'Zara Qui',courtId:3,date:'2026-06-30',startTime:'16:00',endTime:'17:30',duration:90,gameType:'doubles',players:'Zara, Dex',amount:450,paymentMethod:'Maya',status:'confirmed',bookedAt:j(30,16),source:'online'},
+        {id:'SEED19',customer:'Cancelled One',courtId:1,date:'2026-06-09',startTime:'10:00',endTime:'11:30',duration:90,gameType:'singles',players:'',amount:400,paymentMethod:'GCash',status:'cancelled',bookedAt:j(9,10),source:'online'},
+    ];
+    const existingIds=new Set(S.bookings.map(b=>b.id));
+    let added=0;
+    bk.forEach(b=>{if(!existingIds.has(b.id)){S.bookings.push(b);added++;S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date(b.bookedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType||'singles'});}});
+    const costs=[{category:'Utilities',amount:3500,desc:'Electric + Water',date:'2026-06-30',createdAt:j(30)},{category:'Wages',amount:12000,desc:'Staff salaries',date:'2026-06-30',createdAt:j(30)},{category:'Maintenance',amount:2000,desc:'Court repairs',date:'2026-06-15',createdAt:j(15)},{category:'Rent',amount:8000,desc:'Monthly rent',date:'2026-06-01',createdAt:j(1)},{category:'Supplies',amount:1500,desc:'Paddles, balls',date:'2026-06-10',createdAt:j(10)},{category:'Other',amount:1000,desc:'Miscellaneous',date:'2026-06-20',createdAt:j(20)}];
+    if(!S.costs) S.costs=[];
+    costs.forEach(c=>{S.costs.push(c);});
+    // Dev fees for GCash/Maya bookings
+    const pKey='2026-06';
+    bk.filter(b=>b.status==='confirmed'&&(b.paymentMethod==='GCash'||b.paymentMethod==='Maya')).forEach(b=>{
+        const fee=Math.round(b.amount*0.05);
+        if(!S.devFees.find(d=>d.bookingId===b.id)) S.devFees.push({bookingId:b.id,amount:fee,period:pKey,status:'pending',createdAt:j(30)});
+    });
+    const nextB=Math.max(...S.bookings.filter(b=>b.id.startsWith('BK')).map(b=>parseInt(b.id.replace('BK',''))||0),50);
+    S.nextBId=nextB+1;
+    saveState();renderAll();
+    showNotif('✅ June dummy data seeded! 19 bookings, 6 expenses added.','success');
 }
 
 // ===================== DEV DASHBOARD =====================
