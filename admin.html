@@ -1788,8 +1788,10 @@ Recommend which group goes to which court in 1 short sentence. Consider wait tim
             body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:200}})
         });
         const d=await res.json();
+        console.log('Gemini aiSuggest response:', d);
+        if(d.error){showNotif('Gemini API error: '+d.error.message,'error');return;}
         showNotif('🔮 '+ (d.candidates?.[0]?.content?.parts?.[0]?.text||'No suggestion'),'info');
-    } catch(e){showNotif('AI suggest failed','error');}
+    } catch(e){showNotif('AI suggest failed: '+e.message,'error');}
 }
 
 async function callGemini(prompt,title='🔮 AI'){
@@ -1806,12 +1808,15 @@ async function callGemini(prompt,title='🔮 AI'){
             body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.4,maxOutputTokens:800}})
         });
         const d=await res.json();
-        const text=d.candidates?.[0]?.content?.parts?.[0]?.text||'No response';
+        console.log('Gemini response:', d);
+        if(d.error){showNotif('Gemini API error: '+d.error.message,'error');return null;}
+        const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
+        if(!text){showNotif('AI returned empty response. Check console.','error');return null;}
         document.getElementById('aiModalTitle').textContent=title;
         document.getElementById('aiModalBody').textContent=text;
         document.getElementById('aiModal').classList.add('active');
         return text;
-    } catch(e){showNotif('AI request failed','error');return null;}
+    } catch(e){showNotif('AI request failed: '+e.message,'error');return null;}
 }
 
 async function aiDailyBriefing(){
