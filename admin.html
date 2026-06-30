@@ -626,7 +626,7 @@
         </div>
         <button class="btn btn-primary btn-sm" onclick="openPortal()">🌐 Book Online</button>
         <button class="btn btn-outline btn-sm" onclick="copyPortalLink()">🔗 Share Link</button>
-        <button class="btn btn-outline btn-sm" onclick="openSettings()">⚙️ Settings</button>
+        <button class="btn btn-outline btn-sm" onclick="openSettings()" id="settingsBtn">⚙️ Settings</button>
         <button class="btn btn-outline btn-sm" onclick="setGeminiKey()">🔮 AI</button>
         <button class="btn btn-outline btn-sm" onclick="logout()" style="color:#e74c3c;border-color:rgba(231,76,60,0.3);">🚪 Logout</button>
     </div>
@@ -637,7 +637,7 @@
     <button class="nav-tab" onclick="showPage('courts',this)">🏟️ Courts</button>
     <button class="nav-tab" onclick="showPage('booking',this)">📅 Bookings</button>
     <button class="nav-tab" onclick="showPage('confirmations',this)">✅ Confirmations</button>
-    <button class="nav-tab" onclick="showPage('financials',this)">💰 Financials</button>
+    <button class="nav-tab" onclick="showPage('financials',this)" id="financialsTab">💰 Financials</button>
     <button class="nav-tab" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
     <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
@@ -1220,6 +1220,15 @@
             <div class="form-group"><label>Set Access Code (4-6 digits)</label><input type="text" id="sAccessCode" placeholder="e.g. 1234" maxlength="6" inputmode="numeric"></div>
             <div style="font-size:0.72rem;color:#aaa;">Share this code with the venue owner to access the Financials page.</div>
         </div>
+        <div id="staffSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:none;">
+            <div style="font-weight:700;font-size:0.85rem;color:#2ecc71;margin-bottom:10px;">👥 Staff Management</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="email" id="sStaffEmail" placeholder="staff@email.com" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;">
+                <button class="btn btn-primary btn-sm" onclick="addStaff()">+ Add</button>
+            </div>
+            <div id="staffList" style="font-size:0.85rem;"></div>
+            <div style="font-size:0.72rem;color:#aaa;margin-top:4px;">Staff can access the dashboard but not Financials or Settings.</div>
+        </div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
             <button class="btn btn-outline" onclick="closeModal('settingsModal')">Cancel</button>
@@ -1265,6 +1274,7 @@ const auth = firebase.auth();
 let VENUE_ID = null;
 let VENUE_OWNER_ID = null;
 let GEMINI_API_KEY = '';
+let IS_OWNER = true;
 
 // ===================== STATE =====================
 let S = {
@@ -1290,6 +1300,7 @@ let S = {
     venueSlug:'',
     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     accessCode:'',
+    staffEmails:[],
     devFees:[],
 };
 
@@ -1306,7 +1317,7 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','devFees'];
+const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','devFees'];
 function saveState(){
     if (!VENUE_ID) return;
     try {
@@ -1355,6 +1366,10 @@ function saveVenueName(){
 
 // ===================== PAGE NAV =====================
 function showPage(id,el){
+    if (!IS_OWNER && id === 'financials') {
+        showPage('openplay', document.querySelector('.nav-tab'));
+        return;
+    }
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
     document.getElementById('page-'+id).classList.add('active');
@@ -1939,7 +1954,33 @@ function openSettings(){
     document.getElementById('sMayaNum').value=S.paymentInfo.maya.number||'';
     document.getElementById('sMayaName').value=S.paymentInfo.maya.name||'';
     document.getElementById('sAccessCode').value=S.accessCode||'';
+    document.getElementById('staffSection').style.display=IS_OWNER?'':'none';
+    renderStaffList();
     document.getElementById('settingsModal').classList.add('active');
+}
+function renderStaffList(){
+    const list=document.getElementById('staffList');
+    const emails=S.staffEmails||[];
+    if(emails.length===0){list.innerHTML='<div style="color:#666;font-style:italic;">No staff added yet.</div>';return;}
+    list.innerHTML=emails.map((e,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span>${e}</span><button class="btn btn-danger btn-sm" onclick="removeStaff(${i})">✕</button></div>`).join('');
+}
+function addStaff(){
+    const inp=document.getElementById('sStaffEmail');
+    const email=inp.value.trim().toLowerCase();
+    if(!email||!email.includes('@')){showNotif('Enter a valid email!','error');return;}
+    if(!S.staffEmails) S.staffEmails=[];
+    if(S.staffEmails.includes(email)){showNotif('Already added!','error');return;}
+    S.staffEmails.push(email);
+    inp.value='';
+    renderStaffList();
+    saveState();
+    showNotif('Staff added!');
+}
+function removeStaff(idx){
+    S.staffEmails=(S.staffEmails||[]).filter((_,i)=>i!==idx);
+    renderStaffList();
+    saveState();
+    showNotif('Staff removed!');
 }
 function saveSettings(){
     S.paymentInfo.gcash.number=document.getElementById('sGcashNum').value.trim();
@@ -2799,13 +2840,24 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
             const user = await new Promise(resolve => {
                 const unsub = auth.onAuthStateChanged(u => { unsub(); resolve(u); });
             });
-            if (!user || user.uid !== VENUE_OWNER_ID) {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            IS_OWNER = (user.uid === VENUE_OWNER_ID);
+            const isStaff = (S.staffEmails || []).includes(user.email);
+            if (!IS_OWNER && !isStaff) {
                 window.location.href = 'index.html';
                 return;
             }
             // Show dev tab only for developer's email
             if (user.email === 'pinoymemesforever@gmail.com') {
                 document.getElementById('devTabBtn').style.display = '';
+            }
+            // Hide owner-only UI for staff
+            if (!IS_OWNER) {
+                document.getElementById('settingsBtn').style.display = 'none';
+                document.getElementById('financialsTab').style.display = 'none';
             }
         }
 
