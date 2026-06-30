@@ -913,7 +913,7 @@
                 </div>
                 <div id="finCostList"></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="display:grid;grid-template-columns:1fr;gap:12px;">
                 <div>
                     <div class="card-title" style="font-size:0.8rem;">📊 Transactions</div>
                     <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;">
@@ -924,22 +924,6 @@
                         <div style="display:flex;justify-content:space-between;padding:6px 0;">
                             <span style="color:#aaa;">Drop-in Fees</span>
                             <span style="font-weight:700;" id="finTxDropin">0</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="card-title" style="font-size:0.8rem;">💻 Developer Fee (5%)</div>
-                    <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.15);border-radius:10px;padding:12px;">
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-                            <span style="color:#aaa;">5% of GCash + Maya</span>
-                            <span style="font-weight:700;color:#f39c12;" id="finDevFee">₱0</span>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;">
-                            <span style="color:#aaa;">Status</span>
-                            <span id="finDevStatus" style="font-weight:700;color:#f39c12;">pending</span>
-                        </div>
-                        <div style="margin-top:8px;display:flex;gap:6px;">
-                            <button class="btn btn-success btn-sm" style="flex:1;" onclick="markDevPaid()">✅ Mark Paid</button>
                         </div>
                     </div>
                 </div>
@@ -978,26 +962,74 @@
 <div class="page" id="page-dev">
     <div id="devContent">
         <div class="card">
-            <div class="card-title"><span>💻 Dev Dashboard</span></div>
-            <div id="devSummary" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div class="card-title"><span>💻 Dev Dashboard</span><button class="btn btn-primary btn-sm" onclick="refreshDevDashboard()">🔄 Refresh</button></div>
+            <div id="devSummary" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
                 <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Venues</div>
                     <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;margin-top:4px;" id="devVenueCount">0</div>
                 </div>
                 <div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Dev Fees</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#f39c12;margin-top:4px;" id="devTotalFees">₱0</div>
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Active Contracts</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#f39c12;margin-top:4px;" id="devActiveContracts">0</div>
                 </div>
-                <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Unpaid</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="devUnpaid">₱0</div>
+                <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Monthly Retainers</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#9b59b6;margin-top:4px;" id="devMonthlyTotal">₱0</div>
                 </div>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-                <select id="devMonth" onchange="renderDevDashboard()" style="padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.8rem;"></select>
-                <span style="font-size:0.78rem;color:#aaa;align-self:center;">Filter by month</span>
+                <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Due</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="devTotalDue">₱0</div>
+                </div>
             </div>
             <div id="devVenuesList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- CONTRACT MODAL -->
+<div class="modal-overlay" id="contractModal">
+    <div class="modal" style="max-width:550px;">
+        <div class="modal-title">📝 Contract Details</div>
+        <input type="hidden" id="cVenueId">
+        <div class="form-group"><label>Venue Name</label><input type="text" id="cVenueName" placeholder="Venue name"></div>
+        <div class="form-group"><label>Owner Name</label><input type="text" id="cOwnerName" placeholder="Owner name"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="form-group"><label>Original # of Courts</label><input type="number" id="cOrigCourts" min="0"></div>
+            <div class="form-group"><label>Total Courts Today</label><input type="number" id="cTotalCourts" min="0"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="form-group"><label>Contract Start</label><input type="date" id="cStartDate"></div>
+            <div class="form-group"><label>Contract End</label><input type="date" id="cEndDate"></div>
+        </div>
+        <div class="form-group"><label>Monthly Retainer (₱)</label><input type="number" id="cMonthlyRetainer" min="0" step="100"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="saveContract()">💾 Save Contract</button>
+            <button class="btn btn-outline" onclick="closeModal('contractModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentModal">
+    <div class="modal" style="max-width:450px;">
+        <div class="modal-title">💰 Add Payment</div>
+        <input type="hidden" id="pVenueId">
+        <div class="form-group"><label>Transaction Number</label><input type="text" id="pTxNo" placeholder="e.g. TXN-001"></div>
+        <div class="form-group"><label>Amount Due (₱)</label><input type="number" id="pAmount" min="0" step="100"></div>
+        <div class="form-group"><label>Due Date</label><input type="date" id="pDueDate"></div>
+        <div class="form-group"><label>Status</label>
+            <select id="pStatus" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Paid At</label><input type="date" id="pPaidAt"></div>
+        <div class="form-group"><label>Notes</label><input type="text" id="pNotes" placeholder="Optional notes"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="savePayment()">💾 Save Payment</button>
+            <button class="btn btn-outline" onclick="closeModal('paymentModal')">Cancel</button>
         </div>
     </div>
 </div>
@@ -1362,7 +1394,7 @@ let S = {
     accessCode:'',
     staffEmails:[],
     costs:[],
-    devFees:[],
+
 };
 
 // ===================== HELPERS =====================
@@ -1378,7 +1410,7 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','devFees'];
+const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs'];
 function saveState(){
     if (!VENUE_ID) return;
     try {
@@ -1958,8 +1990,6 @@ function createBooking(){
     };
     S.bookings.push(b);
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
-    const fee=Math.round(b.amount*0.05);
-    S.devFees.push({bookingId:b.id,amount:fee,period:getPeriodKey(),status:'pending',createdAt:Date.now()});
     ['bCustomer','bPhone','bEmail','bDate','bStart','bPlayers'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bConflict').innerHTML='';
     document.getElementById('bPricePreview').style.display='none';
@@ -2153,10 +2183,8 @@ function confirmBookingPayment(bId){
     if(!b) return;
     b.status='confirmed';
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
-    const fee=Math.round(b.amount*0.05);
-    S.devFees.push({bookingId:b.id,amount:fee,period:getPeriodKey(),status:'pending',createdAt:Date.now()});
     saveState();renderConfirmations();renderBookings();
-    showNotif(`✅ ${b.customer}'s payment confirmed! Dev fee: ₱${fee}`,'success');
+    showNotif(`✅ ${b.customer}'s payment confirmed!`,'success');
 }
 
 function getPeriodKey(){
@@ -2227,12 +2255,6 @@ function renderFinancials(){
     const onlineCount=filtered.filter(b=>b.source==='online').length;
     const inPersonCount=filtered.filter(b=>b.source!=='online').length;
     const onlinePct=allTx>0?Math.round(onlineCount/allTx*100):0;
-    // Dev fee
-    const devFeeTotal=Math.round((gcash+maya)*0.05);
-    const periodKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-    const devFeesForPeriod=S.devFees.filter(d=>d.period===periodKey);
-    const devPaid=devFeesForPeriod.filter(d=>d.status==='paid').reduce((s,d)=>s+d.amount,0);
-    const devPending=devFeesForPeriod.filter(d=>d.status==='pending').reduce((s,d)=>s+d.amount,0);
     // Update DOM
     document.getElementById('finGCash').textContent='₱'+gcash.toLocaleString();
     document.getElementById('finMaya').textContent='₱'+maya.toLocaleString();
@@ -2248,10 +2270,6 @@ function renderFinancials(){
     document.getElementById('finOnlineSplit').textContent=onlineCount+' online / '+inPersonCount+' in-person';
     document.getElementById('finTxBooking').textContent=bookTx;
     document.getElementById('finTxDropin').textContent=dropTx;
-    const totalDev=devPaid+devPending;
-    document.getElementById('finDevFee').textContent='₱'+totalDev.toLocaleString();
-    document.getElementById('finDevStatus').textContent=devPending>0?'pending (₱'+devPending.toLocaleString()+' unpaid)':'paid (₱'+devPaid.toLocaleString()+')';
-    document.getElementById('finDevStatus').style.color=devPending>0?'#f39c12':'#2ecc71';
     // Revenue by court
     const crDiv=document.getElementById('finCourtRev');
     crDiv.innerHTML=Object.values(courtRevMap).sort((a,b)=>b.rev-a.rev).map(c=>{
@@ -2343,12 +2361,6 @@ function removeCost(idx){
     renderFinancials();
     showNotif('Expense removed!');
 }
-function markDevPaid(){
-    const periodKey=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
-    S.devFees.filter(d=>d.period===periodKey&&d.status==='pending').forEach(d=>d.status='paid');
-    saveState();renderFinancials();
-    showNotif('✅ Dev fee marked as paid!');
-}
 function seedJuneData(){
     if(!confirm('Add dummy June data to this venue? Existing bookings/costs will be kept.'))return;
     const j=(d,h=12,m=0)=>new Date(2026,5,d,h,m).getTime();
@@ -2379,12 +2391,6 @@ function seedJuneData(){
     const costs=[{category:'Utilities',amount:3500,desc:'Electric + Water',date:'2026-06-30',createdAt:j(30)},{category:'Wages',amount:12000,desc:'Staff salaries',date:'2026-06-30',createdAt:j(30)},{category:'Maintenance',amount:2000,desc:'Court repairs',date:'2026-06-15',createdAt:j(15)},{category:'Rent',amount:8000,desc:'Monthly rent',date:'2026-06-01',createdAt:j(1)},{category:'Supplies',amount:1500,desc:'Paddles, balls',date:'2026-06-10',createdAt:j(10)},{category:'Other',amount:1000,desc:'Miscellaneous',date:'2026-06-20',createdAt:j(20)}];
     if(!S.costs) S.costs=[];
     costs.forEach(c=>{S.costs.push(c);});
-    // Dev fees for GCash/Maya bookings
-    const pKey='2026-06';
-    bk.filter(b=>b.status==='confirmed'&&(b.paymentMethod==='GCash'||b.paymentMethod==='Maya')).forEach(b=>{
-        const fee=Math.round(b.amount*0.05);
-        if(!S.devFees.find(d=>d.bookingId===b.id)) S.devFees.push({bookingId:b.id,amount:fee,period:pKey,status:'pending',createdAt:j(30)});
-    });
     const nextB=Math.max(...S.bookings.filter(b=>b.id.startsWith('BK')).map(b=>parseInt(b.id.replace('BK',''))||0),50);
     S.nextBId=nextB+1;
     saveState();renderAll();
@@ -2392,64 +2398,152 @@ function seedJuneData(){
 }
 
 // ===================== DEV DASHBOARD =====================
-function populateDevMonth(){
-    const sel=document.getElementById('devMonth');
-    const now=new Date();
-    for(let i=0;i<12;i++){
-        const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-        const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-        const label=d.toLocaleDateString('en-US',{year:'numeric',month:'short'});
-        const opt=document.createElement('option');
-        opt.value=key;opt.textContent=label;
-        if(i===0) opt.selected=true;
-        sel.appendChild(opt);
-    }
-}
+let _devContracts = {};
 async function renderDevDashboard(){
-    populateDevMonth();
-    const sel=document.getElementById('devMonth');
-    const periodKey=sel.value;
     document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading venues...</p></div>';
     try {
         const slugsSnap=await db.collection('slugs').get();
         const venues=[];
+        let activeCount=0, monthlyTotal=0, dueTotal=0;
         for(const slugDoc of slugsSnap.docs){
             const venueId=slugDoc.data().venueId;
             if(!venueId) continue;
             const vDoc=await db.collection('venues').doc(venueId).get();
             if(!vDoc.exists) continue;
-            const data=vDoc.data();
-            const devFees=(data.devFees||[]).filter(d=>d.period===periodKey);
-            const total=devFees.reduce((s,d)=>s+d.amount,0);
-            const pending=devFees.filter(d=>d.status==='pending').reduce((s,d)=>s+d.amount,0);
-            const paid=devFees.filter(d=>d.status==='paid').reduce((s,d)=>s+d.amount,0);
-            venues.push({slug:slugDoc.id,venueId,name:data.venueName||'Unnamed',total,pending,paid});
+            const vData=vDoc.data();
+            const contractSnap=await db.collection('contracts').doc(venueId).get();
+            const contract=contractSnap.exists?contractSnap.data():null;
+            if(contract){_devContracts[venueId]=contract;activeCount++;monthlyTotal+=contract.monthlyRetainer||0;}
+            const totalCourts=(vData.courts||[]).length;
+            const origCourts=contract?contract.originalCourts:totalCourts;
+            const added=totalCourts-origCourts;
+            let dueAmt=0;
+            if(contract&&contract.payments){
+                const pendingPmts=contract.payments.filter(p=>p.status==='pending'||p.status==='unpaid');
+                dueAmt=pendingPmts.reduce((s,p)=>s+(p.amount||0),0);
+            }
+            dueTotal+=dueAmt;
+            venues.push({slug:slugDoc.id,venueId,name:vData.venueName||'Unnamed',totalCourts,origCourts,added,contract,dueAmt});
         }
-        const allTotal=venues.reduce((s,v)=>s+v.total,0);
-        const allUnpaid=venues.reduce((s,v)=>s+v.pending,0);
         document.getElementById('devVenueCount').textContent=venues.length;
-        document.getElementById('devTotalFees').textContent='₱'+allTotal.toLocaleString();
-        document.getElementById('devUnpaid').textContent='₱'+allUnpaid.toLocaleString();
+        document.getElementById('devActiveContracts').textContent=activeCount;
+        document.getElementById('devMonthlyTotal').textContent='₱'+monthlyTotal.toLocaleString();
+        document.getElementById('devTotalDue').textContent='₱'+dueTotal.toLocaleString();
         if(venues.length===0){
             document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No venues found.</p></div>';
             return;
         }
-        document.getElementById('devVenuesList').innerHTML=venues.map(v=>`
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                    <div>
-                        <div style="font-weight:700;">🏟️ ${v.name}</div>
-                        <div style="font-size:0.72rem;color:#aaa;">/${v.slug} · ${v.venueId.slice(0,12)}...</div>
+        const now=new Date();
+        document.getElementById('devVenuesList').innerHTML=venues.map(v=>{
+            const c=v.contract;
+            const isActive=c&&(!c.endDate||new Date(c.endDate)>=now);
+            const statusIcon=isActive?'🟢':c?'🔴':'⚪';
+            const statusLabel=isActive?'Active':c?'Expired':'No Contract';
+            const latestPmt=c&&c.payments&&c.payments.length>0?c.payments.reduce((a,b)=>new Date(a.dueDate||0)>new Date(b.dueDate||0)?a:b):null;
+            return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                    <div style="flex:1;min-width:200px;">
+                        <div style="font-weight:700;">${statusIcon} ${v.name}</div>
+                        <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${v.slug}</div>
+                        ${c?`<div style="font-size:0.72rem;color:#aaa;">👤 ${c.ownerName||'N/A'} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#555;">No contract set up</div>'}
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-weight:800;color:#f39c12;">₱${v.total.toLocaleString()}</div>
-                        <div style="font-size:0.72rem;color:${v.pending>0?'#f39c12':'#2ecc71'};">${v.pending>0?'pending (₱'+v.pending+'):':'paid (₱'+v.paid+')'}</div>
+                        ${c?`<div style="font-weight:800;color:#9b59b6;">₱${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
+                        <div style="font-size:0.7rem;color:#aaa;">${c.startDate||'?'} → ${c.endDate||'?'}</div>
+                        <div style="font-size:0.7rem;color:${v.dueAmt>0?'#e74c3c':'#2ecc71'};">Due: ₱${v.dueAmt.toLocaleString()}</div>
+                        <div style="font-size:0.65rem;color:#555;">${statusLabel}</div>`:'<div style="font-size:0.7rem;color:#555;">${statusLabel}</div>'}
                     </div>
                 </div>
-            </div>`).join('');
+                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                    ${c?`<button class="btn btn-outline btn-sm" onclick="editContract('${v.venueId}')">✏️ Edit Contract</button>
+                    <button class="btn btn-outline btn-sm" onclick="addPayment('${v.venueId}')">💰 Add Payment</button>
+                    <button class="btn btn-outline btn-sm" onclick="viewPayments('${v.venueId}')">📋 Payments (${(c.payments||[]).length})</button>`:
+                    `<button class="btn btn-primary btn-sm" onclick="editContract('${v.venueId}')">➕ Create Contract</button>`}
+                </div>
+                ${latestPmt?`<div style="font-size:0.65rem;color:#555;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Last: ${latestPmt.txNo||'N/A'} · ₱${(latestPmt.amount||0).toLocaleString()} · ${latestPmt.status}</div>`:''}
+            </div>`;
+        }).join('');
     } catch(e){
+        console.error(e);
         document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Error loading venues. Check Firestore permissions.</p></div>';
     }
+}
+function refreshDevDashboard(){renderDevDashboard();showNotif('Refreshing...');}
+function editContract(venueId){
+    const c=_devContracts[venueId]||{};
+    document.getElementById('cVenueId').value=venueId;
+    document.getElementById('cVenueName').value=c.venueName||'';
+    document.getElementById('cOwnerName').value=c.ownerName||'';
+    document.getElementById('cOrigCourts').value=c.originalCourts||'';
+    document.getElementById('cTotalCourts').value=c.totalCourts||'';
+    document.getElementById('cStartDate').value=c.startDate||'';
+    document.getElementById('cEndDate').value=c.endDate||'';
+    document.getElementById('cMonthlyRetainer').value=c.monthlyRetainer||'';
+    document.getElementById('contractModal').classList.add('active');
+}
+async function saveContract(){
+    const venueId=document.getElementById('cVenueId').value;
+    if(!venueId){showNotif('Error: missing venue ID','error');return;}
+    const data={
+        venueName:document.getElementById('cVenueName').value.trim(),
+        ownerName:document.getElementById('cOwnerName').value.trim(),
+        originalCourts:parseInt(document.getElementById('cOrigCourts').value)||0,
+        totalCourts:parseInt(document.getElementById('cTotalCourts').value)||0,
+        startDate:document.getElementById('cStartDate').value,
+        endDate:document.getElementById('cEndDate').value,
+        monthlyRetainer:parseFloat(document.getElementById('cMonthlyRetainer').value)||0,
+        updatedAt:Date.now(),
+    };
+    const existing=_devContracts[venueId]||{};
+    data.payments=existing.payments||[];
+    if(!data.startDate&&!data.ownerName&&!data.monthlyRetainer){
+        if(!confirm('Save empty contract?'))return;
+    }
+    await db.collection('contracts').doc(venueId).set(data,{merge:true});
+    _devContracts[venueId]=data;
+    closeModal('contractModal');
+    renderDevDashboard();
+    showNotif('✅ Contract saved!');
+}
+function addPayment(venueId){
+    document.getElementById('pVenueId').value=venueId;
+    document.getElementById('pTxNo').value='';
+    document.getElementById('pAmount').value='';
+    document.getElementById('pDueDate').value=getTodayISO();
+    document.getElementById('pStatus').value='pending';
+    document.getElementById('pPaidAt').value='';
+    document.getElementById('pNotes').value='';
+    document.getElementById('paymentModal').classList.add('active');
+}
+async function savePayment(){
+    const venueId=document.getElementById('pVenueId').value;
+    if(!venueId){showNotif('Error: missing venue','error');return;}
+    const txNo=document.getElementById('pTxNo').value.trim();
+    if(!txNo){showNotif('Transaction number required!','error');return;}
+    const pmt={txNo,amount:parseFloat(document.getElementById('pAmount').value)||0,dueDate:document.getElementById('pDueDate').value,status:document.getElementById('pStatus').value,paidAt:document.getElementById('pPaidAt').value,notes:document.getElementById('pNotes').value.trim(),createdAt:Date.now()};
+    const contract=_devContracts[venueId]||{};
+    if(!contract.payments) contract.payments=[];
+    contract.payments.push(pmt);
+    await db.collection('contracts').doc(venueId).set({payments:contract.payments},{merge:true});
+    _devContracts[venueId]=contract;
+    closeModal('paymentModal');
+    renderDevDashboard();
+    showNotif('✅ Payment added!');
+}
+function viewPayments(venueId){
+    const c=_devContracts[venueId];
+    if(!c||!c.payments||c.payments.length===0){showNotif('No payments recorded.','error');return;}
+    document.getElementById('paymentsViewModal')?.remove();
+    let html='<div class="modal" style="max-width:600px;"><div class="modal-title">📋 Payment History</div><div style="max-height:400px;overflow-y:auto;">';
+    html+='<table style="width:100%;font-size:0.78rem;border-collapse:collapse;"><thead><tr style="color:#aaa;border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:6px 8px;text-align:left;">Tx No</th><th style="padding:6px 8px;text-align:left;">Amount</th><th style="padding:6px 8px;text-align:left;">Due</th><th style="padding:6px 8px;text-align:left;">Status</th><th style="padding:6px 8px;text-align:left;">Paid</th></tr></thead><tbody>';
+    c.payments.sort((a,b)=>new Date(b.dueDate||0)-new Date(a.dueDate||0)).forEach(p=>{
+        const stColor=p.status==='paid'?'#2ecc71':p.status==='cancelled'?'#666':'#f39c12';
+        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${p.txNo||'-'}</td><td style="padding:6px 8px;font-weight:700;">₱${(p.amount||0).toLocaleString()}</td><td style="padding:6px 8px;">${p.dueDate||'-'}</td><td style="padding:6px 8px;color:${stColor};">${p.status}</td><td style="padding:6px 8px;">${p.paidAt||'-'}</td></tr>`;
+    });
+    html+='</tbody></table></div><div class="modal-actions"><button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
+    const overlay=document.createElement('div');overlay.className='modal-overlay active';overlay.id='paymentsViewModal';overlay.innerHTML=html;
+    document.body.appendChild(overlay);
+    overlay.onclick=e=>{if(e.target===overlay) overlay.remove();};
 }
 function copyPortalLink(){
     const url = window.location.origin + '/' + S.venueSlug;
