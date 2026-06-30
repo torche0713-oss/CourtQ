@@ -904,6 +904,14 @@
                     <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finNetMargin">0% margin</div>
                 </div>
             </div>
+            <div class="card-title" style="font-size:0.8rem;">📅 Monthly Net Position</div>
+            <div style="margin-bottom:10px;overflow-x:auto;">
+                <table style="width:100%;font-size:0.75rem;border-collapse:collapse;" id="finMonthlyTable">
+                    <thead><tr><th style="text-align:left;padding:6px 8px;color:#aaa;">Month</th><th style="text-align:right;padding:6px 8px;color:#aaa;">Revenue</th><th style="text-align:right;padding:6px 8px;color:#aaa;">Costs</th><th style="text-align:right;padding:6px 8px;color:#aaa;">Net</th><th style="text-align:right;padding:6px 8px;color:#aaa;">Margin</th></tr></thead>
+                    <tbody id="finMonthlyBody"></tbody>
+                </table>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="downloadMonthlyCSV()">📥 Download CSV</button>
             <div class="card-title" style="font-size:0.8rem;">📋 Expenses</div>
             <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;margin-bottom:16px;">
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
@@ -2441,6 +2449,30 @@ function renderFinancials(){
     document.getElementById('finNetProfit').style.color=netProfit>=0?'#2ecc71':'#e74c3c';
     document.getElementById('finNetMargin').textContent=netMargin+'% margin';
     document.getElementById('finNetMargin').style.color=netMargin>=0?'#2ecc71':'#e74c3c';
+    // Monthly net position table
+    const billingsAll=S.bookings.filter(b=>b.status==='confirmed'||b.status==='checkedin'||b.status==='completed');
+    const monthMap={};
+    billingsAll.forEach(b=>{
+        const d=new Date(b.bookedAt||0);
+        if(d.getTime()){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');monthMap[k]=(monthMap[k]||0)+(b.amount||0);}
+    });
+    const costMap={};
+    (S.costs||[]).forEach(c=>{
+        const d=new Date(c.date);
+        if(d.getTime()){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');costMap[k]=(costMap[k]||0)+(c.amount||0);}
+    });
+    const months=Object.keys({...monthMap,...costMap}).sort();
+    const tbody=document.getElementById('finMonthlyBody');
+    if(months.length===0){
+        tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px;color:#555;">No data yet.</td></tr>';
+    } else {
+        tbody.innerHTML=months.map(m=>{
+            const rev=monthMap[m]||0,cst=costMap[m]||0,net=rev-cst,margin=rev>0?Math.round(net/rev*100)+'%':'-';
+            const nc=net>=0?'#2ecc71':'#e74c3c';
+            return `<tr><td style="padding:6px 8px;font-weight:600;">${m}</td><td style="padding:6px 8px;text-align:right;">₱${rev.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;">₱${cst.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;color:${nc};font-weight:700;">₱${net.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;color:${nc};">${margin}</td></tr>`;
+        }).join('');
+    }
+    window._finMonthlyData = months.map(m=>({month:m,revenue:monthMap[m]||0,costs:costMap[m]||0,net:(monthMap[m]||0)-(costMap[m]||0)}));
     const clDiv=document.getElementById('finCostList');
     if(monthCosts.length===0){
         clDiv.innerHTML='<div style="font-size:0.78rem;color:#666;font-style:italic;">No expenses recorded this month.</div>';
@@ -3336,6 +3368,22 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
 function logout() {
     if (auth.currentUser) auth.signOut();
     window.location.href = 'index.html';
+}
+function downloadMonthlyCSV(){
+    const data=window._finMonthlyData||[];
+    if(data.length===0){showNotif('No monthly data to export.','error');return;}
+    let csv='Month,Revenue,Costs,Net,Margin\n';
+    data.forEach(r=>{
+        const margin=r.revenue>0?Math.round(r.net/r.revenue*100)+'%':'-';
+        csv+=`${r.month},${r.revenue},${r.costs},${r.net},${margin}\n`;
+    });
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='CourtQ_Monthly_Net_Position.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showNotif('CSV downloaded!');
 }
 </script>
 </body>
