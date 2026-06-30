@@ -2456,14 +2456,24 @@ function renderFinancials(){
     // Detailed breakdown
     const div=document.getElementById('finBreakdown');
     if(filtered.length===0){div.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No transactions this period.</p></div>';return;}
-    div.innerHTML=filtered.slice().reverse().map(b=>{
+    const perPage=10;
+    if(!window._finPage) window._finPage=1;
+    const totalPages=Math.ceil(filtered.length/perPage)||1;
+    if(window._finPage>totalPages) window._finPage=1;
+    const pg=window._finPage;
+    const start=(pg-1)*perPage,end=Math.min(start+perPage,filtered.length);
+    div.innerHTML=filtered.slice().reverse().slice(start,end).map(b=>{
         const c=(S.courts.find(c=>c.id===b.courtId)||{}).name||'';
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
             <div><div style="font-weight:600;">${b.customer}</div>
             <div style="color:#aaa;font-size:0.7rem;">${b.date} · ${c} · ${b.paymentMethod} · ${b.source}</div></div>
             <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
         </div>`;
-    }).join('');
+    }).join('')+(totalPages>1?`<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px;font-size:0.75rem;">
+        <button class="btn btn-outline btn-sm" onclick="window._finPage=${Math.max(1,pg-1)};renderFinancials()" ${pg<=1?'disabled':''}>← Prev</button>
+        <span style="color:#aaa;">${pg} / ${totalPages}</span>
+        <button class="btn btn-outline btn-sm" onclick="window._finPage=${Math.min(totalPages,pg+1)};renderFinancials()" ${pg>=totalPages?'disabled':''}>Next →</button>
+    </div>`:'');
 }
 function addCost(){
     const amt=parseFloat(document.getElementById('costAmount').value);
