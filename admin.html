@@ -628,6 +628,7 @@
         <button class="btn btn-outline btn-sm" onclick="copyPortalLink()">🔗 Share Link</button>
         <button class="btn btn-outline btn-sm" onclick="openSettings()" id="settingsBtn">⚙️ Settings</button>
         <button class="btn btn-outline btn-sm" onclick="setGeminiKey()">🔮 AI</button>
+        <button class="btn btn-outline btn-sm" onclick="aiDailyBriefing()">📋 AI Briefing</button>
         <button class="btn btn-outline btn-sm" onclick="logout()" style="color:#e74c3c;border-color:rgba(231,76,60,0.3);">🚪 Logout</button>
     </div>
 </header>
@@ -705,7 +706,10 @@
     <div class="card">
         <div class="card-title">
             <span>🏟️ Court Management</span>
-            <button class="btn btn-primary" onclick="openAddCourtModal()">➕ Add Court</button>
+            <div style="display:flex;gap:6px;">
+                <button class="btn btn-outline btn-sm" onclick="aiPricingSuggest()">🔮 Pricing</button>
+                <button class="btn btn-primary" onclick="openAddCourtModal()">➕ Add Court</button>
+            </div>
         </div>
         <div style="font-size:0.82rem;color:#aaa;margin-bottom:16px;">Manage your courts — add, edit, remove, or toggle maintenance. Courts with active games or bookings are protected.</div>
         <div class="courts-manage-grid" id="courtsManageGrid"></div>
@@ -836,6 +840,7 @@
                         <option value="week">This Week</option>
                         <option value="month">This Month</option>
                     </select>
+                    <button class="btn btn-outline btn-sm" onclick="aiFinancialInsights()">🔮 Insights</button>
                     <button class="btn btn-outline btn-sm" onclick="seedJuneData()" title="Add dummy June data for testing">🌱</button>
                     <button class="btn btn-outline btn-sm" onclick="lockFinancials()">🔒 Lock</button>
                 </div>
@@ -983,6 +988,15 @@
             </div>
             <div id="devVenuesList"></div>
         </div>
+    </div>
+</div>
+
+<!-- AI RESPONSE MODAL -->
+<div class="modal-overlay" id="aiModal">
+    <div class="modal" style="max-width:600px;">
+        <div class="modal-title" id="aiModalTitle">🔮 AI</div>
+        <div id="aiModalBody" style="color:#ddd;font-size:0.85rem;line-height:1.6;max-height:400px;overflow-y:auto;white-space:pre-wrap;"></div>
+        <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('aiModal')">Close</button></div>
     </div>
 </div>
 
@@ -1778,7 +1792,83 @@ Recommend which group goes to which court in 1 short sentence. Consider wait tim
     } catch(e){showNotif('AI suggest failed','error');}
 }
 
-function showAssignModal(court,group){
+async function callGemini(prompt,title='🔮 AI'){
+    if (!GEMINI_API_KEY) {
+        try {
+            const cfg = await db.collection('config').doc('gemini').get();
+            if (cfg.exists) GEMINI_API_KEY = cfg.data().apiKey || '';
+        } catch(e){}
+        if (!GEMINI_API_KEY) { showNotif('Set Gemini key first via 🔮 AI button','error'); return null; }
+    }
+    try {
+        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_API_KEY,{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.4,maxOutputTokens:800}})
+        });
+        const d=await res.json();
+        const text=d.candidates?.[0]?.content?.parts?.[0]?.text||'No response';
+        document.getElementById('aiModalTitle').textContent=title;
+        document.getElementById('aiModalBody').textContent=text;
+        document.getElementById('aiModal').classList.add('active');
+        return text;
+    } catch(e){showNotif('AI request failed','error');return null;}
+}
+
+async function aiDailyBriefing(){
+    const today=getTodayISO();
+    const todayBks=S.bookings.filter(b=>b.date===today&&b.status!=='cancelled');
+    const todayRev=todayBks.reduce((s,b)=>s+(b.amount||0),0);
+    const avail=S.courts.filter(c=>c.status==='available').length;
+    const occupied=S.courts.filter(c=>c.status==='occupied').length;
+    const qCount=S.queue.length;
+    const prompt=`You are a friendly pickleball venue assistant for "${S.venueName}" in the Philippines. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
+
+Today's summary:
+- Courts: ${S.courts.length} total (${avail} available, ${occupied} occupied)
+- Bookings today: ${todayBks.length} (₱${todayRev} expected)
+- Queue: ${qCount} groups waiting
+${todayBks.length>0?'Today\'s bookings:\n'+todayBks.map(b=>`  • ${b.customer} — Court ${(S.courts.find(c=>c.id===b.courtId)||{}).name||b.courtId} — ${b.startTime}-${b.endTime} — ${b.paymentMethod} ₱${b.amount}`).join('\n'):''}
+${S.session&&S.session.active?`Open Play session: ${S.session.start}-${S.session.end}, ${S.session.rot}min rotations`:''}
+
+Write a very brief 2-3 sentence morning briefing for the owner. Include key numbers.`;
+    callGemini(prompt,'📋 AI Daily Briefing');
+}
+
+async function aiFinancialInsights(){
+    const period=document.getElementById('finPeriod').value;
+    const now=new Date();
+    let startDate;
+    if(period==='today'){startDate=new Date(now.getFullYear(),now.getMonth(),now.getDate());}
+    else if(period==='week'){const d=new Date(now);d.setDate(d.getDate()-d.getDay());startDate=new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+    else{startDate=new Date(now.getFullYear(),now.getMonth(),1);}
+    const billings=S.bookings.filter(b=>b.status==='confirmed'||b.status==='checkedin'||b.status==='completed');
+    const filtered=billings.filter(b=>new Date(b.bookedAt||0)>=startDate);
+    const gcash=filtered.filter(b=>b.paymentMethod==='GCash').reduce((s,b)=>s+(b.amount||0),0);
+    const maya=filtered.filter(b=>b.paymentMethod==='Maya').reduce((s,b)=>s+(b.amount||0),0);
+    const cash=filtered.filter(b=>b.paymentMethod==='Cash').reduce((s,b)=>s+(b.amount||0),0);
+    const totalRev=gcash+maya+cash;
+    const onlineCount=filtered.filter(b=>b.source==='online').length;
+    const inPersonCount=filtered.filter(b=>b.source!=='online').length;
+    const cancelled=S.bookings.filter(b=>b.status==='cancelled'&&new Date(b.bookedAt||0)>=startDate).length;
+    const courtRev=S.courts.map(c=>{
+        const rev=filtered.filter(b=>b.courtId===c.id).reduce((s,b)=>s+(b.amount||0),0);
+        return `${c.name}: ₱${rev}`;
+    }).join(', ');
+    const peakHrs={};
+    filtered.forEach(b=>{const h=parseInt(b.startTime.split(':')[0]);peakHrs[h]=(peakHrs[h]||0)+1;});
+    const peak=Object.entries(peakHrs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([h,c])=>`${h}:00 (${c} bookings)`).join(', ');
+    const prompt=`You are a pickleball venue financial analyst for "${S.venueName}" in the Philippines. Analyze this ${period} data:
+
+Period: ${period}
+Revenue: GCash ₱${gcash} | Maya ₱${maya} | Cash ₱${cash} | Total ₱${totalRev}
+Bookings: ${filtered.length} total (${onlineCount} online, ${inPersonCount} in-person)
+Cancelled: ${cancelled}
+Revenue by court: ${courtRev}
+Peak hours: ${peak}
+
+Give 2-3 concise, specific, actionable insights. Include numbers. Mention trends or patterns. Keep it under 150 words.`;
+    callGemini(prompt,'🔮 Financial Insights');
+}
     document.getElementById('assignTitle').textContent='📋 Assign to Court';
     const avail=getAvailableCourts();
     document.getElementById('assignBody').innerHTML=`
@@ -1799,6 +1889,32 @@ function showAssignModal(court,group){
         closeModal('assignModal');
     };
     document.getElementById('assignModal').classList.add('active');
+}
+
+async function aiPricingSuggest(){
+    const now=new Date();
+    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const billings=S.bookings.filter(b=>(b.status==='confirmed'||b.status==='checkedin'||b.status==='completed')&&new Date(b.bookedAt||0)>=monthStart);
+    const courtData=S.courts.map(c=>{
+        const bks=billings.filter(b=>b.courtId===c.id);
+        const rev=bks.reduce((s,b)=>s+(b.amount||0),0);
+        const hrs=bks.reduce((s,b)=>s+(timeToMin(b.endTime)-timeToMin(b.startTime))/60,0);
+        return `${c.name}: rate=₱${c.rate}, type=${c.gameType||'all'}, surface=${c.surface||'hard'}, bookings=${bks.length}, hours=${Math.round(hrs)}, revenue=₱${rev}`;
+    }).join('\n');
+    const peakHrs={};
+    billings.forEach(b=>{const h=parseInt(b.startTime.split(':')[0]);peakHrs[h]=(peakHrs[h]||0)+1;});
+    const peakSorted=Object.entries(peakHrs).sort((a,b)=>b[1]-a[1]);
+    const peakStr=peakSorted.slice(0,5).map(([h,c])=>`${h}:00 (${c})`).join(', ');
+    const prompt=`You are a pickleball venue pricing strategist for "${S.venueName}" in the Philippines.
+
+Current court setup (${S.courts.length} courts):
+${courtData}
+
+Monthly booking summary: ${billings.length} total bookings, ₱${billings.reduce((s,b)=>s+(b.amount||0),0)} total revenue.
+Peak hours this month: ${peakStr}
+
+Suggest optimal rate adjustments for each court. For each court, propose a new rate and briefly explain why. Consider peak/off-peak, court demand, and current rate. Keep it concise.`;
+    callGemini(prompt,'🔮 AI Pricing Suggestions');
 }
 
 function selCourtOpt(el,id){
