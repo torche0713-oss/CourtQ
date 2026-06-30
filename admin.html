@@ -853,6 +853,30 @@
                     <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finCash">₱0</div>
                 </div>
             </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+                <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Revenue</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#3498db;margin-top:4px;" id="finTotalRev">₱0</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finPrevRev">prev: ₱0</div>
+                </div>
+                <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Bookings</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#9b59b6;margin-top:4px;" id="finBookCount">0</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finCancelRate">0% cancelled</div>
+                </div>
+                <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Utilization</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finUtilization">0%</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finBusiestCourt">-</div>
+                </div>
+                <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Online vs In-person</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="finOnlinePct">0%</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finOnlineSplit">0 online / 0 in-person</div>
+                </div>
+            </div>
+            <div class="card-title" style="font-size:0.8rem;">🏟️ Revenue by Court</div>
+            <div id="finCourtRev" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
                     <div class="card-title" style="font-size:0.8rem;">📊 Transactions</div>
@@ -2123,36 +2147,97 @@ function renderFinancials(){
     if(period==='today'){startDate=new Date(now.getFullYear(),now.getMonth(),now.getDate());}
     else if(period==='week'){const d=new Date(now);d.setDate(d.getDate()-d.getDay());startDate=new Date(d.getFullYear(),d.getMonth(),d.getDate());}
     else{startDate=new Date(now.getFullYear(),now.getMonth(),1);}
+    // Previous period start
+    let prevStart;
+    if(period==='today'){const d=new Date(startDate);d.setDate(d.getDate()-1);prevStart=d;}
+    else if(period==='week'){const d=new Date(startDate);d.setDate(d.getDate()-7);prevStart=d;}
+    else{const d=new Date(startDate);d.setMonth(d.getMonth()-1);prevStart=d;}
     const billings=S.bookings.filter(b=>b.status==='confirmed'||b.status==='checkedin'||b.status==='completed');
     const filtered=billings.filter(b=>new Date(b.bookedAt||0)>=startDate);
+    const prevFiltered=billings.filter(b=>new Date(b.bookedAt||0)>=prevStart&&new Date(b.bookedAt||0)<startDate);
     const gcash=filtered.filter(b=>b.paymentMethod==='GCash').reduce((s,b)=>s+(b.amount||0),0);
     const maya=filtered.filter(b=>b.paymentMethod==='Maya').reduce((s,b)=>s+(b.amount||0),0);
     const cash=filtered.filter(b=>b.paymentMethod==='Cash').reduce((s,b)=>s+(b.amount||0),0);
+    const totalRev=gcash+maya+cash;
+    const prevTotal=prevFiltered.reduce((s,b)=>s+(b.amount||0),0);
     const bookTx=filtered.filter(b=>b.source==='online'||b.source==='admin').length;
     const dropTx=filtered.filter(b=>b.source==='pos'||b.source==='openplay').length;
+    const allTx=filtered.length;
+    const cancelled=S.bookings.filter(b=>b.status==='cancelled'&&new Date(b.bookedAt||0)>=startDate).length;
+    const totalInPeriod=allTx+cancelled;
+    const cancelRate=totalInPeriod>0?Math.round(cancelled/totalInPeriod*100):0;
+    // Utilization: sum of booked hours / (courts * available hours per day)
+    const availHours=16; // 6am-10pm
+    const courtCount=S.courts.length||1;
+    let totalBookedMin=0;
+    const courtMap={};
+    const courtRevMap={};
+    S.courts.forEach(c=>{courtMap[c.id]=0;courtRevMap[c.id]={name:c.name,color:c.color||'#3498db',rev:0,min:0};});
+    filtered.forEach(b=>{
+        const sm=timeToMin(b.startTime),em=timeToMin(b.endTime);
+        const mins=em-sm;
+        if(mins>0){
+            totalBookedMin+=mins;
+            if(courtMap[b.courtId]!==undefined) courtMap[b.courtId]+=mins;
+            if(courtRevMap[b.courtId]){courtRevMap[b.courtId].rev+=b.amount||0;courtRevMap[b.courtId].min+=mins;}
+        }
+    });
+    const daysInPeriod=period==='today'?1:period==='week'?7:new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+    const totalAvailMin=courtCount*availHours*60*daysInPeriod;
+    const utilization=totalAvailMin>0?Math.round(totalBookedMin/totalAvailMin*100):0;
+    const busiest=Object.values(courtRevMap).sort((a,b)=>b.min-a.min)[0];
+    // Online vs in-person
+    const onlineCount=filtered.filter(b=>b.source==='online').length;
+    const inPersonCount=filtered.filter(b=>b.source!=='online').length;
+    const onlinePct=allTx>0?Math.round(onlineCount/allTx*100):0;
+    // Dev fee
     const devFeeTotal=Math.round((gcash+maya)*0.05);
     const periodKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
     const devFeesForPeriod=S.devFees.filter(d=>d.period===periodKey);
     const devPaid=devFeesForPeriod.filter(d=>d.status==='paid').reduce((s,d)=>s+d.amount,0);
     const devPending=devFeesForPeriod.filter(d=>d.status==='pending').reduce((s,d)=>s+d.amount,0);
+    // Update DOM
     document.getElementById('finGCash').textContent='₱'+gcash.toLocaleString();
     document.getElementById('finMaya').textContent='₱'+maya.toLocaleString();
     document.getElementById('finCash').textContent='₱'+cash.toLocaleString();
+    document.getElementById('finTotalRev').textContent='₱'+totalRev.toLocaleString();
+    document.getElementById('finPrevRev').textContent='prev: ₱'+prevTotal.toLocaleString()+(totalRev>prevTotal?' ↑':' ↓');
+    document.getElementById('finPrevRev').style.color=totalRev>prevTotal?'#2ecc71':'#e74c3c';
+    document.getElementById('finBookCount').textContent=allTx;
+    document.getElementById('finCancelRate').textContent=cancelRate+'% cancelled ('+cancelled+')';
+    document.getElementById('finUtilization').textContent=utilization+'%';
+    document.getElementById('finBusiestCourt').textContent=busiest?busiest.name:'-';
+    document.getElementById('finOnlinePct').textContent=onlinePct+'%';
+    document.getElementById('finOnlineSplit').textContent=onlineCount+' online / '+inPersonCount+' in-person';
     document.getElementById('finTxBooking').textContent=bookTx;
     document.getElementById('finTxDropin').textContent=dropTx;
     const totalDev=devPaid+devPending;
     document.getElementById('finDevFee').textContent='₱'+totalDev.toLocaleString();
-    document.getElementById('finDevStatus').textContent=devPending>0?'pending ('+devPending+' unpaid)':'paid (₱'+devPaid+')';
+    document.getElementById('finDevStatus').textContent=devPending>0?'pending (₱'+devPending.toLocaleString()+' unpaid)':'paid (₱'+devPaid.toLocaleString()+')';
     document.getElementById('finDevStatus').style.color=devPending>0?'#f39c12':'#2ecc71';
+    // Revenue by court
+    const crDiv=document.getElementById('finCourtRev');
+    crDiv.innerHTML=Object.values(courtRevMap).sort((a,b)=>b.rev-a.rev).map(c=>{
+        const pct=totalRev>0?Math.round(c.rev/totalRev*100):0;
+        const util=courtCount*availHours*60*daysInPeriod>0?Math.round(c.min/(courtCount*availHours*60*daysInPeriod)*10000)/100:0;
+        return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:0.75rem;font-weight:700;color:${c.color};">${c.name}</div>
+            <div style="font-size:1.1rem;font-weight:800;margin-top:4px;">₱${c.rev.toLocaleString()}</div>
+            <div style="font-size:0.65rem;color:#aaa;">${pct}% of revenue</div>
+            <div style="font-size:0.65rem;color:#555;">${util}% utilized</div>
+        </div>`;
+    }).join('');
     // Detailed breakdown
     const div=document.getElementById('finBreakdown');
     if(filtered.length===0){div.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No transactions this period.</p></div>';return;}
-    div.innerHTML=filtered.slice().reverse().map(b=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
+    div.innerHTML=filtered.slice().reverse().map(b=>{
+        const c=(S.courts.find(c=>c.id===b.courtId)||{}).name||'';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
             <div><div style="font-weight:600;">${b.customer}</div>
-            <div style="color:#aaa;font-size:0.7rem;">${b.date}·${b.paymentMethod}·${b.source}</div></div>
+            <div style="color:#aaa;font-size:0.7rem;">${b.date} · ${c} · ${b.paymentMethod} · ${b.source}</div></div>
             <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 function markDevPaid(){
     const periodKey=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
