@@ -99,6 +99,46 @@
             border-radius: 8px; padding: 8px; font-size: 0.72rem; color: #f39c12;
             text-align: center; margin-bottom: 12px; display: none;
         }
+        .footer-links {
+            text-align: center; margin-top: 24px; padding: 16px 0;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.7rem; color: #555;
+        }
+        .footer-links a {
+            color: #777; text-decoration: none; margin: 0 8px;
+            transition: color 0.3s; cursor: pointer;
+        }
+        .footer-links a:hover { color: #4ecdc4; }
+        .footer-links .dot { color: #444; }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8); z-index: 9999;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; max-width: 640px; width: 100%;
+            max-height: 80vh; overflow-y: auto; padding: 28px;
+            position: relative;
+        }
+        .modal-box h2 {
+            font-size: 1.1rem; color: #4ecdc4; margin-bottom: 16px;
+            padding-right: 40px;
+        }
+        .modal-box p, .modal-box li {
+            font-size: 0.78rem; color: #aaa; line-height: 1.6; margin-bottom: 8px;
+        }
+        .modal-box ul { padding-left: 20px; }
+        .modal-close {
+            position: absolute; top: 16px; right: 16px;
+            background: none; border: none; color: #555; font-size: 1.2rem;
+            cursor: pointer; transition: color 0.3s;
+        }
+        .modal-close:hover { color: #fff; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(78,205,196,0.3); border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -151,6 +191,19 @@
             <div class="spinner"></div>
             <div style="margin-top:12px;color:#aaa;font-size:0.9rem;" id="loadingMsg">Setting things up...</div>
         </div>
+
+        <div class="footer-links">
+            <a onclick="showLegal('about')">About</a><span class="dot"> · </span>
+            <a onclick="showLegal('privacy')">Privacy</a><span class="dot"> · </span>
+            <a onclick="showLegal('terms')">Terms</a><span class="dot"> · </span>
+            <a onclick="showLegal('disclaimer')">Disclaimer</a><span class="dot"> · </span>
+            <a onclick="showLegal('contact')">Contact</a>
+        </div>
+    </div>
+
+    <!-- Legal Modal -->
+    <div class="modal-overlay" id="legalModal" onclick="if(event.target===this)closeLegal()">
+        <div class="modal-box" id="legalContent"></div>
     </div>
 
     <!-- Firebase SDK -->
@@ -301,6 +354,50 @@
                 } catch(e) {}
             }
         });
-    </script>
+        function closeLegal(){document.getElementById('legalModal').classList.remove('active');}
+        function showLegal(page){
+            const c=document.getElementById('legalContent');
+            const pages={
+                about:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2>
+                <p>CourtQ Pro is a smart venue management platform built for the Philippine pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
+                <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p>
+                <p>Built with ❤️ for the Philippine pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></p>`,
+
+                privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
+                <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information.</p>
+                <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services.</p>
+                <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). We retain booking data as needed for business operations and financial records.</p>
+                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p>
+                <p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a>.</p>
+                <p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p>
+                <p><em>Last updated: June 2026</em></p>`,
+
+                terms:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2>
+                <p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. If you do not agree, do not use the platform.</p>
+                <p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p>
+                <p><strong>Players:</strong> You agree to provide accurate information when booking. No-shows or repeated cancellations may result in restricted access at the venue's discretion.</p>
+                <p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p>
+                <p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p>
+                <p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p>
+                <p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p>
+                <p><em>Last updated: June 2026</em></p>`,
+
+                disclaimer:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2>
+                <p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p>
+                <p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p>
+                <p><strong>Payment:</strong> CourtQ Pro does not process payments. GCash and Maya are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p>
+                <p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p>
+                <p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>`,
+
+                contact:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2>
+                <p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></p>
+                <p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p>
+                <p><strong>Venue Partnerships:</strong> Interested in listing your venue on CourtQ Pro? Email us for pricing and onboarding.</p>
+                <p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p>
+                <p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Manila, Philippines</p>`
+            };
+            c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
+            document.getElementById('legalModal').classList.add('active');
+        }
 </body>
 </html>
