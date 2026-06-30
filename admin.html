@@ -638,7 +638,7 @@
     <button class="nav-tab" onclick="showPage('courts',this)">🏟️ Courts</button>
     <button class="nav-tab" onclick="showPage('booking',this)">📅 Bookings</button>
     <button class="nav-tab" onclick="showPage('confirmations',this)">✅ Confirmations</button>
-    <button class="nav-tab" onclick="showPage('financials',this)" id="financialsTab">💰 Financials</button>
+    <button class="nav-tab" onclick="showPage('financials',this)" id="financialsTab" title="Set an access code in Settings → Financials Access Code first">💰 Financials</button>
     <button class="nav-tab" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
     <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
@@ -841,7 +841,10 @@
                         <option value="month">This Month</option>
                     </select>
                     <button class="btn btn-outline btn-sm" onclick="aiFinancialInsights()">🔮 Insights</button>
-                    <button class="btn btn-outline btn-sm" onclick="seedJuneData()" title="Add dummy June data for testing">🌱</button>
+                    <span id="seedDemoArea" style="display:none;">
+                        <button class="btn btn-outline btn-sm" onclick="seedJuneData()" title="Add 19 dummy bookings + 6 expenses for June">🌱</button>
+                        <span style="font-size:0.65rem;color:#888;margin-left:4px;">Dummy data for testing</span>
+                    </span>
                     <button class="btn btn-outline btn-sm" onclick="lockFinancials()">🔒 Lock</button>
                 </div>
             </div>
@@ -3272,6 +3275,11 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
 
         const data = venueDoc.data();
         VENUE_OWNER_ID = data.ownerId;
+
+        // Show seed (dummy data) button only in demo mode
+        if (VENUE_OWNER_ID === 'demo') {
+            document.getElementById('seedDemoArea').style.display = 'inline';
+        }
 
         // Load state
         PERSISTENT_KEYS.forEach(k => {
