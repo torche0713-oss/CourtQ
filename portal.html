@@ -553,16 +553,15 @@ function processPortalPayment(){
                 <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
             </div>
         </div>`;
-        // Check booking status every 10 seconds
-        const checkStatus = setInterval(async () => {
+        // Watch booking status via real-time listener (1 read on connect + 1 per status change)
+        const unsubStatus = db.collection('venues').doc(VENUE_ID).onSnapshot(snap => {
             try {
-                const doc = await db.collection('venues').doc(VENUE_ID).get();
-                if (!doc.exists) return;
-                const data = doc.data();
+                if (!snap.exists) return;
+                const data = snap.data();
                 const booking = (data.bookings||[]).find(x => x.id === bId);
                 if (!booking) return;
                 if (booking.status === 'confirmed') {
-                    clearInterval(checkStatus);
+                    unsubStatus();
                     document.getElementById('bookingStatusWait').innerHTML=`
                         <div style="font-size:2rem;margin-bottom:10px;">✅</div>
                         <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
@@ -578,7 +577,7 @@ function processPortalPayment(){
                         </div>`;
                 }
                 if (booking.status === 'cancelled') {
-                    clearInterval(checkStatus);
+                    unsubStatus();
                     document.getElementById('bookingStatusWait').innerHTML=`
                         <div style="font-size:2rem;margin-bottom:10px;">😔</div>
                         <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
@@ -586,7 +585,22 @@ function processPortalPayment(){
                         <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
                 }
             } catch(e) {}
-        }, 10000);
+        }, err => {
+            // If listener fails, fall back to polling every 30s
+            console.warn('onSnapshot failed, falling back to polling', err);
+            const fallbackInterval = setInterval(async () => {
+                try {
+                    const doc = await db.collection('venues').doc(VENUE_ID).get();
+                    if (!doc.exists) return;
+                    const booking = (doc.data().bookings||[]).find(x => x.id === bId);
+                    if (!booking) return;
+                    if (booking.status === 'confirmed' || booking.status === 'cancelled') {
+                        clearInterval(fallbackInterval);
+                        location.reload();
+                    }
+                } catch(e) {}
+            }, 30000);
+        });
     }, 2000);
 }
 
