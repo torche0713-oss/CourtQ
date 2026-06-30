@@ -1480,6 +1480,7 @@ function saveVenueName(){
     const n=inp.value.trim();
     if(n) S.venueName='🏟️ '+n;
     document.getElementById('venueDisplay').innerHTML=`<span id="venueText">${S.venueName}</span><span style="font-size:0.6rem;opacity:0.5;">✏️</span>`;
+    saveState();
 }
 
 // ===================== PAGE NAV =====================
