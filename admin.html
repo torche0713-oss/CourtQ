@@ -1869,6 +1869,7 @@ Peak hours: ${peak}
 Give 2-3 concise, specific, actionable insights. Include numbers. Mention trends or patterns. Keep it under 150 words.`;
     callGemini(prompt,'🔮 Financial Insights');
 }
+function showAssign(court, group){
     document.getElementById('assignTitle').textContent='📋 Assign to Court';
     const avail=getAvailableCourts();
     document.getElementById('assignBody').innerHTML=`
