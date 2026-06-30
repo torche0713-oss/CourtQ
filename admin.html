@@ -1783,15 +1783,14 @@ Queue: ${S.queue.map((g,i)=>i+1+'. "'+g.groupName+'" – '+g.gameType+', skill '
 
 Recommend which group goes to which court in 1 short sentence. Consider wait time, skill, and court features.`;
     try {
-        const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key='+GEMINI_API_KEY,{
+        const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key='+GEMINI_API_KEY,{
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:200}})
         });
         const d=await res.json();
-        console.log('Gemini aiSuggest response:', d);
         if(d.error){showNotif('Gemini API error: '+d.error.message,'error');return;}
         showNotif('🔮 '+ (d.candidates?.[0]?.content?.parts?.[0]?.text||'No suggestion'),'info');
-    } catch(e){showNotif('AI suggest failed: '+e.message,'error');}
+    } catch(e){showNotif('AI suggest failed','error');}
 }
 
 async function callGemini(prompt,title='🔮 AI'){
@@ -1803,15 +1802,14 @@ async function callGemini(prompt,title='🔮 AI'){
         if (!GEMINI_API_KEY) { showNotif('Set Gemini key first via 🔮 AI button','error'); return null; }
     }
     try {
-        const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key='+GEMINI_API_KEY,{
+        const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key='+GEMINI_API_KEY,{
             method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.4,maxOutputTokens:800}})
         });
         const d=await res.json();
-        console.log('Gemini response:', d);
         if(d.error){showNotif('Gemini API error: '+d.error.message,'error');return null;}
         const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
-        if(!text){showNotif('AI returned empty response. Check console.','error');return null;}
+        if(!text){showNotif('AI returned empty response.','error');return null;}
         document.getElementById('aiModalTitle').textContent=title;
         document.getElementById('aiModalBody').textContent=text;
         document.getElementById('aiModal').classList.add('active');
