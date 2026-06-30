@@ -315,7 +315,6 @@
                 <div class="pay-methods">
                     <div class="pay-btn" onclick="selPortalPay(this,'GCash')"><span class="pay-icon">📱</span><div class="pay-name">GCash</div><div class="pay-desc">Send via GCash</div></div>
                     <div class="pay-btn" onclick="selPortalPay(this,'Maya')"><span class="pay-icon">💜</span><div class="pay-name">Maya</div><div class="pay-desc">Send via Maya</div></div>
-                    <div class="pay-btn" onclick="selPortalPay(this,'PayLater')"><span class="pay-icon">🏦</span><div class="pay-name">Pay on Arrival</div><div class="pay-desc">Cash at venue</div></div>
                 </div>
                 <div id="payInputArea" style="margin-top:16px;"></div>
                 <div style="display:flex;justify-content:space-between;margin-top:16px;">
@@ -492,11 +491,6 @@ function selPortalPay(btn,method){
             </div>
             <div class="form-group"><label>Reference Number *</label><input type="text" id="portalRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
             <div style="font-size:0.72rem;color:#aaa;">Send the exact amount shown above. Enter the reference number after payment.</div></div>`;
-    } else {
-        area.innerHTML=`<div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:16px;text-align:center;">
-            <div style="font-size:1.5rem;margin-bottom:6px;">🏦</div>
-            <div style="font-size:0.85rem;font-weight:700;color:#2ecc71;">Pay on Arrival</div>
-            <div style="font-size:0.78rem;color:#aaa;margin-top:6px;">Present booking ID at the venue. Payment due at check-in.</div></div>`;
     }
 }
 
@@ -509,22 +503,19 @@ function retryBooking(){
 
 function processPortalPayment(){
     if(!S.portal.payMethod){showNotif('Select payment method!','error');return;}
-    if(S.portal.payMethod!=='PayLater'){
-        const ref=document.getElementById('portalRef');
-        if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
-    }
+    const ref=document.getElementById('portalRef');
+    if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
     goPortalStep(5);
     const conf=document.getElementById('confirmationContent');
     conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#4ecdc4;">Processing Payment...</div></div>`;
     setTimeout(()=>{
-        const ref=genRef();
+        const refCode=genRef();
         const court=S.courts.find(c=>c.id===S.portal.courtId);
         const dur=S.portal.duration;
         const total=S.portal.total||Math.round(court.rate*(dur/60));
         const bId=genId();
-        const refNum=S.portal.payMethod!=='PayLater'?(document.getElementById('portalRef')?.value.trim()||''):'';
-        const status=S.portal.payMethod==='PayLater'?'confirmed':'pending';
-        const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status,reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref};
+        const refNum=document.getElementById('portalRef')?.value.trim()||'';
+        const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode};
         S.bookings.push(b);
         if (VENUE_ID) {
             // Read current bookings from Firestore to avoid overwriting admin changes
@@ -540,87 +531,62 @@ function processPortalPayment(){
                 }, { merge: true });
             });
         }
-        const payInfo=S.portal.payMethod==='PayLater'?'Pay on Arrival':'₱'+total+(refNum?' (Ref: '+refNum+')':'');
-        if(S.portal.payMethod==='PayLater'){
-            conf.innerHTML=`<div class="payment-success">
-                <div class="success-circle">✅</div>
-                <div style="font-size:1.2rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
-                <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Please show your Booking ID at the venue when you arrive.</div>
-                <div style="font-size:0.85rem;color:#f39c12;margin-bottom:16px;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</div>
-                <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:16px;">Thank you for booking with us!</div>
-                <div class="receipt-box" style="text-align:left;">
-                    <div style="text-align:center;margin-bottom:10px;">
-                        <div style="font-weight:700;color:#4ecdc4;">${S.venueName}</div>
-                        <div style="font-size:0.68rem;color:#aaa;">ID: ${bId}</div>
-                    </div>
-                    <div class="receipt-line"><span>Name</span><span>${b.customer}</span></div>
-                    <div class="receipt-line"><span>Court</span><span>${court.name}</span></div>
-                    <div class="receipt-line"><span>Date</span><span>${b.date}</span></div>
-                    <div class="receipt-line"><span>Time</span><span>${b.startTime} – ${b.endTime}</span></div>
-                    <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
+        const payInfo='₱'+total+(refNum?' (Ref: '+refNum+')':'');
+        conf.innerHTML=`<div class="payment-success">
+            <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+            <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">Payment Submitted!</div>
+            <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Don't close this page. Please wait for confirmation from Admin.</div>
+            <div id="bookingStatusWait" style="text-align:center;">
+                <div class="payment-spinner" style="margin:10px auto;"></div>
+                <div style="font-size:0.8rem;color:#aaa;">Checking status...</div>
+            </div>
+            <div class="receipt-box" style="text-align:left;">
+                <div style="text-align:center;margin-bottom:10px;">
+                    <div style="font-weight:700;color:#4ecdc4;">${S.venueName}</div>
+                    <div style="font-size:0.68rem;color:#aaa;">ID: ${bId}</div>
                 </div>
-                <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
-                    <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
-                    <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
-                </div>
-            </div>`;
-        } else {
-            conf.innerHTML=`<div class="payment-success">
-                <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
-                <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">Payment Submitted!</div>
-                <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Don't close this page. Please wait for confirmation from Admin.</div>
-                <div id="bookingStatusWait" style="text-align:center;">
-                    <div class="payment-spinner" style="margin:10px auto;"></div>
-                    <div style="font-size:0.8rem;color:#aaa;">Checking status...</div>
-                </div>
-                <div class="receipt-box" style="text-align:left;">
-                    <div style="text-align:center;margin-bottom:10px;">
-                        <div style="font-weight:700;color:#4ecdc4;">${S.venueName}</div>
-                        <div style="font-size:0.68rem;color:#aaa;">ID: ${bId}</div>
-                    </div>
-                    <div class="receipt-line"><span>Name</span><span>${b.customer}</span></div>
-                    <div class="receipt-line"><span>Court</span><span>${court.name}</span></div>
-                    <div class="receipt-line"><span>Date</span><span>${b.date}</span></div>
-                    <div class="receipt-line"><span>Time</span><span>${b.startTime} – ${b.endTime}</span></div>
-                    <div class="receipt-line"><span>Reference</span><span>${refNum||'N/A'}</span></div>
-                    <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
-                </div>
-            </div>`;
-            // Check booking status every 10 seconds
-            const checkStatus = setInterval(async () => {
-                try {
-                    const doc = await db.collection('venues').doc(VENUE_ID).get();
-                    if (!doc.exists) return;
-                    const data = doc.data();
-                    const booking = (data.bookings||[]).find(x => x.id === bId);
-                    if (!booking) return;
-                    if (booking.status === 'confirmed') {
-                        clearInterval(checkStatus);
-                        document.getElementById('bookingStatusWait').innerHTML=`
-                            <div style="font-size:2rem;margin-bottom:10px;">✅</div>
-                            <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
-                            <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your booking has been confirmed.</div>
-                            <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">Thank you for booking with us!</div>
-                            <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
-                                Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
-                                <span style="color:#f39c12;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
-                            </div>
-                            <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
-                                <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
-                                <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
-                            </div>`;
-                    }
-                    if (booking.status === 'cancelled') {
-                        clearInterval(checkStatus);
-                        document.getElementById('bookingStatusWait').innerHTML=`
-                            <div style="font-size:2rem;margin-bottom:10px;">😔</div>
-                            <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
-                            <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
-                            <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
-                    }
-                } catch(e) {}
-            }, 10000);
-        };
+                <div class="receipt-line"><span>Name</span><span>${b.customer}</span></div>
+                <div class="receipt-line"><span>Court</span><span>${court.name}</span></div>
+                <div class="receipt-line"><span>Date</span><span>${b.date}</span></div>
+                <div class="receipt-line"><span>Time</span><span>${b.startTime} – ${b.endTime}</span></div>
+                <div class="receipt-line"><span>Reference</span><span>${refNum||'N/A'}</span></div>
+                <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
+            </div>
+        </div>`;
+        // Check booking status every 10 seconds
+        const checkStatus = setInterval(async () => {
+            try {
+                const doc = await db.collection('venues').doc(VENUE_ID).get();
+                if (!doc.exists) return;
+                const data = doc.data();
+                const booking = (data.bookings||[]).find(x => x.id === bId);
+                if (!booking) return;
+                if (booking.status === 'confirmed') {
+                    clearInterval(checkStatus);
+                    document.getElementById('bookingStatusWait').innerHTML=`
+                        <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                        <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
+                        <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your booking has been confirmed.</div>
+                        <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">Thank you for booking with us!</div>
+                        <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                            Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
+                            <span style="color:#f39c12;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
+                        </div>
+                        <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
+                            <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
+                        </div>`;
+                }
+                if (booking.status === 'cancelled') {
+                    clearInterval(checkStatus);
+                    document.getElementById('bookingStatusWait').innerHTML=`
+                        <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                        <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
+                        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
+                        <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
+                }
+            } catch(e) {}
+        }, 10000);
     }, 2000);
 }
 
