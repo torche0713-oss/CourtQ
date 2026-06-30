@@ -2291,7 +2291,6 @@ function renderFinancials(){
     const daysInMonth=nextMonthStart.getTime()-thisMonthStart.getTime()>0?new Date(now.getFullYear(),now.getMonth()+1,0).getDate():30;
     const monthCosts=(S.costs||[]).filter(c=>{const d=new Date(c.date);return d>=thisMonthStart&&d<nextMonthStart;});
     const monthlyTotal=monthCosts.reduce((s,c)=>s+(c.amount||0),0);
-    const daysInPeriod=period==='today'?1:period==='week'?7:daysInMonth;
     const totalCosts=daysInMonth>0?Math.round(monthlyTotal/daysInMonth*daysInPeriod):0;
     const netProfit=totalRev-totalCosts;
     const netMargin=totalRev>0?Math.round(netProfit/totalRev*100):0;
