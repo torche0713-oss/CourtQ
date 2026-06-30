@@ -1346,6 +1346,15 @@
             <div id="staffList" style="font-size:0.85rem;"></div>
             <div style="font-size:0.72rem;color:#aaa;margin-top:4px;">Staff can access the dashboard but not Financials or Settings.</div>
         </div>
+        <div id="ownerSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:none;">
+            <div style="font-weight:700;font-size:0.85rem;color:#e74c3c;margin-bottom:10px;">👑 Co-Owners</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="email" id="sOwnerEmail" placeholder="coowner@email.com" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;">
+                <button class="btn btn-primary btn-sm" onclick="addOwner()">+ Add</button>
+            </div>
+            <div id="ownerList" style="font-size:0.85rem;"></div>
+            <div style="font-size:0.72rem;color:#aaa;margin-top:4px;">Co-owners have full access — Financials, Settings, Confirmations, and all dashboard features.</div>
+        </div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
             <button class="btn btn-outline" onclick="closeModal('settingsModal')">Cancel</button>
@@ -1419,6 +1428,7 @@ let S = {
     accessCode:'',
     staffEmails:[],
     costs:[],
+    ownerEmails:[],
 
 };
 
@@ -1435,7 +1445,7 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs'];
+const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails'];
 function saveState(){
     if (!VENUE_ID) return;
     try {
@@ -2178,7 +2188,9 @@ function openSettings(){
     document.getElementById('sMayaName').value=S.paymentInfo.maya.name||'';
     document.getElementById('sAccessCode').value=S.accessCode||'';
     document.getElementById('staffSection').style.display=IS_OWNER?'':'none';
+    document.getElementById('ownerSection').style.display=IS_OWNER?'':'none';
     renderStaffList();
+    renderOwnerList();
     document.getElementById('settingsModal').classList.add('active');
 }
 function renderStaffList(){
@@ -2204,6 +2216,30 @@ function removeStaff(idx){
     renderStaffList();
     saveState();
     showNotif('Staff removed!');
+}
+function renderOwnerList(){
+    const list=document.getElementById('ownerList');
+    const emails=S.ownerEmails||[];
+    if(emails.length===0){list.innerHTML='<div style="color:#666;font-style:italic;">No co-owners added yet.</div>';return;}
+    list.innerHTML=emails.map((e,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span>${e}</span><button class="btn btn-danger btn-sm" onclick="removeOwner(${i})">✕</button></div>`).join('');
+}
+function addOwner(){
+    const inp=document.getElementById('sOwnerEmail');
+    const email=inp.value.trim().toLowerCase();
+    if(!email||!email.includes('@')){showNotif('Enter a valid email!','error');return;}
+    if(!S.ownerEmails) S.ownerEmails=[];
+    if(S.ownerEmails.includes(email)){showNotif('Already added!','error');return;}
+    S.ownerEmails.push(email);
+    inp.value='';
+    renderOwnerList();
+    saveState();
+    showNotif('Co-owner added!');
+}
+function removeOwner(idx){
+    S.ownerEmails=(S.ownerEmails||[]).filter((_,i)=>i!==idx);
+    renderOwnerList();
+    saveState();
+    showNotif('Co-owner removed!');
 }
 function saveSettings(){
     S.paymentInfo.gcash.number=document.getElementById('sGcashNum').value.trim();
@@ -3370,7 +3406,12 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
                 window.location.href = 'index.html';
                 return;
             }
-            IS_OWNER = (user.uid === VENUE_OWNER_ID);
+            IS_OWNER = (user.uid === VENUE_OWNER_ID) || (S.ownerEmails||[]).includes(user.email);
+            // Auto-add current owner's email to ownerEmails if not present
+            if (user.uid === VENUE_OWNER_ID && !(S.ownerEmails||[]).includes(user.email)) {
+                S.ownerEmails.push(user.email);
+                saveState();
+            }
             const isStaff = (S.staffEmails || []).includes(user.email);
             if (!IS_OWNER && !isStaff) {
                 window.location.href = 'index.html';
