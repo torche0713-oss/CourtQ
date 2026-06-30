@@ -2285,12 +2285,14 @@ function renderFinancials(){
                 <div style="font-size:0.55rem;color:#666;margin-top:3px;">${label}</div>
             </div>`;
         }).join('')+'</div>';
-    // Costs
-    const periodCosts=(S.costs||[]).filter(c=>{
-        const d=new Date(c.date);
-        return d>=startDate;
-    });
-    const totalCosts=periodCosts.reduce((s,c)=>s+(c.amount||0),0);
+    // Costs — prorated by days in period
+    const thisMonthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const nextMonthStart=new Date(now.getFullYear(),now.getMonth()+1,1);
+    const daysInMonth=nextMonthStart.getTime()-thisMonthStart.getTime()>0?new Date(now.getFullYear(),now.getMonth()+1,0).getDate():30;
+    const monthCosts=(S.costs||[]).filter(c=>{const d=new Date(c.date);return d>=thisMonthStart&&d<nextMonthStart;});
+    const monthlyTotal=monthCosts.reduce((s,c)=>s+(c.amount||0),0);
+    const daysInPeriod=period==='today'?1:period==='week'?7:daysInMonth;
+    const totalCosts=daysInMonth>0?Math.round(monthlyTotal/daysInMonth*daysInPeriod):0;
     const netProfit=totalRev-totalCosts;
     const netMargin=totalRev>0?Math.round(netProfit/totalRev*100):0;
     document.getElementById('finGrossRev').textContent='₱'+totalRev.toLocaleString();
@@ -2300,10 +2302,10 @@ function renderFinancials(){
     document.getElementById('finNetMargin').textContent=netMargin+'% margin';
     document.getElementById('finNetMargin').style.color=netMargin>=0?'#2ecc71':'#e74c3c';
     const clDiv=document.getElementById('finCostList');
-    if(periodCosts.length===0){
-        clDiv.innerHTML='<div style="font-size:0.78rem;color:#666;font-style:italic;">No expenses recorded this period.</div>';
+    if(monthCosts.length===0){
+        clDiv.innerHTML='<div style="font-size:0.78rem;color:#666;font-style:italic;">No expenses recorded this month.</div>';
     } else {
-        clDiv.innerHTML=periodCosts.slice().reverse().map((c,i)=>{
+        clDiv.innerHTML=monthCosts.slice().reverse().map((c,i)=>{
             const origIdx=S.costs.indexOf(c);
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:3px;font-size:0.75rem;">
                 <div><span style="color:#aaa;">${c.category}</span> ${c.desc?'· '+c.desc:''} <span style="color:#555;font-size:0.65rem;">${c.date}</span></div>
