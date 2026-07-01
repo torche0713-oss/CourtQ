@@ -687,7 +687,7 @@
                         <option value="5">5.0 – Pro</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Group Name (optional)</label><input type="text" id="groupName" placeholder="e.g. Team Awesome" autocomplete="off"></div>
+                <div class="form-group"><label>Group Name (optional)</label><input type="text" id="groupName" placeholder="e.g. Team Awesome" autocomplete="new-password"></div>
                 <button class="btn btn-primary btn-full" onclick="joinQueue()">🏓 Join Queue</button>
             </div>
             <div class="card">
@@ -1793,7 +1793,8 @@ function joinQueue(){
                 all.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
                 clearJoinForm();
                 showNotif(`⏳ Added ${all.length} player(s). Need ${4-all.length-exCount} more.`,'warning');
-                renderAll();
+        renderAll();
+        setTimeout(()=>{const g=document.getElementById('groupName');if(g)g.value='';},100);
             }
         }
     }
