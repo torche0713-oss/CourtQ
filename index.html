@@ -450,6 +450,31 @@
             document.getElementById('demoBadge').style.display = 'block';
             showLoading('Creating demo venue...');
             try {
+                // Clean up demos older than 4 hours and check concurrency limit
+                const demoSnap = await db.collection('venues').where('ownerId','==','demo').get();
+                const FOUR_HOURS = 4 * 60 * 60 * 1000;
+                const now = Date.now();
+                let activeDemos = 0;
+                const deletes = [];
+                demoSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (now - (data.createdAt||0) > FOUR_HOURS) {
+                        deletes.push(doc.ref.delete());
+                        // Also delete slug
+                        if (data.slug) {
+                            deletes.push(db.collection('slugs').doc(data.slug).delete());
+                        }
+                    } else {
+                        activeDemos++;
+                    }
+                });
+                await Promise.all(deletes);
+                if (activeDemos >= 5) {
+                    document.getElementById('authCard').style.display = 'block';
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    showError('Too many active demos right now. Please try again later.');
+                    return;
+                }
                 const slug = 'demo-' + Date.now().toString(36);
                 const venueId = db.collection('venues').doc().id;
                 const defaultCourts = [
