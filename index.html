@@ -452,13 +452,13 @@
             try {
                 // Clean up demos older than 4 hours and check concurrency limit
                 const demoSnap = await db.collection('venues').where('ownerId','==','demo').get();
-                const FOUR_HOURS = 4 * 60 * 60 * 1000;
+                const ONE_HOUR = 60 * 60 * 1000;
                 const now = Date.now();
                 let activeDemos = 0;
                 const deletes = [];
                 demoSnap.forEach(doc => {
                     const data = doc.data();
-                    if (now - (data.createdAt||0) > FOUR_HOURS) {
+                    if (now - (data.createdAt||0) > ONE_HOUR) {
                         deletes.push(doc.ref.delete());
                         // Also delete slug
                         if (data.slug) {
