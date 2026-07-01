@@ -1208,6 +1208,19 @@
             </div>
             <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="sesDropIn" value="100"></div>
         </div>
+        <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
+            <div style="display:flex;gap:10px;">
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(78,205,196,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                    <input type="radio" name="opMode" value="fourOnFour" checked onchange="document.getElementById('sesModeInfo').textContent='Groups of 4 rotate in and out together on each timer.'">
+                    <span style="font-weight:600;font-size:0.82rem;">4 on / 4 off</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(243,156,18,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                    <input type="radio" name="opMode" value="winnersSplit" onchange="document.getElementById('sesModeInfo').textContent='Winners stay, losers rotate. Teams split and reform each game.'">
+                    <span style="font-weight:600;font-size:0.82rem;">Winners Stay & Split</span>
+                </label>
+            </div>
+            <div id="sesModeInfo" style="font-size:0.72rem;color:#aaa;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
+        </div>
         <div id="sesConflictPreview" style="margin-top:8px;"></div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="startSession()">▶ Start</button>
@@ -1656,12 +1669,14 @@ function startSession(){
     const end=document.getElementById('sesEnd').value;
     const rot=parseInt(document.getElementById('sesRot').value);
     const fee=parseInt(document.getElementById('sesDropIn').value)||0;
+    const mode=document.querySelector('input[name="opMode"]:checked').value;
     if(!start||!end){showNotif('Set start and end times!','error');return;}
     if(timeToMin(start)>=timeToMin(end)){showNotif('End must be after start!','error');return;}
-    S.session={id:'SES'+Date.now(),start,end,rot,fee,startedAt:Date.now(),active:true};
+    S.session={id:'SES'+Date.now(),start,end,rot,fee,mode,startedAt:Date.now(),active:true};
+    updateJoinFormMode();
     closeModal('sessionModal');
-    showNotif(`▶ Open Play started! ${start}–${end}·${rot}min rotations`,'success');
-    announce(`Open Play started! ${start}–${end}. Drop-in: ₱${fee}. Rotation: ${rot}min.`);
+    showNotif(`▶ Open Play started! ${start}–${end}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}`,'success');
+    announce(`Open Play started! ${start}–${end}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}.`);
     renderAll();
 }
 
@@ -1669,33 +1684,59 @@ function endSession(){
     if(!S.session) return;
     S.session.active=false; S.session=null;
     S.courts.forEach(c=>{ if(c.status==='occupied') completeRelease(c,null); });
+    updateJoinFormMode();
     showNotif('⏹ Session ended.','warning');
     announce('Open Play session ended. Thank you!');
     renderAll();
 }
 
+function updateJoinFormMode(){
+    const mode=S.session?.mode;
+    const gtEl=document.getElementById('gameType');
+    const gnEl=document.getElementById('groupName');
+    const epEl=document.getElementById('extraPlayers');
+    if(gtEl) gtEl.parentElement.style.display=mode==='winnersSplit'?'none':'';
+    if(gnEl) gnEl.parentElement.style.display=mode==='winnersSplit'?'none':'';
+    if(epEl) epEl.style.display='none';
+    const lbl=document.querySelector('#page-openplay .card .card-title');
+    if(lbl) lbl.textContent=mode==='winnersSplit'?'🎯 Join Pool':'🎯 Join Queue';
+}
+
 // ===================== QUEUE =====================
 function onGTChange(){
+    const mode=S.session?.mode;
+    if(mode==='winnersSplit') return;
     document.getElementById('extraPlayers').style.display=document.getElementById('gameType').value==='doubles'?'block':'none';
 }
 
 function joinQueue(){
     if(!S.session||!S.session.active){showNotif('No active session! Start one first.','error');return;}
     const p1n=document.getElementById('p1').value.trim();
-    const gt=document.getElementById('gameType').value;
     const sk=parseInt(document.getElementById('skillLevel').value);
-    const gn=document.getElementById('groupName').value.trim();
     if(!p1n){showNotif('Enter your name!','error');return;}
-
     const allEx=[...S.soloQueue.map(s=>s.players.map(p=>p.name.toLowerCase())).flat(),...S.queue.map(g=>g.players.map(p=>p.name.toLowerCase())).flat()];
     if(allEx.includes(p1n.toLowerCase())){showNotif(`"${p1n}" already in queue!`,'error');return;}
-
     const p1={name:p1n,skill:sk,color:COLORS[0]};
+    if(S.session.mode==='winnersSplit'){
+        S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:sk,players:[p1],joinedAt:Date.now()});
+        clearJoinForm(); showNotif(`⏳ ${p1n} joined pool. Waiting for more players...`,'warning'); renderAll();
+        setTimeout(()=>tryWinnersAutoAssign(),400);
+        return;
+    }
+    const gt=document.getElementById('gameType').value;
+    const gn=document.getElementById('groupName').value.trim();
 
     if(gt==='singles'){
-        const si=S.soloQueue.findIndex(s=>s.gameType==='singles');
-        if(si!==-1){
-            const solo=S.soloQueue.splice(si,1)[0];
+        // Skill-based pairing: find closest skill match within ±1.0
+        let bestIdx=-1, bestDiff=Infinity;
+        S.soloQueue.forEach((s,i)=>{
+            if(s.gameType==='singles'){
+                const diff=Math.abs(s.skillLevel-sk);
+                if(diff<=1 && diff<bestDiff){bestIdx=i;bestDiff=diff;}
+            }
+        });
+        if(bestIdx!==-1){
+            const solo=S.soloQueue.splice(bestIdx,1)[0];
             p1.color=COLORS[1]; solo.players[0].color=COLORS[0];
             const paired={id:++S.nextId,groupName:gn||`${solo.players[0].name} & ${p1n}`,gameType:'singles',skillLevel:Math.round((solo.skillLevel+sk)/2),players:[solo.players[0],p1],joinedAt:solo.joinedAt};
             [paired.players[0],p1].forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
@@ -1716,7 +1757,8 @@ function joinQueue(){
         const all=[p1,...extras];
         all.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
         if(all.length>=4){
-            const g={id:++S.nextId,groupName:gn||`${p1n}'s Team`,gameType:'doubles',skillLevel:sk,players:all.slice(0,4),joinedAt:Date.now()};
+            const {team1,team2}=balanceTeams(all.slice(0,4));
+            const g={id:++S.nextId,groupName:gn||`${p1n}'s Team`,gameType:'doubles',skillLevel:sk,players:all.slice(0,4),team1,team2,joinedAt:Date.now()};
             g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
             S.queue.push(g);
             clearJoinForm();
@@ -1731,7 +1773,8 @@ function joinQueue(){
                 S.soloQueue=S.soloQueue.filter(s=>!toRm.includes(s.id));
                 comb.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
                 const avg=Math.round(comb.reduce((a,p)=>a+p.skill,0)/comb.length);
-                const g={id:++S.nextId,groupName:gn||comb.slice(0,2).map(p=>p.name).join(' & ')+' Team',gameType:'doubles',skillLevel:avg,players:comb,joinedAt:Date.now()};
+                const {team1,team2}=balanceTeams(comb);
+                const g={id:++S.nextId,groupName:gn||comb.slice(0,2).map(p=>p.name).join(' & ')+' Team',gameType:'doubles',skillLevel:avg,players:comb,team1,team2,joinedAt:Date.now()};
                 comb.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
                 S.queue.push(g);
                 clearJoinForm();
@@ -1749,6 +1792,11 @@ function joinQueue(){
 }
 
 function clearJoinForm(){['p1','p2','p3','p4','groupName'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
+
+function balanceTeams(players){
+    const sorted=[...players].sort((a,b)=>b.skill-a.skill);
+    return {team1:[sorted[0],sorted[3]],team2:[sorted[1],sorted[2]]};
+}
 
 function pairSolos(i1,i2){
     const e1=S.soloQueue.find(s=>s.id===i1),e2=S.soloQueue.find(s=>s.id===i2);
@@ -1775,6 +1823,32 @@ function tryAutoAssign(){
     const avail=getAvailableCourts();
     if(avail.length===0) return;
     showAssignModal(avail[0],S.queue[0]);
+}
+
+function tryWinnersAutoAssign(){
+    if(!S.session||S.session.mode!=='winnersSplit') return;
+    const avail=getAvailableCourts();
+    if(avail.length===0) return;
+    const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
+    if(poolSize<4) return;
+    const flat=[];
+    const used=[];
+    for(let i=0;i<S.soloQueue.length&&flat.length<4;i++){
+        for(let j=0;j<S.soloQueue[i].players.length&&flat.length<4;j++){
+            flat.push(S.soloQueue[i].players[j]);
+        }
+        used.push(S.soloQueue[i].id);
+    }
+    S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
+    flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+    const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
+    const {team1,team2}=balanceTeams(flat);
+    const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:flat,team1,team2,joinedAt:Date.now()};
+    g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+    const court=avail[0];
+    doAssign(court,g);
+    showNotif(`🎉 ${court.name} → ${flat.map(p=>p.name).join(', ')}`,'success');
+    renderAll();
 }
 
 function setGeminiKey(){
@@ -1902,9 +1976,21 @@ function showAssign(court, group){
         ${avail.length>1?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
             ${avail.map((c,i)=>`<div class="copt ${c.id===court.id?'copt-sel':''}" onclick="selCourtOpt(this,${c.id})" style="padding:8px;border:2px solid ${c.id===court.id?'#4ecdc4':'rgba(255,255,255,0.1)'};border-radius:8px;cursor:pointer;text-align:center;font-size:0.8rem;background:${c.id===court.id?'rgba(78,205,196,0.12)':'transparent'};transition:all 0.2s;">🏟️ ${c.name}</div>`).join('')}
         </div>`:`<p style="color:#4ecdc4;margin-bottom:10px;">🏟️ ${court.name}</p>`}
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        ${group.team1&&group.team2?`
+            <div style="display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:140px;background:rgba(78,205,196,0.08);border-radius:10px;padding:8px;">
+                    <div style="font-size:0.65rem;font-weight:700;color:#4ecdc4;text-transform:uppercase;margin-bottom:4px;">Team A</div>
+                    ${group.team1.map(p=>`<div style="display:flex;align-items:center;gap:5px;margin:3px 0;"><div style="width:20px;height:20px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;">${p.name[0]}</div><span style="font-size:0.75rem;">${p.name} ⭐${p.skill}</span></div>`).join('')}
+                </div>
+                <div style="display:flex;align-items:center;font-size:0.9rem;font-weight:800;color:#666;">VS</div>
+                <div style="flex:1;min-width:140px;background:rgba(243,156,18,0.08);border-radius:10px;padding:8px;">
+                    <div style="font-size:0.65rem;font-weight:700;color:#f39c12;text-transform:uppercase;margin-bottom:4px;">Team B</div>
+                    ${group.team2.map(p=>`<div style="display:flex;align-items:center;gap:5px;margin:3px 0;"><div style="width:20px;height:20px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;">${p.name[0]}</div><span style="font-size:0.75rem;">${p.name} ⭐${p.skill}</span></div>`).join('')}
+                </div>
+            </div>`
+        :`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
             ${group.players.map(p=>`<div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);padding:5px 10px;border-radius:8px;"><div style="width:22px;height:22px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;">${p.name[0]}</div><span style="font-size:0.8rem;">${p.name}</span></div>`).join('')}
-        </div>
+        </div>`}
         <div style="font-size:0.75rem;color:#aaa;">${group.gameType} · ⭐ ${SKILL_LABELS[group.skillLevel]}</div>`;
     document.getElementById('assignBody').dataset.cId=court.id;
     document.getElementById('assignBody').dataset.gId=group.id;
@@ -1950,8 +2036,14 @@ function selCourtOpt(el,id){
 }
 
 function manualAssignToCourt(cId){
-    if(S.queue.length===0){showNotif('No paired groups!','error');return;}
     const court=S.courts.find(c=>c.id===cId);
+    if(S.session?.mode==='winnersSplit'){
+        const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
+        if(poolSize<4){showNotif('Need 4 players in pool!','error');return;}
+        tryWinnersAutoAssign();
+        return;
+    }
+    if(S.queue.length===0){showNotif('No paired groups!','error');return;}
     document.getElementById('assignTitle').textContent=`📋 Assign to ${court.name}`;
     document.getElementById('assignBody').innerHTML=`
         <p style="color:#aaa;margin-bottom:10px;">Choose group for <strong style="color:#fff">${court.name}</strong>:</p>
@@ -1988,6 +2080,7 @@ function promptAssignGroup(gId){
 
 function doAssign(court,group){
     court.status='occupied';court.players=group.players;court.startTime=Date.now();court.gameType=group.gameType;
+    if(group.team1&&group.team2){court.team1=group.team1;court.team2=group.team2;}else{court.team1=null;court.team2=null;}
     group.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].games++;S.leaderboard[p.name].points+=10;});
     const i=S.queue.findIndex(g=>g.id===group.id);
     if(i!==-1) S.queue.splice(i,1);
@@ -1998,8 +2091,8 @@ function freeCourt(cId){
     const c=S.courts.find(x=>x.id===cId);
     if(!c||c.status!=='occupied'){showNotif('Court not occupied!','error');return;}
     const gt=c.gameType||(c.players.length>2?'doubles':'singles');
-    const tA=gt==='singles'?[c.players[0]]:[c.players[0],c.players[1]];
-    const tB=gt==='singles'?[c.players[1]||{name:'P2',color:'#888',skill:3}]:[c.players[2],c.players[3]].filter(Boolean);
+    const tA=c.team1||(gt==='singles'?[c.players[0]]:[c.players[0],c.players[1]]);
+    const tB=c.team2||(gt==='singles'?[c.players[1]||{name:'P2',color:'#888',skill:3}]:[c.players[2],c.players[3]].filter(Boolean));
     S.currentScore={courtId:c.id,players:[...c.players],gameType:gt,teamA:{players:tA,score:11},teamB:{players:tB,score:0},isTie:false,winner:'A'};
     renderScoreModal();
     document.getElementById('scoreModal').classList.add('active');
@@ -2047,8 +2140,46 @@ function aS(s,d){const k=s==='A'?'teamA':'teamB';S.currentScore[k].score=Math.ma
 function confirmScore(){
     const c=S.courts.find(x=>x.id===S.currentScore.courtId);
     if(!c){closeModal('scoreModal');return;}
-    completeRelease(c,S.currentScore);
     const sd=S.currentScore;
+    if(S.session?.mode==='winnersSplit'&&!sd.isTie){
+        const wt=sd.winner==='A'?sd.teamA:sd.teamB;
+        const lt=sd.winner==='A'?sd.teamB:sd.teamA;
+        // Record game in history
+        const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
+        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
+        (wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
+        (lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});
+        S.history.unshift(entry);if(S.history.length>100)S.history.pop();
+        // Winners stay, losers go to queue
+        const winners=wt.players||[];
+        const losers=lt.players||[];
+        losers.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now()});});
+        // Pull from solo queue to fill up to 4
+        const needed=4-winners.length;
+        const flat=[...winners];
+        const used=[];
+        for(let i=0;i<S.soloQueue.length&&flat.length<4;i++){
+            S.soloQueue[i].players.forEach(p=>{if(flat.length<4)flat.push(p);});
+            used.push(S.soloQueue[i].id);
+        }
+        S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
+        if(flat.length>=4){
+            flat.slice(0,4).forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+            const {team1,team2}=balanceTeams(flat.slice(0,4));
+            c.players=flat.slice(0,4);c.startTime=Date.now();c.team1=team1;c.team2=team2;c.gameType='doubles';
+            const wn=winners.map(p=>p.name).join(' & ');
+            showNotif(`🏆 ${wn} won! Winners stay, new teams formed.`,'success');
+            announce(`${wn} won on ${c.name}! Winners stay & split.`);
+        } else {
+            // Not enough players, free the court
+            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;
+            showNotif(`🏆 ${winners.map(p=>p.name).join(' & ')} won! Court freed (need more players).`,'success');
+            announce(`${winners.map(p=>p.name).join(' & ')} won on ${c.name}!`);
+        }
+        closeModal('scoreModal');renderAll();setTimeout(()=>tryWinnersAutoAssign(),500);
+        return;
+    }
+    completeRelease(c,sd);
     if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
     else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=wt.players.map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
     closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
@@ -2073,7 +2204,7 @@ function completeRelease(court,sd){
         else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const lt=sd.winner==='A'?sd.teamB:sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});(lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});}
     }
     S.history.unshift(entry);if(S.history.length>100)S.history.pop();
-    court.status='available';court.players=[];court.startTime=null;court.gameType=null;
+    court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;
 }
 
 // ===================== BOOKINGS =====================
@@ -3007,6 +3138,7 @@ function processPortalPayment(){
 
 // ===================== RENDER ALL =====================
 function renderAll(){
+    updateJoinFormMode();
     renderSession();
     renderOpCourts();
     renderCourtsManage();
@@ -3041,7 +3173,7 @@ function renderSession(){
                     <div class="live-dot"></div>
                     <div>
                         <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${ses.start} to ${ses.end}</div>
-                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in</div>
+                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':'🔄 4 on / 4 off'}</div>
                     </div>
                 </div>
                 <button class="btn btn-warning btn-sm" onclick="endSession()">⏹ End Session</button>
@@ -3081,8 +3213,20 @@ function renderOpCourts(){
             </div>
             ${opS==='playing'?`
                 <div class="court-players-mini">
-                    ${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
-                    ${[...Array(Math.max(0,4-court.players.length))].map(()=>`<div class="cpm-slot empty">+</div>`).join('')}
+                    ${court.team1&&court.team2?`
+                        <div style="display:flex;gap:6px;width:100%;margin-bottom:4px;">
+                            <div style="flex:1;background:rgba(78,205,196,0.08);border-radius:8px;padding:4px;">
+                                <div style="font-size:0.55rem;font-weight:700;color:#4ecdc4;text-align:center;text-transform:uppercase;margin-bottom:2px;">Team A</div>
+                                ${court.team1.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                            </div>
+                            <div style="display:flex;align-items:center;font-size:0.7rem;font-weight:800;color:#555;">VS</div>
+                            <div style="flex:1;background:rgba(243,156,18,0.08);border-radius:8px;padding:4px;">
+                                <div style="font-size:0.55rem;font-weight:700;color:#f39c12;text-align:center;text-transform:uppercase;margin-bottom:2px;">Team B</div>
+                                ${court.team2.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                            </div>
+                        </div>`
+                    :`${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                    ${[...Array(Math.max(0,4-court.players.length))].map(()=>`<div class="cpm-slot empty">+</div>`).join('')}`}
                 </div>
                 <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;text-align:center;">⏱ ${elapsed}m played · ${remaining}m left</div>
                 <div class="timer-bar"><div class="timer-bar-fill" style="width:${pct}%;background:${pct>80?'#e74c3c':pct>60?'#f39c12':'#4ecdc4'};"></div></div>
@@ -3091,7 +3235,7 @@ function renderOpCourts(){
             ${opS==='available'?`<div style="text-align:center;padding:14px 0;color:#444;font-size:0.8rem;">🏓 Court Ready</div>`:''}
             ${opS==='maintenance'?`<div style="background:rgba(243,156,18,0.08);border-radius:8px;padding:10px;text-align:center;color:#f39c12;font-size:0.8rem;margin-bottom:8px;">🔧 Under Maintenance</div>`:''}
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">🏁 End Game</button>`:''}
+                ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">${S.session?.mode==='winnersSplit'?'🔄 Rotate':'🏁 End Game'}</button>`:''}
                 ${opS==='available'?`<button class="btn btn-success btn-sm" onclick="manualAssignToCourt(${court.id})">📋 Assign</button><button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">🔧</button>`:''}
                 ${opS==='maintenance'?`<button class="btn btn-success btn-sm" onclick="toggleMaint(${court.id})">✅ Open</button>`:''}
             </div>`;
@@ -3152,6 +3296,29 @@ function renderQueueList(){
     badge.textContent=`(${total})`;
     if(total===0){list.innerHTML='<div class="empty-state"><div class="ei">🏓</div><p>Queue is empty.<br>Join to get a court.</p></div>';return;}
     list.innerHTML='';
+    if(S.session?.mode==='winnersSplit'){
+        const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
+        const sec=document.createElement('div');
+        sec.innerHTML=`<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👥 Player Pool (${poolSize})</div>
+            <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">${poolSize>=4?'✅ Ready to assign!':'⏳ Need '+(4-poolSize)+' more for a court'}</div>`;
+        S.soloQueue.forEach(entry=>{
+            const wait=Math.floor((Date.now()-entry.joinedAt)/60000);
+            const card=document.createElement('div');
+            card.className='solo-wait-card';
+            card.innerHTML=`
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        ${entry.players.map(p=>`<div style="width:26px;height:26px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.72rem;">${p.name[0]}</div>`).join('')}
+                        <div><div style="font-weight:700;font-size:0.85rem;">${entry.players.map(p=>p.name).join(' & ')}</div><div style="font-size:0.68rem;color:#aaa;">⭐${SKILL_LABELS[entry.skillLevel]} · ⏳${wait}m</div></div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeSolo(${entry.id})">✕</button>
+                </div>`;
+            sec.appendChild(card);
+        });
+        if(poolSize>=4) sec.innerHTML+=`<div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="tryWinnersAutoAssign()">🎯 Force Assign</button></div>`;
+        list.appendChild(sec);
+        return;
+    }
     if(S.soloQueue.length>0){
         const sec=document.createElement('div');
         sec.innerHTML='<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⏳ Waiting for Partner</div>';
@@ -3193,7 +3360,15 @@ function renderQueueList(){
             <div class="q-pos ${idx===0?'first':''}">${idx+1}</div>
             <div class="q-info">
                 <div class="q-name">${g.groupName}</div>
-                <div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}</div>
+                ${g.team1&&g.team2?`
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0;">
+                        <span style="font-size:0.65rem;font-weight:700;color:#4ecdc4;">Team A</span>
+                        ${g.team1.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}
+                        <span style="font-size:0.6rem;color:#555;">VS</span>
+                        <span style="font-size:0.65rem;font-weight:700;color:#f39c12;">Team B</span>
+                        ${g.team2.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}
+                    </div>`
+                :`<div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}</div>`}
                 <div class="q-meta"><span class="q-wait">⏳${wait}m</span><span class="q-type ${g.gameType==='singles'?'q-singles':'q-doubles'}">${g.gameType}</span><span style="font-size:0.65rem;color:#666;">⭐${SKILL_LABELS[g.skillLevel]}</span></div>
             </div>
             <div class="q-actions">
