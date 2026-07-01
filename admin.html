@@ -2823,6 +2823,7 @@ async function renderDevDashboard(){
                         </div>
                         <div style="text-align:right;">
                             <button class="btn btn-success btn-sm" onclick="activateVenue('${p.venueId}','${p.slug}')">✅ Activate</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteVenue('${p.venueId}','${p.slug}')">🗑️</button>
                         </div>
                     </div>
                 </div>`;
@@ -2859,6 +2860,7 @@ async function renderDevDashboard(){
                         <button class="btn btn-outline btn-sm" onclick="addPayment('${v.venueId}')">💰 Add Payment</button>
                         <button class="btn btn-outline btn-sm" onclick="viewPayments('${v.venueId}')">📋 Payments (${(c.payments||[]).length})</button>`:
                         `<button class="btn btn-primary btn-sm" onclick="editContract('${v.venueId}')">➕ Create Contract</button>`}
+                        <button class="btn btn-danger btn-sm" onclick="deleteVenue('${v.venueId}','${v.slug}')">🗑️</button>
                     </div>
                     ${latestPmt?`<div style="font-size:0.65rem;color:#555;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Last: ${latestPmt.txNo||'N/A'} · ₱${(latestPmt.amount||0).toLocaleString()} · ${latestPmt.status}</div>`:''}
                 </div>`;
@@ -2901,6 +2903,18 @@ async function activateVenue(venueId,slug){
         renderDevDashboard();
     } catch(e){
         showNotif('Activation failed: '+e.message,'error');
+    }
+}
+async function deleteVenue(venueId,slug){
+    if(!confirm('⚠️ Permanently delete this venue and all its data? This cannot be undone.')) return;
+    try {
+        await db.collection('venues').doc(venueId).delete();
+        await db.collection('slugs').doc(slug).delete();
+        try { await db.collection('contracts').doc(venueId).delete(); } catch(e){}
+        showNotif('🗑️ Venue deleted','warning');
+        renderDevDashboard();
+    } catch(e){
+        showNotif('Delete failed: '+e.message,'error');
     }
 }
 function editContract(venueId){
