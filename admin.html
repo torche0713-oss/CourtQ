@@ -3217,15 +3217,15 @@ function renderOpCourts(){
                         <div style="display:flex;gap:6px;width:100%;margin-bottom:4px;">
                             <div style="flex:1;background:rgba(78,205,196,0.08);border-radius:8px;padding:4px;">
                                 <div style="font-size:0.55rem;font-weight:700;color:#4ecdc4;text-align:center;text-transform:uppercase;margin-bottom:2px;">Team A</div>
-                                ${court.team1.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                                ${court.team1.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span><span style="font-size:0.55rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span></div>`).join('')}
                             </div>
                             <div style="display:flex;align-items:center;font-size:0.7rem;font-weight:800;color:#555;">VS</div>
                             <div style="flex:1;background:rgba(243,156,18,0.08);border-radius:8px;padding:4px;">
                                 <div style="font-size:0.55rem;font-weight:700;color:#f39c12;text-align:center;text-transform:uppercase;margin-bottom:2px;">Team B</div>
-                                ${court.team2.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                                ${court.team2.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.68rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span><span style="font-size:0.55rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span></div>`).join('')}
                             </div>
                         </div>`
-                    :`${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                    :`${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span><span style="font-size:0.55rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span></div>`).join('')}
                     ${[...Array(Math.max(0,4-court.players.length))].map(()=>`<div class="cpm-slot empty">+</div>`).join('')}`}
                 </div>
                 <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;text-align:center;">⏱ ${elapsed}m played · ${remaining}m left</div>
@@ -3269,7 +3269,7 @@ function renderCourtsManage(){
             </div>
             ${isOcc?`
                 <div class="court-players-mini">
-                    ${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span></div>`).join('')}
+                    ${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span><span style="font-size:0.55rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span></div>`).join('')}
                 </div>
                 <div style="font-size:0.72rem;color:#f39c12;margin-bottom:8px;">⚠️ Game in progress — cannot remove</div>
             `:''}
@@ -3309,7 +3309,7 @@ function renderQueueList(){
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         ${entry.players.map(p=>`<div style="width:26px;height:26px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.72rem;">${p.name[0]}</div>`).join('')}
-                        <div><div style="font-weight:700;font-size:0.85rem;">${entry.players.map(p=>p.name).join(' & ')}</div><div style="font-size:0.68rem;color:#aaa;">⭐${SKILL_LABELS[entry.skillLevel]} · ⏳${wait}m</div></div>
+                        <div><div style="font-weight:700;font-size:0.85rem;">${entry.players.map(p=>`${p.name}<span style="font-size:0.65rem;opacity:0.5;margin-left:3px;">${p.skill||'?'}.0</span>`).join(' & ')}</div><div style="font-size:0.68rem;color:#aaa;">⭐${SKILL_LABELS[entry.skillLevel]} · ⏳${wait}m</div></div>
                     </div>
                     <button class="btn btn-danger btn-sm" onclick="removeSolo(${entry.id})">✕</button>
                 </div>`;
@@ -3332,14 +3332,14 @@ function renderQueueList(){
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         ${entry.players.map(p=>`<div style="width:26px;height:26px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.72rem;">${p.name[0]}</div>`).join('')}
-                        <div><div style="font-weight:700;font-size:0.85rem;">${entry.players.map(p=>p.name).join(' & ')}</div><div style="font-size:0.68rem;color:#aaa;">⭐${SKILL_LABELS[entry.skillLevel]}</div></div>
+                        <div><div style="font-weight:700;font-size:0.85rem;">${entry.players.map(p=>`${p.name}<span style="font-size:0.65rem;opacity:0.5;margin-left:3px;">${p.skill||'?'}.0</span>`).join(' & ')}</div><div style="font-size:0.68rem;color:#aaa;">⭐${SKILL_LABELS[entry.skillLevel]}</div></div>
                     </div>
                     <button class="btn btn-danger btn-sm" onclick="removeSolo(${entry.id})">✕</button>
                 </div>
                 ${canPair.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);">
                     <div style="font-size:0.65rem;color:#4ecdc4;font-weight:700;margin-bottom:4px;">🔗 Pair with:</div>
                     ${canPair.map(s=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(78,205,196,0.05);border-radius:7px;margin-bottom:3px;cursor:pointer;" onclick="pairSolos(${entry.id},${s.id})">
-                        <span style="font-size:0.75rem;">${s.players.map(p=>p.name).join(' & ')}</span>
+                        <span style="font-size:0.75rem;">${s.players.map(p=>`${p.name}<span style="font-size:0.6rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span>`).join(' & ')}</span>
                         <button class="btn btn-primary btn-sm">Pair ↗</button>
                     </div>`).join('')}
                 </div>`:''}`;
@@ -3363,12 +3363,12 @@ function renderQueueList(){
                 ${g.team1&&g.team2?`
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0;">
                         <span style="font-size:0.65rem;font-weight:700;color:#4ecdc4;">Team A</span>
-                        ${g.team1.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}
-                        <span style="font-size:0.6rem;color:#555;">VS</span>
-                        <span style="font-size:0.65rem;font-weight:700;color:#f39c12;">Team B</span>
-                        ${g.team2.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}
+                    ${g.team1.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}
+                    <span style="font-size:0.6rem;color:#555;">VS</span>
+                    <span style="font-size:0.65rem;font-weight:700;color:#f39c12;">Team B</span>
+                    ${g.team2.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}
                     </div>`
-                :`<div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name}</span>`).join('')}</div>`}
+                :`<div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}</div>`}
                 <div class="q-meta"><span class="q-wait">⏳${wait}m</span><span class="q-type ${g.gameType==='singles'?'q-singles':'q-doubles'}">${g.gameType}</span><span style="font-size:0.65rem;color:#666;">⭐${SKILL_LABELS[g.skillLevel]}</span></div>
             </div>
             <div class="q-actions">
@@ -3489,7 +3489,7 @@ function renderHistory(){
                     </div>
                 </div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                    ${h.players.map(p=>{const isW=wn.includes(p.name);return`<div style="display:flex;align-items:center;gap:4px;background:${isW?'rgba(46,204,113,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${isW?'rgba(46,204,113,0.4)':'transparent'};padding:4px 8px;border-radius:8px;font-size:0.78rem;"><div style="width:18px;height:18px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;">${p.name[0]}</div>${p.name}${isW?' 🏆':''}</div>`;}).join('')}
+                    ${h.players.map(p=>{const isW=wn.includes(p.name);return`<div style="display:flex;align-items:center;gap:4px;background:${isW?'rgba(46,204,113,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${isW?'rgba(46,204,113,0.4)':'transparent'};padding:4px 8px;border-radius:8px;font-size:0.78rem;"><div style="width:18px;height:18px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;">${p.name[0]}</div>${p.name}<span style="font-size:0.6rem;opacity:0.5;margin-left:3px;">${p.skill||'?'}.0</span>${isW?' 🏆':''}</div>`;}).join('')}
                 </div>`;
             list.appendChild(div);
         });
