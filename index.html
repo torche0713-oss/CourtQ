@@ -408,22 +408,16 @@
                         const ej = cfg.data();
                         emailjs.init(ej.publicKey);
                         // Owner welcome email
-                        await emailjs.send(ej.serviceId, ej.templateWelcome, {
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
-                            venue_name: p.venue, mobile: p.mobile,
-                            court_count: c, monthly_fee: '₱' + monthly.toLocaleString(),
-                            payment_ref: ref, ack_number: ackNum,
-                            status: 'Pending Verification',
-                            slug: finalSlug
+                            subject: 'Welcome to CourtQ Pro! 🎾',
+                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
                         });
                         // Developer notification
-                        await emailjs.send(ej.serviceId, ej.templateNotification, {
-                            to_email: 'apexmindagency@gmail.com',
-                            venue_name: p.venue, owner_name: p.name,
-                            owner_email: p.email, mobile: p.mobile,
-                            court_count: c, monthly_fee: '₱' + monthly.toLocaleString(),
-                            payment_ref: ref, ack_number: ackNum,
-                            slug: finalSlug
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
+                            subject: `New Venue Signup: ${p.venue}`,
+                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
