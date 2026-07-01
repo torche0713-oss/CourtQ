@@ -687,7 +687,7 @@
                         <option value="5">5.0 – Pro</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Group Name (optional)</label><input type="text" id="groupName" placeholder="e.g. Team Awesome" autocomplete="new-password"></div>
+                <div class="form-group"><label>Group Name (optional)</label><input type="text" id="groupName" placeholder="e.g. Team Awesome" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')"></div>
                 <button class="btn btn-primary btn-full" onclick="joinQueue()">🏓 Join Queue</button>
             </div>
             <div class="card">
