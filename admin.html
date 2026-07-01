@@ -921,6 +921,7 @@
                 </table>
             </div>
             <button class="btn btn-outline btn-sm" onclick="downloadMonthlyCSV()">📥 Download CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="openArchiveModal()" style="margin-left:6px;">📦 Archive Old Data</button>
             <div class="card-title" style="font-size:0.8rem;">📋 Expenses</div>
             <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;margin-bottom:16px;">
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
@@ -1399,6 +1400,28 @@
         <div class="modal-actions">
             <button class="btn btn-danger" id="confirmOk" style="flex:1;">Confirm</button>
             <button class="btn btn-outline" style="flex:1;" onclick="closeModal('confirmModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="archiveModal">
+    <div class="modal" style="max-width:450px;">
+        <div class="modal-title">📦 Archive Old Data</div>
+        <div style="color:#aaa;font-size:0.82rem;margin-bottom:14px;">
+            Archive bookings and sales older than a cutoff date. Archived data will be downloaded as CSV then removed from Firestore to save space.
+        </div>
+        <div class="form-group">
+            <label>Cutoff Date (archives everything before this date)</label>
+            <input type="date" id="archiveCutoff" onchange="updateArchivePreview()">
+        </div>
+        <div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;margin-bottom:10px;font-size:0.8rem;">
+            <div style="font-weight:700;color:#f39c12;margin-bottom:4px;">⚠️ Irreversible</div>
+            <div style="color:#aaa;">This action downloads the old data to your computer and permanently removes it from the system. Make sure to save the CSV file.</div>
+        </div>
+        <div id="archivePreview" style="font-size:0.82rem;margin-bottom:10px;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-danger" onclick="confirmArchive()">📥 Archive & Download</button>
+            <button class="btn btn-outline" onclick="closeModal('archiveModal')">Cancel</button>
         </div>
     </div>
 </div>
@@ -3771,6 +3794,68 @@ function downloadMonthlyCSV(){
     a.click();
     URL.revokeObjectURL(a.href);
     showNotif('CSV downloaded!');
+}
+function openArchiveModal(){
+    const d=new Date();
+    d.setMonth(d.getMonth()-1);
+    d.setDate(1);
+    document.getElementById('archiveCutoff').value=d.toISOString().split('T')[0];
+    updateArchivePreview();
+    document.getElementById('archiveModal').classList.add('active');
+}
+function updateArchivePreview(){
+    const cutoff=document.getElementById('archiveCutoff').value;
+    if(!cutoff){document.getElementById('archivePreview').textContent='';return;}
+    const cutoffDate=new Date(cutoff+'T00:00:00');
+    const bCount=(S.bookings||[]).filter(b=>new Date(b.date+'T'+b.startTime)<cutoffDate).length;
+    const sCount=(S.sales||[]).filter(s=>s.bookedAt&&s.bookedAt<cutoffDate.getTime()).length;
+    const cCount=(S.costs||[]).filter(c=>new Date(c.date||c.month+'T00:00:00')<cutoffDate).length;
+    document.getElementById('archivePreview').innerHTML=`
+        <div style="color:#aaa;">Items to archive:</div>
+        <div style="display:flex;gap:16px;margin-top:6px;">
+            <span>📅 <strong>${bCount}</strong> bookings</span>
+            <span>💰 <strong>${sCount}</strong> sales</span>
+            <span>📋 <strong>${cCount}</strong> expenses</span>
+        </div>
+        <div style="color:#e74c3c;font-size:0.75rem;margin-top:6px;">Total: <strong>${bCount+sCount+cCount}</strong> records</div>`;
+}
+function confirmArchive(){
+    const cutoff=document.getElementById('archiveCutoff').value;
+    if(!cutoff){showNotif('Select a cutoff date!','error');return;}
+    const cutoffDate=new Date(cutoff+'T00:00:00');
+    const oldBookings=(S.bookings||[]).filter(b=>new Date(b.date+'T'+b.startTime)<cutoffDate);
+    const oldSales=(S.sales||[]).filter(s=>s.bookedAt&&s.bookedAt<cutoffDate.getTime());
+    const oldCosts=(S.costs||[]).filter(c=>new Date(c.date||c.month+'T00:00:00')<cutoffDate);
+    if(oldBookings.length===0&&oldSales.length===0&&oldCosts.length===0){
+        showNotif('No data to archive for this period.','info');
+        return;
+    }
+    let csv='Type,ID,Customer,Court,Date,StartTime,EndTime,Amount,PaymentMethod,Status,BookedAt\n';
+    oldBookings.forEach(b=>{
+        const court=(S.courts||[]).find(c=>c.id===b.courtId);
+        csv+=`Booking,${b.id},${b.customer||''},${court?court.name:''},${b.date},${b.startTime},${b.endTime},${b.amount||0},${b.paymentMethod||''},${b.status||''},${b.bookedAt?new Date(b.bookedAt).toISOString():''}\n`;
+    });
+    csv+='\n--- SALES ---\nType,BookingID,Amount,PaymentMethod,BookedAt\n';
+    oldSales.forEach(s=>{
+        csv+=`Sale,${s.bookingId||''},${s.amount||0},${s.paymentMethod||''},${s.bookedAt?new Date(s.bookedAt).toISOString():''}\n`;
+    });
+    csv+='\n--- EXPENSES ---\nType,Category,Amount,Description,Date\n';
+    oldCosts.forEach(c=>{
+        csv+=`Expense,${c.category||''},${c.amount||0},${(c.desc||'').replace(/,/g,' ')},${c.date||c.month||''}\n`;
+    });
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`CourtQ_Archive_${cutoff}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    S.bookings=(S.bookings||[]).filter(b=>new Date(b.date+'T'+b.startTime)>=cutoffDate);
+    S.sales=(S.sales||[]).filter(s=>!s.bookedAt||s.bookedAt>=cutoffDate.getTime());
+    S.costs=(S.costs||[]).filter(c=>new Date(c.date||c.month+'T00:00:00')>=cutoffDate);
+    closeModal('archiveModal');
+    saveState();
+    renderFinancials();
+    showNotif(`✅ Archived ${oldBookings.length} bookings, ${oldSales.length} sales, ${oldCosts.length} expenses. CSV saved.`,'success');
 }
 </script>
 </body>
