@@ -53,6 +53,7 @@
         }
 
         .venue-editable:hover { background: rgba(78,205,196,0.25); }
+.venue-editable img { max-height: 24px; width: auto; border-radius: 4px; }
         .venue-editable input {
             background: transparent; border: none; color: #4ecdc4;
             font-size: 0.8rem; font-weight: 600; width: 180px; outline: none;
@@ -621,7 +622,7 @@
             <span id="dateDisplay" style="font-size:0.7rem;">--</span>
         </div>
         <div class="venue-editable" id="venueDisplay" onclick="editVenueName()">
-            <span id="venueText">🏟️ Riverside Pickleball</span>
+            <span id="venueLogo"></span><span id="venueText">🏟️ Riverside Pickleball</span>
             <span style="font-size:0.6rem;opacity:0.5;">✏️</span>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openPortal()">🌐 Book Online</button>
@@ -1353,6 +1354,11 @@
             <div class="form-group"><label>Maya Name</label><input type="text" id="sMayaName" placeholder="Juan dela Cruz"></div>
         </div>
         <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="font-weight:700;font-size:0.85rem;color:#3498db;margin-bottom:10px;">🖼️ Venue Logo</div>
+            <div class="form-group"><label>Logo Image URL</label><input type="url" id="sLogoUrl" placeholder="https://i.imgur.com/your-logo.png"></div>
+            <div style="font-size:0.72rem;color:#aaa;">Paste a public URL to your logo image. Recommended size: 200x200px or smaller.</div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
             <div style="font-weight:700;font-size:0.85rem;color:#f39c12;margin-bottom:10px;">🔒 Financials Access Code</div>
             <div class="form-group"><label>Set Access Code (4-6 digits)</label><input type="text" id="sAccessCode" placeholder="e.g. 1234" maxlength="6" inputmode="numeric"></div>
             <div style="font-size:0.72rem;color:#aaa;">Share this code with the venue owner to access the Financials page.</div>
@@ -1445,6 +1451,7 @@ let S = {
     nextBId:3,
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{},ref:''},
     venueSlug:'',
+    logoUrl:'',
     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     accessCode:'',
     staffEmails:[],
@@ -1466,7 +1473,7 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails'];
+const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails'];
 function saveState(){
     if (!VENUE_ID) return;
     try {
@@ -1510,8 +1517,12 @@ function saveVenueName(){
     if(!inp) return;
     const n=inp.value.trim();
     if(n) S.venueName='🏟️ '+n;
-    document.getElementById('venueDisplay').innerHTML=`<span id="venueText">${S.venueName}</span><span style="font-size:0.6rem;opacity:0.5;">✏️</span>`;
+    renderVenueDisplay();
     saveState();
+}
+function renderVenueDisplay(){
+    const logo=S.logoUrl?`<img src="${S.logoUrl}" style="height:24px;width:auto;margin-right:6px;vertical-align:middle;" alt="logo">`:'';
+    document.getElementById('venueDisplay').innerHTML=`${logo}<span id="venueText">${S.venueName}</span><span style="font-size:0.6rem;opacity:0.5;">✏️</span>`;
 }
 
 // ===================== PAGE NAV =====================
@@ -2326,6 +2337,7 @@ function openSettings(){
     document.getElementById('sGcashName').value=S.paymentInfo.gcash.name||'';
     document.getElementById('sMayaNum').value=S.paymentInfo.maya.number||'';
     document.getElementById('sMayaName').value=S.paymentInfo.maya.name||'';
+    document.getElementById('sLogoUrl').value=S.logoUrl||'';
     document.getElementById('sAccessCode').value=S.accessCode||'';
     document.getElementById('staffSection').style.display=IS_OWNER?'':'none';
     document.getElementById('ownerSection').style.display=IS_OWNER?'':'none';
@@ -2386,6 +2398,7 @@ function saveSettings(){
     S.paymentInfo.gcash.name=document.getElementById('sGcashName').value.trim();
     S.paymentInfo.maya.number=document.getElementById('sMayaNum').value.trim();
     S.paymentInfo.maya.name=document.getElementById('sMayaName').value.trim();
+    S.logoUrl=document.getElementById('sLogoUrl').value.trim();
     S.accessCode=document.getElementById('sAccessCode').value.trim();
     closeModal('settingsModal');saveState();showNotif('Settings saved!');
 }
@@ -3003,7 +3016,7 @@ function copyPortalLink(){
 }
 function openPortal(){
     S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
-    document.getElementById('portalVenueName').textContent=S.venueName;
+    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${S.logoUrl}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${S.venueName}`:S.venueName;
     document.getElementById('pDate').value=getTodayISO();
     goPortalStep(1);
     renderCourtPicker();
@@ -3192,7 +3205,7 @@ function processPortalPayment(){
 
                 <div class="receipt-box" style="text-align:left;">
                     <div style="text-align:center;margin-bottom:10px;">
-                        <div style="font-weight:700;color:#4ecdc4;">${S.venueName}</div>
+                        <div style="font-weight:700;color:#4ecdc4;">${S.logoUrl?`<img src="${S.logoUrl}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">`:''}${S.venueName}</div>
                         <div style="font-size:0.68rem;color:#aaa;">Booking ID: ${bId} · Ref: ${ref}</div>
                     </div>
                     <div class="receipt-line"><span>Name</span><span>${b.customer}</span></div>
@@ -3222,6 +3235,7 @@ function processPortalPayment(){
 
 // ===================== RENDER ALL =====================
 function renderAll(){
+    renderVenueDisplay();
     updateJoinFormMode();
     renderSession();
     renderOpCourts();
