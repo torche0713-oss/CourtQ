@@ -644,6 +644,15 @@
     <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
 </nav>
 
+<!-- PENDING APPROVAL SCREEN (shown when venue.status === 'pending') -->
+<div id="pendingScreen" style="display:none;padding:60px 20px;text-align:center;">
+    <div style="font-size:4rem;margin-bottom:16px;">⏳</div>
+    <h2 style="color:#f39c12;font-size:1.5rem;margin-bottom:8px;">Venue Pending Approval</h2>
+    <p style="color:#aaa;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
+    <div id="pendingDetails" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;max-width:400px;margin:0 auto;text-align:left;font-size:0.82rem;"></div>
+    <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></div>
+</div>
+
 <!-- OPEN PLAY PAGE -->
 <div class="page active" id="page-openplay">
     <div id="sessionDisplay"></div>
@@ -1391,6 +1400,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 // ===================== CONSTANTS =====================
 const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
@@ -1464,8 +1474,8 @@ function saveState(){
     try {
         const state = {};
         PERSISTENT_KEYS.forEach(k => state[k] = S[k]);
-        db.collection('venues').doc(VENUE_ID).set(state, { merge: true });
-    } catch(e){}
+        db.collection('venues').doc(VENUE_ID).set(state, { merge: true }).catch(e => console.warn('saveState failed:', e));
+    } catch(e){ console.warn('saveState failed:', e); }
 }
 async function loadState(){
     if (!VENUE_ID) return;
@@ -2573,7 +2583,7 @@ function renderFinancials(){
     const crDiv=document.getElementById('finCourtRev');
     crDiv.innerHTML=Object.values(courtRevMap).sort((a,b)=>b.rev-a.rev).map(c=>{
         const pct=totalRev>0?Math.round(c.rev/totalRev*100):0;
-        const util=courtCount*availHours*60*daysInPeriod>0?Math.round(c.min/(courtCount*availHours*60*daysInPeriod)*10000)/100:0;
+        const util=availHours*60*daysInPeriod>0?Math.round(c.min/(availHours*60*daysInPeriod)*10000)/100:0;
         return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px;text-align:center;">
             <div style="font-size:0.75rem;font-weight:700;color:${c.color};">${c.name}</div>
             <div style="font-size:1.1rem;font-weight:800;margin-top:4px;">₱${c.rev.toLocaleString()}</div>
@@ -2767,7 +2777,7 @@ async function renderDevDashboard(){
     document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading venues...</p></div>';
     try {
         const slugsSnap=await db.collection('slugs').get();
-        const venues=[];
+        const venues=[], pending=[];
         let activeCount=0, monthlyTotal=0, dueTotal=0;
         for(const slugDoc of slugsSnap.docs){
             const venueId=slugDoc.data().venueId;
@@ -2775,6 +2785,10 @@ async function renderDevDashboard(){
             const vDoc=await db.collection('venues').doc(venueId).get();
             if(!vDoc.exists) continue;
             const vData=vDoc.data();
+            if(vData.status==='pending'){
+                pending.push({slug:slugDoc.id,venueId,data:vData});
+                continue;
+            }
             const contractSnap=await db.collection('contracts').doc(venueId).get();
             const contract=contractSnap.exists?contractSnap.data():null;
             if(contract){_devContracts[venueId]=contract;activeCount++;monthlyTotal+=contract.monthlyRetainer||0;}
@@ -2787,52 +2801,110 @@ async function renderDevDashboard(){
                 dueAmt=pendingPmts.reduce((s,p)=>s+(p.amount||0),0);
             }
             dueTotal+=dueAmt;
-            venues.push({slug:slugDoc.id,venueId,name:vData.venueName||'Unnamed',totalCourts,origCourts,added,contract,dueAmt});
+            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',totalCourts,origCourts,added,contract,dueAmt});
         }
-        document.getElementById('devVenueCount').textContent=venues.length;
+        document.getElementById('devVenueCount').textContent=venues.length+pending.length;
         document.getElementById('devActiveContracts').textContent=activeCount;
         document.getElementById('devMonthlyTotal').textContent='₱'+monthlyTotal.toLocaleString();
         document.getElementById('devTotalDue').textContent='₱'+dueTotal.toLocaleString();
-        if(venues.length===0){
-            document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No venues found.</p></div>';
-            return;
+
+        let html='';
+        // PENDING section
+        if(pending.length>0){
+            html+=`<div style="font-size:0.75rem;font-weight:700;color:#f39c12;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px;">⏳ Pending Approval (${pending.length})</div>`;
+            pending.forEach(p=>{
+                const d=p.data;
+                html+=`<div style="background:rgba(243,156,18,0.06);border:1px solid rgba(243,156,18,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-weight:700;">⏳ ${d.name||'Unnamed'}</div>
+                            <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${p.slug}</div>
+                            <div style="font-size:0.72rem;color:#aaa;">👤 ${d.ownerName||'N/A'} · 📱 ${d.mobile||'N/A'} · 🏟️ ${(d.courts||[]).length} courts</div>
+                            <div style="font-size:0.72rem;color:#aaa;">📧 ${d.ownerId?Object.keys(d).includes('email')?d.email:'(see users doc)':'N/A'} · Ref: ${d.paymentRef||'N/A'}</div>
+                            <div style="font-size:0.72rem;color:#aaa;">💰 Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <button class="btn btn-success btn-sm" onclick="activateVenue('${p.venueId}','${p.slug}')">✅ Activate</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
         }
-        const now=new Date();
-        document.getElementById('devVenuesList').innerHTML=venues.map(v=>{
-            const c=v.contract;
-            const isActive=c&&(!c.endDate||new Date(c.endDate)>=now);
-            const statusIcon=isActive?'🟢':c?'🔴':'⚪';
-            const statusLabel=isActive?'Active':c?'Expired':'No Contract';
-            const latestPmt=c&&c.payments&&c.payments.length>0?c.payments.reduce((a,b)=>new Date(a.dueDate||0)>new Date(b.dueDate||0)?a:b):null;
-            return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
-                    <div style="flex:1;min-width:200px;">
-                        <div style="font-weight:700;">${statusIcon} ${v.name}</div>
-                        <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${v.slug}</div>
-                        ${c?`<div style="font-size:0.72rem;color:#aaa;">👤 ${c.ownerName||'N/A'} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#555;">No contract set up</div>'}
+        // ACTIVE venues
+        if(venues.length===0 && pending.length===0){
+            html='<div class="empty-state"><div class="ei">📊</div><p>No venues found.</p></div>';
+        } else if(venues.length>0){
+            html+=`<div style="font-size:0.75rem;font-weight:700;color:#4ecdc4;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">✅ Active Venues (${venues.length})</div>`;
+            const now=new Date();
+            venues.forEach(v=>{
+                const c=v.contract;
+                const isActive=c&&(!c.endDate||new Date(c.endDate)>=now);
+                const statusIcon=isActive?'🟢':c?'🔴':'⚪';
+                const statusLabel=isActive?'Active':c?'Expired':'No Contract';
+                const latestPmt=c&&c.payments&&c.payments.length>0?c.payments.reduce((a,b)=>new Date(a.dueDate||0)>new Date(b.dueDate||0)?a:b):null;
+                html+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-weight:700;">${statusIcon} ${v.name}</div>
+                            <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${v.slug}</div>
+                            ${c?`<div style="font-size:0.72rem;color:#aaa;">👤 ${c.ownerName||'N/A'} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#555;">No contract set up</div>'}
+                        </div>
+                        <div style="text-align:right;">
+                            ${c?`<div style="font-weight:800;color:#9b59b6;">₱${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
+                            <div style="font-size:0.7rem;color:#aaa;">${c.startDate||'?'} → ${c.endDate||'?'}</div>
+                            <div style="font-size:0.7rem;color:${v.dueAmt>0?'#e74c3c':'#2ecc71'};">Due: ₱${v.dueAmt.toLocaleString()}</div>
+                            <div style="font-size:0.65rem;color:#555;">${statusLabel}</div>`:'<div style="font-size:0.7rem;color:#555;">${statusLabel}</div>'}
+                        </div>
                     </div>
-                    <div style="text-align:right;">
-                        ${c?`<div style="font-weight:800;color:#9b59b6;">₱${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
-                        <div style="font-size:0.7rem;color:#aaa;">${c.startDate||'?'} → ${c.endDate||'?'}</div>
-                        <div style="font-size:0.7rem;color:${v.dueAmt>0?'#e74c3c':'#2ecc71'};">Due: ₱${v.dueAmt.toLocaleString()}</div>
-                        <div style="font-size:0.65rem;color:#555;">${statusLabel}</div>`:'<div style="font-size:0.7rem;color:#555;">${statusLabel}</div>'}
+                    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                        ${c?`<button class="btn btn-outline btn-sm" onclick="editContract('${v.venueId}')">✏️ Edit Contract</button>
+                        <button class="btn btn-outline btn-sm" onclick="addPayment('${v.venueId}')">💰 Add Payment</button>
+                        <button class="btn btn-outline btn-sm" onclick="viewPayments('${v.venueId}')">📋 Payments (${(c.payments||[]).length})</button>`:
+                        `<button class="btn btn-primary btn-sm" onclick="editContract('${v.venueId}')">➕ Create Contract</button>`}
                     </div>
-                </div>
-                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-                    ${c?`<button class="btn btn-outline btn-sm" onclick="editContract('${v.venueId}')">✏️ Edit Contract</button>
-                    <button class="btn btn-outline btn-sm" onclick="addPayment('${v.venueId}')">💰 Add Payment</button>
-                    <button class="btn btn-outline btn-sm" onclick="viewPayments('${v.venueId}')">📋 Payments (${(c.payments||[]).length})</button>`:
-                    `<button class="btn btn-primary btn-sm" onclick="editContract('${v.venueId}')">➕ Create Contract</button>`}
-                </div>
-                ${latestPmt?`<div style="font-size:0.65rem;color:#555;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Last: ${latestPmt.txNo||'N/A'} · ₱${(latestPmt.amount||0).toLocaleString()} · ${latestPmt.status}</div>`:''}
-            </div>`;
-        }).join('');
+                    ${latestPmt?`<div style="font-size:0.65rem;color:#555;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Last: ${latestPmt.txNo||'N/A'} · ₱${(latestPmt.amount||0).toLocaleString()} · ${latestPmt.status}</div>`:''}
+                </div>`;
+            });
+        }
+        document.getElementById('devVenuesList').innerHTML=html;
     } catch(e){
         console.error(e);
         document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Error loading venues. Check Firestore permissions.</p></div>';
     }
 }
 function refreshDevDashboard(){renderDevDashboard();showNotif('Refreshing...');}
+
+async function activateVenue(venueId,slug){
+    if(!confirm('Activate this venue? Owner will be notified via email.')) return;
+    try {
+        await db.collection('venues').doc(venueId).update({ status:'active' });
+        const vDoc=await db.collection('venues').doc(venueId).get();
+        const vData=vDoc.data();
+        // Find owner email from users collection
+        let ownerEmail='';
+        try {
+            const userSnap=await db.collection('users').where('venueId','==',venueId).get();
+            if(!userSnap.empty) ownerEmail=userSnap.docs[0].data().email||'';
+        } catch(e){}
+        // Send activation email via EmailJS
+        try {
+            const cfg=await db.collection('config').doc('emailjs').get();
+            if(cfg.exists && ownerEmail){
+                const ej=cfg.data();
+                emailjs.init(ej.publicKey);
+                await emailjs.send(ej.serviceId, ej.templateActivation, {
+                    to_email: ownerEmail, to_name: vData.ownerName||'Valued Partner',
+                    venue_name: vData.name||'Your Venue', slug: slug,
+                    login_link: 'https://courtq-pro.vercel.app/'+slug+'/admin'
+                });
+            }
+        } catch(e){ console.warn('EmailJS activation send failed:', e); }
+        showNotif(`✅ ${vData.name||'Venue'} activated!`,'success');
+        renderDevDashboard();
+    } catch(e){
+        showNotif('Activation failed: '+e.message,'error');
+    }
+}
 function editContract(venueId){
     const c=_devContracts[venueId]||{};
     document.getElementById('cVenueId').value=venueId;
@@ -3120,11 +3192,10 @@ function processPortalPayment(){
                 </div>
 
                 <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:10px;padding:12px;margin-top:14px;font-size:0.78rem;text-align:left;">
-                    <div style="font-weight:700;color:#2ecc71;margin-bottom:4px;">📧 Confirmation Details</div>
-                    <div>• A confirmation has been sent to <strong>${b.email}</strong></div>
-                    <div>• SMS sent to <strong>${b.phone}</strong></div>
-                    <div>• Show your QR code or booking ID at the venue</div>
-                    ${S.portal.payMethod==='PayLater'?`<div style="color:#f39c12;margin-top:4px;">• Please pay ₱${total} upon arrival</div>`:''}
+                    <div style="font-weight:700;color:#2ecc71;margin-bottom:4px;">📋 Booking Saved</div>
+                    <div>• Booking ID: <strong>${bId}</strong></div>
+                    <div>• Show your QR code or booking ID at check-in</div>
+                    ${b.paymentMethod!=='PayLater'?`<div style="color:#2ecc71;margin-top:4px;">✅ Payment of ₱${total} verified</div>`:`<div style="color:#f39c12;margin-top:4px;">• Please pay ₱${total} upon arrival</div>`}
                 </div>
 
                 <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
@@ -3595,6 +3666,20 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
             // Show dev tab only for developer's email
             if (user.email === 'pinoymemesforever@gmail.com') {
                 document.getElementById('devTabBtn').style.display = '';
+            }
+            // Check if venue is pending approval
+            if (data.status === 'pending' && user.email !== 'pinoymemesforever@gmail.com') {
+                document.getElementById('pendingScreen').style.display = 'block';
+                document.getElementById('pendingDetails').innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        <div style="color:#888;">Venue:</div><div style="font-weight:600;">${data.name||'Unnamed'}</div>
+                        <div style="color:#888;">Submitted:</div><div style="font-weight:600;">${new Date(data.createdAt).toLocaleDateString()}</div>
+                        <div style="color:#888;">Courts:</div><div style="font-weight:600;">${(data.courts||[]).length}</div>
+                        <div style="color:#888;">Payment Ref:</div><div style="font-weight:600;color:#f39c12;">${data.paymentRef||'N/A'}</div>
+                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending</div>
+                    </div>`;
+                document.querySelector('.main-nav').style.display = 'none';
+                return;
             }
             // Hide owner-only UI for staff
             if (!IS_OWNER) {

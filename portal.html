@@ -107,7 +107,7 @@
         .slot-btn.taken:hover { border-color:rgba(231,76,60,0.2); background:rgba(231,76,60,0.08); }
 
         /* PAYMENT */
-        .pay-methods { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+        .pay-methods { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
         .pay-btn {
             padding:14px; border-radius:12px; text-align:center;
             border:2px solid rgba(255,255,255,0.1);
@@ -567,17 +567,15 @@ function processPortalPayment(){
         const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode};
         S.bookings.push(b);
         if (VENUE_ID) {
-            // Read current bookings from Firestore to avoid overwriting admin changes
-            db.collection('venues').doc(VENUE_ID).get().then(doc=>{
-                const existing = (doc.exists ? doc.data().bookings||[] : []);
-                existing.push(b);
-                return db.collection('venues').doc(VENUE_ID).set({
-                    bookings: existing, nextBId: S.nextBId
-                }, { merge: true });
-            }).catch(()=>{
-                db.collection('venues').doc(VENUE_ID).set({
-                    bookings: [b], nextBId: S.nextBId
-                }, { merge: true });
+            db.collection('venues').doc(VENUE_ID).update({
+                bookings: firebase.firestore.FieldValue.arrayUnion(b),
+                nextBId: S.nextBId
+            }).catch(e => {
+                if (e.code === 'not-found') {
+                    db.collection('venues').doc(VENUE_ID).set({
+                        bookings: [b], nextBId: S.nextBId
+                    }, { merge: true });
+                } else { console.warn('Booking save failed:', e); }
             });
         }
         const payInfo='₱'+total+(refNum?' (Ref: '+refNum+')':'');
@@ -603,6 +601,7 @@ function processPortalPayment(){
             </div>
         </div>`;
         // Watch booking status via real-time listener (1 read on connect + 1 per status change)
+        if (!VENUE_ID) return;
         const unsubStatus = db.collection('venues').doc(VENUE_ID).onSnapshot(snap => {
             try {
                 if (!snap.exists) return;
@@ -645,7 +644,27 @@ function processPortalPayment(){
                     if (!booking) return;
                     if (booking.status === 'confirmed' || booking.status === 'cancelled') {
                         clearInterval(fallbackInterval);
-                        location.reload();
+                        if (booking.status === 'confirmed') {
+                            document.getElementById('bookingStatusWait').innerHTML=`
+                                <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                                <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
+                                <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your booking has been confirmed.</div>
+                                <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">Thank you for booking with us!</div>
+                                <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                                    Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
+                                    <span style="color:#f39c12;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
+                                </div>
+                                <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+                                    <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
+                                    <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
+                                </div>`;
+                        } else {
+                            document.getElementById('bookingStatusWait').innerHTML=`
+                                <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                                <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
+                                <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
+                                <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
+                        }
                     }
                 } catch(e) {}
             }, 30000);
