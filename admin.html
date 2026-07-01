@@ -1207,7 +1207,11 @@
     <div class="modal">
         <div class="modal-title">▶ Start Open Play Session</div>
         <div class="form-row">
+            <div class="form-group"><label>Start Date</label><input type="date" id="sesStartDate"></div>
             <div class="form-group"><label>Start Time</label><input type="time" id="sesStart" value="17:00"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>End Date</label><input type="date" id="sesEndDate"></div>
             <div class="form-group"><label>End Time</label><input type="time" id="sesEnd" value="21:00"></div>
         </div>
         <div class="form-row">
@@ -1471,6 +1475,16 @@ function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).pad
 function nowMin(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
+function inSession(date, sMin, eMin){
+    if(!S.session||!S.session.active) return false;
+    const sd=S.session.startDate||date, ed=S.session.endDate||sd;
+    const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
+    if(date<sd||date>ed) return false;
+    if(sd===ed) return sMin<se&&eMin>ss;
+    if(date===sd) return eMin>ss;
+    if(date===ed) return sMin<se;
+    return true;
+}
 
 // ===================== PERSISTENCE =====================
 const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails'];
@@ -1666,11 +1680,16 @@ function getAvailableCourts(){ return S.courts.filter(c=>getCourtStatus(c.id)===
 // ===================== SESSION =====================
 function openStartSession(){
     const today=getTodayISO();
+    document.getElementById('sesStartDate').value=today;
+    document.getElementById('sesEndDate').value=today;
+    const sesStartDate=document.getElementById('sesStartDate').value||today;
+    const sesEndDate=document.getElementById('sesEndDate').value||today;
     const sesS=timeToMin(document.getElementById('sesStart').value||'17:00');
     const sesE=timeToMin(document.getElementById('sesEnd').value||'21:00');
     let conflicts=[];
     S.courts.forEach(c=>{
-        getBookingsForCourt(c.id,today,sesS,sesE).forEach(b=>conflicts.push({court:c.name,b}));
+        getBookingsForCourt(c.id,sesStartDate,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
+        if(sesStartDate!==sesEndDate) getBookingsForCourt(c.id,sesEndDate,0,sesE).forEach(b=>conflicts.push({court:c.name,b}));
     });
     const prev=document.getElementById('sesConflictPreview');
     prev.innerHTML=conflicts.length>0?`
@@ -1684,18 +1703,22 @@ function openStartSession(){
 }
 
 function startSession(){
-    const start=document.getElementById('sesStart').value;
-    const end=document.getElementById('sesEnd').value;
+    const sd=document.getElementById('sesStartDate').value;
+    const st=document.getElementById('sesStart').value;
+    const ed=document.getElementById('sesEndDate').value;
+    const et=document.getElementById('sesEnd').value;
     const rot=parseInt(document.getElementById('sesRot').value);
     const fee=parseInt(document.getElementById('sesDropIn').value)||0;
     const mode=document.querySelector('input[name="opMode"]:checked').value;
-    if(!start||!end){showNotif('Set start and end times!','error');return;}
-    if(timeToMin(start)>=timeToMin(end)){showNotif('End must be after start!','error');return;}
-    S.session={id:'SES'+Date.now(),start,end,rot,fee,mode,startedAt:Date.now(),active:true};
+    if(!sd||!st||!ed||!et){showNotif('Set start and end date/time!','error');return;}
+    const startDT=new Date(sd+'T'+st);
+    const endDT=new Date(ed+'T'+et);
+    if(endDT<=startDT){showNotif('End must be after start!','error');return;}
+    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,startedAt:Date.now(),active:true};
     updateJoinFormMode();
     closeModal('sessionModal');
-    showNotif(`▶ Open Play started! ${start}–${end}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}`,'success');
-    announce(`Open Play started! ${start}–${end}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}.`);
+    showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}`,'success');
+    announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}.`);
     renderAll();
 }
 
@@ -1893,7 +1916,7 @@ async function aiSuggest(){
     }
     showNotif('🔮 AI thinking...','info');
     const prompt=`You are a smart court assignment assistant for "${S.venueName}".
-Session: ${S.session?S.session.start+'-'+S.session.end+', '+S.session.rot+'min rotations':'None'}
+Session: ${S.session?`${S.session.startDate||'today'} ${S.session.startTime||S.session.start}-${S.session.endDate||'today'} ${S.session.endTime||S.session.end}`+', '+S.session.rot+'min rotations':'None'}
 Available: ${avail.map(c=>c.name+' ('+c.location+', ₱'+c.rate+')').join(', ')}
 Queue: ${S.queue.map((g,i)=>i+1+'. "'+g.groupName+'" – '+g.gameType+', skill '+SKILL_LABELS[g.skillLevel]+', waited '+Math.floor((Date.now()-g.joinedAt)/60000)+'min').join(' | ')}
 
@@ -1947,7 +1970,7 @@ Today's summary:
 - Bookings today: ${todayBks.length} (₱${todayRev} expected)
 - Queue: ${qCount} groups waiting
 ${todayBks.length>0?'Today\'s bookings:\n'+todayBks.map(b=>`  • ${b.customer} — Court ${(S.courts.find(c=>c.id===b.courtId)||{}).name||b.courtId} — ${b.startTime}-${b.endTime} — ${b.paymentMethod} ₱${b.amount}`).join('\n'):''}
-${S.session&&S.session.active?`Open Play session: ${S.session.start}-${S.session.end}, ${S.session.rot}min rotations`:''}
+${S.session&&S.session.active?`Open Play session: ${S.session.startDate||'today'} ${S.session.startTime||S.session.start}-${S.session.endDate||'today'} ${S.session.endTime||S.session.end}, ${S.session.rot}min rotations`:''}
 
 Write a very brief 2-3 sentence morning briefing for the owner. Include key numbers.`;
     callGemini(prompt,'📋 AI Daily Briefing');
@@ -2253,10 +2276,8 @@ function checkBConflict(){
     const conflicts=getBookingsForCourt(cId,date,sM,eM);
     if(conflicts.length>0){
         el.innerHTML=`<div class="conflict-box">⚠️ Conflict! ${conflicts.map(b=>`${b.customer} (${b.startTime}–${b.endTime})`).join(', ')} already booked.</div>`;
-    } else if(S.session&&S.session.active&&date===getTodayISO()){
-        const ss=timeToMin(S.session.start),se=timeToMin(S.session.end);
-        if(sM<se&&eM>ss) el.innerHTML=`<div class="overlap-box">⚠️ Overlaps with Open Play (${S.session.start}–${S.session.end}). Court auto-excluded during booking.</div>`;
-        else el.innerHTML='';
+    } else if(inSession(date,sM,eM)){
+        el.innerHTML=`<div class="overlap-box">⚠️ Overlaps with Open Play (${S.session.startDate||date} ${S.session.startTime||S.session.start}–${S.session.endDate||date} ${S.session.endTime||S.session.end}). Court auto-excluded during booking.</div>`;
     } else el.innerHTML='';
 
     // Update price
@@ -2416,17 +2437,20 @@ function renderBookingTimeline(){
     const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
     S.courts.forEach(court=>{
         let slots='';
-        if(S.session&&S.session.active&&isToday){
-            const ss=timeToMin(S.session.start),se=timeToMin(S.session.end);
-            const bks=getBookingsForCourt(court.id,date,ss,se).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
-            let cur=ss;
+        if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60)){
+            const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
+            const sd=S.session.startDate, ed=S.session.endDate;
+            const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
+            const sesEnd=sd!==ed&&date===sd?24*60:Math.min(se,(eH+1)*60);
+            const bks=getBookingsForCourt(court.id,date,sesStart,sesEnd).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+            let cur=sesStart;
             bks.forEach(b=>{
                 const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
-                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((bs-cur)/(total*60))*100}%;">Open Play</div>`;
+                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">Open Play</div>`;
                 slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
                 cur=be;
             });
-            if(cur<se) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${((se-cur)/(total*60))*100}%;">Open Play</div>`;
+            if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
         } else {
             S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
                 const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
@@ -2460,11 +2484,14 @@ function renderConflicts(){
                     conflicts.push({court:court.name,a,b});
             }
         }
-        if(S.session&&S.session.active) bks.forEach(b=>conflicts.push({type:'op',court:court.name,b,ses:S.session}));
+        if(S.session&&S.session.active){
+            const sM=timeToMin(b.startTime),eM=timeToMin(b.endTime);
+            if(inSession(date,sM,eM)) conflicts.push({type:'op',court:court.name,b,ses:S.session});
+        }
     });
     if(conflicts.length===0){div.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No conflicts!</p></div>';return;}
     div.innerHTML=conflicts.map(c=>c.type==='op'?`
-        <div class="overlap-box" style="margin-bottom:8px;">⚠️ Open Play Overlap — ${c.court}: ${c.b.customer} (${c.b.startTime}–${c.b.endTime}) overlaps Open Play (${c.ses.start}–${c.ses.end})<br><span style="font-size:0.72rem;">→ Court auto-excluded during booking.</span></div>`:
+        <div class="overlap-box" style="margin-bottom:8px;">⚠️ Open Play Overlap — ${c.court}: ${c.b.customer} (${c.b.startTime}–${c.b.endTime}) overlaps Open Play (${c.ses.startDate||date} ${c.ses.startTime||c.ses.start}–${c.ses.endDate||date} ${c.ses.endTime||c.ses.end})<br><span style="font-size:0.72rem;">→ Court auto-excluded during booking.</span></div>`:
         `<div class="conflict-box" style="margin-bottom:8px;">🔴 Double Booking — ${c.court}: ${c.a.customer} (${c.a.startTime}–${c.a.endTime}) vs ${c.b.customer} (${c.b.startTime}–${c.b.endTime})
         <div style="margin-top:6px;display:flex;gap:6px;"><button class="btn btn-danger btn-sm" onclick="cancelB('${c.b.id}')">Cancel ${c.b.customer}</button><button class="btn btn-danger btn-sm" onclick="cancelB('${c.a.id}')">Cancel ${c.a.customer}</button></div></div>`
     ).join('');
@@ -3270,7 +3297,7 @@ function renderSession(){
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div class="live-dot"></div>
                     <div>
-                        <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${ses.start} to ${ses.end}</div>
+                        <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${ses.startDate||'today'} ${ses.startTime||ses.start} to ${ses.endDate||'today'} ${ses.endTime||ses.end}</div>
                         <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':'🔄 4 on / 4 off'}</div>
                     </div>
                 </div>
