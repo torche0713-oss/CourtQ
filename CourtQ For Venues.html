@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourtQ Pro — For Venue Owners</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;overflow:hidden;height:100vh;perspective:1200px}
+.slide-stage{width:100vw;height:100vh;position:relative;transform-style:preserve-3d}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;padding:60px 80px;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;will-change:transform,opacity;transition:transform 0.7s cubic-bezier(0.4,0,0.2,1),opacity 0.6s ease;background:#0a0a1a}
+.slide.dim{pointer-events:none}
+.slide.active{z-index:10;pointer-events:auto}
+.slide.active{transform:translateZ(0) scale(1);opacity:1;filter:drop-shadow(0 0 60px rgba(78,205,196,0.08))}
+.slide.dim{transform:translateZ(-600px) scale(0.85);opacity:0.15}
+.slide.prev{transform:translateZ(-300px) translateX(-80px) scale(0.9);opacity:0.35;filter:blur(1px)}
+.slide.next{transform:translateZ(-300px) translateX(80px) scale(0.9);opacity:0.35;filter:blur(1px)}
+.slide.hidden{transform:translateZ(-800px) scale(0.8);opacity:0;pointer-events:none}
+.slide-inner{max-width:1100px;margin:0 auto;width:100%}
+
+/* hero */
+.hero{background:linear-gradient(135deg,#0a0a1a 0%,#16213e 50%,#0f3460 100%);text-align:center}
+.hero .logo-icon{font-size:5rem;margin-bottom:16px}
+.hero h1{font-size:4rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#4ecdc4,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .pro-badge{display:inline-block;background:linear-gradient(135deg,#f39c12,#d68910);color:#fff;font-size:0.7rem;padding:3px 10px;border-radius:6px;font-weight:800;letter-spacing:1px;vertical-align:super;margin-left:4px;-webkit-text-fill-color:#fff}
+.hero .tagline{font-size:1.2rem;color:#ccc;margin-top:12px;font-weight:400}
+.hero .sub{font-size:0.9rem;color:#ccc;margin-top:30px;text-transform:uppercase;letter-spacing:3px}
+.hero .scroll-hint{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);color:#ccc;font-size:0.8rem;animation:bounce 2s infinite}
+
+/* nav */
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,26,0.95);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.06);padding:12px 20px;display:flex;justify-content:center;gap:8px;z-index:100;flex-wrap:wrap}
+.nav button{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#bbb;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.75rem;font-weight:600;transition:all 0.2s;font-family:'Inter',sans-serif}
+.nav button:hover{background:rgba(78,205,196,0.1);color:#4ecdc4}
+.nav button.active{background:rgba(78,205,196,0.15);color:#4ecdc4;border-color:rgba(78,205,196,0.3)}
+
+/* slide content */
+h2{font-size:2.2rem;font-weight:800;margin-bottom:8px;letter-spacing:-1px}
+h2 .highlight{background:linear-gradient(135deg,#4ecdc4,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2 .orange{background:linear-gradient(135deg,#f39c12,#d68910);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.lead{font-size:1.05rem;color:#ccc;margin-bottom:32px;font-weight:400;line-height:1.6}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;transition:all 0.3s}
+.card:hover{background:rgba(78,205,196,0.06);border-color:rgba(78,205,196,0.2);transform:translateY(-2px)}
+.card-icon{font-size:2rem;margin-bottom:12px}
+.card h3{font-size:1rem;font-weight:700;margin-bottom:6px;color:#eee}
+.card p{font-size:0.82rem;color:#bbb;line-height:1.5}
+.card .big{font-size:1.8rem;font-weight:900;color:#4ecdc4}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:32px}
+.stat{text-align:center;padding:20px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+.stat-num{font-size:2rem;font-weight:900;color:#4ecdc4;letter-spacing:-1px}
+.stat-label{font-size:0.75rem;color:#aaa;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* comparison table */
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06)}
+th{color:#ddd;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px}
+td{color:#eee}
+td:last-child,th:last-child{text-align:center}
+td:last-child{color:#4ecdc4;font-weight:700}
+tr:hover{background:rgba(255,255,255,0.02)}
+
+/* pricing */
+.pricing-box{background:rgba(78,205,196,0.06);border:2px solid rgba(78,205,196,0.25);border-radius:20px;padding:36px;max-width:600px;margin:0 auto;text-align:center}
+.pricing-box .big-price{font-size:3.5rem;font-weight:900;color:#4ecdc4;letter-spacing:-2px}
+.pricing-box .big-price span{font-size:1.1rem;color:#ccc;font-weight:400}
+.pricing-box .per-month{font-size:0.9rem;color:#ddd;margin-top:4px}
+.pricing-box .sub-text{font-size:0.85rem;color:#ccc;margin-top:16px;line-height:1.6}
+.example{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;max-width:500px;margin-left:auto;margin-right:auto}
+.example-item{background:rgba(255,255,255,0.04);border-radius:10px;padding:16px;text-align:center}
+.example-item .courts{font-size:1.5rem;font-weight:800;color:#f39c12}
+.example-item .cost{font-size:1.2rem;font-weight:700;color:#4ecdc4;margin-top:4px}
+.example-item .label{font-size:0.7rem;color:#aaa;margin-top:2px}
+
+/* roi */
+.roi-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:12px}
+.roi-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:28px;text-align:center}
+.roi-card .roi-icon{font-size:2.2rem;margin-bottom:8px}
+.roi-card h3{font-size:1rem;margin-bottom:4px}
+.roi-card .roi-num{font-size:2.8rem;font-weight:900;color:#4ecdc4}
+.roi-card .roi-num.orange{color:#f39c12}
+.roi-card p{font-size:0.82rem;color:#bbb;margin-top:6px}
+
+/* CTA */
+.cta-slide{text-align:center;background:linear-gradient(135deg,#0a0a1a 0%,#0f3460 100%)}
+.cta-slide h2{font-size:2.8rem}
+.cta-slide .big-btn{display:inline-block;margin-top:24px;padding:16px 40px;background:linear-gradient(135deg,#4ecdc4,#44b3ab);color:#0a0a1a;font-size:1.1rem;font-weight:800;border-radius:12px;text-decoration:none;transition:all 0.3s}
+.cta-slide .big-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(78,205,196,0.3)}
+.cta-slide .contact{color:#aaa;font-size:0.85rem;margin-top:20px;line-height:1.8}
+
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-6px)}}
+
+@media(max-width:768px){
+body{perspective:800px;-webkit-perspective:800px}
+.slide{padding:32px 16px}
+.slide-inner{display:flex;flex-direction:column;justify-content:center;min-height:100%}
+.hero h1{font-size:2.2rem}
+h2{font-size:1.3rem;margin-bottom:6px}
+.lead{font-size:0.85rem;margin-bottom:20px}
+.grid{grid-template-columns:1fr;gap:10px}
+.card{padding:16px}
+.card-icon{font-size:1.4rem;margin-bottom:8px}
+.card h3{font-size:0.85rem}
+.card p{font-size:0.75rem}
+.card .big{font-size:1.2rem}
+.stats{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.stat{padding:12px}
+.stat-num{font-size:1.3rem}
+.stat-label{font-size:0.6rem}
+.nav{gap:4px;padding:8px 8px}
+.nav button{padding:5px 7px;font-size:0.55rem;border-radius:6px}
+.roi-grid{grid-template-columns:1fr;gap:12px}
+.roi-card{padding:16px}
+.roi-card .roi-num{font-size:1.8rem}
+.example{grid-template-columns:1fr}
+.pricing-box{padding:20px}
+.pricing-box .big-price{font-size:2.5rem}
+.hero .logo-icon{font-size:3rem;margin-bottom:10px}
+.hero .tagline{font-size:0.9rem}
+.hero .sub{font-size:0.75rem;margin-top:16px}
+.hero .scroll-hint{font-size:0.65rem;bottom:70px}
+table{font-size:0.65rem}
+th,td{padding:8px 8px}
+/* flatten 3D on small screens for readability */
+.slide.prev{transform:translateZ(-150px) translateX(-30px) scale(0.92)!important;filter:blur(0.5px)!important}
+.slide.next{transform:translateZ(-150px) translateX(30px) scale(0.92)!important;filter:blur(0.5px)!important}
+.slide.dim{transform:translateZ(-350px) scale(0.88)!important}
+.slide{padding:32px 16px}
+}
+@media(max-width:420px){
+.nav button{padding:4px 5px;font-size:0.48rem;border-radius:4px}
+h2{font-size:1.1rem}
+.lead{font-size:0.78rem}
+.grid{gap:8px}
+.card{padding:12px}
+.slide{padding:24px 12px}
+.hero h1{font-size:1.7rem}
+.hero .logo-icon{font-size:2.2rem}
+}
+</style>
+</head>
+<body>
+
+<div class="slide-stage">
+<!-- SLIDE 1: Hero -->
+<div class="slide hero" id="s1">
+<div class="slide-inner">
+<div class="logo-icon">🏓</div>
+<h1>CourtQ <span class="pro-badge">PRO</span></h1>
+<div class="tagline">Your pickleball venue deserves a professional booking system.</div>
+<div class="sub">No commissions · No hidden fees · You keep 100% of your revenue</div>
+</div>
+<div class="scroll-hint">▼ Navigate using the bar below</div>
+</div>
+
+<!-- SLIDE 2: The Struggle -->
+<div class="slide" id="s2">
+<div class="slide-inner">
+<h2><span class="orange">Tired of...</span></h2>
+<div class="lead">Running your venue through phone calls, text messages, and messy chat groups?</div>
+<div class="grid">
+<div class="card"><div class="card-icon">📞</div><h3>Phone Tag</h3><p>"Is Court 1 available at 4pm?" — answering calls all day instead of running your business.</p></div>
+<div class="card"><div class="card-icon">💸</div><h3>Lost Payments</h3><p>Cash payments you forgot to record. GCash transfers you can't track. Revenue slipping through the cracks.</p></div>
+<div class="card"><div class="card-icon">😤</div><h3>Double Bookings</h3><p>Two groups show up for the same court at the same time. Angry customers, stressed staff.</p></div>
+<div class="card"><div class="card-icon">❓</div><h3>No Visibility</h3><p>How much did you earn this week? Which court is most profitable? Who's your best customer? You have no idea.</p></div>
+<div class="card"><div class="card-icon">📋</div><h3>Open Play Chaos</h3><p>No rotation system, players arguing over court time, no fair way to mix teams or track who's next.</p></div>
+<div class="card"><div class="card-icon">😰</div><h3>Staff Headaches</h3><p>You can't be at the venue 24/7. But there's no way to let staff manage bookings without giving them full access to your finances.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 3: What If -->
+<div class="slide" id="s3">
+<div class="slide-inner">
+<h2>Now imagine <span class="highlight">this</span></h2>
+<div class="lead">Customers book their own courts online. Payments are tracked automatically. You check your business from your phone.</div>
+<div class="grid">
+<div class="card"><div class="card-icon">🌐</div><div class="big">Your Own Portal</div><p>Customers visit your venue's booking page — pick a court, choose a time, pay via GCash or Maya, done. No phone calls needed.</p></div>
+<div class="card"><div class="card-icon">📊</div><div class="big">Live Dashboard</div><p>See every court's status in real time. Who's playing, who's waiting, who's booked later today. All on one screen.</p></div>
+<div class="card"><div class="card-icon">💰</div><div class="big">Auto-Tracked Revenue</div><p>Every booking is logged. Every payment is recorded. Revenue by court, by day, by week, by month — always up to date.</p></div>
+<div class="card"><div class="card-icon">🤖</div><div class="big">AI Assistant</div><p>Get a daily briefing of your venue's activity. AI analyzes your financials. AI suggests optimal court pricing. Like having a data analyst on staff.</p></div>
+<div class="card"><div class="card-icon">🏓</div><div class="big">Smart Open Play</div><p>Two modes: 4 on/4 off (fixed group rotation) or Winners Stay & Split (winners stay, losers rotate, teams reform every game). Skill-matched pairing with balanced doubles teams.</p></div>
+<div class="card"><div class="card-icon">👤</div><div class="big">Staff Controls</div><p>Add your staff by email. They can manage the floor. You control the money. Simple.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 4: Pricing -->
+<div class="slide" id="s4">
+<div class="slide-inner">
+<h2>Simple <span class="orange">Pricing</span></h2>
+<div class="lead">We're launching — first 2 months at a special rate. After that, regular pricing applies.</div>
+<div class="pricing-box" style="margin-bottom:16px;">
+<div class="big-price" style="color:#f39c12;">₱2,000<span>/mo</span></div>
+<div class="per-month" style="color:#f39c12;">Promo — first 2 months only</div>
+<div class="sub-text">for up to <strong style="color:#fff">3 courts</strong>. Then <strong style="color:#f39c12">₱250/mo</strong> per additional court beyond 3.</div>
+<div class="example">
+<div class="example-item" style="border:1px solid rgba(243,156,18,0.3);"><div class="courts" style="color:#f39c12;">3</div><div class="cost" style="color:#f39c12;">₱2,000<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+<div class="example-item" style="border:1px solid rgba(243,156,18,0.3);"><div class="courts" style="color:#f39c12;">6</div><div class="cost" style="color:#f39c12;">₱2,750<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+<div class="example-item" style="border:1px solid rgba(243,156,18,0.3);"><div class="courts" style="color:#f39c12;">10</div><div class="cost" style="color:#f39c12;">₱3,750<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+<div class="example-item" style="border:1px solid rgba(243,156,18,0.3);"><div class="courts" style="color:#f39c12;">20</div><div class="cost" style="color:#f39c12;">₱6,250<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+</div>
+</div>
+<div class="pricing-box" style="border-color:rgba(78,205,196,0.25);">
+<div class="big-price">₱5,000<span>/mo</span></div>
+<div class="per-month">Regular pricing (from month 3)</div>
+<div class="sub-text">for up to <strong style="color:#fff">3 courts</strong>. Then <strong style="color:#4ecdc4">₱500/mo</strong> per additional court beyond 3.</div>
+<div class="example">
+<div class="example-item"><div class="courts">3</div><div class="cost">₱5,000<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+<div class="example-item"><div class="courts">6</div><div class="cost">₱6,500<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+<div class="example-item"><div class="courts">10</div><div class="cost">₱8,500<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+<div class="example-item"><div class="courts">20</div><div class="cost">₱13,500<span style="font-size:0.7rem;color:#ccc;font-weight:400">/mo</span></div><div class="label">Courts</div></div>
+</div>
+</div>
+<div style="text-align:center;margin-top:20px;font-size:0.85rem;color:#ccc">You keep <strong style="color:#4ecdc4">100% of your court revenue</strong>. No per-booking commission. No transaction fees.</div>
+<div style="text-align:center;margin-top:16px;padding:16px;background:rgba(243,156,18,0.06);border:1px solid rgba(243,156,18,0.15);border-radius:12px;max-width:500px;margin-left:auto;margin-right:auto">
+<p style="font-size:0.8rem;color:#ccc;line-height:1.6"><strong style="color:#f39c12">📋 1-Year Contract</strong><br>Minimum 1-year term with auto-renewal.<br>Pay <strong style="color:#f39c12">₱2,000/mo</strong> for first 2 months, then <strong style="color:#fff">₱5,000/mo</strong> from month 3.<br>Cancel with <strong style="color:#fff">1-month notice</strong> before renewal date.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 5: ROI -->
+<div class="slide" id="s5">
+<div class="slide-inner">
+<h2>What's this <span class="highlight">worth to you?</span></h2>
+<div class="lead">CourtQ Pro pays for itself many times over. Here's the math.</div>
+<div class="roi-grid">
+<div class="roi-card"><div class="roi-icon">📅</div><h3>Extra Booking / Day</h3><div class="roi-num">+1</div><p>One extra booking per day at ₱200/hr = <strong style="color:#4ecdc4">₱6,000/mo</strong> — that already covers your subscription (promo rate: <strong style="color:#f39c12">₱2,000</strong>)</p></div>
+<div class="roi-card"><div class="roi-icon">🚫</div><h3>Fewer No-Shows</h3><div class="roi-num orange">-80%</div><p>Online bookings with payment confirmation drastically reduce no-shows vs verbal agreements</p></div>
+<div class="roi-card"><div class="roi-icon">⏱️</div><h3>Staff Time Saved</h3><div class="roi-num">10+</div><p>Hours per week your staff save not answering calls, writing down bookings, and chasing payments</p></div>
+<div class="roi-card"><div class="roi-icon">📈</div><h3>Revenue Uplift</h3><div class="roi-num orange">15-25%</div><p>Venues typically see 15-25% more revenue within 2 months from better utilization and fewer leaks</p></div>
+</div>
+<div style="text-align:center;margin-top:24px;padding:16px;background:rgba(78,205,196,0.06);border-radius:12px;border:1px solid rgba(78,205,196,0.15)">
+<p style="font-size:0.9rem;color:#ccc">For a 6-court venue: <strong style="color:#f39c12">₱2,750/mo</strong> intro or <strong style="color:#fff">₱6,500/mo</strong> regular — even <strong style="color:#4ecdc4">1 extra booking per day</strong> at ₱250/hr covers the cost 3x over.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 6: Feature Tour -->
+<div class="slide" id="s6">
+<div class="slide-inner">
+<h2>Everything <span class="highlight">Included</span></h2>
+<div class="lead">No add-ons, no tier upgrades, no upsells. Every feature is included from day one.</div>
+<table>
+<tr><th>Feature</th><th>Benefit to You</th><th>Included</th></tr>
+<tr><td><strong>Public Booking Portal</strong></td><td>Your own booking website — customers book courts 24/7 without calling you</td><td>✓</td></tr>
+<tr><td><strong>GCash & Maya Payments</strong></td><td>Customers pay via GCash/Maya with reference tracking. You verify and confirm.</td><td>✓</td></tr>
+
+<tr><td><strong>Live Court Dashboard</strong></td><td>See all courts, who's playing, who's next — at a glance</td><td>✓</td></tr>
+<tr><td><strong>Smart Open Play</strong></td><td>Two modes: 4 on/4 off or Winners Stay & Split. Skill-based matching, balanced doubles teams (snake draft), timed rotations, auto-queue</td><td>✓</td></tr>
+<tr><td><strong>Online Bookings Calendar</strong></td><td>Daily/weekly view of all bookings with timeline and conflict detection</td><td>✓</td></tr>
+<tr><td><strong>Confirmations Page</strong></td><td>One-click verify pending payments. Booking auto-confirms and sale is logged.</td><td>✓</td></tr>
+<tr><td><strong>Financial Reports</strong></td><td>Revenue by court, peak hours chart, online vs in-person split, period comparison, monthly net position table with CSV export</td><td>✓</td></tr>
+<tr><td><strong>Cost Tracking</strong></td><td>Log your venue costs (rent, utilities, staff). See net profit per period.</td><td>✓</td></tr>
+<tr><td><strong>AI Daily Briefing</strong></td><td>Morning summary: today's bookings, expected revenue, court availability</td><td>✓</td></tr>
+<tr><td><strong>AI Financial Insights</strong></td><td>AI analyzes your revenue data and gives actionable recommendations</td><td>✓</td></tr>
+<tr><td><strong>AI Pricing Suggestions</strong></td><td>AI recommends optimal court rates based on booking patterns and demand</td><td>✓</td></tr>
+<tr><td><strong>Staff Access Control</strong></td><td>Add staff by email. They manage operations. Financials stay locked to you.</td><td>✓</td></tr>
+<tr><td><strong>Player Leaderboard</strong></td><td>Track wins, games played, and build community among your players</td><td>✓</td></tr>
+<tr><td><strong>Booking History</strong></td><td>Complete archive of all past bookings, payments, and check-ins</td><td>✓</td></tr>
+</table>
+</div>
+</div>
+
+<!-- SLIDE 7: See It Yourself -->
+<div class="slide" id="s7">
+<div class="slide-inner">
+<h2>Try it <span class="highlight">right now</span></h2>
+<div class="lead">No signup. No credit card. One click and you're in.</div>
+<div style="text-align:center;padding:40px">
+<div style="font-size:6rem;margin-bottom:20px">🏓</div>
+<h3 style="font-size:1.4rem;margin-bottom:12px">Visit the link below</h3>
+<p style="color:#ccc;font-size:1rem;margin-bottom:20px">Click <strong>"Try Demo"</strong> on the landing page to instantly create a sample venue with 3 courts and pre-loaded data. Explore the full dashboard right now.</p>
+<div style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:16px;display:inline-block">
+<a href="https://courtq-pro.vercel.app" target="_blank" style="color:#4ecdc4;font-size:1.3rem;font-weight:700;text-decoration:none">courtq-pro.vercel.app</a>
+</div>
+<p style="color:#aaa;font-size:0.82rem;margin-top:16px">Demo expires after 30 minutes of inactivity. All data is temporary.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 8: What You Get -->
+<div class="slide" id="s8">
+<div class="slide-inner">
+<h2>Still <span class="orange">on the fence?</span></h2>
+<div class="lead">Here's exactly what happens when you partner with CourtQ Pro.</div>
+<div class="grid">
+<div class="card"><div class="card-icon">⚡</div><h3>5-Minute Setup</h3><p>I create your venue and send you your booking link. That's it. No installation, no technical skills needed.</p></div>
+<div class="card"><div class="card-icon">📚</div><h3>Quick Onboarding</h3><p>I walk you through the dashboard — bookings, queue, financials, staff. Takes 20 minutes. You'll be an expert.</p></div>
+<div class="card"><div class="card-icon">📢</div><h3>Share Your Portal</h3><p>Post your booking link on Facebook, Instagram, and GChat. Customers start booking themselves immediately.</p></div>
+<div class="card"><div class="card-icon">📱</div><h3>Manage From Anywhere</h3><p>Check bookings, confirm payments, and view reports from your phone. The venue runs itself.</p></div>
+<div class="card"><div class="card-icon">🛟</div><h3>Ongoing Support</h3><p>Questions? Issues? Need a feature? I'm a message away. Updates and improvements are continuous.</p></div>
+<div class="card"><div class="card-icon">📋</div><h3>1-Year Contract</h3><p>Minimum 1-year term with auto-renewal. Cancel with 1-month notice before your renewal date. Simple and transparent.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 9: Who This Is For -->
+<div class="slide" id="s9">
+<div class="slide-inner">
+<h2>This is for you <span class="highlight">if...</span></h2>
+<div class="grid">
+<div class="card" style="text-align:center;padding:32px"><div class="card-icon" style="font-size:2.5rem">🏟️</div><h3>You own a pickleball venue</h3><p>3 courts, 6 courts, 20 courts — the system scales with you.</p></div>
+<div class="card" style="text-align:center;padding:32px"><div class="card-icon" style="font-size:2.5rem">📞</div><h3>You're tired of manual bookings</h3><p>Phone calls, texts, DMs — you want a system that handles it all.</p></div>
+<div class="card" style="text-align:center;padding:32px"><div class="card-icon" style="font-size:2.5rem">💡</div><h3>You want data-driven decisions</h3><p>Know your peak hours, profitable courts, and revenue trends.</p></div>
+<div class="card" style="text-align:center;padding:32px"><div class="card-icon" style="font-size:2.5rem">🧘</div><h3>You want peace of mind</h3><p>Staff can manage the floor. Payments are tracked. You sleep better.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 10: CTA -->
+<div class="slide cta-slide" id="s10">
+<div class="slide-inner">
+<div class="logo-icon" style="font-size:4rem">🏓</div>
+<h2>Let's set up <span class="highlight">your venue.</span></h2>
+<div class="lead" style="font-size:1.1rem;margin-top:16px">Message me to get started. First venue setup is free.</div>
+<a class="big-btn" href="mailto:apexmindagency@gmail.com">📧 Get Started</a>
+<div class="contact">
+apexmindagency@gmail.com<br>
+<a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;text-decoration:none;font-size:0.9rem;">facebook.com/aiautomationexpert</a><br>
+<span style="font-size:0.75rem">DM me on Facebook — I'll reply within an hour</span>
+</div>
+<div style="margin-top:30px;font-size:0.8rem;color:#999">
+Live demo: <a href="https://courtq-pro.vercel.app" style="color:#4ecdc4;text-decoration:none" target="_blank">courtq-pro.vercel.app</a>
+</div>
+</div>
+</div>
+
+</div>
+<!-- Navigation -->
+<div class="nav" id="slideNav">
+<button class="active" onclick="goSlide(1)">🏓 Overview</button>
+<button onclick="goSlide(2)">The Struggle</button>
+<button onclick="goSlide(3)">Solution</button>
+<button onclick="goSlide(4)">Pricing</button>
+<button onclick="goSlide(5)">ROI</button>
+<button onclick="goSlide(6)">Features</button>
+<button onclick="goSlide(7)">Live Demo</button>
+<button onclick="goSlide(8)">Onboarding</button>
+<button onclick="goSlide(9)">Who This Is For</button>
+<button onclick="goSlide(10)">Contact</button>
+</div>
+
+<script>
+let currentSlide = 1;
+const totalSlides = 10;
+
+function goSlide(n) {
+if (n < 1 || n > totalSlides) return;
+const slides = document.querySelectorAll('.slide');
+slides.forEach((s, i) => {
+s.classList.remove('active', 'prev', 'next', 'dim', 'hidden');
+const diff = i + 1 - n;
+if (diff === 0) s.classList.add('active');
+else if (diff === -1) s.classList.add('next');
+else if (diff === 1) s.classList.add('prev');
+else s.classList.add('dim');
+});
+document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+document.querySelectorAll('.nav button')[n-1].classList.add('active');
+currentSlide = n;
+}
+
+document.addEventListener('keydown', e => {
+if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+e.preventDefault();
+if (currentSlide < totalSlides) goSlide(currentSlide + 1);
+}
+if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+e.preventDefault();
+if (currentSlide > 1) goSlide(currentSlide - 1);
+}
+});
+
+let touchX = 0;
+document.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
+document.addEventListener('touchend', e => {
+const diff = touchX - e.changedTouches[0].clientX;
+if (Math.abs(diff) > 50) {
+if (diff > 0 && currentSlide < totalSlides) goSlide(currentSlide + 1);
+if (diff < 0 && currentSlide > 1) goSlide(currentSlide - 1);
+}
+});
+
+// Mouse wheel navigation
+let wheelBusy = false;
+document.addEventListener('wheel', e => {
+if (wheelBusy) return;
+const dir = Math.sign(e.deltaY);
+if (dir > 0 && currentSlide < totalSlides) { wheelBusy = true; goSlide(currentSlide + 1); setTimeout(() => wheelBusy = false, 800); }
+if (dir < 0 && currentSlide > 1) { wheelBusy = true; goSlide(currentSlide - 1); setTimeout(() => wheelBusy = false, 800); }
+}, { passive: true });
+
+// Initialize
+goSlide(1);
+</script>
+</body>
+</html>
