@@ -496,7 +496,7 @@ function renderSlots(){
     S.portal.date=date; S.portal.duration=dur;
     const grid=document.getElementById('slotGrid');
     grid.innerHTML='';
-    const open=7*60, close=22*60, step=60;
+    const open=0, close=24*60, step=60;
     for(let t=open;t<close-dur+step;t+=step){
         const conflicts=getBookingsForCourt(S.portal.courtId,date,t,t+dur);
         const taken=conflicts.length>0;
