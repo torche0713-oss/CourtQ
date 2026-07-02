@@ -2338,6 +2338,7 @@ function createBooking(){
     if(!customer||!cId||!date||!start||!dur){showNotif('Fill all required fields!','error');return;}
     const sM=timeToMin(start),eM=sM+dur;
     if(getBookingsForCourt(cId,date,sM,eM).length>0){showNotif('Slot conflict!','error');return;}
+    if(inSession(date,sM,eM)){showNotif('Cannot book — Open Play session during this time.','error');return;}
     const c=S.courts.find(x=>x.id===cId);
     const b={
         id:genId(),customer,phone:document.getElementById('bPhone').value.trim(),email:document.getElementById('bEmail').value.trim(),
@@ -2573,6 +2574,7 @@ function renderConfirmations(){
 function confirmBookingPayment(bId){
     const b=S.bookings.find(x=>x.id===bId);
     if(!b) return;
+    if(inSession(b.date,timeToMin(b.startTime),timeToMin(b.endTime))){showNotif('Cannot confirm — Open Play session overlaps.','error');return;}
     b.status='confirmed';
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
     saveState();renderConfirmations();renderBookings();

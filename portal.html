@@ -396,7 +396,7 @@ const db = firebase.firestore();
 
 // ===================== STATE =====================
 let S = {
-    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
 };
 let VENUE_ID = null;
@@ -407,6 +407,17 @@ function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); ret
 function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
+
+function inSession(date, sMin, eMin){
+    if(!S.session||!S.session.active) return false;
+    const sd=S.session.startDate||date, ed=S.session.endDate||sd;
+    const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
+    if(date<sd||date>ed) return false;
+    if(sd===ed) return sMin<se&&eMin>ss;
+    if(date===sd) return eMin>ss;
+    if(date===ed) return sMin<se;
+    return true;
+}
 
 // ===================== NOTIFY =====================
 function showNotif(msg,type='success'){
@@ -500,10 +511,11 @@ function renderSlots(){
     const open=0, close=24*60, step=60;
     for(let t=open;t<close-dur+step;t+=step){
         const conflicts=getBookingsForCourt(S.portal.courtId,date,t,t+dur);
-        const taken=conflicts.length>0;
+        const opBlock=inSession(date,t,t+dur);
+        const taken=conflicts.length>0||opBlock;
         const btn=document.createElement('div');
         btn.className=`slot-btn ${taken?'taken':''} ${S.portal.slot===t?'selected':''}`;
-        btn.innerHTML=`<div style="font-weight:700;">${minToTime(t)}</div><div style="font-size:0.65rem;color:${taken?'#e74c3c':'#aaa'};">${taken?'Booked':'Available'}</div>`;
+        btn.innerHTML=`<div style="font-weight:700;">${minToTime(t)}</div><div style="font-size:0.65rem;color:${taken?'#e74c3c':'#aaa'};">${opBlock?'Open Play':taken?'Booked':'Available'}</div>`;
         if(!taken) btn.onclick=()=>{S.portal.slot=t;document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');};
         grid.appendChild(btn);
     }
@@ -554,6 +566,8 @@ function processPortalPayment(){
     if(!S.portal.payMethod){showNotif('Select payment method!','error');return;}
     const ref=document.getElementById('portalRef');
     if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
+    const dur=S.portal.duration;
+    if(inSession(S.portal.date,S.portal.slot,S.portal.slot+dur)){showNotif('Cannot book — Open Play session in progress during this time.','error');return;}
     goPortalStep(5);
     const conf=document.getElementById('confirmationContent');
     conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#4ecdc4;">Processing Payment...</div></div>`;
@@ -698,6 +712,7 @@ function processPortalPayment(){
         S.logoUrl = data.logoUrl || '';
         S.courts = data.courts || [];
         S.bookings = data.bookings || [];
+        S.session = data.session || null;
         S.nextBId = data.nextBId || 1;
         S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
         const logoHtml=S.logoUrl?`<img src="${S.logoUrl}" style="height:28px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">`:'';
