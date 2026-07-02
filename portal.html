@@ -574,8 +574,14 @@ function processPortalPayment(){
                 if (e.code === 'not-found') {
                     db.collection('venues').doc(VENUE_ID).set({
                         bookings: [b], nextBId: S.nextBId
-                    }, { merge: true });
-                } else { console.warn('Booking save failed:', e); }
+                    }, { merge: true }).catch(e2 => {
+                        console.warn('Booking create failed:', e2);
+                        showNotif('Booking failed to save. Please try again or contact the venue.','error');
+                    });
+                } else {
+                    console.warn('Booking save failed:', e);
+                    showNotif('Booking failed to save. Please try again.','error');
+                }
             });
         }
         const payInfo='₱'+total+(refNum?' (Ref: '+refNum+')':'');
