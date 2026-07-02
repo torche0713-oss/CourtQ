@@ -989,7 +989,7 @@
     <div id="devContent">
         <div class="card">
             <div class="card-title"><span>💻 Dev Dashboard</span><button class="btn btn-primary btn-sm" onclick="refreshDevDashboard()">🔄 Refresh</button></div>
-            <div id="devSummary" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+            <div id="devSummary" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
                 <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Venues</div>
                     <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;margin-top:4px;" id="devVenueCount">0</div>
@@ -997,6 +997,10 @@
                 <div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Active Contracts</div>
                     <div style="font-size:1.3rem;font-weight:800;color:#f39c12;margin-top:4px;" id="devActiveContracts">0</div>
+                </div>
+                <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">🔥 Founding</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="devFoundingCount">0</div>
                 </div>
                 <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Monthly Retainers</div>
@@ -2856,7 +2860,7 @@ async function renderDevDashboard(){
     try {
         const slugsSnap=await db.collection('slugs').get();
         const venues=[], pending=[];
-        let activeCount=0, monthlyTotal=0, dueTotal=0;
+        let activeCount=0, monthlyTotal=0, dueTotal=0, foundingCount=0;
         for(const slugDoc of slugsSnap.docs){
             const venueId=slugDoc.data().venueId;
             if(!venueId) continue;
@@ -2867,6 +2871,7 @@ async function renderDevDashboard(){
                 pending.push({slug:slugDoc.id,venueId,data:vData});
                 continue;
             }
+            if(vData.plan==='founding') foundingCount++;
             const contractSnap=await db.collection('contracts').doc(venueId).get();
             const contract=contractSnap.exists?contractSnap.data():null;
             if(contract){_devContracts[venueId]=contract;activeCount++;monthlyTotal+=contract.monthlyRetainer||0;}
@@ -2883,6 +2888,7 @@ async function renderDevDashboard(){
         }
         document.getElementById('devVenueCount').textContent=venues.length+pending.length;
         document.getElementById('devActiveContracts').textContent=activeCount;
+        document.getElementById('devFoundingCount').textContent=foundingCount+'/50';
         document.getElementById('devMonthlyTotal').textContent='₱'+monthlyTotal.toLocaleString();
         document.getElementById('devTotalDue').textContent='₱'+dueTotal.toLocaleString();
 
@@ -2899,7 +2905,7 @@ async function renderDevDashboard(){
                             <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${p.slug}</div>
                             <div style="font-size:0.72rem;color:#aaa;">👤 ${d.ownerName||'N/A'} · 📱 ${d.mobile||'N/A'} · 🏟️ ${(d.courts||[]).length} courts</div>
                             <div style="font-size:0.72rem;color:#aaa;">📧 ${d.ownerId?Object.keys(d).includes('email')?d.email:'(see users doc)':'N/A'} · Ref: ${d.paymentRef||'N/A'}</div>
-                            <div style="font-size:0.72rem;color:#aaa;">💰 Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
+                            <div style="font-size:0.72rem;color:#aaa;">📋 Plan: <strong>${d.plan||'vip'}</strong> · Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
                         </div>
                         <div style="text-align:right;">
                             <button class="btn btn-success btn-sm" onclick="activateVenue('${p.venueId}','${p.slug}')">✅ Activate</button>

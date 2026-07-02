@@ -194,10 +194,34 @@
             <div class="form-group"><label>Number of Courts</label>
                 <input type="number" id="setupCourts" value="3" min="1" max="50" onchange="updatePricing()" style="font-size:1.1rem;font-weight:700;text-align:center;">
             </div>
+            <div style="margin:8px 0;">
+                <div style="font-size:0.68rem;color:#4ecdc4;font-weight:700;margin-bottom:8px;text-align:center;background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:8px;padding:8px;">✅ <strong>Every plan includes ALL features:</strong> booking portal · GCash/Maya · dashboard · financials · AI · Open Play · staff controls · leaderboard · no setup fee · no commission</div>
+                <div style="font-size:0.75rem;color:#aaa;margin-bottom:6px;">Choose your plan:</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+                    <div class="plan-card" data-plan="founding" onclick="selectPlan('founding')" style="background:rgba(231,76,60,0.06);border:2px solid rgba(231,76,60,0.2);border-radius:10px;padding:10px;cursor:pointer;text-align:center;">
+                        <div style="font-size:0.55rem;color:#e74c3c;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🔥 Founding</div>
+                        <div style="font-size:1.2rem;font-weight:900;color:#e74c3c;margin:3px 0;">₱3,000</div>
+                        <div style="font-size:0.6rem;color:#e74c3c;font-weight:600;">for LIFE</div>
+                        <div style="font-size:0.55rem;color:#888;margin-top:4px;">First 50 venues</div>
+                    </div>
+                    <div class="plan-card" data-plan="vip" onclick="selectPlan('vip')" style="background:rgba(243,156,18,0.06);border:2px solid rgba(243,156,18,0.25);border-radius:10px;padding:10px;cursor:pointer;text-align:center;">
+                        <div style="font-size:0.55rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🚀 VIP</div>
+                        <div style="font-size:1.2rem;font-weight:900;color:#f39c12;margin:3px 0;">₱2,500</div>
+                        <div style="font-size:0.6rem;color:#f39c12;font-weight:600;">1st yr, then ₱4k</div>
+                        <div style="font-size:0.55rem;color:#888;margin-top:4px;">Until Aug 2026</div>
+                    </div>
+                    <div class="plan-card" data-plan="regular" onclick="selectPlan('regular')" style="background:rgba(78,205,196,0.06);border:2px solid rgba(78,205,196,0.2);border-radius:10px;padding:10px;cursor:pointer;text-align:center;">
+                        <div style="font-size:0.55rem;color:#4ecdc4;font-weight:700;text-transform:uppercase;letter-spacing:1px;">⚡ Pro</div>
+                        <div style="font-size:1.2rem;font-weight:900;color:#4ecdc4;margin:3px 0;">₱5,000</div>
+                        <div style="font-size:0.6rem;color:#4ecdc4;font-weight:600;">per month</div>
+                        <div style="font-size:0.55rem;color:#888;margin-top:4px;">No deadline</div>
+                    </div>
+                </div>
+            </div>
             <div id="pricingBox" style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:14px;margin:10px 0;text-align:center;">
-                <div style="font-size:0.75rem;color:#aaa;">Promo rate — first 2 months</div>
-                <div style="font-size:1.6rem;font-weight:900;color:#f39c12;" id="setupPrice">₱2,000</div>
-                <div style="font-size:0.78rem;color:#aaa;" id="setupPriceDetail">₱2,000 base (3 courts) + ₱0 for extras</div>
+                <div style="font-size:0.75rem;color:#aaa;" id="setupPlanLabel">VIP Starter — until August 2026</div>
+                <div style="font-size:1.6rem;font-weight:900;color:#f39c12;" id="setupPrice">₱2,500</div>
+                <div style="font-size:0.78rem;color:#aaa;" id="setupPriceDetail">₱2,500 base (5 courts) + ₱0 for extras</div>
             </div>
             <div style="background:rgba(243,156,18,0.06);border:1px solid rgba(243,156,18,0.15);border-radius:10px;padding:12px;margin:8px 0;">
                 <div style="font-weight:700;color:#f39c12;font-size:0.85rem;margin-bottom:6px;">💳 Send payment to:</div>
@@ -335,17 +359,41 @@
             }
         }
 
+        let _selectedPlan = 'vip';
+        const plans = {
+            founding: { name:'Founding Member', base:3000, incl:5, extraRate:250, perBlock:3, color:'#e74c3c', label:'🔥 Founding Member — first 50 venues only' },
+            vip: { name:'VIP Starter', base:2500, incl:5, extraRate:500, perBlock:3, color:'#f39c12', label:'🚀 VIP Starter — until August 2026' },
+            regular: { name:'Regular Pro', base:5000, incl:5, extraRate:500, perBlock:3, color:'#4ecdc4', label:'⚡ Regular Pro — no deadline' }
+        };
+
+        function selectPlan(p) {
+            _selectedPlan = p;
+            document.querySelectorAll('.plan-card').forEach(el => {
+                el.style.borderColor = 'rgba(255,255,255,0.15)';
+                el.style.background = 'rgba(255,255,255,0.03)';
+            });
+            const card = document.querySelector(`.plan-card[data-plan="${p}"]`);
+            if (card) {
+                const border = { founding:'rgba(231,76,60,0.3)', vip:'rgba(243,156,18,0.3)', regular:'rgba(78,205,196,0.3)' };
+                const bg = { founding:'rgba(231,76,60,0.06)', vip:'rgba(243,156,18,0.06)', regular:'rgba(78,205,196,0.06)' };
+                card.style.borderColor = border[p];
+                card.style.background = bg[p];
+            }
+            updatePricing();
+        }
+
         function updatePricing() {
             const c = parseInt(document.getElementById('setupCourts').value, 10) || 3;
-            const base = 2000, extraRate = 250, incl = 3;
-            const extra = Math.max(0, c - incl);
-            const total = base + extra * extraRate;
-            const selected = ' (' + c + ' court' + (c>1?'s':'') + ' selected)';
+            const plan = plans[_selectedPlan];
+            const extra = Math.max(0, c - plan.incl);
+            const blocks = Math.ceil(extra / plan.perBlock);
+            const total = plan.base + blocks * plan.extraRate;
+            document.getElementById('setupPlanLabel').textContent = plan.label;
             document.getElementById('setupPrice').textContent = '₱' + total.toLocaleString();
             document.getElementById('setupPriceDetail').textContent =
-                '₱' + base.toLocaleString() + ' (inclusive up to ' + incl + ' courts)' +
-                (extra>0?' + ₱' + (extra*extraRate).toLocaleString() + ' for ' + extra + ' extra': '') +
-                selected;
+                '₱' + plan.base.toLocaleString() + ' base (' + plan.incl + ' courts incl.)' +
+                (blocks > 0 ? ' + ₱' + (blocks * plan.extraRate).toLocaleString() + ' for extra courts' : '') +
+                ' (' + c + ' court' + (c>1?'s':'') + ')';
         }
 
         function showSetupError(msg) {
@@ -364,9 +412,11 @@
             const p = _pendingCred;
             if (!p) { showSetupError('Session expired. Please sign up again.'); return; }
             const c = parseInt(document.getElementById('setupCourts').value, 10) || 3;
-            const base = 2000, extraRate = 250, incl = 3;
-            const extra = Math.max(0, c - incl);
-            const monthly = base + extra * extraRate;
+            const planKey = _selectedPlan;
+            const plan = plans[planKey];
+            const extra = Math.max(0, c - plan.incl);
+            const blocks = Math.ceil(extra / plan.perBlock);
+            const monthly = plan.base + blocks * plan.extraRate;
             showLoading('Submitting your venue...');
             try {
                 const slug = p.venue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'venue';
@@ -394,7 +444,8 @@
                     bookings: [], history: [], leaderboard: {}, sales: [],
                     nextId: 100, nextBId: 1,
                     status: 'pending', mobile: p.mobile, ownerName: p.name,
-                    paymentRef: ref, monthlyRate: monthly, courtCount: c
+                    paymentRef: ref, monthlyRate: monthly, courtCount: c,
+                    plan: planKey
                 });
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ venueId });
@@ -410,13 +461,13 @@
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
                             subject: 'Welcome to CourtQ Pro! 🎾',
-                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
+                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
                         });
                         // Developer notification
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
                             subject: `New Venue Signup: ${p.venue}`,
-                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
@@ -433,6 +484,7 @@
                         <div style="color:#888;">Email:</div><div style="font-weight:600;">${p.email}</div>
                         <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${p.mobile}</div>
                         <div style="color:#888;">Courts:</div><div style="font-weight:600;">${c}</div>
+                        <div style="color:#888;">Plan:</div><div style="font-weight:600;">${plan.name}</div>
                         <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">₱${monthly.toLocaleString()}</div>
                         <div style="color:#888;">Payment Ref:</div><div style="font-weight:600;">${ref}</div>
                         <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
