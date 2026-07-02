@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourtQ Pro — Letter of Agreement</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+    body {
+        font-family:'Inter',sans-serif; background:#0a0a0f; color:#e0e0e0;
+        padding:40px 20px; display:flex; justify-content:center;
+    }
+    .container { max-width:800px; width:100%; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:40px; }
+    .header { text-align:center; margin-bottom:30px; }
+    .logo { font-size:1.6rem; font-weight:800; color:#4ecdc4; }
+    .logo span { color:#f39c12; }
+    .subtitle { color:#888; font-size:0.82rem; margin-top:4px; }
+    .date { text-align:right; font-size:0.85rem; color:#aaa; margin-bottom:30px; }
+    .greeting { font-size:0.95rem; font-weight:600; color:#fff; margin-bottom:6px; }
+    p { font-size:0.88rem; line-height:1.8; color:#bbb; margin-bottom:14px; }
+    .divider { height:1px; background:rgba(78,205,196,0.15); margin:20px 0; }
+    .terms { margin:16px 0; }
+    .terms h3 { font-size:0.92rem; font-weight:700; color:#4ecdc4; margin-bottom:8px; margin-top:18px; }
+    .terms p { margin-bottom:8px; }
+    ul { margin:4px 0 10px 18px; }
+    ul li { font-size:0.85rem; line-height:1.7; color:#bbb; margin-bottom:4px; }
+    .highlight {
+        background:rgba(78,205,196,0.06); border-left:3px solid #4ecdc4;
+        padding:10px 14px; border-radius:0 6px 6px 0; margin:10px 0;
+        font-size:0.82rem; color:#ccc;
+    }
+    .signature-area { margin-top:30px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); }
+    .sign-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; }
+    .sign-col {}
+    .sign-col .label { font-size:0.75rem; color:#888; margin-bottom:2px; }
+    .sign-col .line { border-bottom:1px solid rgba(255,255,255,0.15); padding-top:24px; font-size:0.78rem; color:#666; margin-bottom:12px; }
+    .footer { margin-top:30px; text-align:center; font-size:0.72rem; color:#555; }
+    @media(max-width:600px){
+        .container { padding:20px; }
+        .sign-row { grid-template-columns:1fr; }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">CourtQ <span>Pro</span></div>
+        <div class="subtitle">by Apex Mind Agency — Cebu, Philippines</div>
+    </div>
+
+    <div class="date" id="letterDate"></div>
+
+    <div class="greeting">Dear Venue Partner,</div>
+
+    <p>Thank you for choosing CourtQ Pro to power your venue's booking and management needs. This Letter of Agreement ("Letter") summarizes the terms under which we will provide the CourtQ Pro platform to you.</p>
+
+    <div class="divider"></div>
+
+    <div class="terms">
+
+    <h3>1. The Service</h3>
+    <p>We will provide you access to CourtQ Pro, a web-based venue management platform that includes court booking, queue management, public booking portal (with GCash/Maya payment integration), admin dashboard, financial reporting, staff management, and AI-powered insights. You keep <strong>100% of all booking revenue</strong> — we charge only the monthly platform fee.</p>
+
+    <h3>2. Pricing</h3>
+    <p>Choose from three plans. All plans include up to 5 courts in the base fee. Additional courts are billed in blocks of 3.</p>
+    <ul>
+        <li><strong>🔥 Founding Member:</strong> ₱3,000/month — <strong>locked for life.</strong> First 50 venues only. ALL features included. ₱250 per 3 extra courts.</li>
+        <li><strong>🚀 VIP Starter:</strong> ₱2,500/month for the first 12 months, then ₱4,000/month. Available until August 2026. ₱500 per 3 extra courts.</li>
+        <li><strong>⚡ Regular Pro:</strong> ₱5,000/month — standard rate, no deadline. ₱500 per 3 extra courts.</li>
+    </ul>
+    <p>Example: 8 courts on VIP Starter = ₱2,500 base + ₱500 (3 extra courts) = ₱3,000/month.</p>
+
+    <h3>3. Term</h3>
+    <p><strong>Founding Member:</strong> ₱3,000/month for life. No fixed term. Either party may terminate with 30 days notice.</p>
+    <p><strong>VIP Starter:</strong> Minimum 12-month commitment. ₱2,500/month for months 1–12, then ₱4,000/month from month 13 onward. Auto-renewal. 30 days cancellation notice.</p>
+    <p><strong>Regular Pro:</strong> Minimum 12-month commitment. ₱5,000/month. Auto-renewal. 30 days cancellation notice.</p>
+
+    <h3>4. Payment</h3>
+    <p>Monthly fees are due within 7 days of invoice. Payments via GCash or Maya. Late payments beyond 7 days grace period may result in temporary service suspension.</p>
+
+    <h3>5. Your Responsibilities</h3>
+    <p>You agree to provide accurate venue information, honor confirmed bookings, keep your login credentials secure, and maintain a safe environment for players. You set your own court pricing.</p>
+
+    <h3>6. Our Responsibilities</h3>
+    <p>We commit to keeping the platform running (target 99.9% uptime), protecting your data, providing support via email, and continually improving the service.</p>
+
+    <h3>7. Data</h3>
+    <p>Your data is yours. We will never share or sell it. Data is stored securely on Google Cloud (Firebase).</p>
+
+    <h3>8. Limitation of Liability</h3>
+    <p>Our total liability is capped at the fees you paid us in the last 12 months. We are not liable for disputes between you and your players, third-party payment issues (GCash, Maya), or events beyond our control.</p>
+
+    </div>
+
+    <div class="highlight">By signing below, you agree to the terms outlined in this Letter of Agreement. This is a legally binding document.</div>
+
+    <div class="signature-area">
+        <div class="sign-row">
+            <div class="sign-col">
+                <div class="label">Provider: Apex Mind Agency</div>
+                <div class="label" style="margin-top:12px;">Signature</div>
+                <div class="line"></div>
+                <div class="label">Date</div>
+                <div class="line"></div>
+            </div>
+            <div class="sign-col">
+                <div class="label">Client (Venue Owner)</div>
+                <div class="label" style="margin-top:12px;">Full Name</div>
+                <div class="line"></div>
+                <div class="label">Signature</div>
+                <div class="line"></div>
+                <div class="label">Date</div>
+                <div class="line"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        CourtQ Pro by Apex Mind Agency | apexmindagency@gmail.com | facebook.com/aiautomationexpert
+    </div>
+</div>
+
+<script>
+    document.getElementById('letterDate').textContent = new Date().toLocaleDateString('en-US', {
+        year:'numeric', month:'long', day:'numeric'
+    });
+</script>
+</body>
+</html>

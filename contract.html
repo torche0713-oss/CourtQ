@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourtQ Pro — Service Agreement</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+    body {
+        font-family:'Inter',sans-serif; background:#0a0a0f; color:#e0e0e0;
+        padding:40px 20px; display:flex; justify-content:center;
+    }
+    .container { max-width:900px; width:100%; }
+    .header {
+        text-align:center; margin-bottom:40px; padding-bottom:30px;
+        border-bottom:1px solid rgba(78,205,196,0.2);
+    }
+    .logo { font-size:1.8rem; font-weight:800; color:#4ecdc4; }
+    .logo span { color:#f39c12; }
+    .subtitle { color:#888; font-size:0.85rem; margin-top:4px; }
+    h1 {
+        font-size:1.6rem; font-weight:700; color:#fff;
+        margin-top:30px; margin-bottom:8px;
+    }
+    h1 small { font-size:0.9rem; color:#888; font-weight:400; display:block; margin-top:4px; }
+    .meta {
+        display:grid; grid-template-columns:1fr 1fr; gap:10px;
+        background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+        border-radius:12px; padding:20px; margin-bottom:30px; font-size:0.85rem;
+    }
+    .meta div span:first-child { color:#888; }
+    .meta div span:last-child { color:#fff; font-weight:600; }
+    h2 {
+        font-size:1.1rem; font-weight:700; color:#4ecdc4;
+        margin-top:30px; margin-bottom:12px; padding-bottom:6px;
+        border-bottom:1px solid rgba(78,205,196,0.15);
+    }
+    p { font-size:0.88rem; line-height:1.7; color:#bbb; margin-bottom:12px; }
+    ul { margin:8px 0 16px 20px; }
+    ul li { font-size:0.88rem; line-height:1.7; color:#bbb; margin-bottom:6px; }
+    .highlight {
+        background:rgba(78,205,196,0.06); border-left:3px solid #4ecdc4;
+        padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0;
+        font-size:0.85rem; color:#ccc;
+    }
+    .fee-table {
+        width:100%; border-collapse:collapse; margin:12px 0 20px;
+        font-size:0.85rem;
+    }
+    .fee-table th {
+        background:rgba(78,205,196,0.1); color:#4ecdc4; font-weight:600;
+        padding:10px 14px; text-align:left; border-bottom:1px solid rgba(78,205,196,0.2);
+    }
+    .fee-table td {
+        padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.05);
+        color:#bbb;
+    }
+    .fee-table tr:last-child td { border-bottom:none; }
+    .fee-table .amt { color:#fff; font-weight:700; text-align:right; }
+    .signature-section {
+        margin-top:40px; padding-top:30px;
+        border-top:1px solid rgba(255,255,255,0.08);
+        display:grid; grid-template-columns:1fr 1fr; gap:30px;
+    }
+    .sign-box {
+        background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06);
+        border-radius:10px; padding:20px;
+    }
+    .sign-box h3 { font-size:0.9rem; color:#fff; margin-bottom:14px; }
+    .sign-line {
+        border-bottom:1px solid rgba(255,255,255,0.15); padding-top:30px;
+        margin-top:10px; font-size:0.78rem; color:#666;
+    }
+    .sign-field { margin-bottom:12px; }
+    .sign-field label { display:block; font-size:0.75rem; color:#888; margin-bottom:2px; }
+    .sign-field .val { font-size:0.85rem; color:#fff; font-weight:600; }
+    .footer-note {
+        margin-top:30px; text-align:center; font-size:0.75rem; color:#555;
+        padding:20px; border-top:1px solid rgba(255,255,255,0.05);
+    }
+    @media(max-width:600px){
+        .meta { grid-template-columns:1fr; }
+        .signature-section { grid-template-columns:1fr; }
+        body { padding:20px 12px; }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">CourtQ <span>Pro</span></div>
+        <div class="subtitle">Powered by Apex Mind Agency</div>
+        <h1>Service Agreement <small>Venue Management Subscription</small></h1>
+    </div>
+
+    <div class="meta">
+        <div><span>Agreement Date:</span> <span id="metaDate"></span></div>
+        <div><span>Version:</span> <span>1.0 — July 2026</span></div>
+        <div><span>Provider:</span> <span>Apex Mind Agency, Cebu, Philippines</span></div>
+        <div><span>Email:</span> <span>apexmindagency@gmail.com</span></div>
+    </div>
+
+    <p>This Service Agreement ("Agreement") is entered into between <strong>Apex Mind Agency</strong> ("Provider", "we", "us") and the venue owner identified below ("Client", "you"). This Agreement governs the use of the CourtQ Pro platform for venue management services.</p>
+
+    <!-- 1. SERVICES -->
+    <h2>1. Services Provided</h2>
+    <p>The Provider grants the Client access to the CourtQ Pro platform (the "Service"), a web-based venue management system that includes:</p>
+    <ul>
+        <li>Court booking and scheduling</li>
+        <li>Queue management with Open Play modes (4 on/4 off and Winners Stay & Split)</li>
+        <li>Public booking portal with GCash/Maya payment integration</li>
+        <li>Admin dashboard with real-time court management</li>
+        <li>Financial reporting with revenue tracking, cost management, and CSV export</li>
+        <li>Staff and co-owner management</li>
+        <li>AI-powered insights (Suggest, Briefing, Insights, Pricing)</li>
+        <li>Booking confirmations and status management</li>
+        <li>Leaderboard and player history</li>
+        <li>Session management with skill-based pairing</li>
+    </ul>
+    <div class="highlight">The Service is provided as a Software-as-a-Service (SaaS) solution. No hardware, servers, or on-premise software is provided under this Agreement.</div>
+
+    <!-- 2. FEES -->
+    <h2>2. Subscription Fees</h2>
+    <p>The Client agrees to pay the applicable monthly subscription fee based on their selected plan and number of courts managed. All fees are in Philippine Pesos (₱).</p>
+
+    <h3 style="color:#e74c3c;font-size:0.9rem;margin-top:16px;margin-bottom:8px;">🔥 Founding Member Plan</h3>
+    <table class="fee-table">
+        <tr><th>Plan</th><th>Rate</th><th>Included Courts</th><th>Extra Courts</th></tr>
+        <tr><td>Founding Member</td><td class="amt">₱3,000/month</td><td>5 courts</td><td>₱250 per 3 extra courts</td></tr>
+    </table>
+    <p style="font-size:0.82rem;color:#aaa;margin-top:4px;"><strong>Limited to the first 50 venues.</strong> Rate locked for life + ALL features included. No rate increases ever.</p>
+
+    <h3 style="color:#f39c12;font-size:0.9rem;margin-top:16px;margin-bottom:8px;">🚀 VIP Starter Plan</h3>
+    <table class="fee-table">
+        <tr><th>Period</th><th>Rate</th><th>Included Courts</th><th>Extra Courts</th></tr>
+        <tr><td>First 12 months</td><td class="amt">₱2,500/month</td><td>5 courts</td><td>₱500 per 3 extra courts</td></tr>
+        <tr><td>From month 13 onward</td><td class="amt">₱4,000/month</td><td>5 courts</td><td>₱500 per 3 extra courts</td></tr>
+    </table>
+    <p style="font-size:0.82rem;color:#aaa;margin-top:4px;">Available for signups until August 31, 2026.</p>
+
+    <h3 style="color:#4ecdc4;font-size:0.9rem;margin-top:16px;margin-bottom:8px;">⚡ Regular Pro Plan</h3>
+    <table class="fee-table">
+        <tr><th>Rate</th><th>Included Courts</th><th>Extra Courts</th></tr>
+        <tr><td class="amt">₱5,000/month</td><td>5 courts</td><td>₱500 per 3 extra courts</td></tr>
+    </table>
+
+    <p style="font-size:0.82rem;color:#aaa;margin-top:8px;"><strong>Example:</strong> A venue on VIP Starter with 8 courts = ₱2,500 base + ₱500 (for 3 extra courts) = ₱3,000/month. Additional courts are billed in blocks of 3 at the applicable extra court rate.</p>
+
+    <div class="highlight">100% of booking revenue goes to the venue owner. The Provider charges only the monthly platform subscription fee. No per-booking commissions, no transaction fees.</div>
+
+    <!-- 3. TERM -->
+    <h2>3. Term and Renewal</h2>
+    <p><strong>Initial Term:</strong> Twelve (12) months from the activation date, unless otherwise specified in the selected plan.</p>
+    <p><strong>Founding Member Plan:</strong> Rate of ₱3,000/month is locked for life. No term limit. Either party may terminate with 30 days written notice.</p>
+    <p><strong>VIP Starter Plan:</strong> ₱2,500/month for the first 12 months. From month 13 onward, rate adjusts to ₱4,000/month. 1-year minimum contract with auto-renewal.</p>
+    <p><strong>Regular Pro Plan:</strong> ₱5,000/month. 1-year minimum contract with auto-renewal.</p>
+    <p><strong>Auto-Renewal:</strong> This Agreement shall automatically renew for successive one (1) month periods unless either party provides written notice of non-renewal at least thirty (30) days before the renewal date.</p>
+    <p><strong>Early Termination:</strong> The Client may terminate early by providing thirty (30) days written notice. Early termination does not relieve the Client of payment obligations for the remainder of the initial term.</p>
+
+    <!-- 4. PAYMENT -->
+    <h2>4. Payment Terms</h2>
+    <ul>
+        <li>Fees are due monthly in advance, payable within seven (7) days of the invoice date.</li>
+        <li>Payments shall be made via GCash or Maya to the Provider's designated accounts.</li>
+        <li>Late payments may result in service suspension after a seven (7) day grace period.</li>
+        <li>All fees are non-refundable except as expressly stated in this Agreement.</li>
+    </ul>
+
+    <!-- 5. CLIENT OBLIGATIONS -->
+    <h2>5. Client Obligations</h2>
+    <ul>
+        <li>Provide accurate venue information, pricing, and availability at all times.</li>
+        <li>Honor all confirmed bookings made through the platform.</li>
+        <li>Maintain the security of login credentials. The Client is responsible for all activity under their account.</li>
+        <li>Not use the platform for any illegal purpose or to harass others.</li>
+        <li>Ensure that the venue maintains safe playing conditions for all players.</li>
+        <li>Set and manage own court pricing. The Provider has no control over pricing decisions.</li>
+    </ul>
+
+    <!-- 6. PROVIDER OBLIGATIONS -->
+    <h2>6. Provider Obligations</h2>
+    <ul>
+        <li>Maintain the CourtQ Pro platform with a target uptime of 99.9% (excluding scheduled maintenance).</li>
+        <li>Provide technical support via email at apexmindagency@gmail.com.</li>
+        <li>Implement reasonable security measures to protect Client data.</li>
+        <li>Not access or use Client data except as necessary to provide the Service.</li>
+        <li>Provide timely updates and feature improvements to the platform.</li>
+    </ul>
+
+    <!-- 7. DATA -->
+    <h2>7. Data Ownership and Privacy</h2>
+    <p>The Client retains full ownership of all data entered into the platform, including booking records, customer information, and financial data. The Provider will not share, sell, or use Client data for any purpose other than providing the Service.</p>
+    <p>The Provider uses Firebase (Google Cloud) for data hosting. Data is stored in accordance with industry-standard security practices.</p>
+
+    <!-- 8. LIMITATION -->
+    <h2>8. Limitation of Liability</h2>
+    <p>The Provider's total liability under this Agreement shall not exceed the total fees paid by the Client in the twelve (12) months preceding the claim. The Provider is not liable for:</p>
+    <ul>
+        <li>Disputes between venue owners and players</li>
+        <li>Third-party payment processing issues (GCash, Maya)</li>
+        <li>Indirect, incidental, or consequential damages</li>
+        <li>Service interruptions due to factors outside the Provider's reasonable control</li>
+    </ul>
+
+    <!-- 9. TERMINATION -->
+    <h2>9. Termination for Cause</h2>
+    <p>Either party may terminate this Agreement immediately upon written notice if the other party materially breaches any provision and fails to cure such breach within fifteen (15) days of receiving written notice. Upon termination, the Provider will provide data export assistance for thirty (30) days following termination.</p>
+
+    <!-- 10. GOVERNING LAW -->
+    <h2>10. Governing Law</h2>
+    <p>This Agreement shall be governed by and construed in accordance with the laws of the Republic of the Philippines. Any disputes arising from this Agreement shall be resolved through mediation in Cebu City, Philippines before resorting to litigation.</p>
+
+    <!-- 11. ENTIRE AGREEMENT -->
+    <h2>11. Entire Agreement</h2>
+    <p>This Agreement constitutes the entire understanding between the parties and supersedes all prior agreements, whether written or oral. No modification of this Agreement shall be binding unless in writing and signed by both parties.</p>
+
+    <!-- SIGNATURES -->
+    <div class="signature-section">
+        <div class="sign-box">
+            <h3>Provider</h3>
+            <p style="font-size:0.82rem;color:#aaa;margin-bottom:10px;">Apex Mind Agency</p>
+            <div class="sign-field"><label>Representative</label><div class="val">___________________________</div></div>
+            <div class="sign-field"><label>Signature</label><div class="sign-line"></div></div>
+            <div class="sign-field"><label>Date</label><div class="val">___________________________</div></div>
+        </div>
+        <div class="sign-box">
+            <h3>Client (Venue Owner)</h3>
+            <p style="font-size:0.82rem;color:#aaa;margin-bottom:10px;">Venue: <span id="signVenue">________________</span></p>
+            <div class="sign-field"><label>Full Name</label><div class="val">___________________________</div></div>
+            <div class="sign-field"><label>Signature</label><div class="sign-line"></div></div>
+            <div class="sign-field"><label>Date</label><div class="val">___________________________</div></div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        CourtQ Pro is a product of Apex Mind Agency — Cebu, Philippines<br>
+        Email: apexmindagency@gmail.com | Facebook: facebook.com/aiautomationexpert<br>
+        &copy; 2026 Apex Mind Agency. All rights reserved.
+    </div>
+</div>
+
+<script>
+    document.getElementById('metaDate').textContent = new Date().toLocaleDateString('en-US', {
+        year:'numeric', month:'long', day:'numeric'
+    });
+</script>
+</body>
+</html>
