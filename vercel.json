@@ -1,6 +1,10 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
+    { "source": "/pitch-deck", "destination": "/pitch-deck.html" },
+    { "source": "/for-venues", "destination": "/for-venues.html" },
+    { "source": "/contract", "destination": "/contract.html" },
+    { "source": "/agreement", "destination": "/agreement.html" },
     { "source": "/:slug/admin", "destination": "/admin.html?venue=:slug" },
     { "source": "/:slug", "destination": "/portal.html?venue=:slug" }
   ]

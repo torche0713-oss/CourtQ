@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourtQ Pro — Pitch Deck</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;overflow:hidden;height:100vh}
+.slide{display:none;width:100vw;height:100vh;padding:60px 80px;position:relative;overflow-y:auto}
+.slide.active{display:flex;flex-direction:column;justify-content:center}
+.slide-inner{max-width:1100px;margin:0 auto;width:100%}
+
+/* slide 1 - hero */
+.hero{background:linear-gradient(135deg,#0a0a1a 0%,#16213e 50%,#0f3460 100%);text-align:center}
+.hero .logo-icon{font-size:5rem;margin-bottom:16px}
+.hero h1{font-size:4rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#4ecdc4,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .pro-badge{display:inline-block;background:linear-gradient(135deg,#f39c12,#d68910);color:#fff;font-size:0.7rem;padding:3px 10px;border-radius:6px;font-weight:800;letter-spacing:1px;vertical-align:super;margin-left:4px;-webkit-text-fill-color:#fff}
+.hero .tagline{font-size:1.2rem;color:#ccc;margin-top:12px;font-weight:300}
+.hero .sub{font-size:0.9rem;color:#ccc;margin-top:30px;text-transform:uppercase;letter-spacing:3px}
+.hero .scroll-hint{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);color:#888;font-size:0.8rem;animation:bounce 2s infinite}
+
+/* nav */
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,26,0.95);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.06);padding:12px 20px;display:flex;justify-content:center;gap:8px;z-index:100;flex-wrap:wrap}
+.nav button{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#aaa;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.75rem;font-weight:600;transition:all 0.2s;font-family:'Inter',sans-serif}
+.nav button:hover{background:rgba(78,205,196,0.1);color:#4ecdc4}
+.nav button.active{background:rgba(78,205,196,0.15);color:#4ecdc4;border-color:rgba(78,205,196,0.3)}
+
+/* slide content */
+h2{font-size:2.2rem;font-weight:800;margin-bottom:8px;letter-spacing:-1px}
+h2 .highlight{background:linear-gradient(135deg,#4ecdc4,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2 .orange{background:linear-gradient(135deg,#f39c12,#d68910);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.lead{font-size:1.05rem;color:#ccc;margin-bottom:32px;font-weight:300;line-height:1.6}
+
+/* grid cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;transition:all 0.3s}
+.card:hover{background:rgba(78,205,196,0.06);border-color:rgba(78,205,196,0.2);transform:translateY(-2px)}
+.card-icon{font-size:2rem;margin-bottom:12px}
+.card h3{font-size:1rem;font-weight:700;margin-bottom:6px;color:#eee}
+.card p{font-size:0.82rem;color:#bbb;line-height:1.5}
+
+/* stats row */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:32px}
+.stat{text-align:center;padding:20px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+.stat-num{font-size:2rem;font-weight:900;color:#4ecdc4;letter-spacing:-1px}
+.stat-label{font-size:0.75rem;color:#aaa;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* workflow */
+.flow{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.flow-step{flex:1;min-width:160px;text-align:center;padding:20px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+.flow-num{width:32px;height:32px;border-radius:50%;background:#4ecdc4;color:#0a0a1a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 10px}
+.flow-step h4{font-size:0.85rem;margin-bottom:4px;color:#ddd}
+.flow-step p{font-size:0.75rem;color:#aaa}
+.flow-arrow{font-size:1.5rem;color:#333;display:flex;align-items:center}
+
+/* pricing table */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:600px;margin:0 auto}
+.pricing-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:28px;text-align:center}
+.pricing-card.featured{background:rgba(78,205,196,0.06);border-color:#4ecdc4;position:relative}
+.pricing-card.featured::before{content:'RECOMMENDED';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#f39c12;color:#fff;font-size:0.6rem;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:1px}
+.pricing-card h3{font-size:1.1rem;margin-bottom:4px}
+.pricing-card .price{font-size:2.5rem;font-weight:900;color:#4ecdc4;margin:12px 0}
+.pricing-card .price span{font-size:0.9rem;color:#aaa;font-weight:400}
+.pricing-card .perks{list-style:none;font-size:0.82rem;color:#ccc;line-height:2;text-align:center}
+.pricing-card .perks li::before{content:'✓ ';color:#4ecdc4}
+
+/* comparison table */
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06)}
+th{color:#ddd;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px}
+td{color:#eee}
+td:last-child,th:last-child{text-align:center}
+td:last-child{color:#4ecdc4;font-weight:700}
+tr:hover{background:rgba(255,255,255,0.02)}
+
+/* CTA slide */
+.cta-slide{text-align:center;background:linear-gradient(135deg,#0a0a1a 0%,#0f3460 100%)}
+.cta-slide h2{font-size:3rem}
+.cta-slide .big-btn{display:inline-block;margin-top:24px;padding:16px 40px;background:linear-gradient(135deg,#4ecdc4,#44b3ab);color:#0a0a1a;font-size:1.1rem;font-weight:800;border-radius:12px;text-decoration:none;transition:all 0.3s}
+.cta-slide .big-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(78,205,196,0.3)}
+.cta-slide .contact{color:#ccc;font-size:0.85rem;margin-top:20px}
+
+/* footer slide */
+.footer-slide{text-align:center}
+.footer-slide .social{display:flex;justify-content:center;gap:16px;margin-top:20px}
+.footer-slide .social a{color:#ccc;text-decoration:none;font-size:0.85rem;transition:color 0.2s}
+.footer-slide .social a:hover{color:#4ecdc4}
+
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-6px)}}
+
+/* responsive */
+@media(max-width:768px){
+.slide{padding:40px 24px}
+.hero h1{font-size:2.5rem}
+h2{font-size:1.6rem}
+.grid{grid-template-columns:1fr}
+.stats{grid-template-columns:1fr 1fr}
+.flow{flex-direction:column}
+.flow-arrow{transform:rotate(90deg)}
+.nav button{padding:6px 10px;font-size:0.65rem}
+.pricing-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: Hero -->
+<div class="slide hero active" id="s1">
+<div class="slide-inner">
+<img src="Logo-with-tagline.jpg" style="height:360px;width:auto;margin-bottom:24px;" alt="CourtQ Pro">
+<div class="tagline" style="margin-top:0;">All-in-one venue management for pickleball courts in the Philippines</div>
+<div class="sub">Multi-tenant · Serverless · Zero backend cost</div>
+</div>
+<div class="scroll-hint">▼ Navigate using the bar below</div>
+</div>
+
+<!-- SLIDE 2: Problem -->
+<div class="slide" id="s2">
+<div class="slide-inner">
+<h2>The <span class="orange">Problem</span></h2>
+<div class="lead">Pickleball is exploding in the Philippines. Venue owners are drowning in manual operations.</div>
+<div class="grid">
+<div class="card"><div class="card-icon">💸</div><h3>Revenue Leakage</h3><p>Cash payments go unrecorded. GCash transfers can't be tracked. No-shows eat into profit. Owners have no idea how much they actually earned or lost.</p></div>
+<div class="card"><div class="card-icon">📞</div><h3>Manual Operations</h3><p>Bookings come through phone calls, texts, and DMs. Open play is managed verbally. Staff can't help without full financial access. The venue stops when the owner isn't there.</p></div>
+<div class="card"><div class="card-icon">📉</div><h3>Blind Decision-Making</h3><p>No data on peak hours, court utilization, or revenue trends. Owners guess which courts are profitable and which hours to promote. No way to measure growth.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 3: Solution -->
+<div class="slide" id="s3">
+<div class="slide-inner">
+<h2>CourtQ Pro <span class="highlight">Solves It All</span></h2>
+<div class="lead">A complete venue management platform — 5-minute setup, zero infrastructure, you keep 100% of revenue.</div>
+<div class="stats">
+<div class="stat"><div class="stat-num">5-min</div><div class="stat-label">Setup</div></div>
+<div class="stat"><div class="stat-num">Zero</div><div class="stat-label">Infra Cost</div></div>
+<div class="stat"><div class="stat-num">100%</div><div class="stat-label">Revenue You Keep</div></div>
+</div>
+<div class="grid">
+<div class="card"><div class="card-icon">🌐</div><h3>Customers Book Themselves</h3><p>Public portal with GCash/Maya payments. Customers pick a court, time, and pay online. Your staff stop answering calls.</p></div>
+<div class="card"><div class="card-icon">💰</div><h3>Every Peso Tracked</h3><p>Revenue by court, peak-hour trends, cost tracking, net profit. Monthly reports with CSV export. Know exactly what you're earning.</p></div>
+<div class="card"><div class="card-icon">🤖</div><h3>AI That Runs Your Briefing</h3><p>Daily morning summary, financial analysis, pricing recommendations. Built-in Gemini AI — no data team needed.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 4: How It Works -->
+<div class="slide" id="s4">
+<div class="slide-inner">
+<h2>How It <span class="highlight">Works</span></h2>
+<div class="lead">From booking to revenue — automated end to end.</div>
+<div class="flow">
+<div class="flow-step"><div class="flow-num">1</div><h4>Customer Books & Pays</h4><p>Opens your venue portal, picks court & time, pays via GCash/Maya. Reference number logged automatically.</p></div>
+<div class="flow-arrow">→</div>
+<div class="flow-step"><div class="flow-num">2</div><h4>You Confirm, It Counts</h4><p>Dashboard shows pending payments. One click to verify. Sale logged, revenue tracked, customer notified in real time.</p></div>
+<div class="flow-arrow">→</div>
+<div class="flow-step"><div class="flow-num">3</div><h4>AI Helps You Grow</h4><p>Daily briefing, financial insights, pricing suggestions. Open Play engine manages rotations. Leaderboard builds community.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 5: Features Deep Dive -->
+<div class="slide" id="s5">
+<div class="slide-inner">
+<h2>Feature <span class="highlight">Highlights</span></h2>
+<div class="lead">Everything you need to run a professional pickleball venue — no add-ons, no upsells.</div>
+<table>
+<tr><th>Capability</th><th>Outcome</th><th>✓</th></tr>
+<tr><td><strong>Self-Service Booking</strong></td><td>Customers book and pay 24/7 through your own portal. No phone calls, no missed bookings.</td><td>✓</td></tr>
+<tr><td><strong>Financial Control</strong></td><td>Revenue dashboard, cost tracking, net profit by period. Staff see operations only — you control the money.</td><td>✓</td></tr>
+<tr><td><strong>AI-Powered Operations</strong></td><td>Daily briefing, financial insights, pricing recommendations. Open Play with skill-based matchmaking. All automated.</td><td>✓</td></tr>
+<tr><td><strong>Payment Verification</strong></td><td>GCash/Maya payments with reference tracking. One-click confirm. No more chasing payments or lost cash.</td><td>✓</td></tr>
+<tr><td><strong>Growth Tools</strong></td><td>Leaderboard, game history, booking archive, peak-hour analytics. Know your customers and optimize your venue.</td><td>✓</td></tr>
+</table>
+</div>
+</div>
+
+<!-- SLIDE 6: Business Model -->
+<div class="slide" id="s6">
+<div class="slide-inner">
+<h2>Business <span class="orange">Model</span></h2>
+<div class="lead">You keep <strong>100% of your revenue</strong>. No transaction fees, no commissions, no hidden costs.</div>
+<div class="pricing-grid">
+<div class="pricing-card featured">
+<h3>🔥 Founding Member</h3>
+<div class="price" style="color:#e74c3c;">₱3,000<span>/mo</span></div>
+<ul class="perks">
+<li><strong>First 50 venues only</strong></li>
+<li><strong style="color:#e74c3c;">Lock this rate for LIFE</strong></li>
+<li>Up to 5 courts included</li>
+<li>₱250/mo per 3 extra courts</li>
+<li>Full admin dashboard</li>
+<li>Public booking portal</li>
+<li>GCash / Maya payments</li>
+<li>Smart Open Play engine</li>
+<li>Financial analytics</li>
+<li>AI features (your API key)</li>
+<li>Staff & co-owner management</li>
+<li>Community leaderboard</li>
+</ul>
+</div>
+<div class="pricing-card">
+<h3>🚀 VIP Starter</h3>
+<div class="price" style="color:#f39c12;">₱2,500<span>/mo</span></div>
+<ul class="perks">
+<li><strong>Until August 2026 only</strong></li>
+<li>First year at ₱2,500/mo</li>
+<li>Then <strong>₱4,000/mo</strong> from year 2</li>
+<li>Up to 5 courts included</li>
+<li>₱500/mo per 3 extra courts</li>
+<li>Everything in Founding</li>
+<li>1-year contract</li>
+<li>Auto-renewal</li>
+<li>1-month cancellation notice</li>
+</ul>
+</div>
+<div class="pricing-card">
+<h3>⚡ Regular Pro</h3>
+<div class="price">₱5,000<span>/mo</span></div>
+<ul class="perks">
+<li><strong>Standard rate, no deadline</strong></li>
+<li>Up to 5 courts included</li>
+<li>₱500/mo per 3 extra courts</li>
+<li>Everything in Founding</li>
+<li>1-year contract</li>
+<li>Auto-renewal</li>
+<li>1-month cancellation notice</li>
+</ul>
+</div>
+</div>
+<div style="text-align:center;margin-top:20px;padding:12px;background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.15);border-radius:10px;max-width:500px;margin-left:auto;margin-right:auto">
+<p style="font-size:0.82rem;color:#ccc;line-height:1.5"><strong style="color:#e74c3c">🔥 Limited Offer:</strong> First 50 venues get Founding Member pricing <strong style="color:#fff">₱3,000/mo for life</strong> + ALL features included (no extra fees for Open Play, AI, or staff management). Lock it in now — never pay more.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 7: Competitive Advantage -->
+<div class="slide" id="s7">
+<div class="slide-inner">
+<h2>Why CourtQ <span class="highlight">Pro?</span></h2>
+<div class="lead">Built specifically for Philippine pickleball venues — not a generic booking system.</div>
+<div class="grid">
+<div class="card"><div class="card-icon">🇵🇭</div><h3>Native PH Payments</h3><p>GCash and Maya built in. No foreign gateways. Your customers already use these every day.</p></div>
+<div class="card"><div class="card-icon">⚡</div><h3>Zero Infrastructure, Zero Cost</h3><p>Entirely serverless on Firebase + Vercel free tier. No backend to maintain, no hosting bill. Scales from 1 to 100+ courts.</p></div>
+<div class="card"><div class="card-icon">🔐</div><h3>Owner-Controlled Access</h3><p>Financials locked behind access code. Staff manage the floor, not the money. Co-owners get full access. You stay in control.</p></div>
+<div class="card"><div class="card-icon">🧠</div><h3>AI-Native From Day One</h3><p>Gemini AI generates daily briefings, financial insights, and pricing suggestions. No data team — just your API key.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 8: Tech Stack -->
+<div class="slide" id="s8">
+<div class="slide-inner">
+<h2>Built on <span class="highlight">Solid Foundations</span></h2>
+<div class="lead">Enterprise-grade infrastructure at zero cost. Scales from 1 court to 100+.</div>
+<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:32px;text-align:center">
+<p style="font-size:1.1rem;color:#ddd;line-height:1.8"><strong>🔥 Firebase</strong> (Auth + Firestore, free tier) · <strong>▲ Vercel</strong> (global CDN, free tier) · <strong>🧠 Gemini AI</strong> (1,500+ free requests/day) · <strong>📄 Zero frameworks</strong> (single-file HTML, no build step, no dependencies)</p>
+<p style="margin-top:20px;font-size:0.9rem;color:#4ecdc4;font-weight:700">Total monthly infrastructure cost: ₱0.00</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 9: Target Market -->
+<div class="slide" id="s9">
+<div class="slide-inner">
+<h2>Target <span class="highlight">Market</span></h2>
+<div class="lead">Pickleball is the fastest-growing sport in the Philippines. The demand is massive and underserved.</div>
+<div class="stats">
+<div class="stat"><div class="stat-num">500+</div><div class="stat-label">Pickleball Courts (PH)</div></div>
+<div class="stat"><div class="stat-num">50+</div><div class="stat-label">Venues Opening 2025-26</div></div>
+<div class="stat"><div class="stat-num">0</div><div class="stat-label">Dedicated PH Booking Apps</div></div>
+<div class="stat"><div class="stat-num">100%</div><div class="stat-label">Untapped Market</div></div>
+</div>
+<div class="grid">
+<div class="card"><div class="card-icon">🏟️</div><h3>Pickleball Venues</h3><p>From dedicated pickleball centers to multi-sport facilities with pickleball courts. Primary target.</p></div>
+<div class="card"><div class="card-icon">🏊</div><h3>Similar Venues</h3><p>Badminton courts, tennis clubs, swimming pools, function rooms — anyone who rents by the hour.</p></div>
+<div class="card"><div class="card-icon">🏫</div><h3>Condos & Villages</h3><p>Subdivisions and condo associations with recreational facilities that need booking systems.</p></div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 10: The Ask -->
+<div class="slide cta-slide" id="s10">
+<div class="slide-inner">
+<div class="logo-icon" style="font-size:4rem">🏓</div>
+<h2>Ready to <span class="highlight">Partner?</span></h2>
+<div class="lead" style="font-size:1.1rem;margin-top:16px">Let's bring CourtQ Pro to every pickleball venue in the Philippines.</div>
+<a class="big-btn" href="https://www.courtqpro.online" target="_blank">🚀 Get Started</a>
+<div style="margin-top:12px;font-size:0.82rem;color:#aaa;">Sign up free — create your venue in 2 minutes</div>
+<a class="big-btn" href="mailto:apexmindagency@gmail.com" style="margin-top:12px;display:inline-block;padding:12px 28px;background:rgba(255,255,255,0.06);color:#ccc;font-size:0.9rem;font-weight:600;border-radius:10px;text-decoration:none;border:1px solid rgba(255,255,255,0.1);transition:all 0.3s">📧 Email Us</a>
+<div class="contact">apexmindagency@gmail.com</div>
+<div style="margin-top:6px;font-size:0.82rem;color:#aaa">📱 <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;text-decoration:none">facebook.com/aiautomationexpert</a></div>
+<div style="margin-top:30px;font-size:0.8rem;color:#444">Live demo: <a href="https://www.courtqpro.online" style="color:#4ecdc4;text-decoration:none" target="_blank">www.courtqpro.online</a> — click "Try Demo" to see it in action</div>
+</div>
+</div>
+
+<!-- Navigation -->
+<div class="nav" id="slideNav">
+<button class="active" onclick="goSlide(1)">🏓 Overview</button>
+<button onclick="goSlide(2)">Problem</button>
+<button onclick="goSlide(3)">Solution</button>
+<button onclick="goSlide(4)">How It Works</button>
+<button onclick="goSlide(5)">Features</button>
+<button onclick="goSlide(6)">Pricing</button>
+<button onclick="goSlide(7)">Why Us</button>
+<button onclick="goSlide(8)">Tech</button>
+<button onclick="goSlide(9)">Market</button>
+<button onclick="goSlide(10)">Contact</button>
+</div>
+
+<script>
+let currentSlide = 1;
+const totalSlides = 10;
+
+function goSlide(n) {
+document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+document.getElementById('s' + n).classList.add('active');
+document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+document.querySelectorAll('.nav button')[n-1].classList.add('active');
+currentSlide = n;
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+e.preventDefault();
+if (currentSlide < totalSlides) goSlide(currentSlide + 1);
+}
+if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+e.preventDefault();
+if (currentSlide > 1) goSlide(currentSlide - 1);
+}
+});
+
+// Touch swipe
+let touchX = 0;
+document.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
+document.addEventListener('touchend', e => {
+const diff = touchX - e.changedTouches[0].clientX;
+if (Math.abs(diff) > 50) {
+if (diff > 0 && currentSlide < totalSlides) goSlide(currentSlide + 1);
+if (diff < 0 && currentSlide > 1) goSlide(currentSlide - 1);
+}
+});
+</script>
+</body>
+</html>
