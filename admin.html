@@ -1009,6 +1009,12 @@
             </div>
             <div id="devVenuesList"></div>
         </div>
+        <div class="card">
+            <div class="card-title">📊 Free Tier Monitor</div>
+            <div id="devUsage">
+                <div class="empty-state"><div class="ei">⏳</div><p>Loading usage stats...</p></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1509,6 +1515,16 @@ function inSession(date, sMin, eMin){
     return true;
 }
 
+// ===================== USAGE TRACKER =====================
+let _usageCounts = { gemini:0, email:0, reads:0, writes:0 };
+function trackUsage(type){
+    if(_usageCounts[type]!==undefined) _usageCounts[type]++;
+}
+function resetUsage(){
+    _usageCounts = { gemini:0, email:0, reads:0, writes:0 };
+    showNotif('Usage counters reset!');
+}
+
 // ===================== PERSISTENCE =====================
 const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails'];
 function saveState(){
@@ -1944,6 +1960,7 @@ Available: ${avail.map(c=>c.name+' ('+c.location+', ₱'+c.rate+')').join(', ')}
 Queue: ${S.queue.map((g,i)=>i+1+'. "'+g.groupName+'" – '+g.gameType+', skill '+SKILL_LABELS[g.skillLevel]+', waited '+Math.floor((Date.now()-g.joinedAt)/60000)+'min').join(' | ')}
 
 Recommend which group goes to which court in 1 short sentence. Consider wait time, skill, and court features.`;
+    trackUsage('gemini');
     try {
         const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key='+GEMINI_API_KEY,{
             method:'POST',headers:{'Content-Type':'application/json'},
@@ -1963,17 +1980,16 @@ async function callGemini(prompt,title='🔮 AI'){
         } catch(e){}
         if (!GEMINI_API_KEY) { showNotif('Set Gemini key first via 🔮 AI button','error'); return null; }
     }
+    trackUsage('gemini');
     try {
         const res=await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key='+GEMINI_API_KEY,{
             method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.4,maxOutputTokens:800}})
+            body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:200}})
         });
         const d=await res.json();
-        if(d.error){showNotif('Gemini API error: '+d.error.message,'error');return null;}
-        const text=d.candidates?.[0]?.content?.parts?.[0]?.text;
-        if(!text){showNotif('AI returned empty response.','error');return null;}
-        document.getElementById('aiModalTitle').textContent=title;
-        document.getElementById('aiModalBody').textContent=text;
+        if(d.error){showNotif('Gemini API error: '+d.error.message,'error');return;}
+        document.getElementById('aiModalTitle').textContent='🔮 Court Suggestion';
+        document.getElementById('aiModalBody').textContent=d.candidates?.[0]?.content?.parts?.[0]?.text||'No response';
         document.getElementById('aiModal').classList.add('active');
         return text;
     } catch(e){showNotif('AI request failed: '+e.message,'error');return null;}
@@ -2931,12 +2947,59 @@ async function renderDevDashboard(){
             });
         }
         document.getElementById('devVenuesList').innerHTML=html;
+        renderDevUsage();
     } catch(e){
         console.error(e);
         document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Error loading venues. Check Firestore permissions.</p></div>';
+        renderDevUsage();
     }
 }
-function refreshDevDashboard(){renderDevDashboard();showNotif('Refreshing...');}
+function renderDevUsage(){
+    const c=_usageCounts;
+    const limits=[
+        {key:'reads',val:Math.round((S.bookings||[]).length*0.5+5),max:50000,lbl:'Est. Firestore reads/day'},
+        {key:'writes',val:Math.round((S.bookings||[]).length*0.3+3),max:20000,lbl:'Est. Firestore writes/day'},
+        {key:'gemini',val:c.gemini,max:1500,lbl:'Gemini API calls (session)'},
+        {key:'email',val:c.email,max:200,lbl:'EmailJS emails (session)'},
+    ];
+    const storageMB=((S.bookings||[]).length*0.3+(S.sales||[]).length*0.15+(S.costs||[]).length*0.1)/1024;
+    const storagePct=Math.min(storageMB/10.24,100);
+    const storageColor=storageMB>512?'#e74c3c':storageMB>256?'#f39c12':'#2ecc71';
+    let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">';
+    html+='<div style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.15);border-radius:10px;padding:12px;">';
+    html+='<div style="font-size:0.65rem;color:#aaa;text-transform:uppercase;">Firestore Storage</div>';
+    html+='<div style="font-size:1rem;font-weight:700;margin-top:4px;">'+storageMB.toFixed(2)+' MB</div>';
+    html+='<div style="font-size:0.65rem;color:#888;">of 1,024 MB ('+storagePct.toFixed(1)+'%)</div>';
+    html+='<div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;"><div style="height:100%;width:'+storagePct+'%;background:'+storageColor+';border-radius:2px;"></div></div>';
+    html+='</div>';
+    html+='<div style="background:rgba(155,89,182,0.08);border:1px solid rgba(155,89,182,0.15);border-radius:10px;padding:12px;">';
+    html+='<div style="font-size:0.65rem;color:#aaa;text-transform:uppercase;">Data Records</div>';
+    html+='<div style="font-size:0.85rem;margin-top:4px;">Bookings: '+(S.bookings||[]).length+' | Sales: '+(S.sales||[]).length+' | Costs: '+(S.costs||[]).length+'</div>';
+    html+='</div></div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+    limits.forEach(function(v){
+        const pct=Math.min(Math.round(v.val/v.max*100),100);
+        const color=pct>=80?'#e74c3c':pct>=50?'#f39c12':'#2ecc71';
+        html+='<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">';
+        html+='<div style="font-size:0.68rem;color:#aaa;">'+v.lbl+'</div>';
+        html+='<div style="font-size:1.1rem;font-weight:700;margin-top:2px;"><span style="color:'+color+';">'+v.val.toLocaleString()+'</span><span style="font-size:0.7rem;color:#666;"> / '+v.max.toLocaleString()+'</span></div>';
+        html+='<div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;margin-top:6px;"><div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px;"></div></div>';
+        html+='<div style="font-size:0.62rem;color:'+color+';margin-top:2px;">'+pct+'% used'+(pct>=80?' WARNING':'')+'</div>';
+        html+='</div>';
+    });
+    html+='</div>';
+    html+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">';
+    html+='<button class="btn btn-outline btn-sm" onclick="resetUsage()">Reset Counters</button>';
+    html+='<a href="https://console.firebase.google.com/project/courtq-2e744/usage" target="_blank" style="color:#4ecdc4;font-size:0.78rem;padding:6px 12px;">Firebase Console</a>';
+    html+='<a href="https://dashboard.emailjs.com/admin" target="_blank" style="color:#4ecdc4;font-size:0.78rem;padding:6px 12px;">EmailJS Dashboard</a>';
+    html+='<a href="https://aistudio.google.com/apikey" target="_blank" style="color:#4ecdc4;font-size:0.78rem;padding:6px 12px;">Gemini Dashboard</a>';
+    html+='</div>';
+    html+='<div style="font-size:0.65rem;color:#555;margin-top:8px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">';
+    html+='Session counters (reset on reload): Gemini '+c.gemini+' calls | Emails '+c.email+' sent. Firestore estimates based on venue data.';
+    html+='</div>';
+    document.getElementById('devUsage').innerHTML=html;
+}
+function refreshDevDashboard(){renderDevDashboard();renderDevUsage();showNotif('Refreshing...');}
 
 async function activateVenue(venueId,slug){
     if(!confirm('Activate this venue? Owner will be notified via email.')) return;
@@ -2956,6 +3019,7 @@ async function activateVenue(venueId,slug){
             if(cfg.exists && ownerEmail){
                 const ej=cfg.data();
                 emailjs.init(ej.publicKey);
+                trackUsage('email');
                 await emailjs.send(ej.serviceId, ej.templateAuto, {
                     to_email: ownerEmail, to_name: vData.ownerName||'Valued Partner',
                     subject: `Your venue "${vData.name}" is now LIVE! ✅`,
