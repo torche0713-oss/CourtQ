@@ -823,6 +823,7 @@
                     <option value="GCash">📱 GCash</option>
                     <option value="Maya">💜 Maya</option>
                 </select>
+                <button onclick="refreshConfirmations()" style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:7px;color:#4ecdc4;padding:4px 10px;cursor:pointer;font-size:0.78rem;">🔄</button>
             </div>
         </div>
         <div style="font-size:0.8rem;color:#aaa;margin-bottom:12px;">Review pending bookings. Verify the customer's payment reference number, then confirm.</div>
@@ -2576,6 +2577,23 @@ function confirmBookingPayment(bId){
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
     saveState();renderConfirmations();renderBookings();
     showNotif(`✅ ${b.customer}'s payment confirmed!`,'success');
+}
+
+async function refreshConfirmations(){
+    if (!VENUE_ID) return;
+    try {
+        const doc = await db.collection('venues').doc(VENUE_ID).get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.bookings) S.bookings = data.bookings;
+            if (data.nextBId) S.nextBId = data.nextBId;
+        }
+        renderConfirmations();
+        showNotif('🔄 Confirmations refreshed!','success');
+    } catch(e) {
+        console.warn('Refresh failed:', e);
+        showNotif('Refresh failed.','error');
+    }
 }
 
 function getPeriodKey(){
