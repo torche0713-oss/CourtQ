@@ -3023,7 +3023,7 @@ async function activateVenue(venueId,slug){
                 await emailjs.send(ej.serviceId, ej.templateAuto, {
                     to_email: ownerEmail, to_name: vData.ownerName||'Valued Partner',
                     subject: `Your venue "${vData.name}" is now LIVE! ✅`,
-                    body: `Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active.\n\nYou can log in to your admin dashboard here:\nhttps://courtq-pro.vercel.app/${slug}/admin\n\nStart managing bookings, courts, and payments right away.\n\nFor questions, email apexmindagency@gmail.com`
+                    body: `Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active.\n\nYou can log in to your admin dashboard here:\nhttps://www.courtqpro.online/${slug}/admin\n\nStart managing bookings, courts, and payments right away.\n\nFor questions, email apexmindagency@gmail.com`
                 });
             }
         } catch(e){ console.warn('EmailJS activation send failed:', e); }
