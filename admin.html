@@ -658,7 +658,7 @@
     <h2 style="color:#f39c12;font-size:1.5rem;margin-bottom:8px;">Venue Pending Approval</h2>
     <p style="color:#aaa;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
     <div id="pendingDetails" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;max-width:400px;margin:0 auto;text-align:left;font-size:0.82rem;"></div>
-    <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></div>
+    <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a> · 📱 +63 999 883 0291 / +62 922 854 4337</div>
 </div>
 
 <!-- OPEN PLAY PAGE -->
@@ -2549,7 +2549,7 @@ function renderBookingTimeline(){
     const date=document.getElementById('tlDate').value||getTodayISO();
     const grid=document.getElementById('tlGrid');
     if(!grid) return;
-    const sH=6,eH=22,total=eH-sH;
+    const sH=0,eH=23,total=eH-sH;
     const nowM=nowMin(),isToday=date===getTodayISO();
     let html=`<div class="tl-hours">`;
     for(let h=sH;h<=eH;h++) html+=`<div class="tl-hour">${h%12||12}${h<12?'am':'pm'}</div>`;
