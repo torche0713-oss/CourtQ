@@ -280,6 +280,13 @@
         .live-dot { width:10px; height:10px; border-radius:50%; background:#2ecc71; animation:ld 1.5s ease-in-out infinite; }
         @keyframes ld { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.8);} }
 
+        .ses-court-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:6px; margin:10px 0; }
+        .ses-court-chip { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:0.78rem; transition:all 0.2s; user-select:none; }
+        .ses-court-chip:hover { border-color:rgba(78,205,196,0.3); }
+        .ses-court-chip.selected { background:rgba(78,205,196,0.12); border-color:rgba(78,205,196,0.4); color:#4ecdc4; }
+        .ses-court-chip .ck { width:14px; height:14px; border-radius:3px; border:2px solid rgba(255,255,255,0.2); display:inline-flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+        .ses-court-chip.selected .ck { background:#4ecdc4; border-color:#4ecdc4; }
+
         /* QUEUE */
         .queue-item {
             background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
@@ -1245,6 +1252,9 @@
             </div>
             <div id="sesModeInfo" style="font-size:0.72rem;color:#aaa;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
         </div>
+        <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
+            <div id="sesCourtCheckboxes" class="ses-court-grid"></div>
+        </div>
         <div id="sesConflictPreview" style="margin-top:8px;"></div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="startSession()">▶ Start</button>
@@ -1509,8 +1519,9 @@ function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).pad
 function nowMin(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
-function inSession(date, sMin, eMin){
+function inSession(date, sMin, eMin, courtId){
     if(!S.session||!S.session.active) return false;
+    if(courtId!=null && S.session.courts && !S.session.courts.includes(courtId)) return false;
     const sd=S.session.startDate||date, ed=S.session.endDate||sd;
     const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
     if(date<sd||date>ed) return false;
@@ -1720,12 +1731,25 @@ function getCourtStatus(cId){
 }
 
 function getAvailableCourts(){ return S.courts.filter(c=>getCourtStatus(c.id)==='available'); }
+function getOpenPlayCourts(){
+    const avail=getAvailableCourts();
+    if(!S.session||!S.session.active) return avail;
+    const assigned=S.session.courts||S.courts.map(c=>c.id);
+    return avail.filter(c=>assigned.includes(c.id));
+}
 
 // ===================== SESSION =====================
 function openStartSession(){
     const today=getTodayISO();
     document.getElementById('sesStartDate').value=today;
     document.getElementById('sesEndDate').value=today;
+    // Populate court checkboxes
+    const ckContainer=document.getElementById('sesCourtCheckboxes');
+    ckContainer.innerHTML=S.courts.map(c=>`
+        <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected')">
+            <span class="ck">✓</span><span>${c.name}</span>
+        </div>
+    `).join('');
     const sesStartDate=document.getElementById('sesStartDate').value||today;
     const sesEndDate=document.getElementById('sesEndDate').value||today;
     const sesS=timeToMin(document.getElementById('sesStart').value||'17:00');
@@ -1758,12 +1782,63 @@ function startSession(){
     const startDT=new Date(sd+'T'+st);
     const endDT=new Date(ed+'T'+et);
     if(endDT<=startDT){showNotif('End must be after start!','error');return;}
-    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,startedAt:Date.now(),active:true};
+    const selectedCourts=[...document.querySelectorAll('#sesCourtCheckboxes .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
+    if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
+    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,startedAt:Date.now(),active:true,courts:selectedCourts};
     updateJoinFormMode();
     closeModal('sessionModal');
     showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}`,'success');
     announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}.`);
     renderAll();
+}
+
+function openSessionCourtPicker(){
+    const assigned=S.session.courts||[];
+    const available=S.courts.filter(c=>!assigned.includes(c.id));
+    if(available.length===0){showNotif('All courts already assigned!','error');return;}
+    const body=document.getElementById('assignBody');
+    body.innerHTML=`
+        <div style="font-size:0.85rem;color:#aaa;margin-bottom:12px;">Select courts to add to Open Play:</div>
+        <div class="ses-court-grid">
+            ${available.map(c=>`
+                <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected')">
+                    <span class="ck">✓</span><span>${c.name}</span>
+                </div>
+            `).join('')}
+        </div>`;
+    document.getElementById('assignTitle').textContent='➕ Add Courts to Open Play';
+    const btn=document.getElementById('assignConfirm');
+    btn.onclick=()=>{
+        const addIds=[...document.querySelectorAll('#assignBody .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
+        if(addIds.length===0){showNotif('Select at least one court!','error');return;}
+        S.session.courts=[...new Set([...(S.session.courts||[]),...addIds])];
+        closeModal('assignModal');
+        showNotif(`✅ ${addIds.length} court(s) added to Open Play.`,'success');
+        renderAll();
+        saveState();
+    };
+    document.getElementById('assignModal').classList.add('active');
+}
+
+function removeSessionCourt(cId){
+    const court=S.courts.find(c=>c.id===cId);
+    if(!court) return;
+    if(court.status==='occupied'){showNotif(`Cannot remove ${court.name} — players currently on court.`,'error');return;}
+    S.session.courts=(S.session.courts||[]).filter(id=>id!==cId);
+    showNotif(`${court.name} removed from Open Play. It is now bookable.`,'warning');
+    renderAll();
+    saveState();
+}
+
+function addSessionCourt(cId){
+    const court=S.courts.find(c=>c.id===cId);
+    if(!court) return;
+    if(!S.session.courts) S.session.courts=[];
+    if(S.session.courts.includes(cId)){showNotif(`${court.name} already in Open Play.`,'error');return;}
+    S.session.courts.push(cId);
+    showNotif(`${court.name} added to Open Play.`,'success');
+    renderAll();
+    saveState();
 }
 
 function endSession(){
@@ -1907,14 +1982,14 @@ function removeFromQueue(id){const i=S.queue.findIndex(g=>g.id===id);if(i!==-1){
 // ===================== ASSIGN =====================
 function tryAutoAssign(){
     if(S.queue.length===0) return;
-    const avail=getAvailableCourts();
+    const avail=getOpenPlayCourts();
     if(avail.length===0) return;
     showAssignModal(avail[0],S.queue[0]);
 }
 
 function tryWinnersAutoAssign(){
     if(!S.session||S.session.mode!=='winnersSplit') return;
-    const avail=getAvailableCourts();
+    const avail=getOpenPlayCourts();
     if(avail.length===0) return;
     const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
     if(poolSize<4) return;
@@ -1949,7 +2024,7 @@ function setGeminiKey(){
 
 async function aiSuggest(){
     if(S.queue.length===0){showNotif('Queue is empty!','error');return;}
-    const avail=getAvailableCourts();
+    const avail=getOpenPlayCourts();
     if(avail.length===0){showNotif('No courts available!','error');return;}
     if (!GEMINI_API_KEY) {
         try {
@@ -2057,7 +2132,7 @@ Give 2-3 concise, specific, actionable insights. Include numbers. Mention trends
 }
 function showAssign(court, group){
     document.getElementById('assignTitle').textContent='📋 Assign to Court';
-    const avail=getAvailableCourts();
+    const avail=getOpenPlayCourts();
     document.getElementById('assignBody').innerHTML=`
         <p style="color:#aaa;margin-bottom:10px;">Assign <strong style="color:#fff">${group.groupName}</strong>:</p>
         ${avail.length>1?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
@@ -2160,7 +2235,7 @@ function selGroupOpt(el,id){
 function promptAssignGroup(gId){
     const g=S.queue.find(x=>x.id===gId);
     if(!g) return;
-    const av=getAvailableCourts();
+    const av=getOpenPlayCourts();
     if(av.length===0){showNotif('No courts available!','error');return;}
     showAssignModal(av[0],g);
 }
@@ -2320,7 +2395,7 @@ function checkBConflict(){
     const conflicts=getBookingsForCourt(cId,date,sM,eM);
     if(conflicts.length>0){
         el.innerHTML=`<div class="conflict-box">⚠️ Conflict! ${conflicts.map(b=>`${b.customer} (${b.startTime}–${b.endTime})`).join(', ')} already booked.</div>`;
-    } else if(inSession(date,sM,eM)){
+    } else if(inSession(date,sM,eM,cId)){
         el.innerHTML=`<div class="overlap-box">⚠️ Overlaps with Open Play (${S.session.startDate||date} ${S.session.startTime||S.session.start}–${S.session.endDate||date} ${S.session.endTime||S.session.end}). Court auto-excluded during booking.</div>`;
     } else el.innerHTML='';
 
@@ -2338,7 +2413,7 @@ function createBooking(){
     if(!customer||!cId||!date||!start||!dur){showNotif('Fill all required fields!','error');return;}
     const sM=timeToMin(start),eM=sM+dur;
     if(getBookingsForCourt(cId,date,sM,eM).length>0){showNotif('Slot conflict!','error');return;}
-    if(inSession(date,sM,eM)){showNotif('Cannot book — Open Play session during this time.','error');return;}
+    if(inSession(date,sM,eM,cId)){showNotif('Cannot book — Open Play session during this time.','error');return;}
     const c=S.courts.find(x=>x.id===cId);
     const b={
         id:genId(),customer,phone:document.getElementById('bPhone').value.trim(),email:document.getElementById('bEmail').value.trim(),
@@ -2482,7 +2557,7 @@ function renderBookingTimeline(){
     const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
     S.courts.forEach(court=>{
         let slots='';
-        if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60)){
+        if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60,court.id)){
             const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
             const sd=S.session.startDate, ed=S.session.endDate;
             const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
@@ -2531,7 +2606,7 @@ function renderConflicts(){
         }
         if(S.session&&S.session.active){
             const sM=timeToMin(b.startTime),eM=timeToMin(b.endTime);
-            if(inSession(date,sM,eM)) conflicts.push({type:'op',court:court.name,b,ses:S.session});
+            if(inSession(date,sM,eM,court.id)) conflicts.push({type:'op',court:court.name,b,ses:S.session});
         }
     });
     if(conflicts.length===0){div.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No conflicts!</p></div>';return;}
@@ -2574,7 +2649,7 @@ function renderConfirmations(){
 function confirmBookingPayment(bId){
     const b=S.bookings.find(x=>x.id===bId);
     if(!b) return;
-    if(inSession(b.date,timeToMin(b.startTime),timeToMin(b.endTime))){showNotif('Cannot confirm — Open Play session overlaps.','error');return;}
+    if(inSession(b.date,timeToMin(b.startTime),timeToMin(b.endTime),b.courtId)){showNotif('Cannot confirm — Open Play session overlaps.','error');return;}
     b.status='confirmed';
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
     saveState();renderConfirmations();renderBookings();
@@ -3399,9 +3474,12 @@ function renderSession(){
         return;
     }
     const ses=S.session;
-    const pool=getAvailableCourts().length;
-    const playing=S.courts.filter(c=>c.status==='occupied').length;
-    const locked=S.courts.filter(c=>getBookingNow(c.id)).length;
+    const assigned=ses.courts||S.courts.map(c=>c.id);
+    const courtNames=S.courts.filter(c=>assigned.includes(c.id)).map(c=>c.name).join(', ');
+    const notAssigned=S.courts.filter(c=>!assigned.includes(c.id));
+    const pool=getOpenPlayCourts().length;
+    const playing=S.courts.filter(c=>c.status==='occupied'&&assigned.includes(c.id)).length;
+    const locked=S.courts.filter(c=>assigned.includes(c.id)&&getBookingNow(c.id)).length;
     const inQ=S.queue.length+S.soloQueue.length;
     const elapsed=Math.floor((Date.now()-ses.startedAt)/60000);
     div.innerHTML=`
@@ -3422,7 +3500,15 @@ function renderSession(){
                 <div class="ss-card"><div class="ss-num" style="color:#e74c3c;">${locked}</div><div class="ss-lbl">Booked/Locked</div></div>
                 <div class="ss-card"><div class="ss-num" style="color:#f39c12;">${inQ}</div><div class="ss-lbl">In Queue</div></div>
             </div>
-            ${locked>0?`<div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:8px 12px;font-size:0.78rem;color:#e74c3c;">🔒 Locked: ${S.courts.filter(c=>getBookingNow(c.id)).map(c=>c.name).join(', ')}</div>`:''}
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;">
+                <span style="font-size:0.75rem;color:#aaa;">🎯 Courts:</span>
+                ${S.courts.map(c=>{
+                    const inSes=assigned.includes(c.id);
+                    return `<span style="font-size:0.72rem;padding:2px 8px;border-radius:6px;background:${inSes?'rgba(78,205,196,0.12)':'rgba(255,255,255,0.04)'};border:1px solid ${inSes?'rgba(78,205,196,0.3)':'rgba(255,255,255,0.08)'};color:${inSes?'#4ecdc4':'#666'};">${c.name} ${inSes?'✅':'❌'}</span>`;
+                }).join('')}
+                ${notAssigned.length>0?`<button class="btn btn-sm" style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:6px;color:#4ecdc4;padding:3px 8px;font-size:0.7rem;cursor:pointer;" onclick="openSessionCourtPicker()">➕ Add Court</button>`:''}
+            </div>
+            ${locked>0?`<div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:8px 12px;font-size:0.78rem;color:#e74c3c;">🔒 Locked: ${S.courts.filter(c=>assigned.includes(c.id)&&getBookingNow(c.id)).map(c=>c.name).join(', ')}</div>`:''}
         </div>`;
 }
 
@@ -3430,6 +3516,7 @@ function renderOpCourts(){
     const grid=document.getElementById('opCourtsGrid');
     if(!grid) return;
     grid.innerHTML='';
+    const assigned=S.session&&S.session.active?(S.session.courts||S.courts.map(c=>c.id)):[];
     S.courts.forEach(court=>{
         const opS=getCourtStatus(court.id);
         const bk=getBookingNow(court.id);
@@ -3474,8 +3561,17 @@ function renderOpCourts(){
             ${opS==='maintenance'?`<div style="background:rgba(243,156,18,0.08);border-radius:8px;padding:10px;text-align:center;color:#f39c12;font-size:0.8rem;margin-bottom:8px;">🔧 Under Maintenance</div>`:''}
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">${S.session?.mode==='winnersSplit'?'🔄 Rotate':'🏁 End Game'}</button>`:''}
-                ${opS==='available'?`<button class="btn btn-success btn-sm" onclick="manualAssignToCourt(${court.id})">📋 Assign</button><button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">🔧</button>`:''}
+                ${opS==='available'&&assigned.includes(court.id)?`<button class="btn btn-success btn-sm" onclick="manualAssignToCourt(${court.id})">📋 Assign</button>`:''}
+                ${opS==='available'?`<button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">🔧</button>`:''}
                 ${opS==='maintenance'?`<button class="btn btn-success btn-sm" onclick="toggleMaint(${court.id})">✅ Open</button>`:''}
+            </div>
+            <div style="display:flex;gap:4px;margin-top:6px;font-size:0.68rem;">
+                ${S.session&&S.session.active?`
+                    ${assigned.includes(court.id)
+                        ?`<span style="color:#4ecdc4;">🎯 In Session</span><button class="btn btn-sm" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:5px;color:#e74c3c;padding:1px 6px;font-size:0.63rem;cursor:pointer;" onclick="removeSessionCourt(${court.id})">✕ Remove</button>`
+                        :`<span style="color:#666;">❌ Not in Session</span><button class="btn btn-sm" style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:5px;color:#4ecdc4;padding:1px 6px;font-size:0.63rem;cursor:pointer;" onclick="addSessionCourt(${court.id})">➕ Add</button>`
+                    }
+                `:''}
             </div>`;
         grid.appendChild(c);
     });
@@ -3620,9 +3716,10 @@ function renderQueueList(){
 function renderOpStats(){
     const div=document.getElementById('opStats');
     if(!div) return;
-    const avail=getAvailableCourts().length;
-    const playing=S.courts.filter(c=>c.status==='occupied').length;
-    const locked=S.courts.filter(c=>getBookingNow(c.id)).length;
+    const assigned=S.session&&S.session.active?(S.session.courts||S.courts.map(c=>c.id)):[];
+    const avail=getOpenPlayCourts().length;
+    const playing=S.courts.filter(c=>c.status==='occupied'&&assigned.includes(c.id)).length;
+    const locked=S.courts.filter(c=>assigned.includes(c.id)&&getBookingNow(c.id)).length;
     const inQ=S.queue.reduce((a,g)=>a+g.players.length,0)+S.soloQueue.reduce((a,s)=>a+s.players.length,0);
     div.innerHTML=`
         <div class="stat-card"><div class="stat-number">${S.courts.length}</div><div class="stat-label">Total Courts</div></div>

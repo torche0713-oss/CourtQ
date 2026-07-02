@@ -408,8 +408,9 @@ function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).pad
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
-function inSession(date, sMin, eMin){
+function inSession(date, sMin, eMin, courtId){
     if(!S.session||!S.session.active) return false;
+    if(courtId!=null && S.session.courts && !S.session.courts.includes(courtId)) return false;
     const sd=S.session.startDate||date, ed=S.session.endDate||sd;
     const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
     if(date<sd||date>ed) return false;
@@ -511,7 +512,7 @@ function renderSlots(){
     const open=0, close=24*60, step=60;
     for(let t=open;t<close-dur+step;t+=step){
         const conflicts=getBookingsForCourt(S.portal.courtId,date,t,t+dur);
-        const opBlock=inSession(date,t,t+dur);
+        const opBlock=inSession(date,t,t+dur,S.portal.courtId);
         const taken=conflicts.length>0||opBlock;
         const btn=document.createElement('div');
         btn.className=`slot-btn ${taken?'taken':''} ${S.portal.slot===t?'selected':''}`;
@@ -567,7 +568,7 @@ function processPortalPayment(){
     const ref=document.getElementById('portalRef');
     if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
     const dur=S.portal.duration;
-    if(inSession(S.portal.date,S.portal.slot,S.portal.slot+dur)){showNotif('Cannot book — Open Play session in progress during this time.','error');return;}
+    if(inSession(S.portal.date,S.portal.slot,S.portal.slot+dur,S.portal.courtId)){showNotif('Cannot book — Open Play session in progress during this time.','error');return;}
     goPortalStep(5);
     const conf=document.getElementById('confirmationContent');
     conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#4ecdc4;">Processing Payment...</div></div>`;
