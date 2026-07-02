@@ -5,6 +5,8 @@
     { "source": "/for-venues", "destination": "/for-venues.html" },
     { "source": "/contract", "destination": "/contract.html" },
     { "source": "/agreement", "destination": "/agreement.html" },
+    { "source": "/Logo.jpg", "destination": "/Logo.jpg" },
+    { "source": "/Logo-with-tagline.jpg", "destination": "/Logo-with-tagline.jpg" },
     { "source": "/:slug/admin", "destination": "/admin.html?venue=:slug" },
     { "source": "/:slug", "destination": "/portal.html?venue=:slug" }
   ]
