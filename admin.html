@@ -1509,14 +1509,15 @@ let S = {
 };
 
 // ===================== HELPERS =====================
-function getTodayISO(){ return new Date().toISOString().split('T')[0]; }
-function getTomorrowISO(){ const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0]; }
-function getTodayStr(){ return new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
-function getYesterdayStr(){ const d=new Date();d.setDate(d.getDate()-1);return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
+function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000); }
+function getTodayISO(){ return phtNow().toISOString().split('T')[0]; }
+function getTomorrowISO(){ const d=phtNow();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0]; }
+function getTodayStr(){ return phtNow().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
+function getYesterdayStr(){ const d=phtNow();d.setDate(d.getDate()-1);return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
 function isSameDay(str,f){ if(f==='today') return str===getTodayStr(); if(f==='yesterday') return str===getYesterdayStr(); return true; }
 function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
 function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
-function nowMin(){ const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+function nowMin(){ const n=phtNow(); return n.getHours()*60+n.getMinutes(); }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 function inSession(date, sMin, eMin, courtId){
@@ -1568,9 +1569,9 @@ async function loadState(){
 
 // ===================== CLOCK =====================
 function updateClock(){
-    const n=new Date();
-    document.getElementById('clockDisplay').textContent=n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    document.getElementById('dateDisplay').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+    const n=phtNow();
+    document.getElementById('clockDisplay').textContent=n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Manila'});
+    document.getElementById('dateDisplay').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'Asia/Manila'});
 }
 setInterval(updateClock,1000); updateClock();
 
@@ -2082,7 +2083,7 @@ async function aiDailyBriefing(){
     const avail=S.courts.filter(c=>c.status==='available').length;
     const occupied=S.courts.filter(c=>c.status==='occupied').length;
     const qCount=S.queue.length;
-    const prompt=`You are a friendly pickleball venue assistant for "${S.venueName}" in the Philippines. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
+    const prompt=`You are a friendly pickleball venue assistant for "${S.venueName}" in the Philippines. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Manila'})}.
 
 Today's summary:
 - Courts: ${S.courts.length} total (${avail} available, ${occupied} occupied)
@@ -2308,7 +2309,7 @@ function confirmScore(){
         const lt=sd.winner==='A'?sd.teamB:sd.teamA;
         // Record game in history
         const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
-        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
+        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
         (wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
         (lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});
         S.history.unshift(entry);if(S.history.length>100)S.history.pop();
@@ -2357,7 +2358,7 @@ function completeRelease(court,sd){
     const dur=Math.floor((Date.now()-(court.startTime||Date.now()))/60000)||1;
     const now=new Date();
     const mid=Math.ceil(court.players.length/2);
-    const entry={court:court.name,players:[...court.players],teamA:court.players.slice(0,mid),teamB:court.players.slice(mid),duration:dur,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),date:getTodayStr(),gameType:court.gameType||(court.players.length>2?'doubles':'singles'),winner:null,scoreA:null,scoreB:null,isTie:false};
+    const entry={court:court.name,players:[...court.players],teamA:court.players.slice(0,mid),teamB:court.players.slice(mid),duration:dur,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:court.gameType||(court.players.length>2?'doubles':'singles'),winner:null,scoreA:null,scoreB:null,isTie:false};
     if(sd){
         entry.teamA=sd.teamA.players;entry.teamB=sd.teamB.players||[];
         entry.scoreA=sd.teamA.score;entry.scoreB=sd.teamB.score;
@@ -2423,7 +2424,7 @@ function createBooking(){
         status:'confirmed',notes:'',bookedAt:Date.now(),source:'admin',
     };
     S.bookings.push(b);
-    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
     ['bCustomer','bPhone','bEmail','bDate','bStart','bPlayers'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bConflict').innerHTML='';
     document.getElementById('bPricePreview').style.display='none';
@@ -2651,7 +2652,7 @@ function confirmBookingPayment(bId){
     if(!b) return;
     if(inSession(b.date,timeToMin(b.startTime),timeToMin(b.endTime),b.courtId)){showNotif('Cannot confirm — Open Play session overlaps.','error');return;}
     b.status='confirmed';
-    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:b.gameType});
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
     saveState();renderConfirmations();renderBookings();
     showNotif(`✅ ${b.customer}'s payment confirmed!`,'success');
 }
@@ -2674,7 +2675,7 @@ async function refreshConfirmations(){
 }
 
 function getPeriodKey(){
-    const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const d=phtNow();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 }
 
 // ===================== FINANCIALS =====================
@@ -2929,7 +2930,7 @@ function seedJuneData(){
                 S.bookings.push(bo);
                 if(st==='confirmed'){
                     const cn=(S.courts.find(c=>c.id===ci)||{}).name||'';
-                    S.sales.push({id:bid,amount:amt,method:pm,customer:cust,court:cn,time:new Date(j(day,sh,sm)).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),gameType:gt});
+                    S.sales.push({id:bid,amount:amt,method:pm,customer:cust,court:cn,time:new Date(j(day,sh,sm)).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:gt});
                 }
                 added++;
             }
@@ -3983,7 +3984,7 @@ function downloadMonthlyCSV(){
     showNotif('CSV downloaded!');
 }
 function openArchiveModal(){
-    const d=new Date();
+    const d=phtNow();
     d.setMonth(d.getMonth()-1);
     d.setDate(1);
     document.getElementById('archiveCutoff').value=d.toISOString().split('T')[0];

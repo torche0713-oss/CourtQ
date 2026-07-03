@@ -402,7 +402,7 @@ let S = {
 let VENUE_ID = null;
 
 // ===================== HELPERS =====================
-function getTodayISO(){ return new Date().toISOString().split('T')[0]; }
+function getTodayISO(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000).toISOString().split('T')[0]; }
 function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
 function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
