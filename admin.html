@@ -519,6 +519,7 @@
         .tl-booked{ background:rgba(231,76,60,0.3); color:#e74c3c; border:1px solid rgba(231,76,60,0.5); }
         .tl-playing{background:rgba(46,204,113,0.25); color:#2ecc71; }
         .tl-maint { background:rgba(150,150,150,0.2); color:#777; }
+        .tl-gridline { position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.06); z-index:0; }
         .tl-now   { position:absolute; top:0; bottom:0; width:2px; background:#f39c12; z-index:5; }
         .tl-now-lbl{ position:absolute; top:-16px; font-size:0.58rem; color:#f39c12; transform:translateX(-50%); font-weight:700; }
 
@@ -2550,14 +2551,16 @@ function renderBookingTimeline(){
     const date=document.getElementById('tlDate').value||getTodayISO();
     const grid=document.getElementById('tlGrid');
     if(!grid) return;
-    const sH=0,eH=23,total=eH-sH;
+    const sH=0,eH=23,total=24;
     const nowM=nowMin(),isToday=date===getTodayISO();
     let html=`<div class="tl-hours">`;
     for(let h=sH;h<=eH;h++) html+=`<div class="tl-hour">${h%12||12}${h<12?'am':'pm'}</div>`;
     html+='</div>';
     const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
+    let gridlines='';
+    for(let h=1;h<=eH;h++) gridlines+=`<div class="tl-gridline" style="left:${(h/total)*100}%;"></div>`;
     S.courts.forEach(court=>{
-        let slots='';
+        let slots=gridlines;
         if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60,court.id)){
             const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
             const sd=S.session.startDate, ed=S.session.endDate;
