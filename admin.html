@@ -1029,6 +1029,23 @@
                 <div class="empty-state"><div class="ei">⏳</div><p>Loading usage stats...</p></div>
             </div>
         </div>
+        <div class="card">
+            <div class="card-title"><span>📧 Owner Emails</span><button class="btn btn-primary btn-sm" onclick="downloadOwnerCSV()">📥 Download CSV</button></div>
+            <div id="devOwnerEmails">
+                <div class="empty-state"><div class="ei">📭</div><p>No owner data loaded yet. Refresh the dev dashboard.</p></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📢 Announcements</div>
+            <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="announceTitle" placeholder="Title" style="flex:2;min-width:120px;padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
+                <input type="text" id="announceBody" placeholder="Message" style="flex:3;min-width:200px;padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
+                <button class="btn btn-primary btn-sm" onclick="postAnnouncement()">📢 Post</button>
+            </div>
+            <div id="devAnnouncements">
+                <div class="empty-state"><div class="ei">📢</div><p>No announcements yet.</p></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2961,14 +2978,27 @@ async function renderDevDashboard(){
         const slugsSnap=await db.collection('slugs').get();
         const venues=[], pending=[];
         let activeCount=0, monthlyTotal=0, dueTotal=0, foundingCount=0;
+        const ownerMap={}; // venueId -> { email, name, mobile }
         for(const slugDoc of slugsSnap.docs){
             const venueId=slugDoc.data().venueId;
             if(!venueId) continue;
             const vDoc=await db.collection('venues').doc(venueId).get();
             if(!vDoc.exists) continue;
             const vData=vDoc.data();
+            // Look up owner email from users collection
+            if(!ownerMap[venueId]){
+                try {
+                    const uSnap=await db.collection('users').where('venueId','==',venueId).get();
+                    if(!uSnap.empty){
+                        const u=uSnap.docs[0].data();
+                        ownerMap[venueId]={ email:u.email||'', name:u.name||vData.ownerName||'', mobile:u.mobile||vData.mobile||'' };
+                    } else {
+                        ownerMap[venueId]={ email:'', name:vData.ownerName||'', mobile:vData.mobile||'' };
+                    }
+                } catch(e){ ownerMap[venueId]={ email:'', name:vData.ownerName||'', mobile:vData.mobile||'' }; }
+            }
             if(vData.status==='pending'){
-                pending.push({slug:slugDoc.id,venueId,data:vData});
+                pending.push({slug:slugDoc.id,venueId,data:vData,owner:ownerMap[venueId]});
                 continue;
             }
             if(vData.plan==='founding') foundingCount++;
@@ -2984,7 +3014,7 @@ async function renderDevDashboard(){
                 dueAmt=pendingPmts.reduce((s,p)=>s+(p.amount||0),0);
             }
             dueTotal+=dueAmt;
-            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',totalCourts,origCourts,added,contract,dueAmt});
+            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId]});
         }
         document.getElementById('devVenueCount').textContent=venues.length+pending.length;
         document.getElementById('devActiveContracts').textContent=activeCount;
@@ -3003,8 +3033,8 @@ async function renderDevDashboard(){
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:700;">⏳ ${d.name||'Unnamed'}</div>
                             <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${p.slug}</div>
-                            <div style="font-size:0.72rem;color:#aaa;">👤 ${d.ownerName||'N/A'} · 📱 ${d.mobile||'N/A'} · 🏟️ ${(d.courts||[]).length} courts</div>
-                            <div style="font-size:0.72rem;color:#aaa;">📧 ${d.ownerId?Object.keys(d).includes('email')?d.email:'(see users doc)':'N/A'} · Ref: ${d.paymentRef||'N/A'}</div>
+                            <div style="font-size:0.72rem;color:#aaa;">👤 ${p.owner.name||d.ownerName||'N/A'} · 📱 ${p.owner.mobile||d.mobile||'N/A'} · 🏟️ ${(d.courts||[]).length} courts</div>
+                            <div style="font-size:0.72rem;color:#aaa;">📧 ${p.owner.email||'N/A'} · Ref: ${d.paymentRef||'N/A'}</div>
                             <div style="font-size:0.72rem;color:#aaa;">📋 Plan: <strong>${d.plan||'vip'}</strong> · Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
                         </div>
                         <div style="text-align:right;">
@@ -3027,12 +3057,13 @@ async function renderDevDashboard(){
                 const statusIcon=isActive?'🟢':c?'🔴':'⚪';
                 const statusLabel=isActive?'Active':c?'Expired':'No Contract';
                 const latestPmt=c&&c.payments&&c.payments.length>0?c.payments.reduce((a,b)=>new Date(a.dueDate||0)>new Date(b.dueDate||0)?a:b):null;
+                const o=v.owner||{};
                 html+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:700;">${statusIcon} ${v.name}</div>
-                            <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${v.slug}</div>
-                            ${c?`<div style="font-size:0.72rem;color:#aaa;">👤 ${c.ownerName||'N/A'} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#555;">No contract set up</div>'}
+                            <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${v.slug} · 📧 ${o.email||'?'}</div>
+                            ${c?`<div style="font-size:0.72rem;color:#aaa;">👤 ${c.ownerName||o.name||'N/A'} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#555;">No contract set up</div>'}
                         </div>
                         <div style="text-align:right;">
                             ${c?`<div style="font-weight:800;color:#9b59b6;">₱${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
@@ -3046,6 +3077,7 @@ async function renderDevDashboard(){
                         <button class="btn btn-outline btn-sm" onclick="addPayment('${v.venueId}')">💰 Add Payment</button>
                         <button class="btn btn-outline btn-sm" onclick="viewPayments('${v.venueId}')">📋 Payments (${(c.payments||[]).length})</button>`:
                         `<button class="btn btn-primary btn-sm" onclick="editContract('${v.venueId}')">➕ Create Contract</button>`}
+                        ${o.email?`<button class="btn btn-outline btn-sm" onclick="sendReminder('${v.venueId}','${v.slug}','${o.email.replace(/'/g,"\\'")}','${(o.name||'Valued Partner').replace(/'/g,"\\'")}')">📧 Remind</button>`:''}
                         <button class="btn btn-danger btn-sm" onclick="deleteVenue('${v.venueId}','${v.slug}')">🗑️</button>
                     </div>
                     ${latestPmt?`<div style="font-size:0.65rem;color:#555;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Last: ${latestPmt.txNo||'N/A'} · ₱${(latestPmt.amount||0).toLocaleString()} · ${latestPmt.status}</div>`:''}
@@ -3053,7 +3085,35 @@ async function renderDevDashboard(){
             });
         }
         document.getElementById('devVenuesList').innerHTML=html;
+        // Build owner emails list
+        _devOwnerList=[];
+        pending.forEach(p=>{
+            const d=p.data;
+            _devOwnerList.push({name:d.name||'Unnamed',slug:p.slug,ownerName:p.owner.name||d.ownerName||'',email:p.owner.email||'',mobile:p.owner.mobile||d.mobile||'',status:'Pending',rate:d.monthlyRate||0});
+        });
+        venues.forEach(v=>{
+            _devOwnerList.push({name:v.name,slug:v.slug,ownerName:v.owner.name||(v.contract?v.contract.ownerName:'')||'',email:v.owner.email||'',mobile:v.owner.mobile||'',status:((v.contract&&(!v.contract.endDate||new Date(v.contract.endDate)>=new Date()))?'Active':'Inactive'),rate:v.contract?v.contract.monthlyRetainer||0:0});
+        });
+        const ownerListEl=document.getElementById('devOwnerEmails');
+        if(ownerListEl){
+            if(_devOwnerList.length===0){
+                ownerListEl.innerHTML='<div class="empty-state"><div class="ei">📭</div><p>No owners found.</p></div>';
+            } else {
+                ownerListEl.innerHTML=_devOwnerList.map(o=>
+                    '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:4px;font-size:0.75rem;">'+
+                        '<span style="flex:2;">'+o.name+'</span>'+
+                        '<span style="flex:2;color:#aaa;">'+o.email+'</span>'+
+                        '<span style="flex:1;color:#aaa;">'+o.mobile+'</span>'+
+                        '<span style="flex:1;text-align:right;">'+
+                            '<span style="color:'+(o.status==='Pending'?'#f39c12':o.status==='Active'?'#2ecc71':'#555')+';">'+o.status+'</span>'+
+                        '</span>'+
+                    '</div>'
+                ).join('');
+                ownerListEl.innerHTML+=`<div style="font-size:0.7rem;color:#555;margin-top:8px;text-align:right;">Total: ${_devOwnerList.length} owner(s)</div>`;
+            }
+        }
         renderDevUsage();
+        renderAnnouncements();
     } catch(e){
         console.error(e);
         document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Error loading venues. Check Firestore permissions.</p></div>';
@@ -3106,7 +3166,97 @@ function renderDevUsage(){
     document.getElementById('devUsage').innerHTML=html;
 }
 function refreshDevDashboard(){renderDevDashboard();renderDevUsage();showNotif('Refreshing...');}
-
+let _devOwnerList=[];
+function downloadOwnerCSV(){
+    if(_devOwnerList.length===0){showNotif('No owner data. Refresh dev dashboard first.','error');return;}
+    let csv='Venue Name,Slug,Owner Name,Email,Mobile,Status,Monthly Rate\n';
+    _devOwnerList.forEach(o=>{
+        csv+=`"${o.name}","${o.slug}","${o.ownerName}","${o.email}","${o.mobile}","${o.status}","${o.rate}"\n`;
+    });
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='courtq-owners-'+new Date().toISOString().split('T')[0]+'.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showNotif(`✅ Downloaded ${_devOwnerList.length} owner(s)`,'success');
+}
+async function sendReminder(venueId,slug,email,name){
+    if(!confirm(`Send payment reminder to ${name} (${email})?`)) return;
+    try {
+        const cfg=await db.collection('config').doc('emailjs').get();
+        if(!cfg.exists){showNotif('EmailJS not configured.','error');return;}
+        if(!email){showNotif('No email for this owner.','error');return;}
+        const ej=cfg.data();
+        emailjs.init(ej.publicKey);
+        trackUsage('email');
+        await emailjs.send(ej.serviceId, ej.templateAuto, {
+            to_email: email, to_name: name,
+            subject: '📋 Payment Reminder — CourtQ Pro',
+            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your monthly retainer for your venue "'+slug+'".\n\nPlease check your dashboard for payment details and due dates.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 +63 999 883 0291'
+        });
+        showNotif('📧 Reminder sent to '+name,'success');
+    } catch(e){
+        showNotif('Reminder failed: '+e.message,'error');
+    }
+}
+async function postAnnouncement(){
+    const title=document.getElementById('announceTitle').value.trim();
+    const body=document.getElementById('announceBody').value.trim();
+    if(!title||!body){showNotif('Enter both title and message.','error');return;}
+    try {
+        const docRef=db.collection('config').doc('announcements');
+        const snap=await docRef.get();
+        const items=snap.exists?snap.data().items||[]:[];
+        items.unshift({id:Date.now().toString(36),title,body,date:new Date().toISOString().split('T')[0]});
+        await docRef.set({items},{merge:true});
+        document.getElementById('announceTitle').value='';
+        document.getElementById('announceBody').value='';
+        showNotif('📢 Announcement posted!','success');
+        renderAnnouncements();
+    } catch(e){
+        showNotif('Failed: '+e.message,'error');
+    }
+}
+async function renderAnnouncements(){
+    const list=document.getElementById('devAnnouncements');
+    if(!list) return;
+    try {
+        const snap=await db.collection('config').doc('announcements').get();
+        const items=snap.exists?snap.data().items||[]:[];
+        if(items.length===0){
+            list.innerHTML='<div class="empty-state"><div class="ei">📢</div><p>No announcements yet.</p></div>';
+            return;
+        }
+        list.innerHTML=items.map(a=>
+            '<div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:10px;padding:12px;margin-bottom:8px;">'+
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'+
+                    '<div>'+
+                        '<div style="font-weight:700;font-size:0.85rem;">📢 '+a.title+'</div>'+
+                        '<div style="font-size:0.75rem;color:#aaa;margin-top:4px;">'+a.body+'</div>'+
+                        '<div style="font-size:0.65rem;color:#555;margin-top:4px;">'+a.date+'</div>'+
+                    '</div>'+
+                    '<button class="btn btn-danger btn-sm" onclick="deleteAnnouncement(\''+a.id+'\')">✕</button>'+
+                '</div>'+
+            '</div>'
+        ).join('');
+    } catch(e){
+        list.innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Error loading announcements.</p></div>';
+    }
+}
+async function deleteAnnouncement(id){
+    try {
+        const docRef=db.collection('config').doc('announcements');
+        const snap=await docRef.get();
+        if(!snap.exists) return;
+        const items=(snap.data().items||[]).filter(a=>a.id!==id);
+        await docRef.set({items},{merge:true});
+        showNotif('Announcement deleted.','info');
+        renderAnnouncements();
+    } catch(e){
+        showNotif('Delete failed: '+e.message,'error');
+    }
+}
 async function activateVenue(venueId,slug){
     if(!confirm('Activate this venue? Owner will be notified via email.')) return;
     try {
@@ -3145,6 +3295,10 @@ async function deleteVenue(venueId,slug){
         await db.collection('venues').doc(venueId).delete();
         await db.collection('slugs').doc(slug).delete();
         try { await db.collection('contracts').doc(venueId).delete(); } catch(e){}
+        try {
+            const userSnap = await db.collection('users').where('venueId', '==', venueId).get();
+            userSnap.forEach(doc => doc.ref.delete());
+        } catch(e){}
         showNotif('🗑️ Venue deleted','warning');
         renderDevDashboard();
     } catch(e){
@@ -3962,6 +4116,17 @@ function announce(t){const el=document.getElementById('announceText');if(el)el.t
         document.getElementById('bDate').value=getTodayISO();
         setInterval(()=>{renderOpCourts();renderOpStats();renderSession();},30000);
         renderAll();
+        // Fetch announcements
+        try {
+            const aSnap=await db.collection('config').doc('announcements').get();
+            if(aSnap.exists){
+                const items=aSnap.data().items||[];
+                if(items.length>0){
+                    const latest=items[0];
+                    document.getElementById('announceText').innerHTML='<strong>'+latest.title+'</strong> — '+latest.body+' <span style="color:#555;font-size:0.7rem;">('+latest.date+')</span>';
+                }
+            }
+        } catch(e){}
     } catch(e) {
         console.error(e);
         window.location.href = 'index.html';
