@@ -800,6 +800,7 @@
                     <span>📋 Bookings</span>
                     <div style="display:flex;gap:6px;">
                         <select id="bFilterDate" onchange="renderBookings()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.75rem;">
+                            <option value="upcoming">Upcoming</option>
                             <option value="today">Today</option>
                             <option value="tomorrow">Tomorrow</option>
                             <option value="all">All</option>
@@ -3747,6 +3748,7 @@ function renderBookings(){
     const fs=document.getElementById('bFilterStatus').value;
     const today=getTodayISO(),tomorrow=getTomorrowISO();
     let filtered=S.bookings.filter(b=>{
+        if(fd==='upcoming'&&(b.date<today||b.status==='cancelled')) return false;
         if(fd==='today'&&b.date!==today) return false;
         if(fd==='tomorrow'&&b.date!==tomorrow) return false;
         if(fs!=='all'&&b.status!==fs) return false;
