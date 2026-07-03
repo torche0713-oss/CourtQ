@@ -225,7 +225,7 @@
             </div>
             <div style="background:rgba(243,156,18,0.06);border:1px solid rgba(243,156,18,0.15);border-radius:10px;padding:12px;margin:8px 0;">
                 <div style="font-weight:700;color:#f39c12;font-size:0.85rem;margin-bottom:6px;">💳 Send payment to:</div>
-                <div style="font-size:0.82rem;color:#ddd;line-height:1.7;"><strong>GCash:</strong> 0906 123 4567 · <strong>Name:</strong> Apex Mind Agency<br><strong>Maya:</strong> 0906 123 4567 · <strong>Name:</strong> Apex Mind Agency</div>
+                <div style="font-size:0.82rem;color:#ddd;line-height:1.7;"><strong>GCash:</strong> 09998830291 · <strong>Name:</strong> Hector Lopez<br><strong>Maya:</strong> 09998830291 · <strong>Name:</strong> Hector Lopez</div>
             </div>
             <div class="form-group"><label>Payment Reference Number</label>
                 <input type="text" id="setupRef" placeholder="Enter GCash/Maya reference number">
@@ -445,7 +445,8 @@
                     nextId: 100, nextBId: 1,
                     status: 'pending', mobile: p.mobile, ownerName: p.name,
                     paymentRef: ref, monthlyRate: monthly, courtCount: c,
-                    plan: planKey
+                    plan: planKey,
+                    paymentInfo:{gcash:{number:'09998830291',name:'Hector Lopez'},maya:{number:'09998830291',name:'Hector Lopez'}}
                 });
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ venueId });
@@ -537,7 +538,8 @@
                     ownerId: 'demo', name: '🏟️ Demo Venue', slug, createdAt: Date.now(),
                     courts: defaultCourts, queue: [], soloQueue: [], session: null,
                     bookings: [], history: [], leaderboard: {}, sales: [],
-                    nextId: 100, nextBId: 1
+                    nextId: 100, nextBId: 1,
+                    paymentInfo:{gcash:{number:'09998830291',name:'Hector Lopez'},maya:{number:'09998830291',name:'Hector Lopez'}}
                 });
                 await db.collection('slugs').doc(slug).set({ venueId });
                 window.location.href = 'admin.html?venue=' + slug;
