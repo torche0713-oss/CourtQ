@@ -4200,11 +4200,13 @@ function createTournament(){
     const date=document.getElementById('tDate').value;
     const raw=document.getElementById('tPlayers').value.trim();
     const players=raw.split('\n').map(s=>s.trim()).filter(Boolean);
-    const groupSize=parseInt(document.getElementById('tGroupSize').value);
     const startRound=document.getElementById('tStartRound').value;
-    const advanceCount=parseInt(document.getElementById('tAdvance').value);
+    const advanceCount=parseInt(document.getElementById('tAdvance').value)||1;
     if(!name){showNotif('Enter a tournament name.','error');return;}
     if(players.length<4){showNotif('Enter at least 4 players.','error');return;}
+    const groupSize=parseInt(document.getElementById('tGroupSize').value)||4;
+    const fmt=document.getElementById('tFormat').value;
+    const label=fmt==='doubles'?'teams':'players';
     const elimSlots={qf:4,r8:8,r16:16,r32:32};
     const need=elimSlots[startRound]||4;
     const groups=Math.ceil(need/advanceCount);
@@ -4214,20 +4216,18 @@ function createTournament(){
         return;
     }
     const id='T'+Date.now().toString(36).toUpperCase();
-    const fmt=document.getElementById('tFormat').value;
-    const label=fmt==='doubles'?'teams':'players';
     const shuffled=[...players].sort(()=>Math.random()-0.5);
     const groupsArr=[];
     for(let g=0;g<groups;g++){
         const gPlayers=shuffled.slice(g*groupSize,(g+1)*groupSize);
-        const label=String.fromCharCode(65+g);
+        const glabel=String.fromCharCode(65+g);
         const matches=[];
         for(let i=0;i<gPlayers.length;i++){
             for(let j=i+1;j<gPlayers.length;j++){
-                matches.push({id:id+'-G'+label+'-M'+matches.length,p1:gPlayers[i],p2:gPlayers[j],court:1,s1:null,s2:null,winner:null,completed:false});
+                matches.push({id:id+'-G'+glabel+'-M'+matches.length,p1:gPlayers[i],p2:gPlayers[j],s1:null,s2:null,winner:null,completed:false});
             }
         }
-        groupsArr.push({name:'Group '+label,players:gPlayers,matches});
+        groupsArr.push({name:'Group '+glabel,players:gPlayers,matches});
     }
     const tournament={
         id,name,date,format:fmt,status:'groups',groupSize,startRound,advanceCount,
@@ -4290,15 +4290,16 @@ function renderTournamentDetail(t){
     const el=document.getElementById('tournamentDetailContent');
     const courts=S.courts||[];
     let html='';
+    const totalPlayers=t.players.length;
+    const groups=t.groups||[];
+    const groupCount=groups.length;
 
     // ── Auto-assign courts if not yet assigned ──
     if(!t._courtsAssigned && courts.length>0){
-      if(courts.length>=groups.length){
-        // Fixed court per group
+      if(courts.length>=groupCount){
         groups.forEach((g,i)=>{g.courtId=courts[i].id;g.courtName=courts[i].name;});
         t.courtMode='group';
       } else {
-        // Round-robin per match across groups
         let ci=0;
         groups.forEach(g=>{
           g.matches.forEach(m=>{
@@ -4313,9 +4314,6 @@ function renderTournamentDetail(t){
     }
 
     // Summary
-    const totalPlayers=t.players.length;
-    const groups=t.groups||[];
-    const groupCount=groups.length;
     const sumCols=window.innerWidth<500?2:4;
     html+=`<div style="display:grid;grid-template-columns:repeat(${sumCols},1fr);gap:8px;margin-bottom:16px;">
         <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">${t.format==='doubles'?'Teams':'Players'}</div><div style="font-weight:800;font-size:1.1rem;">${totalPlayers}</div></div>
