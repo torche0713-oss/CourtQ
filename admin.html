@@ -2424,9 +2424,20 @@ function confirmScore(){
                 const nextRound=t.elimination.rounds[tp.roundIndex+1];
                 if(nextRound){
                     const nextMatchIdx=Math.floor(matchIdx/2);
-                    if(nextRound.matches[nextMatchIdx]){
-                        if(matchIdx%2===0) nextRound.matches[nextMatchIdx].p1=winnerName;
-                        else nextRound.matches[nextMatchIdx].p2=winnerName;
+                    const nm=nextRound.matches[nextMatchIdx];
+                    if(nm){
+                        if(matchIdx%2===0) nm.p1=winnerName;
+                        else nm.p2=winnerName;
+                        // Assign a court when both players are set
+                        if(nm.p1&&nm.p2&&!nm.courtId){
+                            const courtsAll=S.courts||[];
+                            if(courtsAll.length>0){
+                                const totalAssigned=t.elimination.rounds.reduce((sum,r)=>sum+r.matches.filter(m=>m.courtId).length,0);
+                                const pick=courtsAll[totalAssigned%courtsAll.length];
+                                nm.courtId=pick.id;
+                                nm.courtName=pick.name;
+                            }
+                        }
                     }
                 }
             }
