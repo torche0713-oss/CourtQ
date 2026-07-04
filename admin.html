@@ -613,6 +613,14 @@
             .pay-methods{grid-template-columns:repeat(2,1fr);}
         }
 
+        @media(max-width:600px) {
+            #page-tournaments .card-title button { font-size:0.7rem; padding:6px 10px; }
+        }
+        @media(max-width:700px) {
+            #financialsContent div[style*="grid-template-columns:repeat(4,1fr)"] { grid-template-columns:repeat(2,1fr) !important; }
+            #financialsContent div[style*="grid-template-columns:repeat(3,1fr)"] { grid-template-columns:repeat(2,1fr) !important; }
+        }
+
         @media(max-width:500px) {
             .four-col{grid-template-columns:repeat(2,1fr);}
             header{flex-direction:column;text-align:center;}
@@ -1078,7 +1086,13 @@
         <div class="modal-title">🏆 New Tournament</div>
         <div class="form-group"><label>Tournament Name</label><input type="text" id="tName" placeholder="e.g. June Open 2026"></div>
         <div class="form-group"><label>Date</label><input type="date" id="tDate"></div>
-        <div class="form-group"><label>Player Names (one per line, min 4)</label><textarea id="tPlayers" rows="6" placeholder="Juan Cruz&#10;Maria Santos&#10;Alex Tan&#10;Sam Reyes" style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.82rem;resize:vertical;"></textarea></div>
+        <div class="form-group"><label>Format</label>
+            <select id="tFormat" onchange="updateTournamentFormatInfo()" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
+                <option value="singles">Singles (1v1)</option>
+                <option value="doubles">Doubles (2v2 — team per line)</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Players / Teams (one per line, min 4)</label><textarea id="tPlayers" rows="6" placeholder="Singles: enter player names&#10;Doubles: enter team names (e.g. &quot;Juan &amp; Maria&quot;)" style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.82rem;resize:vertical;"></textarea></div>
         <div class="form-group"><label>Players per Group</label>
             <select id="tGroupSize" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
                 <option value="4">4 players</option>
@@ -4111,6 +4125,7 @@ function showCreateTournament(){
 function updateTournamentFormatInfo(){
     const el=document.getElementById('tFormatInfo');
     if(!el) return;
+    const fmt=document.getElementById('tFormat').value;
     const gs=parseInt(document.getElementById('tGroupSize').value);
     const sr=document.getElementById('tStartRound').value;
     const adv=parseInt(document.getElementById('tAdvance').value);
@@ -4118,7 +4133,8 @@ function updateTournamentFormatInfo(){
     const need=elimSlots[sr]||4;
     const groups=Math.ceil(need/adv);
     const minPlayers=groups*gs;
-    el.innerHTML=`ℹ️ Format: <strong>${groups} groups</strong> of <strong>${gs}</strong> players → top <strong>${adv}</strong> advance → <strong>${sr.replace('qf','QF').replace('r8','R8').replace('r16','R16').replace('r32','R32')}</strong> → QF → SF → Finals. Minimum <strong>${minPlayers}</strong> players needed.`;
+    const label=fmt==='doubles'?'teams':'players';
+    el.innerHTML=`ℹ️ ${fmt==='doubles'?'Doubles (2v2)':'Singles (1v1)'}: <strong>${groups} groups</strong> of <strong>${gs}</strong> ${label} → top <strong>${adv}</strong> advance → <strong>${sr.replace('qf','QF').replace('r8','R8').replace('r16','R16').replace('r32','R32')}</strong> → QF → SF → Finals. Minimum <strong>${minPlayers}</strong> ${label} needed.`;
 }
 function createTournament(){
     const name=document.getElementById('tName').value.trim();
@@ -4135,10 +4151,12 @@ function createTournament(){
     const groups=Math.ceil(need/advanceCount);
     const minPlayers=groups*groupSize;
     if(players.length<minPlayers){
-        showNotif(`Need at least ${minPlayers} players for this format (${groups} groups × ${groupSize}). You entered ${players.length}.`,'error');
+        showNotif(`Need at least ${minPlayers} ${label} for this format (${groups} groups × ${groupSize}). You entered ${players.length}.`,'error');
         return;
     }
     const id='T'+Date.now().toString(36).toUpperCase();
+    const fmt=document.getElementById('tFormat').value;
+    const label=fmt==='doubles'?'teams':'players';
     const shuffled=[...players].sort(()=>Math.random()-0.5);
     const groupsArr=[];
     for(let g=0;g<groups;g++){
@@ -4153,7 +4171,7 @@ function createTournament(){
         groupsArr.push({name:'Group '+label,players:gPlayers,matches});
     }
     const tournament={
-        id,name,date,status:'groups',groupSize,startRound,advanceCount,
+        id,name,date,format:fmt,status:'groups',groupSize,startRound,advanceCount,
         players:shuffled,groups:groupsArr,
         elimination:{rounds:[]}
     };
@@ -4182,7 +4200,7 @@ function renderTournamentList(){
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                 <div>
                     <div style="font-weight:700;">${statusIcon} ${t.name}</div>
-                    <div style="font-size:0.75rem;color:#aaa;">📅 ${t.date} · ${t.players.length} players · ${(t.groups||[]).length} groups</div>
+                    <div style="font-size:0.75rem;color:#aaa;">📅 ${t.date} · ${t.players.length} ${t.format==='doubles'?'teams':'players'} · ${(t.groups||[]).length} groups · ${t.format==='doubles'?'2v2':'1v1'}</div>
                 </div>
                 <div style="text-align:right;font-size:0.75rem;">
                     <div>Groups: ${doneMatches}/${totalMatches}</div>
@@ -4214,11 +4232,12 @@ function renderTournamentDetail(t){
     const totalPlayers=t.players.length;
     const groups=t.groups||[];
     const groupCount=groups.length;
-    html+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
-        <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Players</div><div style="font-weight:800;font-size:1.1rem;">${totalPlayers}</div></div>
-        <div style="background:rgba(243,156,18,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Groups</div><div style="font-weight:800;font-size:1.1rem;">${groupCount}</div></div>
+    const sumCols=window.innerWidth<500?2:4;
+    html+=`<div style="display:grid;grid-template-columns:repeat(${sumCols},1fr);gap:8px;margin-bottom:16px;">
+        <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">${t.format==='doubles'?'Teams':'Players'}</div><div style="font-weight:800;font-size:1.1rem;">${totalPlayers}</div></div>
+        <div style="background:rgba(243,156,18,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Format</div><div style="font-weight:800;font-size:1.1rem;">${t.format==='doubles'?'2v2':'1v1'}</div></div>
         <div style="background:rgba(155,89,182,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Status</div><div style="font-weight:800;font-size:1.1rem;color:${t.status==='completed'?'#2ecc71':t.status==='elimination'?'#f39c12':'#4ecdc4'};">${t.status}</div></div>
-        <div style="background:rgba(231,76,60,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Date</div><div style="font-weight:800;font-size:1.1rem;">${t.date}</div></div>
+        <div style="background:rgba(231,76,60,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Groups</div><div style="font-weight:800;font-size:1.1rem;">${groupCount}</div></div>
     </div>`;
 
     // Action buttons
@@ -4231,7 +4250,8 @@ function renderTournamentDetail(t){
 
     // Groups section
     html+=`<div style="font-size:0.85rem;font-weight:700;color:#4ecdc4;margin-bottom:8px;">📋 Group Stage</div>`;
-    html+=`<div style="display:grid;grid-template-columns:repeat(${Math.min(groupCount,3)},1fr);gap:12px;margin-bottom:20px;">`;
+    const groupCols=window.innerWidth<600?1:window.innerWidth<900?Math.min(groupCount,2):Math.min(groupCount,3);
+    html+=`<div style="display:grid;grid-template-columns:repeat(${groupCols},1fr);gap:12px;margin-bottom:20px;">`;
     groups.forEach(g=>{
         const standings=getGroupStandings(g);
         html+=`<div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:12px;">
