@@ -4367,11 +4367,21 @@ function renderTournamentDetail(t){
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">`;
       courts.forEach(c=>{
         const matchesOnCourt=[];
-        if(t.courtMode==='group'){
-          const g=groups.find(g=>g.courtId===c.id);
-          if(g) g.matches.forEach(m=>matchesOnCourt.push({match:m,group:g.name}));
-        } else {
-          groups.forEach(g=>g.matches.forEach(m=>{if(m.courtId===c.id)matchesOnCourt.push({match:m,group:g.name});}));
+        // Group stage: show group matches on courts
+        if(t.status==='groups'){
+          if(t.courtMode==='group'){
+            const g=groups.find(g=>g.courtId===c.id);
+            if(g) g.matches.forEach(m=>matchesOnCourt.push({match:m,label:g.name}));
+          } else {
+            groups.forEach(g=>g.matches.forEach(m=>{if(m.courtId===c.id)matchesOnCourt.push({match:m,label:g.name});}));
+          }
+        }
+        // Elimination stage: show elimination matches on courts (clear group pairings)
+        if((t.status==='elimination'||t.status==='completed')&&t.elimination){
+          const rl={r32:'R32',r16:'R16',r8:'R8',qf:'QF',sf:'SF',final:'Final'};
+          t.elimination.rounds.forEach(r=>{
+            r.matches.forEach(m=>{if(m.courtId===c.id&&m.p1&&m.p2)matchesOnCourt.push({match:m,label:rl[r.name]||r.name});});
+          });
         }
         const hasActive=matchesOnCourt.some(x=>!x.match.completed);
         html+=`<div style="background:${hasActive?'rgba(78,205,196,0.06)':'rgba(255,255,255,0.03)'};border:1px solid ${hasActive?'rgba(78,205,196,0.3)':'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px;min-width:150px;flex:1;">
