@@ -1039,6 +1039,16 @@
             </div>
         </div>
         <div class="card">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+                <span>🎮 Live Demo Activity</span>
+                <span id="demoVisitorCount" style="background:rgba(78,205,196,0.15);color:#4ecdc4;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;">0 visitors</span>
+                <span id="demoVenueCountLive" style="background:rgba(243,156,18,0.15);color:#f39c12;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;">0 venues</span>
+            </div>
+            <div id="liveDemoContent">
+                <div class="empty-state"><div class="ei">⏳</div><p>Listening for demo activity...</p></div>
+            </div>
+        </div>
+        <div class="card">
             <div class="card-title"><span>📧 Owner Emails</span><button class="btn btn-primary btn-sm" onclick="downloadOwnerCSV()">📥 Download CSV</button></div>
             <div id="devOwnerEmails">
                 <div class="empty-state"><div class="ei">📭</div><p>No owner data loaded yet. Refresh the dev dashboard.</p></div>
@@ -1705,7 +1715,7 @@ function showPage(id,el){
         history:renderHistory,
         confirmations:renderConfirmations,
         financials:()=>{if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();},
-        dev:renderDevDashboard,
+        dev:()=>{renderDevDashboard();startDemoMonitor();},
     };
     if(actions[id]) actions[id]();
 }
@@ -3240,6 +3250,54 @@ function renderDevUsage(){
     html+='</div>';
     document.getElementById('devUsage').innerHTML=html;
 }
+let _demoUnsub=null;
+function startDemoMonitor(){
+  if(_demoUnsub) _demoUnsub();
+  const demoContent=document.getElementById('liveDemoContent');
+  const visitorBadge=document.getElementById('demoVisitorCount');
+  const venueBadge=document.getElementById('demoVenueCountLive');
+  _demoUnsub=db.collection('demo_sessions').onSnapshot(snap=>{
+    const now=Date.now();
+    const active=[];
+    const started=[];
+    snap.forEach(doc=>{
+      const d=doc.data();
+      if(!d.lastSeen) return;
+      const last=d.lastSeen.toMillis?d.lastSeen.toMillis():now;
+      const age=now-last;
+      if(age<150000){ // active within 2.5 min
+        active.push({id:doc.id,...d,age});
+        if(d.startedDemo) started.push(d);
+      }
+    });
+    active.sort((a,b)=>b.age-a.age);
+    visitorBadge.textContent=active.length+' visitor'+(active.length!==1?'s':'');
+    if(active.length===0){
+      demoContent.innerHTML='<div class="empty-state"><div class="ei">🕊️</div><p>No active visitors right now</p></div>';
+      venueBadge.textContent='0 venues';
+      return;
+    }
+    // Count unique demo venues
+    const venueIds=new Set(started.map(d=>d.demoVenueId));
+    venueBadge.textContent=venueIds.size+' venue'+(venueIds.size!==1?'s':'');
+    demoContent.innerHTML=`
+      <div style="font-size:0.75rem;color:#aaa;margin-bottom:6px;">🟢 Active in last 2 min — ${active.length} total</div>
+      <div style="display:grid;gap:4px;font-size:0.72rem;">
+        ${active.map((v,i)=>{
+          const ago=Math.round(v.age/1000);
+          const label=v.startedDemo?'🎮 Started demo':'👀 Browsing';
+          return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:${i<active.length-1?'1px solid rgba(255,255,255,0.04)':'none'}">
+            <span>${label}</span>
+            <span style="color:#666;">${ago}s ago${v.demoVenueName?' · '+v.demoVenueName:''}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  }, err=>{
+    demoContent.innerHTML='<div class="empty-state"><div class="ei">⚠️</div><p>Error monitoring: '+err.message+'</p></div>';
+  });
+}
+
 function refreshDevDashboard(){renderDevDashboard();renderDevUsage();showNotif('Refreshing...');}
 let _devOwnerList=[];
 function downloadOwnerCSV(){
