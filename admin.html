@@ -2406,6 +2406,40 @@ function togTie(){S.currentScore.isTie=!S.currentScore.isTie;if(S.currentScore.i
 function aS(s,d){const k=s==='A'?'teamA':'teamB';S.currentScore[k].score=Math.max(0,Math.min(99,S.currentScore[k].score+d));renderScoreModal();}
 
 function confirmScore(){
+    // Handle tournament match result
+    if(S.tournamentPending){
+        const tp=S.tournamentPending;
+        const sd=S.currentScore;
+        if(sd.isTie){showNotif('Tournament matches cannot end in a tie.','error');return;}
+        const winnerName=sd.winner==='A'?sd.teamA.players[0].name:sd.teamB.players[0].name;
+        tp.match.completed=true;
+        tp.match.winner=winnerName;
+        tp.match.s1=sd.teamA.score;
+        tp.match.s2=sd.teamB.score;
+        if(tp.type==='elim'){
+            const t=(S.tournaments||[]).find(x=>x.id===tp.tournamentId);
+            if(t){
+                const round=t.elimination.rounds[tp.roundIndex];
+                const matchIdx=round.matches.indexOf(tp.match);
+                const nextRound=t.elimination.rounds[tp.roundIndex+1];
+                if(nextRound){
+                    const nextMatchIdx=Math.floor(matchIdx/2);
+                    if(nextRound.matches[nextMatchIdx]){
+                        if(matchIdx%2===0) nextRound.matches[nextMatchIdx].p1=winnerName;
+                        else nextRound.matches[nextMatchIdx].p2=winnerName;
+                    }
+                }
+            }
+        }
+        saveState();
+        showNotif(`✅ ${winnerName} ${tp.type==='elim'?'advances!':'wins!'}`,'success');
+        closeModal('scoreModal');
+        S.tournamentPending=null;
+        const t=(S.tournaments||[]).find(x=>x.id===tp.tournamentId);
+        if(t) renderTournamentDetail(t);
+        return;
+    }
+
     const c=S.courts.find(x=>x.id===S.currentScore.courtId);
     if(!c){closeModal('scoreModal');return;}
     const sd=S.currentScore;
@@ -2454,6 +2488,11 @@ function confirmScore(){
 }
 
 function skipScore(){
+    if(S.tournamentPending){
+        closeModal('scoreModal');
+        S.tournamentPending=null;
+        return;
+    }
     const c=S.courts.find(x=>x.id===S.currentScore.courtId);
     if(c){completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);}
     closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
@@ -4322,27 +4361,30 @@ function renderTournamentDetail(t){
         <div style="background:rgba(231,76,60,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Groups</div><div style="font-weight:800;font-size:1.1rem;">${groupCount}</div></div>
     </div>`;
 
-    // ── Court cards ──
+    // ── Court cards with players ──
     if(courts.length>0){
       html+=`<div style="font-size:0.8rem;font-weight:700;color:#aaa;margin-bottom:6px;">🏟️ Courts</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">`;
       courts.forEach(c=>{
-        let assignedTo='';
-        let isBusy=false;
+        const matchesOnCourt=[];
         if(t.courtMode==='group'){
           const g=groups.find(g=>g.courtId===c.id);
-          assignedTo=g?g.name:'';
+          if(g) g.matches.forEach(m=>matchesOnCourt.push({match:m,group:g.name}));
         } else {
-          const usedBy=new Set();
-          groups.forEach(g=>g.matches.forEach(m=>{if(m.courtId===c.id&&!m.completed)usedBy.add(g.name);}));
-          assignedTo=[...usedBy].join(', ');
-          isBusy=usedBy.size>0;
+          groups.forEach(g=>g.matches.forEach(m=>{if(m.courtId===c.id)matchesOnCourt.push({match:m,group:g.name});}));
         }
-        const bg=assignedTo?'rgba(78,205,196,0.1)':'rgba(255,255,255,0.03)';
-        const border=assignedTo?'rgba(78,205,196,0.3)':'rgba(255,255,255,0.08)';
-        html+=`<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px;text-align:center;font-size:0.72rem;">
-          <div style="font-weight:700;">${c.name}</div>
-          ${assignedTo?`<div style="color:#4ecdc4;font-size:0.65rem;">${assignedTo}</div>`:'<div style="color:#555;font-size:0.65rem;">Free</div>'}
+        const hasActive=matchesOnCourt.some(x=>!x.match.completed);
+        html+=`<div style="background:${hasActive?'rgba(78,205,196,0.06)':'rgba(255,255,255,0.03)'};border:1px solid ${hasActive?'rgba(78,205,196,0.3)':'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px;min-width:150px;flex:1;">
+          <div style="font-weight:700;font-size:0.78rem;margin-bottom:6px;">🏟️ ${c.name}</div>
+          ${matchesOnCourt.length>0
+            ? matchesOnCourt.map(x=>`
+              <div style="background:rgba(255,255,255,${x.match.completed?0.06:0.04});border-radius:6px;padding:4px 7px;margin-bottom:3px;font-size:0.7rem;display:flex;justify-content:space-between;align-items:center;">
+                <span>${x.match.p1} vs ${x.match.p2}</span>
+                ${x.match.completed?`<span style="color:#4ecdc4;font-weight:600;">${x.match.s1}–${x.match.s2}</span>`:'<span style="color:#f39c12;">⚡</span>'}
+              </div>
+            `).join('')
+            :`<div style="color:#555;font-size:0.7rem;text-align:center;padding:8px 0;">⚪ Free</div>`
+          }
         </div>`;
       });
       html+=`</div>`;
@@ -4451,14 +4493,10 @@ function recordGroupResult(tournamentId,groupName,matchId){
     if(!group) return;
     const match=group.matches.find(m=>m.id===matchId);
     if(!match) return;
-    const winner=confirm(`${match.p1} wins?`) ? match.p1 : match.p2;
-    match.completed=true;
-    match.winner=winner;
-    match.s1=winner===match.p1?1:0;
-    match.s2=winner===match.p2?1:0;
-    saveState();
-    showNotif(`✅ ${winner} wins!`,'success');
-    renderTournamentDetail(t);
+    S.tournamentPending={type:'group',tournamentId,groupName,matchId,match};
+    S.currentScore={courtId:match.courtId||0,players:[match.p1,match.p2],gameType:'singles',teamA:{players:[{name:match.p1,color:'#4ecdc4',skill:3}],score:0},teamB:{players:[{name:match.p2,color:'#f39c12',skill:3}],score:0},isTie:false,winner:null};
+    renderScoreModal();
+    document.getElementById('scoreModal').classList.add('active');
 }
 function startElimination(id){
     const t=(S.tournaments||[]).find(x=>x.id===id);
@@ -4536,29 +4574,10 @@ function recordElimResult(tournamentId,roundIndex,matchId){
     if(!round) return;
     const match=round.matches.find(m=>m.id===matchId);
     if(!match) return;
-    const winner=confirm(`${match.p1} wins?`) ? match.p1 : match.p2;
-    match.completed=true;
-    match.winner=winner;
-    match.s1=winner===match.p1?1:0;
-    match.s2=winner===match.p2?1:0;
-
-    // Advance winner to next round
-    const nextRound=t.elimination.rounds[parseInt(roundIndex)+1];
-    if(nextRound){
-        const matchIdx=round.matches.indexOf(match);
-        const nextMatchIdx=Math.floor(matchIdx/2);
-        if(nextRound.matches[nextMatchIdx]){
-            if(matchIdx%2===0){
-                nextRound.matches[nextMatchIdx].p1=winner;
-            } else {
-                nextRound.matches[nextMatchIdx].p2=winner;
-            }
-        }
-    }
-
-    saveState();
-    showNotif(`✅ ${winner} advances!`,'success');
-    renderTournamentDetail(t);
+    S.tournamentPending={type:'elim',tournamentId,roundIndex:parseInt(roundIndex),matchId,match};
+    S.currentScore={courtId:match.courtId||0,players:[match.p1,match.p2],gameType:'singles',teamA:{players:[{name:match.p1,color:'#4ecdc4',skill:3}],score:0},teamB:{players:[{name:match.p2,color:'#f39c12',skill:3}],score:0},isTie:false,winner:null};
+    renderScoreModal();
+    document.getElementById('scoreModal').classList.add('active');
 }
 function completeTournament(id){
     const t=(S.tournaments||[]).find(x=>x.id===id);
