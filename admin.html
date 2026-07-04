@@ -4255,16 +4255,19 @@ function renderTournamentList(){
         const doneMatches=(t.groups||[]).reduce((s,g)=>s+(g.matches||[]).filter(m=>m.completed).length,0);
         const elimMatches=(t.elimination?.rounds||[]).reduce((s,r)=>s+(r.matches||[]).length,0);
         const elimDone=(t.elimination?.rounds||[]).reduce((s,r)=>s+(r.matches||[]).filter(m=>m.completed).length,0);
-        return `<div class="booking-card" onclick="openTournament('${t.id}')" style="cursor:pointer;">
+        return `<div class="booking-card" style="cursor:pointer;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                <div>
+                <div onclick="openTournament('${t.id}')" style="flex:1;min-width:0;">
                     <div style="font-weight:700;">${statusIcon} ${t.name}</div>
                     <div style="font-size:0.75rem;color:#aaa;">📅 ${t.date} · ${t.players.length} ${t.format==='doubles'?'teams':'players'} · ${(t.groups||[]).length} groups · ${t.format==='doubles'?'2v2':'1v1'}</div>
                 </div>
-                <div style="text-align:right;font-size:0.75rem;">
-                    <div>Groups: ${doneMatches}/${totalMatches}</div>
-                    ${t.status==='elimination'||t.status==='completed'?`<div>Elim: ${elimDone}/${elimMatches}</div>`:''}
-                    <div style="color:${t.status==='completed'?'#2ecc71':t.status==='elimination'?'#f39c12':'#4ecdc4'};font-weight:600;">${t.status}</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="text-align:right;font-size:0.75rem;">
+                        <div>Groups: ${doneMatches}/${totalMatches}</div>
+                        ${t.status==='elimination'||t.status==='completed'?`<div>Elim: ${elimDone}/${elimMatches}</div>`:''}
+                        <div style="color:${t.status==='completed'?'#2ecc71':t.status==='elimination'?'#f39c12':'#4ecdc4'};font-weight:600;">${t.status}</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTournament('${t.id}')" style="padding:4px 8px;font-size:0.65rem;">🗑</button>
                 </div>
             </div>
         </div>`;
@@ -4285,7 +4288,29 @@ function openTournament(id){
 }
 function renderTournamentDetail(t){
     const el=document.getElementById('tournamentDetailContent');
+    const courts=S.courts||[];
     let html='';
+
+    // ── Auto-assign courts if not yet assigned ──
+    if(!t._courtsAssigned && courts.length>0){
+      if(courts.length>=groups.length){
+        // Fixed court per group
+        groups.forEach((g,i)=>{g.courtId=courts[i].id;g.courtName=courts[i].name;});
+        t.courtMode='group';
+      } else {
+        // Round-robin per match across groups
+        let ci=0;
+        groups.forEach(g=>{
+          g.matches.forEach(m=>{
+            m.courtId=courts[ci%courts.length].id;
+            m.courtName=courts[ci%courts.length].name;
+            ci++;
+          });
+        });
+        t.courtMode='match';
+      }
+      t._courtsAssigned=true;
+    }
 
     // Summary
     const totalPlayers=t.players.length;
@@ -4299,13 +4324,39 @@ function renderTournamentDetail(t){
         <div style="background:rgba(231,76,60,0.08);border-radius:8px;padding:10px;text-align:center;"><div style="font-size:0.65rem;color:#888;">Groups</div><div style="font-weight:800;font-size:1.1rem;">${groupCount}</div></div>
     </div>`;
 
-    // Action buttons
-    if(t.status==='groups'){
-        html+=`<div style="display:flex;gap:8px;margin-bottom:16px;">
-            <button class="btn btn-success btn-sm" onclick="startElimination('${t.id}')" ${groups.every(g=>g.matches.every(m=>m.completed))?'':'disabled'}>🏆 Start Elimination</button>
-            <span style="font-size:0.75rem;color:#888;align-self:center;">${groups.every(g=>g.matches.every(m=>m.completed))?'All group matches done!':'Complete all group matches first.'}</span>
+    // ── Court cards ──
+    if(courts.length>0){
+      html+=`<div style="font-size:0.8rem;font-weight:700;color:#aaa;margin-bottom:6px;">🏟️ Courts</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">`;
+      courts.forEach(c=>{
+        let assignedTo='';
+        let isBusy=false;
+        if(t.courtMode==='group'){
+          const g=groups.find(g=>g.courtId===c.id);
+          assignedTo=g?g.name:'';
+        } else {
+          const usedBy=new Set();
+          groups.forEach(g=>g.matches.forEach(m=>{if(m.courtId===c.id&&!m.completed)usedBy.add(g.name);}));
+          assignedTo=[...usedBy].join(', ');
+          isBusy=usedBy.size>0;
+        }
+        const bg=assignedTo?'rgba(78,205,196,0.1)':'rgba(255,255,255,0.03)';
+        const border=assignedTo?'rgba(78,205,196,0.3)':'rgba(255,255,255,0.08)';
+        html+=`<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px;text-align:center;font-size:0.72rem;">
+          <div style="font-weight:700;">${c.name}</div>
+          ${assignedTo?`<div style="color:#4ecdc4;font-size:0.65rem;">${assignedTo}</div>`:'<div style="color:#555;font-size:0.65rem;">Free</div>'}
         </div>`;
+      });
+      html+=`</div>`;
     }
+
+    // Action buttons
+    html+=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="backToTournamentList()">← Back</button>
+        ${t.status==='groups'?`<button class="btn btn-success btn-sm" onclick="startElimination('${t.id}')" ${groups.every(g=>g.matches.every(m=>m.completed))?'':'disabled'}>🏆 Start Elimination</button>
+            <span style="font-size:0.75rem;color:#888;align-self:center;">${groups.every(g=>g.matches.every(m=>m.completed))?'All group matches done!':'Complete all group matches first.'}</span>`:''}
+        <button class="btn btn-danger btn-sm" onclick="deleteTournament('${t.id}')" style="margin-left:auto;">🗑 Delete</button>
+    </div>`;
 
     // Groups section
     html+=`<div style="font-size:0.85rem;font-weight:700;color:#4ecdc4;margin-bottom:8px;">📋 Group Stage</div>`;
@@ -4314,13 +4365,13 @@ function renderTournamentDetail(t){
     groups.forEach(g=>{
         const standings=getGroupStandings(g);
         html+=`<div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:12px;">
-            <div style="font-weight:700;font-size:0.85rem;margin-bottom:8px;">${g.name}</div>
+            <div style="font-weight:700;font-size:0.85rem;margin-bottom:8px;">${g.name} ${g.courtName?`<span style="color:#4ecdc4;font-size:0.7rem;">· ${g.courtName}</span>`:''}</div>
             <div style="font-size:0.7rem;color:#888;margin-bottom:6px;">Standings</div>
             ${standings.map((p,i)=>`<div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:2px 0;${i<standings.length&&i<(t.advanceCount||1)?'color:#4ecdc4;font-weight:600;':''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':''}<span>${p.name}</span><span>${p.wins}W ${p.losses}L</span></div>`).join('')}
             <div style="font-size:0.7rem;color:#888;margin:8px 0 4px;">Matches</div>
             ${g.matches.map(m=>`
                 <div style="background:rgba(255,255,255,${m.completed?0.06:0.02});border-radius:6px;padding:6px 8px;margin-bottom:4px;font-size:0.72rem;display:flex;justify-content:space-between;align-items:center;">
-                    <span>${m.p1} vs ${m.p2}</span>
+                    <span>${m.p1} vs ${m.p2} ${m.courtName?`<span style="color:#666;">· ${m.courtName}</span>`:''}</span>
                     ${m.completed
                         ?`<span style="font-weight:600;">${m.s1}–${m.s2}</span>`
                         :`<button class="btn btn-primary btn-sm" onclick="recordGroupResult('${t.id}','${g.name}','${m.id}')">Score</button>`
@@ -4346,6 +4397,7 @@ function renderTournamentDetail(t){
                         ${m.p1?`<span style="${m.completed&&m.winner===m.p1?'color:#4ecdc4;font-weight:600;':''}">${m.p1}</span>`:'<span style="color:#555;">TBD</span>'}
                         <span style="color:#555;margin:0 6px;">vs</span>
                         ${m.p2?`<span style="${m.completed&&m.winner===m.p2?'color:#4ecdc4;font-weight:600;':''}">${m.p2}</span>`:'<span style="color:#555;">TBD</span>'}
+                        ${m.courtName?`<span style="color:#666;font-size:0.7rem;">· ${m.courtName}</span>`:''}
                     </div>
                     ${m.completed
                         ?`<span style="font-weight:600;font-size:0.85rem;">${m.s1}–${m.s2}</span>`
@@ -4461,6 +4513,20 @@ function startElimination(id){
 
     t.elimination={rounds};
     t.status='elimination';
+    // Auto-assign courts to elimination matches
+    const courts=S.courts||[];
+    if(courts.length>0){
+      let ci=0;
+      rounds.forEach(r=>{
+        r.matches.forEach(m=>{
+          if(m.p1&&m.p2){
+            m.courtId=courts[ci%courts.length].id;
+            m.courtName=courts[ci%courts.length].name;
+            ci++;
+          }
+        });
+      });
+    }
     saveState();
     showNotif('🏆 Elimination bracket ready!','success');
     renderTournamentDetail(t);
@@ -4503,6 +4569,16 @@ function completeTournament(id){
     saveState();
     showNotif('🏆 Tournament completed!','success');
     renderTournamentDetail(t);
+}
+function deleteTournament(id){
+    const t=(S.tournaments||[]).find(x=>x.id===id);
+    if(!t) return;
+    const name=t.name;
+    if(!confirm(`Delete tournament "${name}"? This cannot be undone.`)) return;
+    S.tournaments=S.tournaments.filter(x=>x.id!==id);
+    saveState();
+    backToTournamentList();
+    showNotif('🗑 Tournament "'+name+'" deleted.','success');
 }
 
 // ===================== INIT =====================
