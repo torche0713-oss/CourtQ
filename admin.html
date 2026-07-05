@@ -2046,7 +2046,7 @@ function updateJoinFormMode(){
     const epEl=document.getElementById('extraPlayers');
     if(gtEl) gtEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
     if(gnEl) gnEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
-    if(epEl) epEl.style.display='none';
+    if(epEl) epEl.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
     const lbl=document.querySelector('#page-openplay .card .card-title');
     if(lbl) lbl.textContent=mode==='winnersSplit'||mode==='roundRobin'?'🎯 Join Pool':'🎯 Join Queue';
 }
