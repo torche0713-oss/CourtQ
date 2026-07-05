@@ -300,8 +300,15 @@
               userAgent: (navigator.userAgent||'').substring(0,100)
             }, { merge: true }).catch(() => {});
           };
-          touch();
-          _heartbeatInterval = setInterval(touch, 30000);
+          // Increment total visitor counter on first touch
+          const firstTouch = () => {
+            touch();
+            db.collection('demo_stats').doc('stats').set({
+              visitorCount: firebase.firestore.FieldValue.increment(1)
+            }, { merge: true }).catch(() => {});
+            _heartbeatInterval = setInterval(touch, 30000);
+          };
+          firstTouch();
           window.addEventListener('beforeunload', () => {
             clearInterval(_heartbeatInterval);
             if (_demoSessionId) db.collection('demo_sessions').doc(_demoSessionId).delete().catch(() => {});

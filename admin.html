@@ -1085,7 +1085,8 @@
         <div class="card">
             <div class="card-title" style="display:flex;align-items:center;gap:8px;">
                 <span>🎮 Live Demo Activity</span>
-                <span id="demoVisitorCount" style="background:rgba(78,205,196,0.15);color:#4ecdc4;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;">0 visitors</span>
+                <span id="demoVisitorCount" style="background:rgba(78,205,196,0.15);color:#4ecdc4;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;">0 now</span>
+                <span id="demoTotalCount" style="background:rgba(52,152,219,0.15);color:#3498db;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;">0 total</span>
                 <span id="demoVenueCountLive" style="background:rgba(243,156,18,0.15);color:#f39c12;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;">0 venues</span>
             </div>
             <div id="liveDemoContent">
@@ -3425,11 +3426,19 @@ function renderDevUsage(){
     document.getElementById('devUsage').innerHTML=html;
 }
 let _demoUnsub=null;
+let _demoStatsUnsub=null;
 function startDemoMonitor(){
   if(_demoUnsub) _demoUnsub();
+  if(_demoStatsUnsub) _demoStatsUnsub();
   const demoContent=document.getElementById('liveDemoContent');
   const visitorBadge=document.getElementById('demoVisitorCount');
+  const totalBadge=document.getElementById('demoTotalCount');
   const venueBadge=document.getElementById('demoVenueCountLive');
+  // Cumulative visitor count
+  _demoStatsUnsub=db.collection('demo_stats').doc('stats').onSnapshot(snap=>{
+    const d=snap.data();
+    if(d&&d.visitorCount!=null) totalBadge.textContent=d.visitorCount.toLocaleString()+' total';
+  },()=>{totalBadge.textContent='? total';});
   _demoUnsub=db.collection('demo_sessions').onSnapshot(snap=>{
     const now=Date.now();
     const active=[];
@@ -3445,7 +3454,7 @@ function startDemoMonitor(){
       }
     });
     active.sort((a,b)=>b.age-a.age);
-    visitorBadge.textContent=active.length+' visitor'+(active.length!==1?'s':'');
+    visitorBadge.textContent=active.length+' now';
     if(active.length===0){
       demoContent.innerHTML='<div class="empty-state"><div class="ei">🕊️</div><p>No active visitors right now</p></div>';
       venueBadge.textContent='0 venues';
