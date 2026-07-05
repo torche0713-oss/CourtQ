@@ -164,85 +164,123 @@
         }
 
         .court-manage-card {
-            background: rgba(255,255,255,0.06);
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
             border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 14px; padding: 16px;
-            position: relative; transition: all 0.3s;
+            border-radius: 16px; padding: 16px;
+            position: relative; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
         }
 
-        .court-manage-card:hover { border-color: rgba(255,255,255,0.2); }
+        .court-manage-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at var(--mouse-x,50%) var(--mouse-y,50%), rgba(255,255,255,0.04), transparent 60%);
+            pointer-events: none;
+        }
 
-        .court-manage-card.occupied { border-color: rgba(78,205,196,0.4); background: rgba(78,205,196,0.06); }
-        .court-manage-card.available { border-color: rgba(46,204,113,0.3); background: rgba(46,204,113,0.05); }
-        .court-manage-card.maintenance { border-color: rgba(243,156,18,0.3); background: rgba(243,156,18,0.05); }
-        .court-manage-card.booked { border-color: rgba(231,76,60,0.3); background: rgba(231,76,60,0.05); }
-        .court-manage-card.tournament { border-color: rgba(155,89,182,0.4); background: rgba(155,89,182,0.06); }
+        .court-manage-card:hover {
+            border-color: rgba(255,255,255,0.25);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .court-manage-card.occupied { border-color: rgba(78,205,196,0.5); background: linear-gradient(145deg, rgba(78,205,196,0.1), rgba(78,205,196,0.03)); box-shadow: 0 4px 20px rgba(78,205,196,0.08); }
+        .court-manage-card.available { border-color: rgba(46,204,113,0.4); background: linear-gradient(145deg, rgba(46,204,113,0.08), rgba(46,204,113,0.02)); box-shadow: 0 4px 20px rgba(46,204,113,0.06); }
+        .court-manage-card.maintenance { border-color: rgba(243,156,18,0.4); background: linear-gradient(145deg, rgba(243,156,18,0.08), rgba(243,156,18,0.02)); box-shadow: 0 4px 20px rgba(243,156,18,0.06); }
+        .court-manage-card.booked { border-color: rgba(231,76,60,0.4); background: linear-gradient(145deg, rgba(231,76,60,0.08), rgba(231,76,60,0.02)); box-shadow: 0 4px 20px rgba(231,76,60,0.06); }
+        .court-manage-card.tournament { border-color: rgba(155,89,182,0.5); background: linear-gradient(145deg, rgba(155,89,182,0.1), rgba(155,89,182,0.03)); box-shadow: 0 4px 20px rgba(155,89,182,0.08); }
+
+        .court-manage-card.occupied:hover { border-color: rgba(78,205,196,0.7); box-shadow: 0 8px 30px rgba(78,205,196,0.15); }
+        .court-manage-card.available:hover { border-color: rgba(46,204,113,0.6); box-shadow: 0 8px 30px rgba(46,204,113,0.12); }
+        .court-manage-card.maintenance:hover { border-color: rgba(243,156,18,0.6); box-shadow: 0 8px 30px rgba(243,156,18,0.12); }
+        .court-manage-card.booked:hover { border-color: rgba(231,76,60,0.6); box-shadow: 0 8px 30px rgba(231,76,60,0.12); }
+        .court-manage-card.tournament:hover { border-color: rgba(155,89,182,0.7); box-shadow: 0 8px 30px rgba(155,89,182,0.15); }
 
         .court-color-bar {
-            position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 14px 14px 0 0;
+            position: absolute; top: 0; left: 0; right: 0; height: 5px;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 0 12px rgba(0,0,0,0.2);
         }
 
         .court-manage-header {
             display: flex; justify-content: space-between;
-            align-items: flex-start; margin-bottom: 10px; margin-top: 8px;
+            align-items: flex-start; margin-bottom: 12px; margin-top: 10px;
         }
 
-        .court-manage-name { font-weight: 700; font-size: 1rem; }
-        .court-manage-loc { font-size: 0.7rem; color: #666; margin-top: 2px; }
+        .court-manage-name { font-weight: 700; font-size: 1rem; letter-spacing: 0.3px; }
+        .court-manage-loc { font-size: 0.7rem; color: #888; margin-top: 3px; }
 
         .court-status-badge {
-            font-size: 0.65rem; font-weight: 700;
-            padding: 3px 8px; border-radius: 10px; text-transform: uppercase;
+            font-size: 0.62rem; font-weight: 800;
+            padding: 4px 10px; border-radius: 12px; text-transform: uppercase;
+            letter-spacing: 0.5px; backdrop-filter: blur(4px);
         }
 
-        .csb-available { background:rgba(46,204,113,0.2); color:#2ecc71; }
-        .csb-occupied  { background:rgba(78,205,196,0.2); color:#4ecdc4; }
-        .csb-tournament { background:rgba(155,89,182,0.2); color:#9b59b6; }
-        .csb-maintenance { background:rgba(243,156,18,0.2); color:#f39c12; }
-        .csb-booked    { background:rgba(231,76,60,0.2); color:#e74c3c; }
+        .csb-available { background:linear-gradient(135deg,rgba(46,204,113,0.25),rgba(46,204,113,0.1)); color:#2ecc71; border:1px solid rgba(46,204,113,0.15); }
+        .csb-occupied  { background:linear-gradient(135deg,rgba(78,205,196,0.25),rgba(78,205,196,0.1)); color:#4ecdc4; border:1px solid rgba(78,205,196,0.15); }
+        .csb-tournament { background:linear-gradient(135deg,rgba(155,89,182,0.25),rgba(155,89,182,0.1)); color:#9b59b6; border:1px solid rgba(155,89,182,0.15); }
+        .csb-maintenance { background:linear-gradient(135deg,rgba(243,156,18,0.25),rgba(243,156,18,0.1)); color:#f39c12; border:1px solid rgba(243,156,18,0.15); }
+        .csb-booked    { background:linear-gradient(135deg,rgba(231,76,60,0.25),rgba(231,76,60,0.1)); color:#e74c3c; border:1px solid rgba(231,76,60,0.15); }
 
         .court-info-row {
-            display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+            display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
         }
 
         .court-info-tag {
-            font-size: 0.67rem; padding: 2px 8px; border-radius: 8px;
-            background: rgba(255,255,255,0.07); color: #aaa;
+            font-size: 0.67rem; padding: 3px 10px; border-radius: 8px;
+            background: rgba(255,255,255,0.06); color: #bbb;
+            border: 1px solid rgba(255,255,255,0.06);
         }
 
         .court-players-mini {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 12px;
         }
 
         .cpm-slot {
-            background: rgba(255,255,255,0.04); border-radius: 6px;
-            padding: 5px 7px; display: flex; align-items: center; gap: 5px;
-            font-size: 0.72rem;
+            background: rgba(255,255,255,0.05); border-radius: 8px;
+            padding: 5px 7px; display: flex; align-items: center; gap: 6px;
+            font-size: 0.72rem; border: 1px solid rgba(255,255,255,0.04);
         }
 
         .cpm-slot.empty { border: 1px dashed rgba(255,255,255,0.12); color: #444; justify-content: center; }
 
         .mini-av {
-            width: 20px; height: 20px; border-radius: 50%;
+            width: 22px; height: 22px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 0.6rem; flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
         .timer-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
         .timer-bar-fill { height: 100%; border-radius: 2px; transition: width 1s; }
 
         .add-court-card {
-            background: rgba(78,205,196,0.04);
-            border: 2px dashed rgba(78,205,196,0.25);
-            border-radius: 14px; padding: 16px;
+            background: linear-gradient(145deg, rgba(78,205,196,0.06), rgba(78,205,196,0.02));
+            border: 2px dashed rgba(78,205,196,0.3);
+            border-radius: 16px; padding: 16px;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            min-height: 200px; cursor: pointer; transition: all 0.3s; gap: 10px;
+            min-height: 200px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); gap: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
 
         .add-court-card:hover {
-            background: rgba(78,205,196,0.1);
-            border-color: rgba(78,205,196,0.5);
+            background: linear-gradient(145deg, rgba(78,205,196,0.12), rgba(78,205,196,0.04));
+            border-color: rgba(78,205,196,0.6);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(78,205,196,0.1);
+        }
+
+        .add-court-icon {
+            font-size: 2rem; transition: all 0.3s;
+            filter: drop-shadow(0 2px 8px rgba(78,205,196,0.3));
+        }
+
+        .add-court-card:hover .add-court-icon {
+            transform: scale(1.15) rotate(90deg);
+            filter: drop-shadow(0 4px 12px rgba(78,205,196,0.5));
+        }
             transform: translateY(-2px);
         }
 
@@ -509,22 +547,24 @@
         .receipt-total { display:flex; justify-content:space-between; font-size:1rem; font-weight:800; padding:10px 0; color:#4ecdc4; }
 
         /* TIMELINE */
-        .timeline-wrap { overflow-x:auto; margin-bottom:20px; }
-        .timeline-grid { min-width:800px; background:rgba(0,0,0,0.2); border-radius:12px; padding:16px; }
+        .timeline-wrap { overflow-x:auto; margin-bottom:20px; border-radius:14px; }
+        .timeline-grid { min-width:800px; background:linear-gradient(145deg, rgba(0,0,0,0.25), rgba(0,0,0,0.15)); border-radius:14px; padding:16px; border:1px solid rgba(255,255,255,0.05); box-shadow:0 4px 24px rgba(0,0,0,0.2); }
         .tl-hours { display:flex; margin-left:110px; margin-bottom:8px; }
-        .tl-hour { flex:1; font-size:0.63rem; color:#555; text-align:center; }
-        .tl-row { display:flex; align-items:center; margin-bottom:6px; height:36px; }
-        .tl-label { width:110px; font-size:0.75rem; font-weight:600; flex-shrink:0; color:#aaa; }
-        .tl-slots { flex:1; height:100%; position:relative; background:rgba(255,255,255,0.02); border-radius:6px; overflow:hidden; }
-        .tl-slot { position:absolute; top:3px; bottom:3px; border-radius:4px; display:flex; align-items:center; padding:0 6px; font-size:0.65rem; font-weight:700; white-space:nowrap; overflow:hidden; }
-        .tl-op    { background:rgba(78,205,196,0.25); color:#4ecdc4; border:1px solid rgba(78,205,196,0.4); }
-        .tl-tournament{ background:rgba(155,89,182,0.25); color:#9b59b6; border:1px solid rgba(155,89,182,0.4); }
-        .tl-booked{ background:rgba(231,76,60,0.3); color:#e74c3c; border:1px solid rgba(231,76,60,0.5); }
-        .tl-playing{background:rgba(46,204,113,0.25); color:#2ecc71; }
-        .tl-maint { background:rgba(150,150,150,0.2); color:#777; }
-        .tl-gridline { position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.06); z-index:0; }
-        .tl-now   { position:absolute; top:0; bottom:0; width:2px; background:#f39c12; z-index:5; }
-        .tl-now-lbl{ position:absolute; top:-16px; font-size:0.58rem; color:#f39c12; transform:translateX(-50%); font-weight:700; }
+        .tl-hour { flex:1; font-size:0.63rem; color:#666; text-align:center; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; }
+        .tl-row { display:flex; align-items:center; margin-bottom:6px; height:36px; border-radius:8px; transition:all 0.2s; }
+        .tl-row:hover { background:rgba(255,255,255,0.03); }
+        .tl-label { width:110px; font-size:0.75rem; font-weight:700; flex-shrink:0; padding-right:8px; text-shadow:0 1px 4px rgba(0,0,0,0.3); }
+        .tl-slots { flex:1; height:100%; position:relative; background:rgba(255,255,255,0.03); border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.04); }
+        .tl-slot { position:absolute; top:2px; bottom:2px; border-radius:5px; display:flex; align-items:center; padding:0 7px; font-size:0.65rem; font-weight:700; white-space:nowrap; overflow:hidden; text-shadow:0 1px 3px rgba(0,0,0,0.4); box-shadow:0 2px 8px rgba(0,0,0,0.15); transition:all 0.2s; z-index:2; }
+        .tl-slot:hover { transform:scaleY(1.15); z-index:10; box-shadow:0 4px 16px rgba(0,0,0,0.3); }
+        .tl-op    { background:linear-gradient(135deg, rgba(78,205,196,0.35), rgba(78,205,196,0.15)); color:#4ecdc4; border:1px solid rgba(78,205,196,0.5); }
+        .tl-tournament{ background:linear-gradient(135deg, rgba(155,89,182,0.35), rgba(155,89,182,0.15)); color:#d4a5e8; border:1px solid rgba(155,89,182,0.5); }
+        .tl-booked{ background:linear-gradient(135deg, rgba(231,76,60,0.4), rgba(231,76,60,0.15)); color:#ff8a80; border:1px solid rgba(231,76,60,0.5); }
+        .tl-playing{background:linear-gradient(135deg, rgba(46,204,113,0.4), rgba(46,204,113,0.15)); color:#69f0ae; border:1px solid rgba(46,204,113,0.5); }
+        .tl-maint { background:linear-gradient(135deg, rgba(150,150,150,0.3), rgba(150,150,150,0.1)); color:#aaa; border:1px solid rgba(150,150,150,0.3); }
+        .tl-gridline { position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.05); z-index:0; }
+        .tl-now   { position:absolute; top:0; bottom:0; width:3px; background:linear-gradient(180deg, #f39c12, #e74c3c); z-index:5; box-shadow:0 0 12px rgba(243,156,18,0.5); }
+        .tl-now-lbl{ position:absolute; top:-18px; font-size:0.6rem; color:#f39c12; transform:translateX(-50%); font-weight:800; text-shadow:0 0 8px rgba(243,156,18,0.4); letter-spacing:0.5px; }
 
         /* POS */
         .pos-grid { display:grid; grid-template-columns:1fr 360px; gap:20px; }
@@ -2727,12 +2767,13 @@ function renderBookingTimeline(){
     S.courts.forEach(court=>{
         let slots=gridlines;
         // Tournament background indicator (shows behind bookings)
-        const isTournamentActive=(()=>{
-            if(!court._tournamentId) return false;
+        const tournamentInfo=(()=>{
+            if(!court._tournamentId) return null;
             const t=(S.tournaments||[]).find(x=>x.id===court._tournamentId);
-            return t&&(t.status==='groups'||t.status==='elimination');
+            if(!t||t.status==='completed') return null;
+            return {name:t.name,status:t.status};
         })();
-        if(isTournamentActive) slots+=`<div class="tl-slot tl-tournament" style="left:0%;width:100%;">🔮 Tournament</div>`;
+        if(tournamentInfo) slots+=`<div class="tl-slot tl-tournament" style="left:0%;width:100%;">🔮 ${tournamentInfo.name}</div>`;
         // Always render bookings/sessions
         if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60,court.id)){
             const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
@@ -3953,13 +3994,13 @@ function renderCourtsManage(){
             <div class="court-color-bar" style="background:${court.color};"></div>
             <div class="court-manage-header">
                 <div>
-                    <div class="court-manage-name">🏟️ ${court.name}</div>
+                    <div class="court-manage-name" style="color:${court.color};">🏟️ ${court.name}</div>
                     <div class="court-manage-loc">📍 ${court.location} · ${SURF_ICONS[court.surface]} ${court.surface} · ${ENV_ICONS[court.env]} ${court.env}</div>
                 </div>
                 <span class="court-status-badge csb-${isOcc?'occupied':opS==='tournament'?'tournament':court.status==='maintenance'?'maintenance':opS==='booked'?'booked':'available'}">${isOcc?'🟢 In Use':opS==='tournament'?'🔮 Tournament':court.status==='maintenance'?'🔧 Maint.':opS==='booked'?'🔒 Booked':'⚪ Open'}</span>
             </div>
             <div class="court-info-row">
-                <span class="court-info-tag">₱${court.rate}/hr</span>
+                <span class="court-info-tag" style="color:#4ecdc4;border-color:rgba(78,205,196,0.2);">₱${court.rate}/hr</span>
                 <span class="court-info-tag">${hasBk} booking(s)</span>
                 ${court.desc?`<span class="court-info-tag">${court.desc.slice(0,20)}...</span>`:''}
             </div>
@@ -3967,12 +4008,12 @@ function renderCourtsManage(){
                 <div class="court-players-mini">
                     ${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span><span style="font-size:0.55rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span></div>`).join('')}
                 </div>
-                <div style="font-size:0.72rem;color:#f39c12;margin-bottom:8px;">⚠️ Game in progress — cannot remove</div>
+                <div style="font-size:0.72rem;color:#f39c12;margin-bottom:8px;background:rgba(243,156,18,0.08);padding:6px 10px;border-radius:8px;border:1px solid rgba(243,156,18,0.12);">⚠️ Game in progress — cannot remove</div>
             `:''}
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="openEditCourt(${court.id})">✏️ Edit</button>
-                ${court.status!=='occupied'?`<button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">${court.status==='maintenance'?'✅ Open':'🔧 Maint.'}</button>`:''}
-                ${!isOcc?`<button class="btn btn-danger btn-sm" onclick="promptRemoveCourt(${court.id})">🗑️ Remove</button>`:`<button class="btn btn-sm" style="background:rgba(78,205,196,0.1);color:#4ecdc4;" disabled>🔒 In Use</button>`}
+                <button class="btn btn-primary btn-sm" onclick="openEditCourt(${court.id})" style="background:linear-gradient(135deg,${court.color},rgba(0,0,0,0.3));border:none;">✏️ Edit</button>
+                ${court.status!=='occupied'?`<button class="btn btn-sm" style="background:rgba(243,156,18,0.12);border:1px solid rgba(243,156,18,0.2);border-radius:6px;color:#f39c12;padding:5px 10px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onclick="toggleMaint(${court.id})" onmouseover="this.style.background='rgba(243,156,18,0.2)'" onmouseout="this.style.background='rgba(243,156,18,0.12)'">${court.status==='maintenance'?'✅ Open':'🔧 Maint.'}</button>`:''}
+                ${!isOcc?`<button class="btn btn-sm" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.15);border-radius:6px;color:#e74c3c;padding:5px 10px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onclick="promptRemoveCourt(${court.id})" onmouseover="this.style.background='rgba(231,76,60,0.2)'" onmouseout="this.style.background='rgba(231,76,60,0.1)'">🗑️ Remove</button>`:`<button class="btn btn-sm" style="background:rgba(78,205,196,0.15);color:#4ecdc4;border:1px solid rgba(78,205,196,0.2);" disabled>🔒 In Use</button>`}
             </div>`;
         grid.appendChild(card);
     });
@@ -4436,16 +4477,18 @@ function renderTournamentDetail(t){
           });
         }
         const hasActive=matchesOnCourt.some(x=>!x.match.completed);
-        html+=`<div style="background:${hasActive?'rgba(78,205,196,0.06)':'rgba(255,255,255,0.03)'};border:1px solid ${hasActive?'rgba(78,205,196,0.3)':'rgba(255,255,255,0.08)'};border-radius:10px;padding:10px;min-width:150px;flex:1;">
-          <div style="font-weight:700;font-size:0.78rem;margin-bottom:6px;">🏟️ ${c.name}</div>
+        const cc=c.color||'#4ecdc4';
+        html+=`<div style="background:linear-gradient(145deg,${hasActive?'rgba(78,205,196,0.08)':'rgba(255,255,255,0.04)'},rgba(255,255,255,0.02));border:1px solid ${hasActive?cc+'44':'rgba(255,255,255,0.08)'};border-radius:14px;padding:12px;min-width:160px;flex:1;box-shadow:0 4px 16px rgba(0,0,0,0.12)${hasActive?',0 0 20px '+cc+'11':''};transition:all 0.3s;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,${cc},${cc}88);box-shadow:0 0 10px ${cc}44;"></div>
+          <div style="font-weight:800;font-size:0.78rem;margin-bottom:8px;margin-top:6px;color:${cc};">🏟️ ${c.name}</div>
           ${matchesOnCourt.length>0
             ? matchesOnCourt.map(x=>`
-              <div style="background:rgba(255,255,255,${x.match.completed?0.06:0.04});border-radius:6px;padding:4px 7px;margin-bottom:3px;font-size:0.7rem;display:flex;justify-content:space-between;align-items:center;">
-                <span>${x.match.p1} vs ${x.match.p2}</span>
-                ${x.match.completed?`<span style="color:#4ecdc4;font-weight:600;">${x.match.s1}–${x.match.s2}</span>`:'<span style="color:#f39c12;">⚡</span>'}
+              <div style="background:${x.match.completed?cc+'11':'rgba(255,255,255,0.06)'};border-radius:8px;padding:5px 8px;margin-bottom:4px;font-size:0.7rem;display:flex;justify-content:space-between;align-items:center;border:1px solid ${x.match.completed?cc+'22':'rgba(255,255,255,0.05)'};">
+                <span style="font-weight:${x.match.completed?500:400};">${x.match.p1} vs ${x.match.p2}</span>
+                ${x.match.completed?`<span style="color:#4ecdc4;font-weight:700;background:rgba(78,205,196,0.12);padding:1px 6px;border-radius:5px;">${x.match.s1}–${x.match.s2}</span>`:'<span style="color:#f39c12;font-weight:700;">⚡</span>'}
               </div>
             `).join('')
-            :`<div style="color:#555;font-size:0.7rem;text-align:center;padding:8px 0;">⚪ Free</div>`
+            :`<div style="color:#555;font-size:0.7rem;text-align:center;padding:10px 0;">⚪ Free</div>`
           }
         </div>`;
       });
