@@ -4647,9 +4647,10 @@ function assignTournamentCourts(t){
     const usedIds=new Set();
     (t.groups||[]).forEach(g=>(g.matches||[]).forEach(m=>{if(m.courtId)usedIds.add(m.courtId);}));
     if(t.elimination) t.elimination.rounds.forEach(r=>(r.matches||[]).forEach(m=>{if(m.courtId)usedIds.add(m.courtId);}));
+    if(t.status==='completed') return; // don't re-block after tournament ends
+    const selectedIds=t.selectedCourtIds&&t.selectedCourtIds.length?t.selectedCourtIds:null;
     (S.courts||[]).forEach(c=>{
-        const selected=t.selectedCourtIds&&t.selectedCourtIds.length?t.selectedCourtIds.includes(c.id):true;
-        if(usedIds.has(c.id)||selected)c._tournamentId=t.id;
+        if(usedIds.has(c.id)||!selectedIds||selectedIds.includes(c.id))c._tournamentId=t.id;
     });
 }
 function getTournamentCourts(t){
