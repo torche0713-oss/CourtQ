@@ -733,12 +733,23 @@
                     </select>
                 </div>
                 <div id="extraPlayers" style="display:none;">
-                    <div class="form-group"><label>Teammates</label>
-                        <div style="display:flex;flex-direction:column;gap:6px;">
-                            <input type="text" id="p2" placeholder="Teammate 2">
-                            <input type="text" id="p3" placeholder="Teammate 3">
-                            <input type="text" id="p4" placeholder="Teammate 4">
+                    <div class="form-group"><label>Join As</label>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                            <label style="display:flex;align-items:center;gap:4px;background:rgba(78,205,196,0.08);padding:6px 12px;border-radius:6px;cursor:pointer;flex:1;font-size:0.78rem;">
+                                <input type="radio" name="joinAs" value="team" checked onchange="onJoinAsChange()">
+                                <span>👫 I have a partner</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:4px;background:rgba(243,156,18,0.08);padding:6px 12px;border-radius:6px;cursor:pointer;flex:1;font-size:0.78rem;">
+                                <input type="radio" name="joinAs" value="solo" onchange="onJoinAsChange()">
+                                <span>🙋 I need a partner</span>
+                            </label>
                         </div>
+                    </div>
+                    <div id="teamFields">
+                        <div class="form-group"><label>Partner Name</label><input type="text" id="p2" placeholder="Your teammate's name"></div>
+                    </div>
+                    <div id="soloFields" style="display:none;">
+                        <div class="form-group" style="padding:8px 12px;background:rgba(243,156,18,0.06);border-radius:8px;font-size:0.75rem;color:#aaa;">You'll be paired with another solo player to form a team.</div>
                     </div>
                 </div>
                 <div class="form-group"><label>Skill Level</label>
@@ -2044,7 +2055,15 @@ function updateJoinFormMode(){
 function onGTChange(){
     const mode=S.session?.mode;
     if(mode==='winnersSplit'||mode==='roundRobin') return;
-    document.getElementById('extraPlayers').style.display=document.getElementById('gameType').value==='doubles'?'block':'none';
+    const isDoubles=document.getElementById('gameType').value==='doubles';
+    document.getElementById('extraPlayers').style.display=isDoubles?'block':'none';
+    document.getElementById('groupName').parentElement.style.display=isDoubles?'none':'';
+}
+
+function onJoinAsChange(){
+    const isTeam=document.querySelector('input[name="joinAs"]:checked').value==='team';
+    document.getElementById('teamFields').style.display=isTeam?'block':'none';
+    document.getElementById('soloFields').style.display=isTeam?'none':'block';
 }
 
 function joinQueue(){
@@ -2090,43 +2109,63 @@ function joinQueue(){
             renderAll();
         }
     } else {
-        const extras=[];
-        for(let i=2;i<=4;i++){const el=document.getElementById('p'+i);if(el&&el.value.trim()&&!allEx.includes(el.value.trim().toLowerCase()))extras.push({name:el.value.trim(),skill:sk,color:COLORS[extras.length+1]});}
-        const all=[p1,...extras];
-        all.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-        if(all.length>=4){
-            const {team1,team2}=balanceTeams(all.slice(0,4));
-            const g={id:++S.nextId,groupName:gn||`${p1n}'s Team`,gameType:'doubles',skillLevel:sk,players:all.slice(0,4),team1,team2,joinedAt:Date.now()};
-            g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
-            S.queue.push(g);
+        // Doubles
+        const joinAs=document.querySelector('input[name="joinAs"]:checked')?.value||'team';
+        if(joinAs==='team'){
+            const p2n=document.getElementById('p2').value.trim();
+            if(!p2n){showNotif('Enter your partner\'s name!','error');return;}
+            if(allEx.includes(p2n.toLowerCase())){showNotif(`"${p2n}" already in queue!`,'error');return;}
+            const p2={name:p2n,skill:sk,color:COLORS[1]};
+            const team=[p1,p2];
+            team.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+            const half={id:++S.nextId,groupName:`${p1n} & ${p2n}`,gameType:'doubles',skillLevel:sk,players:team,team1:null,team2:null,joinedAt:Date.now(),_halfTeam:true};
+            half.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+            S.queue.push(half);
             clearJoinForm();
-            showNotif(`✅ Full doubles team joined!`,'success');
+            tryCombineTeams();
+            const halves=S.queue.filter(g=>g._halfTeam).length;
+            if(halves>=2) showNotif(`✅ Team ${p1n} & ${p2n} joined! Looking for opponent...`,'success');
+            else showNotif(`⏳ Team ${p1n} & ${p2n} joined! Waiting for another team...`,'warning');
             renderAll(); setTimeout(()=>tryAutoAssign(),400);
         } else {
-            const dSolo=S.soloQueue.filter(s=>s.gameType==='doubles');
-            const exCount=dSolo.reduce((a,s)=>a+s.players.length,0);
-            if(all.length+exCount>=4){
-                let comb=[...all]; const toRm=[];
-                for(let i=0;i<dSolo.length&&comb.length<4;i++){dSolo[i].players.forEach(p=>{if(comb.length<4)comb.push(p);});toRm.push(dSolo[i].id);}
-                S.soloQueue=S.soloQueue.filter(s=>!toRm.includes(s.id));
-                comb.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-                const avg=Math.round(comb.reduce((a,p)=>a+p.skill,0)/comb.length);
-                const {team1,team2}=balanceTeams(comb);
-                const g={id:++S.nextId,groupName:gn||comb.slice(0,2).map(p=>p.name).join(' & ')+' Team',gameType:'doubles',skillLevel:avg,players:comb,team1,team2,joinedAt:Date.now()};
-                comb.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
-                S.queue.push(g);
+            // Solo — push to soloQueue, try pairing with another solo
+            const dSolo=S.soloQueue.filter(s=>s.gameType==='doubles'&&s._solo);
+            if(dSolo.length>0){
+                const match=dSolo[0];
+                S.soloQueue=S.soloQueue.filter(s=>s.id!==match.id);
+                const p2=match.players[0];
+                p1.color=COLORS[1]; p2.color=COLORS[0];
+                const team=[p2,p1];
+                const half={id:++S.nextId,groupName:`${p2.name} & ${p1n}`,gameType:'doubles',skillLevel:Math.round((match.skillLevel+sk)/2),players:team,team1:null,team2:null,joinedAt:Math.min(match.joinedAt,Date.now()),_halfTeam:true};
+                half.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+                S.queue.push(half);
                 clearJoinForm();
-                showNotif(`🎉 Full doubles team assembled!`,'success');
+                tryCombineTeams();
+                showNotif(`🎉 Paired! ${p2.name} & ${p1n} — looking for opponent team.`,'success');
                 renderAll(); setTimeout(()=>tryAutoAssign(),400);
             } else {
-                S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:sk,players:all,joinedAt:Date.now(),groupName:gn});
-                all.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+                S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:sk,players:[p1],joinedAt:Date.now(),_solo:true});
                 clearJoinForm();
-                showNotif(`⏳ Added ${all.length} player(s). Need ${4-all.length-exCount} more.`,'warning');
-        renderAll();
-        setTimeout(()=>{const g=document.getElementById('groupName');if(g)g.value='';},100);
+                showNotif(`⏳ ${p1n} waiting for a partner...`,'warning');
+                renderAll();
             }
         }
+    }
+}
+
+function tryCombineTeams(){
+    const halves=S.queue.filter(g=>g._halfTeam).sort((a,b)=>a.joinedAt-b.joinedAt);
+    while(halves.length>=2){
+        const a=halves.shift();
+        const b=halves.shift();
+        const all=[...a.players,...b.players];
+        all.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+        const {team1,team2}=balanceTeams(all);
+        const full={id:++S.nextId,groupName:`${a.groupName} vs ${b.groupName}`,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:all,team1,team2,joinedAt:Math.min(a.joinedAt,b.joinedAt)};
+        // Remove halves from queue, add full group
+        S.queue=S.queue.filter(g=>g.id!==a.id&&g.id!==b.id);
+        S.queue.push(full);
+        showNotif(`✅ Teams combined: ${a.groupName} + ${b.groupName}`,'success');
     }
 }
 
@@ -2158,10 +2197,12 @@ function removeFromQueue(id){const i=S.queue.findIndex(g=>g.id===id);if(i!==-1){
 
 // ===================== ASSIGN =====================
 function tryAutoAssign(){
-    if(S.queue.length===0) return;
+    tryCombineTeams();
+    const full=S.queue.filter(g=>!g._halfTeam);
+    if(full.length===0) return;
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
-    showAssignModal(avail[0],S.queue[0]);
+    showAssignModal(avail[0],full[0]);
 }
 
 function tryWinnersAutoAssign(){
@@ -2420,18 +2461,19 @@ function manualAssignToCourt(cId){
         tryRoundRobinAutoAssign();
         return;
     }
-    if(S.queue.length===0){showNotif('No paired groups!','error');return;}
+    if(S.queue.filter(g=>!g._halfTeam).length===0){showNotif('No full groups ready!','error');return;}
     document.getElementById('assignTitle').textContent=`📋 Assign to ${court.name}`;
     document.getElementById('assignBody').innerHTML=`
         <p style="color:#aaa;margin-bottom:10px;">Choose group for <strong style="color:#fff">${court.name}</strong>:</p>
         <div style="display:flex;flex-direction:column;gap:6px;">
-            ${S.queue.map((g,i)=>`<div class="gopt ${i===0?'gopt-sel':''}" onclick="selGroupOpt(this,${g.id})" style="padding:10px;border:2px solid ${i===0?'#4ecdc4':'rgba(255,255,255,0.1)'};border-radius:8px;cursor:pointer;transition:all 0.2s;background:${i===0?'rgba(78,205,196,0.08)':'transparent'};">
+            ${S.queue.filter(g=>!g._halfTeam).map((g,i)=>`<div class="gopt ${i===0?'gopt-sel':''}" onclick="selGroupOpt(this,${g.id})" style="padding:10px;border:2px solid ${i===0?'#4ecdc4':'rgba(255,255,255,0.1)'};border-radius:8px;cursor:pointer;transition:all 0.2s;background:${i===0?'rgba(78,205,196,0.08)':'transparent'};">
                 <div style="display:flex;justify-content:space-between;"><strong>${g.groupName}</strong><span style="font-size:0.72rem;color:#f39c12;">⏳${Math.floor((Date.now()-g.joinedAt)/60000)}m</span></div>
                 <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">${g.players.map(p=>p.name).join(', ')} · ${g.gameType}</div>
             </div>`).join('')}
         </div>`;
     document.getElementById('assignBody').dataset.cId=cId;
-    document.getElementById('assignBody').dataset.gId=S.queue[0].id;
+    const firstFull=S.queue.filter(g=>!g._halfTeam)[0];
+    document.getElementById('assignBody').dataset.gId=firstFull?firstFull.id:null;
     document.getElementById('assignConfirm').onclick=()=>{
         const c=S.courts.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.cId));
         const g=S.queue.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.gId));
@@ -4195,11 +4237,14 @@ function renderQueueList(){
         const wait=Math.floor((Date.now()-g.joinedAt)/60000);
         const item=document.createElement('div');
         item.className='queue-item';
+        if(g._halfTeam) item.style.opacity='0.6';
         item.innerHTML=`
             <div class="q-pos ${idx===0?'first':''}">${idx+1}</div>
             <div class="q-info">
-                <div class="q-name">${g.groupName}</div>
-                ${g.team1&&g.team2?`
+                <div class="q-name">${g._halfTeam?'👫 '+g.groupName+' (waiting for opponent)':g.groupName}</div>
+                ${g._halfTeam
+                    ?`<div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}</div>`
+                    :(g.team1&&g.team2?`
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0;">
                         <span style="font-size:0.65rem;font-weight:700;color:#4ecdc4;">Team A</span>
                     ${g.team1.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}
@@ -4207,11 +4252,11 @@ function renderQueueList(){
                     <span style="font-size:0.65rem;font-weight:700;color:#f39c12;">Team B</span>
                     ${g.team2.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}
                     </div>`
-                :`<div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}</div>`}
+                :`<div class="q-tags">${g.players.map(p=>`<span class="q-tag" style="border-left:2px solid ${p.color}">${p.name} <span style="font-size:0.6rem;opacity:0.6;">${p.skill||'?'}.0</span></span>`).join('')}</div>`)}
                 <div class="q-meta"><span class="q-wait">⏳${wait}m</span><span class="q-type ${g.gameType==='singles'?'q-singles':'q-doubles'}">${g.gameType}</span><span style="font-size:0.65rem;color:#666;">⭐${SKILL_LABELS[g.skillLevel]}</span></div>
             </div>
             <div class="q-actions">
-                <button class="btn btn-purple btn-sm" onclick="promptAssignGroup(${g.id})">📋</button>
+                ${g._halfTeam?'':`<button class="btn btn-purple btn-sm" onclick="promptAssignGroup(${g.id})">📋</button>`}
                 <button class="btn btn-danger btn-sm" onclick="removeFromQueue(${g.id})">✕</button>
             </div>`;
         list.appendChild(item);
