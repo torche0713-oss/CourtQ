@@ -1399,6 +1399,10 @@
                     <input type="radio" name="opMode" value="winnersSplit" onchange="document.getElementById('sesModeInfo').textContent='Winners stay, losers rotate. Teams split and reform each game.'">
                     <span style="font-weight:600;font-size:0.82rem;">Winners Stay & Split</span>
                 </label>
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(155,89,182,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                    <input type="radio" name="opMode" value="roundRobin" onchange="document.getElementById('sesModeInfo').textContent='4 players in a pod, rotating partners each game — everyone plays with everyone.'">
+                    <span style="font-weight:600;font-size:0.82rem;">Round Robin</span>
+                </label>
             </div>
             <div id="sesModeInfo" style="font-size:0.72rem;color:#aaa;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
         </div>
@@ -1944,8 +1948,8 @@ function startSession(){
     S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,startedAt:Date.now(),active:true,courts:selectedCourts};
     updateJoinFormMode();
     closeModal('sessionModal');
-    showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}`,'success');
-    announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':'4 on/4 off'}.`);
+    showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}`,'success');
+    announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}.`);
     renderAll();
 }
 
@@ -2001,7 +2005,7 @@ function addSessionCourt(cId){
 function endSession(){
     if(!S.session) return;
     S.session.active=false; S.session=null;
-    S.courts.forEach(c=>{ if(c.status==='occupied') completeRelease(c,null); });
+    S.courts.forEach(c=>{ if(c.status==='occupied') completeRelease(c,null); if(c.rr) delete c.rr; });
     updateJoinFormMode();
     showNotif('⏹ Session ended.','warning');
     announce('Open Play session ended. Thank you!');
@@ -2013,17 +2017,17 @@ function updateJoinFormMode(){
     const gtEl=document.getElementById('gameType');
     const gnEl=document.getElementById('groupName');
     const epEl=document.getElementById('extraPlayers');
-    if(gtEl) gtEl.parentElement.style.display=mode==='winnersSplit'?'none':'';
-    if(gnEl) gnEl.parentElement.style.display=mode==='winnersSplit'?'none':'';
+    if(gtEl) gtEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
+    if(gnEl) gnEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
     if(epEl) epEl.style.display='none';
     const lbl=document.querySelector('#page-openplay .card .card-title');
-    if(lbl) lbl.textContent=mode==='winnersSplit'?'🎯 Join Pool':'🎯 Join Queue';
+    if(lbl) lbl.textContent=mode==='winnersSplit'||mode==='roundRobin'?'🎯 Join Pool':'🎯 Join Queue';
 }
 
 // ===================== QUEUE =====================
 function onGTChange(){
     const mode=S.session?.mode;
-    if(mode==='winnersSplit') return;
+    if(mode==='winnersSplit'||mode==='roundRobin') return;
     document.getElementById('extraPlayers').style.display=document.getElementById('gameType').value==='doubles'?'block':'none';
 }
 
@@ -2035,10 +2039,10 @@ function joinQueue(){
     const allEx=[...S.soloQueue.map(s=>s.players.map(p=>p.name.toLowerCase())).flat(),...S.queue.map(g=>g.players.map(p=>p.name.toLowerCase())).flat()];
     if(allEx.includes(p1n.toLowerCase())){showNotif(`"${p1n}" already in queue!`,'error');return;}
     const p1={name:p1n,skill:sk,color:COLORS[0]};
-    if(S.session.mode==='winnersSplit'){
+    if(S.session.mode==='winnersSplit'||S.session.mode==='roundRobin'){
         S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:sk,players:[p1],joinedAt:Date.now()});
         clearJoinForm(); showNotif(`⏳ ${p1n} joined pool. Waiting for more players...`,'warning'); renderAll();
-        setTimeout(()=>tryWinnersAutoAssign(),400);
+        setTimeout(()=>S.session.mode==='roundRobin'?tryRoundRobinAutoAssign():tryWinnersAutoAssign(),400);
         return;
     }
     const gt=document.getElementById('gameType').value;
@@ -2167,6 +2171,38 @@ function tryWinnersAutoAssign(){
     const court=avail[0];
     doAssign(court,g);
     showNotif(`🎉 ${court.name} → ${flat.map(p=>p.name).join(', ')}`,'success');
+    renderAll();
+}
+
+function tryRoundRobinAutoAssign(){
+    if(!S.session||S.session.mode!=='roundRobin') return;
+    const avail=getOpenPlayCourts();
+    if(avail.length===0) return;
+    const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
+    if(poolSize<4) return;
+    const flat=[]; const used=[];
+    for(let i=0;i<S.soloQueue.length&&flat.length<4;i++){
+        for(let j=0;j<S.soloQueue[i].players.length&&flat.length<4;j++){
+            flat.push(S.soloQueue[i].players[j]);
+        }
+        used.push(S.soloQueue[i].id);
+    }
+    S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
+    flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+    const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
+    // Generate round-robin schedule: each player partners with everyone once
+    const [p0,p1,p2,p3]=flat;
+    const rrSchedule=[
+        {teamA:[p0,p1],teamB:[p2,p3]},
+        {teamA:[p0,p2],teamB:[p1,p3]},
+        {teamA:[p0,p3],teamB:[p1,p2]}
+    ];
+    const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:flat,team1:rrSchedule[0].teamA,team2:rrSchedule[0].teamB,joinedAt:Date.now()};
+    g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+    const court=avail[0];
+    court.rr={round:0,schedule:rrSchedule};
+    doAssign(court,g);
+    showNotif(`🎯 Round Robin (round 1/3) → ${court.name}: ${flat.map(p=>p.name).join(', ')}`,'success');
     renderAll();
 }
 
@@ -2362,6 +2398,12 @@ function manualAssignToCourt(cId){
         tryWinnersAutoAssign();
         return;
     }
+    if(S.session?.mode==='roundRobin'){
+        const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
+        if(poolSize<4){showNotif('Need 4 players in pool!','error');return;}
+        tryRoundRobinAutoAssign();
+        return;
+    }
     if(S.queue.length===0){showNotif('No paired groups!','error');return;}
     document.getElementById('assignTitle').textContent=`📋 Assign to ${court.name}`;
     document.getElementById('assignBody').innerHTML=`
@@ -2543,6 +2585,27 @@ function confirmScore(){
         closeModal('scoreModal');renderAll();setTimeout(()=>tryWinnersAutoAssign(),500);
         return;
     }
+    // Round-robin: advance to next round instead of freeing
+    if(S.session?.mode==='roundRobin'&&c.rr&&!sd.isTie){
+        const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
+        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
+        const wt=sd.winner==='A'?sd.teamA:sd.teamB;
+        (wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
+        S.history.unshift(entry);if(S.history.length>100)S.history.pop();
+        c.rr.round++;
+        if(c.rr.round>=3){
+            delete c.rr;
+            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;
+            showNotif(`🏆 Round Robin complete! ${c.name} is free.`,'success');
+            announce(`Round Robin finished on ${c.name}!`);
+        } else {
+            const next=c.rr.schedule[c.rr.round];
+            c.team1=next.teamA; c.team2=next.teamB; c.startTime=Date.now();
+            showNotif(`🔄 Round ${c.rr.round+1}/3 → ${next.teamA.map(p=>p.name).join(' & ')} vs ${next.teamB.map(p=>p.name).join(' & ')}`,'success');
+        }
+        closeModal('scoreModal');renderAll();setTimeout(()=>tryRoundRobinAutoAssign(),500);
+        return;
+    }
     completeRelease(c,sd);
     if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
     else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=wt.players.map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
@@ -2557,7 +2620,7 @@ function skipScore(){
     }
     const c=S.courts.find(x=>x.id===S.currentScore.courtId);
     if(c){completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);}
-    closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
+    closeModal('scoreModal');renderAll();setTimeout(()=>S.session?.mode==='roundRobin'?tryRoundRobinAutoAssign():S.session?.mode==='winnersSplit'?tryWinnersAutoAssign():tryAutoAssign(),500);
 }
 
 function completeRelease(court,sd){
@@ -2573,7 +2636,7 @@ function completeRelease(court,sd){
         else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const lt=sd.winner==='A'?sd.teamB:sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});(lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});}
     }
     S.history.unshift(entry);if(S.history.length>100)S.history.pop();
-    court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;
+    court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;if(court.rr) delete court.rr;
 }
 
 // ===================== BOOKINGS =====================
@@ -3892,7 +3955,7 @@ function renderSession(){
                     <div class="live-dot"></div>
                     <div>
                         <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${ses.startDate||'today'} ${ses.startTime||ses.start} to ${ses.endDate||'today'} ${ses.endTime||ses.end}</div>
-                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':'🔄 4 on / 4 off'}</div>
+                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':ses.mode==='roundRobin'?'🔄 Round Robin':'🔄 4 on / 4 off'}</div>
                     </div>
                 </div>
                 <button class="btn btn-warning btn-sm" onclick="endSession()">⏹ End Session</button>
@@ -3956,14 +4019,14 @@ function renderOpCourts(){
                     :`${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span><span style="font-size:0.55rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span></div>`).join('')}
                     ${[...Array(Math.max(0,4-court.players.length))].map(()=>`<div class="cpm-slot empty">+</div>`).join('')}`}
                 </div>
-                <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;text-align:center;">⏱ ${elapsed}m played · ${remaining}m left</div>
+                <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;text-align:center;">⏱ ${elapsed}m played · ${remaining}m left ${court.rr?`· <span style="color:#9b59b6;font-weight:700;">Round ${court.rr.round+1}/3</span>`:''}</div>
                 <div class="timer-bar"><div class="timer-bar-fill" style="width:${pct}%;background:${pct>80?'#e74c3c':pct>60?'#f39c12':'#4ecdc4'};"></div></div>
             `:''}
             ${opS==='booked'&&bk?`<div style="background:rgba(231,76,60,0.08);border-radius:8px;padding:8px;font-size:0.78rem;margin-bottom:8px;"><div style="font-weight:700;">👤 ${bk.customer}</div><div style="color:#e74c3c;">🕐 ${bk.startTime}–${bk.endTime}</div></div>`:''}
             ${opS==='available'?`<div style="text-align:center;padding:14px 0;color:#444;font-size:0.8rem;">🏓 Court Ready</div>`:''}
             ${opS==='maintenance'?`<div style="background:rgba(243,156,18,0.08);border-radius:8px;padding:10px;text-align:center;color:#f39c12;font-size:0.8rem;margin-bottom:8px;">🔧 Under Maintenance</div>`:''}
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">${S.session?.mode==='winnersSplit'?'🔄 Rotate':'🏁 End Game'}</button>`:''}
+                ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">${S.session?.mode==='winnersSplit'||S.session?.mode==='roundRobin'?'🔄 Rotate':'🏁 End Game'}</button>`:''}
                 ${opS==='available'&&assigned.includes(court.id)?`<button class="btn btn-success btn-sm" onclick="manualAssignToCourt(${court.id})">📋 Assign</button>`:''}
                 ${opS==='available'?`<button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">🔧</button>`:''}
                 ${opS==='maintenance'?`<button class="btn btn-success btn-sm" onclick="toggleMaint(${court.id})">✅ Open</button>`:''}
@@ -4033,10 +4096,11 @@ function renderQueueList(){
     badge.textContent=`(${total})`;
     if(total===0){list.innerHTML='<div class="empty-state"><div class="ei">🏓</div><p>Queue is empty.<br>Join to get a court.</p></div>';return;}
     list.innerHTML='';
-    if(S.session?.mode==='winnersSplit'){
+    if(S.session?.mode==='winnersSplit'||S.session?.mode==='roundRobin'){
         const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
         const sec=document.createElement('div');
-        sec.innerHTML=`<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👥 Player Pool (${poolSize})</div>
+        const modeLabel=S.session?.mode==='roundRobin'?'Round Robin':'Winners Stay & Split';
+        sec.innerHTML=`<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👥 ${modeLabel} Pool (${poolSize})</div>
             <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">${poolSize>=4?'✅ Ready to assign!':'⏳ Need '+(4-poolSize)+' more for a court'}</div>`;
         S.soloQueue.forEach(entry=>{
             const wait=Math.floor((Date.now()-entry.joinedAt)/60000);
@@ -4052,7 +4116,7 @@ function renderQueueList(){
                 </div>`;
             sec.appendChild(card);
         });
-        if(poolSize>=4) sec.innerHTML+=`<div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="tryWinnersAutoAssign()">🎯 Force Assign</button></div>`;
+        if(poolSize>=4) sec.innerHTML+=`<div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="${S.session?.mode==='roundRobin'?'tryRoundRobinAutoAssign()':'tryWinnersAutoAssign()'}">🎯 Force Assign</button></div>`;
         list.appendChild(sec);
         return;
     }
