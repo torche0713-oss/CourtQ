@@ -176,6 +176,7 @@
         .court-manage-card.available { border-color: rgba(46,204,113,0.3); background: rgba(46,204,113,0.05); }
         .court-manage-card.maintenance { border-color: rgba(243,156,18,0.3); background: rgba(243,156,18,0.05); }
         .court-manage-card.booked { border-color: rgba(231,76,60,0.3); background: rgba(231,76,60,0.05); }
+        .court-manage-card.tournament { border-color: rgba(155,89,182,0.4); background: rgba(155,89,182,0.06); }
 
         .court-color-bar {
             position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 14px 14px 0 0;
@@ -196,6 +197,7 @@
 
         .csb-available { background:rgba(46,204,113,0.2); color:#2ecc71; }
         .csb-occupied  { background:rgba(78,205,196,0.2); color:#4ecdc4; }
+        .csb-tournament { background:rgba(155,89,182,0.2); color:#9b59b6; }
         .csb-maintenance { background:rgba(243,156,18,0.2); color:#f39c12; }
         .csb-booked    { background:rgba(231,76,60,0.2); color:#e74c3c; }
 
@@ -1828,6 +1830,10 @@ function getCourtStatus(cId){
     const c=S.courts.find(x=>x.id===cId);
     if(!c) return 'unknown';
     if(c.status==='maintenance') return 'maintenance';
+    if(c._tournamentId){
+        const t=(S.tournaments||[]).find(x=>x.id===c._tournamentId);
+        if(t&&(t.status==='groups'||t.status==='elimination')) return 'tournament';
+    }
     if(getBookingNow(cId)) return 'booked';
     const now=nowMin(),today=getTodayISO();
     const upcoming=S.bookings.find(b=>b.courtId===cId&&b.date===today&&b.status!=='cancelled'&&timeToMin(b.startTime)>now&&timeToMin(b.startTime)<=now+30);
@@ -2410,7 +2416,7 @@ function confirmScore(){
     if(S.tournamentPending){
         const tp=S.tournamentPending;
         const sd=S.currentScore;
-        if(sd.isTie){showNotif('Tournament matches cannot end in a tie.','error');return;}
+        if(sd.isTie||!sd.winner||sd.winner==='tie'){showNotif('Select a winner first.','error');return;}
         const winnerName=sd.winner==='A'?sd.teamA.players[0].name:sd.teamB.players[0].name;
         tp.match.completed=true;
         tp.match.winner=winnerName;
@@ -3868,12 +3874,12 @@ function renderOpCourts(){
         const pct=court.startTime?Math.min((Date.now()-court.startTime)/rotMs*100,100):0;
         const remaining=court.startTime?Math.max(0,Math.round((rotMs-(Date.now()-court.startTime))/60000)):0;
         const c=document.createElement('div');
-        c.className=`court-manage-card ${opS==='playing'?'occupied':opS==='booked'?'booked':opS==='available'?'available':opS==='maintenance'?'maintenance':''}`;
+        c.className=`court-manage-card ${opS==='playing'?'occupied':opS==='booked'?'booked':opS==='tournament'?'tournament':opS==='available'?'available':opS==='maintenance'?'maintenance':''}`;
         c.innerHTML=`
             <div class="court-color-bar" style="background:${court.color};"></div>
             <div class="court-manage-header">
                 <div><div class="court-manage-name">🏟️ ${court.name}</div><div class="court-manage-loc">📍 ${court.location} · ₱${court.rate}/hr</div></div>
-                <span class="court-status-badge csb-${opS==='playing'?'occupied':opS}">${opS==='playing'?'🟢 Playing':opS==='booked'?'🔒 Booked':opS==='pending'?'⏳ Soon':opS==='maintenance'?'🔧 Maint.':'⚪ Open'}</span>
+                <span class="court-status-badge csb-${opS==='playing'?'occupied':opS}">${opS==='playing'?'🟢 Playing':opS==='tournament'?'🔮 Tournament':opS==='booked'?'🔒 Booked':opS==='pending'?'⏳ Soon':opS==='maintenance'?'🔧 Maint.':'⚪ Open'}</span>
             </div>
             <div class="court-info-row">
                 <span class="court-info-tag">${SURF_ICONS[court.surface]} ${court.surface}</span>
@@ -3929,7 +3935,7 @@ function renderCourtsManage(){
         const isOcc=court.status==='occupied';
         const hasBk=S.bookings.filter(b=>b.courtId===court.id&&b.status!=='cancelled'&&b.date>=getTodayISO()).length;
         const card=document.createElement('div');
-        card.className=`court-manage-card ${isOcc?'occupied':opS==='booked'?'booked':court.status==='maintenance'?'maintenance':'available'}`;
+        card.className=`court-manage-card ${isOcc?'occupied':opS==='booked'?'booked':opS==='tournament'?'tournament':court.status==='maintenance'?'maintenance':'available'}`;
         card.innerHTML=`
             <div class="court-color-bar" style="background:${court.color};"></div>
             <div class="court-manage-header">
@@ -3937,7 +3943,7 @@ function renderCourtsManage(){
                     <div class="court-manage-name">🏟️ ${court.name}</div>
                     <div class="court-manage-loc">📍 ${court.location} · ${SURF_ICONS[court.surface]} ${court.surface} · ${ENV_ICONS[court.env]} ${court.env}</div>
                 </div>
-                <span class="court-status-badge csb-${isOcc?'occupied':court.status==='maintenance'?'maintenance':opS==='booked'?'booked':'available'}">${isOcc?'🟢 In Use':court.status==='maintenance'?'🔧 Maint.':opS==='booked'?'🔒 Booked':'⚪ Open'}</span>
+                <span class="court-status-badge csb-${isOcc?'occupied':opS==='tournament'?'tournament':court.status==='maintenance'?'maintenance':opS==='booked'?'booked':'available'}">${isOcc?'🟢 In Use':opS==='tournament'?'🔮 Tournament':court.status==='maintenance'?'🔧 Maint.':opS==='booked'?'🔒 Booked':'⚪ Open'}</span>
             </div>
             <div class="court-info-row">
                 <span class="court-info-tag">₱${court.rate}/hr</span>
@@ -4361,6 +4367,7 @@ function renderTournamentDetail(t){
         t.courtMode='match';
       }
       t._courtsAssigned=true;
+      assignTournamentCourts(t);
     }
 
     // Summary
@@ -4416,6 +4423,7 @@ function renderTournamentDetail(t){
         <button class="btn btn-outline btn-sm" onclick="backToTournamentList()">← Back</button>
         ${t.status==='groups'?`<button class="btn btn-success btn-sm" onclick="startElimination('${t.id}')" ${groups.every(g=>g.matches.every(m=>m.completed))?'':'disabled'}>🏆 Start Elimination</button>
             <span style="font-size:0.75rem;color:#888;align-self:center;">${groups.every(g=>g.matches.every(m=>m.completed))?'All group matches done!':'Complete all group matches first.'}</span>`:''}
+        ${t.status!=='completed'?`<button class="btn btn-warning btn-sm" onclick="endTournament('${t.id}')">⏹ End Tournament</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="deleteTournament('${t.id}')" style="margin-left:auto;">🗑 Delete</button>
     </div>`;
 
@@ -4584,6 +4592,7 @@ function startElimination(id){
         });
       });
     }
+    assignTournamentCourts(t);
     saveState();
     showNotif('🏆 Elimination bracket ready!','success');
     renderTournamentDetail(t);
@@ -4600,9 +4609,29 @@ function recordElimResult(tournamentId,roundIndex,matchId){
     renderScoreModal();
     document.getElementById('scoreModal').classList.add('active');
 }
+function assignTournamentCourts(t){
+    const usedIds=new Set();
+    (t.groups||[]).forEach(g=>(g.matches||[]).forEach(m=>{if(m.courtId)usedIds.add(m.courtId);}));
+    if(t.elimination) t.elimination.rounds.forEach(r=>(r.matches||[]).forEach(m=>{if(m.courtId)usedIds.add(m.courtId);}));
+    (S.courts||[]).forEach(c=>{if(usedIds.has(c.id))c._tournamentId=t.id;});
+}
+function freeTournamentCourts(t){
+    (S.courts||[]).forEach(c=>{if(c._tournamentId===t.id)delete c._tournamentId;});
+}
+function endTournament(id){
+    const t=(S.tournaments||[]).find(x=>x.id===id);
+    if(!t) return;
+    if(!confirm(`End tournament "${t.name}"? Courts used will be freed for booking.`)) return;
+    freeTournamentCourts(t);
+    t.status='completed';
+    saveState();
+    showNotif('⏹ Tournament ended. Courts freed.','success');
+    renderTournamentDetail(t);
+}
 function completeTournament(id){
     const t=(S.tournaments||[]).find(x=>x.id===id);
     if(!t) return;
+    freeTournamentCourts(t);
     t.status='completed';
     saveState();
     showNotif('🏆 Tournament completed!','success');
@@ -4613,6 +4642,7 @@ function deleteTournament(id){
     if(!t) return;
     const name=t.name;
     if(!confirm(`Delete tournament "${name}"? This cannot be undone.`)) return;
+    freeTournamentCourts(t);
     S.tournaments=S.tournaments.filter(x=>x.id!==id);
     saveState();
     backToTournamentList();

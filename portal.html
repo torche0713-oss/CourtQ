@@ -487,11 +487,12 @@ function renderCourtPicker(){
     const grid=document.getElementById('courtPickerGrid');
     grid.innerHTML='';
     S.courts.forEach(court=>{
-        const avail=court.status!=='maintenance';
+        const avail=court.status!=='maintenance'&&!court._tournamentId;
         const card=document.createElement('div');
         card.className=`court-picker-card ${!avail?'unavailable':''} ${S.portal.courtId===court.id?'selected':''}`;
         card.innerHTML=`<div style="font-size:2rem;margin-bottom:8px;">🏟️</div>
             <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${court.name}</div>
+            ${court._tournamentId?`<div style="font-size:0.65rem;color:#9b59b6;margin-bottom:4px;">🔮 Tournament</div>`:''}
             <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;">📍 ${court.location}</div>
             <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">
                 <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${court.surface}</span>
