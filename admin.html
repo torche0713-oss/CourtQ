@@ -2441,10 +2441,7 @@ function confirmScore(){
                         else nm.p2=winnerName;
                         // Assign a court when both players are set
                         if(nm.p1&&nm.p2&&!nm.courtId){
-                            const courtsAll=S.courts||[];
-                            const tCourts=(t.selectedCourtIds&&t.selectedCourtIds.length>0)
-                                ? courtsAll.filter(c=>t.selectedCourtIds.includes(c.id))
-                                : courtsAll;
+                            const tCourts=getTournamentCourts(t);
                             if(tCourts.length>0){
                                 const totalAssigned=t.elimination.rounds.reduce((sum,r)=>sum+r.matches.filter(m=>m.courtId).length,0);
                                 const pick=tCourts[totalAssigned%tCourts.length];
@@ -2729,43 +2726,40 @@ function renderBookingTimeline(){
     for(let h=1;h<=eH;h++) gridlines+=`<div class="tl-gridline" style="left:${(h/total)*100}%;"></div>`;
     S.courts.forEach(court=>{
         let slots=gridlines;
-        // Tournament block covers full timeline
-        const tournamentBlock=(()=>{
-            if(!court._tournamentId) return '';
+        // Tournament background indicator (shows behind bookings)
+        const isTournamentActive=(()=>{
+            if(!court._tournamentId) return false;
             const t=(S.tournaments||[]).find(x=>x.id===court._tournamentId);
-            if(!t||t.status==='completed') return '';
-            return `<div class="tl-slot tl-tournament" style="left:0%;width:100%;">🔮 ${t.name}</div>`;
+            return t&&(t.status==='groups'||t.status==='elimination');
         })();
-        if(tournamentBlock){
-            slots+=tournamentBlock;
+        if(isTournamentActive) slots+=`<div class="tl-slot tl-tournament" style="left:0%;width:100%;">🔮 Tournament</div>`;
+        // Always render bookings/sessions
+        if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60,court.id)){
+            const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
+            const sd=S.session.startDate, ed=S.session.endDate;
+            const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
+            const sesEnd=sd!==ed&&date===sd?24*60:Math.min(se,(eH+1)*60);
+            const bks=getBookingsForCourt(court.id,date,sesStart,sesEnd).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+            let cur=sesStart;
+            bks.forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">Open Play</div>`;
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
+                cur=be;
+            });
+            if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
         } else {
-            if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60,court.id)){
-                const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
-                const sd=S.session.startDate, ed=S.session.endDate;
-                const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
-                const sesEnd=sd!==ed&&date===sd?24*60:Math.min(se,(eH+1)*60);
-                const bks=getBookingsForCourt(court.id,date,sesStart,sesEnd).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
-                let cur=sesStart;
-                bks.forEach(b=>{
-                    const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
-                    if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">Open Play</div>`;
-                    slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
-                    cur=be;
-                });
-                if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
-            } else {
-                S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
-                    const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
-                    slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
-                });
-            }
-            if(court.status==='occupied'&&court.startTime&&isToday){
-                const el=Math.floor((Date.now()-court.startTime)/60000);
-                const ps=nowM-el;
-                const l=((ps-sH*60)/(total*60))*100;
-                const w=(el/(total*60))*100;
-                if(l>=0) slots+=`<div class="tl-slot tl-playing" style="left:${l}%;width:${Math.max(w,0.5)}%;">Playing</div>`;
-            }
+            S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${b.customer}</div>`;
+            });
+        }
+        if(court.status==='occupied'&&court.startTime&&isToday){
+            const el=Math.floor((Date.now()-court.startTime)/60000);
+            const ps=nowM-el;
+            const l=((ps-sH*60)/(total*60))*100;
+            const w=(el/(total*60))*100;
+            if(l>=0) slots+=`<div class="tl-slot tl-playing" style="left:${l}%;width:${Math.max(w,0.5)}%;">Playing</div>`;
         }
         const nowLine=isToday?`<div class="tl-now" style="left:${((nowM-sH*60)/(total*60))*100}%;"><span class="tl-now-lbl">NOW</span></div>`:'';
         html+=`<div class="tl-row"><div class="tl-label" style="color:${court.color};">🏟️ ${court.name}</div><div class="tl-slots">${slots}${nowLine}</div></div>`;
@@ -4372,32 +4366,41 @@ function openTournament(id){
 }
 function renderTournamentDetail(t){
     const el=document.getElementById('tournamentDetailContent');
-    const courtsAll=S.courts||[];
-    const courts=(t.selectedCourtIds&&t.selectedCourtIds.length>0)
-        ? courtsAll.filter(c=>t.selectedCourtIds.includes(c.id))
-        : courtsAll;
+    const courtsAvail=getTournamentCourts(t);
+    const courtsAll=(S.courts||[]).filter(c=>{
+        if(!t.selectedCourtIds||!t.selectedCourtIds.length) return true;
+        return t.selectedCourtIds.includes(c.id);
+    });
+    const courts=courtsAll; // all selected courts for display
     let html='';
     const totalPlayers=t.players.length;
     const groups=t.groups||[];
     const groupCount=groups.length;
 
-    // ── Auto-assign courts if not yet assigned ──
-    if(!t._courtsAssigned && courts.length>0){
-      if(courts.length>=groupCount){
-        groups.forEach((g,i)=>{g.courtId=courts[i].id;g.courtName=courts[i].name;});
+    // ── Auto-assign courts (re-evaluates each render; only fills unassigned) ──
+    if(courtsAvail.length>0){
+      // Group stage: assign court per group or round-robin per match
+      if(groupCount>0 && courtsAvail.length>=groupCount){
+        groups.forEach((g,i)=>{if(!g.courtId){g.courtId=courtsAvail[i].id;g.courtName=courtsAvail[i].name;}});
         t.courtMode='group';
-      } else {
+      } else if(groupCount>0){
         let ci=0;
         groups.forEach(g=>{
           g.matches.forEach(m=>{
-            m.courtId=courts[ci%courts.length].id;
-            m.courtName=courts[ci%courts.length].name;
-            ci++;
+            if(!m.courtId){m.courtId=courtsAvail[ci%courtsAvail.length].id;m.courtName=courtsAvail[ci%courtsAvail.length].name;ci++;}
           });
         });
         t.courtMode='match';
       }
-      t._courtsAssigned=true;
+      // Elimination stage: fill unassigned matches
+      if((t.status==='elimination'||t.status==='completed')&&t.elimination){
+        let eci=0;
+        t.elimination.rounds.forEach(r=>{
+          r.matches.forEach(m=>{
+            if(m.p1&&m.p2&&!m.courtId){m.courtId=courtsAvail[eci%courtsAvail.length].id;m.courtName=courtsAvail[eci%courtsAvail.length].name;eci++;}
+          });
+        });
+      }
       assignTournamentCourts(t);
     }
 
@@ -4609,16 +4612,13 @@ function startElimination(id){
 
     t.elimination={rounds};
     t.status='elimination';
-    // Auto-assign courts to elimination matches
-    const courtsAll=S.courts||[];
-    const courts=(t.selectedCourtIds&&t.selectedCourtIds.length>0)
-        ? courtsAll.filter(c=>t.selectedCourtIds.includes(c.id))
-        : courtsAll;
+    // Auto-assign courts to elimination matches (only unassigned)
+    const courts=getTournamentCourts(t);
     if(courts.length>0){
       let ci=0;
       rounds.forEach(r=>{
         r.matches.forEach(m=>{
-          if(m.p1&&m.p2){
+          if(m.p1&&m.p2&&!m.courtId){
             m.courtId=courts[ci%courts.length].id;
             m.courtName=courts[ci%courts.length].name;
             ci++;
@@ -4647,7 +4647,23 @@ function assignTournamentCourts(t){
     const usedIds=new Set();
     (t.groups||[]).forEach(g=>(g.matches||[]).forEach(m=>{if(m.courtId)usedIds.add(m.courtId);}));
     if(t.elimination) t.elimination.rounds.forEach(r=>(r.matches||[]).forEach(m=>{if(m.courtId)usedIds.add(m.courtId);}));
-    (S.courts||[]).forEach(c=>{if(usedIds.has(c.id))c._tournamentId=t.id;});
+    (S.courts||[]).forEach(c=>{
+        const selected=t.selectedCourtIds&&t.selectedCourtIds.length?t.selectedCourtIds.includes(c.id):true;
+        if(usedIds.has(c.id)||selected)c._tournamentId=t.id;
+    });
+}
+function getTournamentCourts(t){
+    const all=(S.courts||[]).filter(c=>{
+        if(!t.selectedCourtIds||!t.selectedCourtIds.length) return true;
+        return t.selectedCourtIds.includes(c.id);
+    });
+    const now=nowMin(),today=getTodayISO();
+    const free=all.filter(c=>{
+        if(getBookingNow(c.id)) return false;
+        if(S.bookings.find(b=>b.courtId===c.id&&b.date===today&&b.status!=='cancelled'&&timeToMin(b.startTime)>now&&timeToMin(b.startTime)<=now+30)) return false;
+        return true;
+    });
+    return free;
 }
 function freeTournamentCourts(t){
     (S.courts||[]).forEach(c=>{if(c._tournamentId===t.id)delete c._tournamentId;});
