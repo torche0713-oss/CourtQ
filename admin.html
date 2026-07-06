@@ -2068,14 +2068,23 @@ function tryRoundRobinAutoAssign(){
     let assigned=0;
     for(let ci=0;ci<avail.length&&assigned<toAssign;ci++){
         const court=avail[ci];
-        // Find first pending match where neither team's players are busy
-        const match=schedule.matches.find(m=>{
+        // Get all pending matches available right now (players not busy)
+        const candidates=schedule.matches.filter(m=>{
             if(m.completed||m.courtId||m.winner!=null) return false;
             const tA=schedule.teams[m.teamAIndex].players;
             const tB=schedule.teams[m.teamBIndex].players;
             return ![...tA,...tB].some(p=>busyPlayers.has(p.name));
         });
-        if(!match) break;
+        if(!candidates.length) break;
+        // Sort by total games played (ascending) — give priority to teams that played less
+        candidates.sort((a,b)=>{
+            const aPlayed=schedule.teams[a.teamAIndex].wins+schedule.teams[a.teamAIndex].losses+schedule.teams[a.teamAIndex].draws
+                         +schedule.teams[a.teamBIndex].wins+schedule.teams[a.teamBIndex].losses+schedule.teams[a.teamBIndex].draws;
+            const bPlayed=schedule.teams[b.teamAIndex].wins+schedule.teams[b.teamAIndex].losses+schedule.teams[b.teamAIndex].draws
+                         +schedule.teams[b.teamBIndex].wins+schedule.teams[b.teamBIndex].losses+schedule.teams[b.teamBIndex].draws;
+            return aPlayed-bPlayed;
+        });
+        const match=candidates[0];
         const tA=schedule.teams[match.teamAIndex].players;
         const tB=schedule.teams[match.teamBIndex].players;
         const tAN=schedule.teams[match.teamAIndex].name;
