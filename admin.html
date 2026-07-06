@@ -544,7 +544,7 @@
     <div class="announce-banner"><span style="font-size:1.1rem">📢</span><span id="announceText">Welcome to CourtQ Pro!</span></div>
     <div class="two-col">
         <div>
-            <div class="card">
+            <div class="card" id="joinCard">
                 <div class="card-title">🎯 Join Queue</div>
                 <div id="pairingAlert" style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.3);border-radius:8px;padding:10px;margin-bottom:12px;font-size:0.8rem;color:#f39c12;display:none;"></div>
                 <div class="form-group"><label>Your Name *</label><input type="text" id="p1" placeholder="Enter your name"></div>
@@ -1016,6 +1016,25 @@
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="createTournament()">🏆 Create Tournament</button>
             <button class="btn btn-outline" onclick="closeModal('createTournamentModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Round Robin Setup Modal -->
+<div class="modal-overlay" id="rrSetupModal">
+    <div class="modal" style="max-width:500px;">
+        <div class="modal-title">🔄 Round Robin Setup</div>
+        <div class="form-group"><label>Format</label>
+            <select id="rrSetupFormat" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
+                <option value="singles">Singles (1v1)</option>
+                <option value="doubles">Doubles (2v2 — team per line)</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Players / Teams (one per line, min 4)</label><textarea id="rrPlayers" rows="8" placeholder="Singles: enter one player name per line&#10;Doubles: enter team name per line (e.g. &quot;Juan &amp; Maria&quot;)" style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.82rem;resize:vertical;"></textarea></div>
+        <div style="font-size:0.78rem;color:#888;margin-bottom:4px;">All players will be entered into the round robin. Each player/team plays every other.</div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="startRoundRobin()">▶ Start Round Robin</button>
+            <button class="btn btn-outline" onclick="closeModal('rrSetupModal')">Cancel</button>
         </div>
     </div>
 </div>
@@ -1659,7 +1678,7 @@ function onOpModeChange(mode){
     const info={
         fourOnFour:'Groups of 4 rotate in and out together on each timer.',
         winnersSplit:'Winners stay, losers rotate. Teams split and reform each game.',
-        roundRobin:'Everyone plays everyone — full round-robin schedule generated when enough players/teams join. Matches auto-assigned across all courts. Standings tracked until all matches done.'
+        roundRobin:'Admin sets up participants via the Setup button — type names, generate a full schedule. Every player/team plays everyone else. Matches auto-assigned across courts. Standings tracked until complete.'
     };
     document.getElementById('sesModeInfo').textContent=info[mode]||'';
     document.getElementById('loopingLabel').style.display=mode==='fourOnFour'?'flex':'none';
@@ -1750,6 +1769,8 @@ function endSession(){
 
 function updateJoinFormMode(){
     const mode=S.session?.mode;
+    const joinCard=document.getElementById('joinCard');
+    if(joinCard) joinCard.style.display=mode==='roundRobin'?'none':'';
     const gtEl=document.getElementById('gameType');
     const gnEl=document.getElementById('groupName');
     const epEl=document.getElementById('extraPlayers');
@@ -1780,6 +1801,7 @@ function joinQueue(){
     const p1n=document.getElementById('p1').value.trim();
     const sk=parseInt(document.getElementById('skillLevel').value);
     if(!p1n){showNotif('Enter your name!','error');return;}
+    if(S.session.mode==='roundRobin'){showNotif('Round Robin uses admin setup — click "📋 Setup Round Robin" in the queue panel.','warning');return;}
     const allEx=[...S.soloQueue.map(s=>s.players.map(p=>p.name.toLowerCase())).flat(),...S.queue.map(g=>g.players.map(p=>p.name.toLowerCase())).flat()];
     if(allEx.includes(p1n.toLowerCase())){showNotif(`"${p1n}" already in queue!`,'error');return;}
     const p1={name:p1n,skill:sk,color:COLORS[0]};
@@ -1986,63 +2008,55 @@ function tryWinnersAutoAssign(){
     renderAll();
 }
 
+function openRRSetup(){
+    const fmtEl=document.getElementById('rrSetupFormat');
+    if(S.session?.rrGameType) fmtEl.value=S.session.rrGameType;
+    document.getElementById('rrPlayers').value='';
+    openModal('rrSetupModal');
+}
+
+function startRoundRobin(){
+    if(!S.session||S.session.mode!=='roundRobin'){showNotif('Start an Open Play Round Robin session first.','error');return;}
+    const fmt=document.getElementById('rrSetupFormat').value;
+    const raw=document.getElementById('rrPlayers').value.trim();
+    const players=raw.split('\n').map(s=>s.trim()).filter(Boolean);
+    if(players.length<4){showNotif('Enter at least 4 players/teams.','error');return;}
+    S.session.rrGameType=fmt;
+    // Build teams
+    const isSingles=fmt==='singles';
+    const teams=players.map((name,i)=>{
+        const p={name,color:COLORS[i%COLORS.length],skill:3};
+        if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};
+        if(isSingles) return {id:'T'+i,players:[p],name,p.wins:0,losses:0,draws:0,pointsFor:0,pointsAgainst:0};
+        // Doubles: parse team members from line
+        const members=name.split(/[&,]/).map(s=>s.trim()).filter(Boolean);
+        const teamPlayers=members.length>=2?members.map((mn,mi)=>({name:mn,color:COLORS[(i+mi)%COLORS.length],skill:3})):[p,{name:'Partner',color:COLORS[(i+1)%COLORS.length],skill:3}];
+        teamPlayers.forEach(tp=>{if(!S.leaderboard[tp.name])S.leaderboard[tp.name]={games:0,wins:0,points:0};});
+        return {id:'T'+i,players:teamPlayers,name:teamPlayers.map(tp=>tp.name).join(' & '),wins:0,losses:0,draws:0,pointsFor:0,pointsAgainst:0};
+    });
+    // Generate schedule
+    const matches=[];
+    for(let i=0;i<teams.length;i++){
+        for(let j=i+1;j<teams.length;j++){
+            matches.push({id:'RRM'+Date.now().toString(36).toUpperCase()+matches.length,teamAIndex:i,teamBIndex:j,completed:false,winner:null,scoreA:null,scoreB:null,courtId:null});
+        }
+    }
+    S.session.rrSchedule={teams,matches,startedAt:Date.now(),completed:false};
+    // Clear any existing pool
+    S.soloQueue=[];
+    closeModal('rrSetupModal');
+    showNotif(`🎯 Round Robin started! ${teams.length} ${isSingles?'players':'teams'}, ${matches.length} matches.`,'success');
+    saveState();
+    tryRoundRobinAutoAssign();
+}
+
 function tryRoundRobinAutoAssign(){
     if(!S.session||S.session.mode!=='roundRobin') return;
+    if(!S.session.rrSchedule||S.session.rrSchedule.completed) return;
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
     const isSingles=S.session.rrGameType==='singles';
-    const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
-
-    // Auto-reset completed schedule if enough players waiting
-    if(S.session.rrSchedule&&S.session.rrSchedule.completed){
-        const minPlayers=isSingles?4:8;
-        if(poolSize>=minPlayers){
-            delete S.session.rrSchedule;
-        } else return;
-    }
-
-    if(!S.session.rrSchedule){
-        const minPlayers=isSingles?4:8;
-        if(poolSize<minPlayers) return;
-        let teams;
-        if(isSingles){
-            const flat=[]; const used=[];
-            for(let i=0;i<S.soloQueue.length&&flat.length<10;i++){
-                for(let j=0;j<S.soloQueue[i].players.length&&flat.length<10;j++){
-                    flat.push(S.soloQueue[i].players[j]);}
-                used.push(S.soloQueue[i].id);}
-            if(flat.length<minPlayers) return;
-            S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
-            flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-            teams=flat.map((p,i)=>({id:'T'+i,players:[p],name:p.name,wins:0,losses:0,draws:0,pointsFor:0,pointsAgainst:0}));
-        } else {
-            const halves=S.soloQueue.filter(s=>s._halfTeam);
-            const solos=S.soloQueue.filter(s=>s._solo);
-            for(let i=0;i+1<solos.length;i+=2){
-                const a=solos[i],b=solos[i+1];
-                const allP=[...a.players,...b.players];
-                allP.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-                const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:allP,joinedAt:Math.min(a.joinedAt,b.joinedAt),_halfTeam:true,_fixedTeam:false};
-                S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
-                S.soloQueue.push(half); halves.push(half);}
-            if(halves.length<4) return;
-            const maxT=Math.min(halves.length,8);
-            const usedTeams=halves.slice(0,maxT);
-            usedTeams.forEach(h=>S.soloQueue=S.soloQueue.filter(s=>s.id!==h.id));
-            teams=usedTeams.map((h,i)=>{
-                h.players.forEach(p=>p.color=COLORS[i%COLORS.length]);
-                return {id:'T'+i,players:h.players,name:h.players.map(p=>p.name).join(' & '),wins:0,losses:0,draws:0,pointsFor:0,pointsAgainst:0};});
-        }
-        const matches=[];
-        for(let i=0;i<teams.length;i++){
-            for(let j=i+1;j<teams.length;j++){
-                matches.push({id:'RRM'+Date.now().toString(36).toUpperCase()+matches.length,teamAIndex:i,teamBIndex:j,completed:false,winner:null,scoreA:null,scoreB:null,courtId:null});}
-        }
-        S.session.rrSchedule={teams,matches,startedAt:Date.now(),completed:false};
-        showNotif(`🎯 Round Robin started! ${teams.length} ${isSingles?'players':'teams'}, ${matches.length} matches.`,'success');
-    }
     const schedule=S.session.rrSchedule;
-    if(schedule.completed) return;
     const pending=schedule.matches.filter(m=>!m.completed&&!m.courtId);
     const assignCount=Math.min(avail.length,pending.length);
     for(let i=0;i<assignCount;i++){
@@ -2474,6 +2488,7 @@ function confirmScore(){
                 const done=schedule.matches.filter(m=>m.completed).length;
                 showNotif(`🏁 Match done! ${done}/${schedule.matches.length}`,'success');
             }
+            saveState();
         } else if(match&&match.completed){
             showNotif('This match was already scored.','warning');
         }
@@ -3639,7 +3654,7 @@ function renderSession(){
     const pool=getOpenPlayCourts().length;
     const playing=S.courts.filter(c=>c.status==='occupied'&&assigned.includes(c.id)).length;
     const locked=S.courts.filter(c=>assigned.includes(c.id)&&getBookingNow(c.id)).length;
-    const inQ=S.queue.length+S.soloQueue.length;
+    const inQ=ses.mode==='roundRobin'&&ses.rrSchedule?ses.rrSchedule.matches.filter(m=>m.completed).length+'/'+ses.rrSchedule.matches.length:S.queue.length+S.soloQueue.length;
     const elapsed=Math.floor((Date.now()-ses.startedAt)/60000);
     div.innerHTML=`
         <div class="session-card session-active" style="margin-bottom:16px;">
@@ -3657,7 +3672,7 @@ function renderSession(){
                 <div class="ss-card"><div class="ss-num" style="color:#2ecc71;">${pool}</div><div class="ss-lbl">Available</div></div>
                 <div class="ss-card"><div class="ss-num" style="color:#4ecdc4;">${playing}</div><div class="ss-lbl">Playing</div></div>
                 <div class="ss-card"><div class="ss-num" style="color:#e74c3c;">${locked}</div><div class="ss-lbl">Booked/Locked</div></div>
-                <div class="ss-card"><div class="ss-num" style="color:#f39c12;">${inQ}</div><div class="ss-lbl">In Queue</div></div>
+                <div class="ss-card"><div class="ss-num" style="color:#f39c12;">${inQ}</div><div class="ss-lbl">${ses.mode==='roundRobin'&&ses.rrSchedule?'Matches':'In Queue'}</div></div>
             </div>
             ${ses.mode==='roundRobin'&&ses.rrSchedule?(()=>{
                 const s=ses.rrSchedule;
@@ -3795,16 +3810,43 @@ function renderQueueList(){
     const list=document.getElementById('queueList');
     const badge=document.getElementById('qBadge');
     const total=S.queue.length+S.soloQueue.length;
-    badge.textContent=`(${total})`;
-    if(total===0){list.innerHTML='<div class="empty-state"><div class="ei">🏓</div><p>Queue is empty.<br>Join to get a court.</p></div>';return;}
+    badge.textContent=S.session?.mode==='roundRobin'&&S.session.rrSchedule?`(${S.session.rrSchedule.matches.filter(m=>m.completed).length}/${S.session.rrSchedule.matches.length})`:`(${total})`;
+    if(total===0&&S.session?.mode!=='roundRobin'){list.innerHTML='<div class="empty-state"><div class="ei">🏓</div><p>Queue is empty.<br>Join to get a court.</p></div>';return;}
     list.innerHTML='';
-    if(S.session?.mode==='winnersSplit'||S.session?.mode==='roundRobin'){
+    if(S.session?.mode==='roundRobin'){
+        if(S.session.rrSchedule){
+            const s=S.session.rrSchedule;
+            const sec=document.createElement('div');
+            const done=s.matches.filter(m=>m.completed).length;
+            if(s.completed){
+                const sorted=[...s.teams].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||(b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst));
+                sec.innerHTML=`<div style="font-size:0.68rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🏆 Round Robin Complete</div>
+                    <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:8px;padding:10px;margin-bottom:8px;"><strong style="color:#2ecc71;">Winner: ${sorted[0].name}</strong></div>
+                    ${s.teams.map((t,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="font-weight:700;">${i+1}. ${t.name}</span><span style="color:#aaa;font-size:0.78rem;">${t.wins}W / ${t.losses}L${t.draws?' / '+t.draws+'D':''} · ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}
+                    <div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="openRRSetup()">▶ New Round Robin</button></div>`;
+            } else {
+                sec.innerHTML=`<div style="font-size:0.68rem;color:#9b59b6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🔄 Round Robin · ${done}/${s.matches.length} Matches</div>
+                    <div style="font-size:0.72rem;color:#aaa;margin-bottom:8px;">${s.teams.length} ${S.session.rrGameType==='singles'?'players':'teams'}</div>
+                    ${s.teams.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:0.82rem;"><span>${t.name}</span><span style="color:#aaa;font-size:0.75rem;">${t.wins}W / ${t.losses}L${t.draws?' / '+t.draws+'D':''} · ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
+            }
+            list.appendChild(sec);
+        } else {
+            // No schedule yet — show setup button
+            const sec=document.createElement('div');
+            sec.innerHTML=`<div style="text-align:center;padding:20px;">
+                <div style="font-size:2rem;margin-bottom:8px;">🔄</div>
+                <p style="color:#aaa;margin-bottom:12px;">Set up the Round Robin participants to get started.</p>
+                <button class="btn btn-primary" onclick="openRRSetup()">📋 Setup Round Robin</button>
+            </div>`;
+            list.appendChild(sec);
+        }
+        badge.textContent=S.session.rrSchedule?`(${S.session.rrSchedule.matches.filter(m=>m.completed).length}/${S.session.rrSchedule.matches.length})`:'';
+        return;
+    }
+    if(S.session?.mode==='winnersSplit'){
         const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
         const sec=document.createElement('div');
-        const modeLabel=S.session?.mode==='roundRobin'?'Round Robin':'Winners Stay & Split';
-        const rrNeed=S.session?.rrGameType==='singles'?2:4;
-        sec.innerHTML=`<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👥 ${modeLabel} Pool (${poolSize})${S.session?.rrGameType==='singles'?' · 1v1':''}</div>
-            <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">${poolSize>=rrNeed?'✅ Ready to assign!':'⏳ Need '+(rrNeed-poolSize)+' more for a court'}</div>`;
+        sec.innerHTML=`<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👥 Winners Stay & Split Pool (${poolSize})</div>`;
         S.soloQueue.forEach(entry=>{
             const wait=Math.floor((Date.now()-entry.joinedAt)/60000);
             const card=document.createElement('div');
@@ -3819,8 +3861,7 @@ function renderQueueList(){
                 </div>`;
             sec.appendChild(card);
         });
-        const rrMin=S.session?.rrGameType==='singles'?2:4;
-        if(poolSize>=rrMin) sec.innerHTML+=`<div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="${S.session?.mode==='roundRobin'?'tryRoundRobinAutoAssign()':'tryWinnersAutoAssign()'}">🎯 Force Assign</button></div>`;
+        if(poolSize>=4) sec.innerHTML+=`<div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="tryWinnersAutoAssign()">🎯 Force Assign</button></div>`;
         list.appendChild(sec);
         return;
     }
