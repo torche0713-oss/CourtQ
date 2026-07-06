@@ -469,7 +469,7 @@ function portalPrev(step){ goPortalStep(step-1); }
 function portalNext(step){
     if(step===1&&!S.portal.courtId){showNotif('Please select a court!','error');return;}
     if(step===1){renderSlots();}
-    if(step===2&&!S.portal.slot){showNotif('Please select a time slot!','error');return;}
+    if(step===2&&S.portal.slot==null){showNotif('Please select a time slot!','error');return;}
     if(step===3){
         const f=document.getElementById('pFirst').value.trim();
         const l=document.getElementById('pLast').value.trim();
