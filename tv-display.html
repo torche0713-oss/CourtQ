@@ -330,8 +330,23 @@ function render(data){
     const soloCount=soloQueue.reduce((a,s)=>a+s.players.length,0);
     const poolMode=session&&(session.mode==='winnersSplit'||session.mode==='roundRobin');
     if(poolMode){
-        if(soloCount===0){ql.innerHTML='<div class="empty-msg">Pool is empty</div>';}
-        else {
+        // Round-robin with schedule — show standings instead of pool
+        if(session.mode==='roundRobin'&&session.rrSchedule){
+            const s=session.rrSchedule;
+            const done=s.matches.filter(m=>m.completed).length;
+            if(s.completed){
+                const sorted=[...s.teams].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||(b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst));
+                ql.innerHTML=`<div style="font-size:0.7rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🏆 Round Robin Complete</div>
+                    <div style="background:rgba(46,204,113,0.1);border-radius:6px;padding:6px 10px;margin-bottom:6px;font-weight:700;color:#2ecc71;font-size:0.82rem;">Winner: ${sorted[0].name}</div>
+                    ${s.teams.map((t,i)=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${i+1}. ${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
+            } else {
+                ql.innerHTML=`<div style="font-size:0.68rem;color:#9b59b6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🔄 Round Robin · ${done}/${s.matches.length}</div>
+                    <div style="font-size:0.7rem;color:#888;margin-bottom:6px;">${s.teams.length} ${session.rrGameType==='singles'?'players':'teams'}</div>
+                    ${s.teams.map(t=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
+            }
+        } else if(soloCount===0){
+            ql.innerHTML='<div class="empty-msg">Pool is empty</div>';
+        } else {
             const entries=session.mode==='roundRobin'&&session.rrGameType==='singles'
                 ?soloQueue.map(e=>`<div class="queue-item"><span class="q-name">${e.players.map(p=>p.name).join(', ')}</span><span class="q-wait">waiting</span></div>`).join('')
                 :soloQueue.map(e=>{
@@ -360,7 +375,7 @@ function render(data){
         }
     }
 
-    // Recent Results — collect history from all courts
+    // Recent Results — collect history from all courts and global history
     const rl=document.getElementById('resultsList');
     const allHistory=[];
     courts.forEach(c=>{
@@ -368,12 +383,20 @@ function render(data){
             allHistory.push({courtName:c.name,courtId:c.id,courtColor:c.color,...h});
         });
     });
-    allHistory.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+    (data.history||[]).forEach(h=>{
+        allHistory.push({...h,courtName:h.court,courtColor:'#555'});
+    });
+    allHistory.sort((a,b)=>{
+        const ta=a.timestamp||0;
+        const tb=b.timestamp||0;
+        return tb-ta;
+    });
     const top=allHistory.slice(0,8);
     if(top.length===0){rl.innerHTML='<div class="empty-msg">No completed games yet</div>';}
     else {
         rl.innerHTML=top.map(h=>{
-            const winnerName=h.winner?h.winner.split(',').map(w=>w.trim()).join(' & '):'—';
+            const wt=h.winner==='A'?h.teamA:h.winner==='B'?h.teamB:null;
+            const winnerName=wt?(Array.isArray(wt)?wt.map(p=>p.name).join(' & '):''):'—';
             const scoreText=(h.scoreA!=null&&h.scoreB!=null)?`${h.scoreA}-${h.scoreB}`:'';
             const timeStr=h.timestamp?(()=>{
                 const d=new Date(h.timestamp);
