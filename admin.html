@@ -2057,28 +2057,33 @@ function tryRoundRobinAutoAssign(){
     if(avail.length===0) return;
     const isSingles=S.session.rrGameType==='singles';
     const schedule=S.session.rrSchedule;
-    // Collect player names already on a court right now
+    // Track players already on a court OR already assigned in this batch
     const busyPlayers=new Set();
     S.courts.forEach(c=>{
         if(c._rrMatchId&&c.status==='occupied'&&c.players){
             c.players.forEach(p=>busyPlayers.add(p.name));
         }
     });
-    const pending=schedule.matches.filter(m=>{
-        if(m.completed||m.courtId) return false;
-        const tA=schedule.teams[m.teamAIndex].players;
-        const tB=schedule.teams[m.teamBIndex].players;
-        return ![...tA,...tB].some(p=>busyPlayers.has(p.name));
-    });
-    const toAssign=Math.min(avail.length,pending.length);
-    for(let i=0;i<toAssign;i++){
-        const match=pending[i];
-        const court=avail[i];
+    const toAssign=Math.min(avail.length, schedule.matches.length);
+    let assigned=0;
+    for(let ci=0;ci<avail.length&&assigned<toAssign;ci++){
+        const court=avail[ci];
+        // Find first pending match where neither team's players are busy
+        const match=schedule.matches.find(m=>{
+            if(m.completed||m.courtId) return false;
+            const tA=schedule.teams[m.teamAIndex].players;
+            const tB=schedule.teams[m.teamBIndex].players;
+            return ![...tA,...tB].some(p=>busyPlayers.has(p.name));
+        });
+        if(!match) break;
         const tA=schedule.teams[match.teamAIndex].players;
         const tB=schedule.teams[match.teamBIndex].players;
         const tAN=schedule.teams[match.teamAIndex].name;
         const tBN=schedule.teams[match.teamBIndex].name;
         match.courtId=court.id;
+        // Mark these players busy so no other court in this batch gets them
+        tA.forEach(p=>busyPlayers.add(p.name));
+        tB.forEach(p=>busyPlayers.add(p.name));
         const flat=[...tA,...tB];
         const gt=isSingles?'singles':'doubles';
         const avg=Math.round(flat.reduce((a,p)=>a+(p.skill||3),0)/flat.length);
@@ -2086,6 +2091,7 @@ function tryRoundRobinAutoAssign(){
         court._rrMatchId=match.id;
         doAssign(court,g);
         showNotif(`🎯 ${tAN} vs ${tBN} → ${court.name}`,'success');
+        assigned++;
     }
     renderAll();
 }
