@@ -1106,6 +1106,19 @@
                 </label>
             </div>
             <div id="sesModeInfo" style="font-size:0.72rem;color:#aaa;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
+            <div id="rrGameTypeRow" style="display:none;margin-top:8px;">
+                <label style="font-size:0.78rem;font-weight:600;color:#aaa;">Game Type</label>
+                <div style="display:flex;gap:8px;margin-top:4px;">
+                    <label style="display:flex;align-items:center;gap:6px;background:rgba(78,205,196,0.08);padding:6px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                        <input type="radio" name="rrGameType" value="doubles" checked>
+                        <span style="font-weight:600;font-size:0.8rem;">Doubles (2v2)</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;background:rgba(155,89,182,0.08);padding:6px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                        <input type="radio" name="rrGameType" value="singles">
+                        <span style="font-weight:600;font-size:0.8rem;">Singles (1v1)</span>
+                    </label>
+                </div>
+            </div>
             <label id="loopingLabel" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(52,152,219,0.08);border-radius:8px;cursor:pointer;">
                 <input type="checkbox" id="sesLooping">
                 <span style="font-weight:600;font-size:0.82rem;">🔄 Looping Mode</span>
@@ -1640,10 +1653,11 @@ function onOpModeChange(mode){
     const info={
         fourOnFour:'Groups of 4 rotate in and out together on each timer.',
         winnersSplit:'Winners stay, losers rotate. Teams split and reform each game.',
-        roundRobin:'4 players in a pod, rotating partners each game — everyone plays with everyone.'
+        roundRobin:'Doubles (4 players, rotating partners) or Singles (1v1, both back to pool after each game).'
     };
     document.getElementById('sesModeInfo').textContent=info[mode]||'';
     document.getElementById('loopingLabel').style.display=mode==='fourOnFour'?'flex':'none';
+    document.getElementById('rrGameTypeRow').style.display=mode==='roundRobin'?'block':'none';
 }
 
 function startSession(){
@@ -1660,7 +1674,8 @@ function startSession(){
     if(endDT<=startDT){showNotif('End must be after start!','error');return;}
     const selectedCourts=[...document.querySelectorAll('#sesCourtCheckboxes .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
     if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
-    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked};
+    const rrGameType=mode==='roundRobin'?(document.querySelector('input[name="rrGameType"]:checked')?.value||'doubles'):null;
+    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked};
     updateJoinFormMode();
     closeModal('sessionModal');
     showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}`,'success');
@@ -1763,7 +1778,8 @@ function joinQueue(){
     if(allEx.includes(p1n.toLowerCase())){showNotif(`"${p1n}" already in queue!`,'error');return;}
     const p1={name:p1n,skill:sk,color:COLORS[0]};
     if(S.session.mode==='winnersSplit'||S.session.mode==='roundRobin'){
-        S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:sk,players:[p1],joinedAt:Date.now()});
+        const rrGT=S.session.mode==='roundRobin'?S.session.rrGameType:'doubles';
+        S.soloQueue.push({id:++S.nextId,gameType:rrGT||'doubles',skillLevel:sk,players:[p1],joinedAt:Date.now()});
         clearJoinForm(); showNotif(`⏳ ${p1n} joined pool. Waiting for more players...`,'warning'); renderAll();
         setTimeout(()=>S.session.mode==='roundRobin'?tryRoundRobinAutoAssign():tryWinnersAutoAssign(),400);
         return;
@@ -1924,10 +1940,12 @@ function tryRoundRobinAutoAssign(){
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
     const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
-    if(poolSize<4) return;
+    const isSingles=S.session.rrGameType==='singles';
+    const need=isSingles?2:4;
+    if(poolSize<need) return;
     const flat=[]; const used=[];
-    for(let i=0;i<S.soloQueue.length&&flat.length<4;i++){
-        for(let j=0;j<S.soloQueue[i].players.length&&flat.length<4;j++){
+    for(let i=0;i<S.soloQueue.length&&flat.length<need;i++){
+        for(let j=0;j<S.soloQueue[i].players.length&&flat.length<need;j++){
             flat.push(S.soloQueue[i].players[j]);
         }
         used.push(S.soloQueue[i].id);
@@ -1935,19 +1953,27 @@ function tryRoundRobinAutoAssign(){
     S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
     flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
     const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
-    // Generate round-robin schedule: each player partners with everyone once
-    const [p0,p1,p2,p3]=flat;
-    const rrSchedule=[
-        {teamA:[p0,p1],teamB:[p2,p3]},
-        {teamA:[p0,p2],teamB:[p1,p3]},
-        {teamA:[p0,p3],teamB:[p1,p2]}
-    ];
-    const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:flat,team1:rrSchedule[0].teamA,team2:rrSchedule[0].teamB,joinedAt:Date.now()};
-    g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
-    const court=avail[0];
-    court.rr={round:0,schedule:rrSchedule};
-    doAssign(court,g);
-    showNotif(`🎯 Round Robin (round 1/3) → ${court.name}: ${flat.map(p=>p.name).join(', ')}`,'success');
+    if(isSingles){
+        const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' vs '),gameType:'singles',skillLevel:avg,players:flat,team1:[flat[0]],team2:[flat[1]],joinedAt:Date.now()};
+        g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+        const court=avail[0];
+        doAssign(court,g);
+        showNotif(`🎯 Singles → ${court.name}: ${flat[0].name} vs ${flat[1].name}`,'success');
+    } else {
+        // Generate round-robin schedule: each player partners with everyone once
+        const [p0,p1,p2,p3]=flat;
+        const rrSchedule=[
+            {teamA:[p0,p1],teamB:[p2,p3]},
+            {teamA:[p0,p2],teamB:[p1,p3]},
+            {teamA:[p0,p3],teamB:[p1,p2]}
+        ];
+        const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:flat,team1:rrSchedule[0].teamA,team2:rrSchedule[0].teamB,joinedAt:Date.now()};
+        g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
+        const court=avail[0];
+        court.rr={round:0,schedule:rrSchedule};
+        doAssign(court,g);
+        showNotif(`🎯 Round Robin (round 1/3) → ${court.name}: ${flat.map(p=>p.name).join(', ')}`,'success');
+    }
     renderAll();
 }
 
@@ -2145,7 +2171,8 @@ function manualAssignToCourt(cId){
     }
     if(S.session?.mode==='roundRobin'){
         const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
-        if(poolSize<4){showNotif('Need 4 players in pool!','error');return;}
+        const need=S.session?.rrGameType==='singles'?2:4;
+        if(poolSize<need){showNotif('Need '+need+' players in pool!','error');return;}
         tryRoundRobinAutoAssign();
         return;
     }
@@ -2331,7 +2358,21 @@ function confirmScore(){
         closeModal('scoreModal');renderAll();setTimeout(()=>tryWinnersAutoAssign(),500);
         return;
     }
-    // Round-robin: advance to next round instead of freeing
+    // Round-robin singles: both players back to pool after scoring
+    if(S.session?.mode==='roundRobin'&&S.session?.rrGameType==='singles'&&!sd.isTie){
+        const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
+        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:'singles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
+        const wt=sd.winner==='A'?sd.teamA:sd.teamB;
+        (wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
+        S.history.unshift(entry);if(S.history.length>100)S.history.pop();
+        // Both players go back to pool
+        c.players.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'singles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now()});});
+        c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;
+        showNotif(`🏆 ${wt.players.map(p=>p.name).join(' & ')} won! Both back to pool.`,'success');
+        closeModal('scoreModal');renderAll();setTimeout(()=>tryRoundRobinAutoAssign(),500);
+        return;
+    }
+    // Round-robin doubles: advance to next round instead of freeing
     if(S.session?.mode==='roundRobin'&&c.rr&&!sd.isTie){
         const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
         const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
@@ -2378,7 +2419,10 @@ function skipScore(){
             const loopGroup={id:++S.nextId,groupName:c.players.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(c.players.reduce((a,p)=>a+p.skill,0)/c.players.length),players:[...c.players],team1:null,team2:null,joinedAt:Date.now()};
             S.queue.push(loopGroup);
         }
+        // Re-add singles RR players to pool before completeRelease clears them
+        const rrSingles=S.session?.mode==='roundRobin'&&S.session?.rrGameType==='singles'?[...c.players]:null;
         completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);
+        if(rrSingles) rrSingles.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'singles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now()});});
     }
     closeModal('scoreModal');renderAll();setTimeout(()=>S.session?.mode==='roundRobin'?tryRoundRobinAutoAssign():S.session?.mode==='winnersSplit'?tryWinnersAutoAssign():tryAutoAssign(),500);
 }
@@ -3506,7 +3550,7 @@ function renderSession(){
                     <div class="live-dot"></div>
                     <div>
                         <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${ses.startDate||'today'} ${ses.startTime||ses.start} to ${ses.endDate||'today'} ${ses.endTime||ses.end}</div>
-                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':ses.mode==='roundRobin'?'🔄 Round Robin':'🔄 4 on / 4 off'}${ses.looping?' · 🔁 Looping':''}</div>
+                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':ses.mode==='roundRobin'?'🔄 Round Robin '+(ses.rrGameType||'doubles'):'🔄 4 on / 4 off'}${ses.looping?' · 🔁 Looping':''}</div>
                     </div>
                 </div>
                 <button class="btn btn-warning btn-sm" onclick="endSession()">⏹ End Session</button>
@@ -3651,8 +3695,9 @@ function renderQueueList(){
         const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
         const sec=document.createElement('div');
         const modeLabel=S.session?.mode==='roundRobin'?'Round Robin':'Winners Stay & Split';
-        sec.innerHTML=`<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👥 ${modeLabel} Pool (${poolSize})</div>
-            <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">${poolSize>=4?'✅ Ready to assign!':'⏳ Need '+(4-poolSize)+' more for a court'}</div>`;
+        const rrNeed=S.session?.rrGameType==='singles'?2:4;
+        sec.innerHTML=`<div style="font-size:0.68rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👥 ${modeLabel} Pool (${poolSize})${S.session?.rrGameType==='singles'?' · 1v1':''}</div>
+            <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">${poolSize>=rrNeed?'✅ Ready to assign!':'⏳ Need '+(rrNeed-poolSize)+' more for a court'}</div>`;
         S.soloQueue.forEach(entry=>{
             const wait=Math.floor((Date.now()-entry.joinedAt)/60000);
             const card=document.createElement('div');
@@ -3667,7 +3712,8 @@ function renderQueueList(){
                 </div>`;
             sec.appendChild(card);
         });
-        if(poolSize>=4) sec.innerHTML+=`<div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="${S.session?.mode==='roundRobin'?'tryRoundRobinAutoAssign()':'tryWinnersAutoAssign()'}">🎯 Force Assign</button></div>`;
+        const rrMin=S.session?.rrGameType==='singles'?2:4;
+        if(poolSize>=rrMin) sec.innerHTML+=`<div style="margin-top:10px;"><button class="btn btn-primary btn-full" onclick="${S.session?.mode==='roundRobin'?'tryRoundRobinAutoAssign()':'tryWinnersAutoAssign()'}">🎯 Force Assign</button></div>`;
         list.appendChild(sec);
         return;
     }
