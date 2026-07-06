@@ -2031,6 +2031,7 @@ function tryRoundRobinAutoAssign(){
         S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
         flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
         const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
+        const sorted=[...flat].sort((x,y)=>y.skill-x.skill);
         let rrSchedule;
         if(a._fixedTeam&&b._fixedTeam){
             rrSchedule=[
@@ -2039,9 +2040,10 @@ function tryRoundRobinAutoAssign(){
                 {teamA:[...a.players],teamB:[...b.players]}
             ];
         } else {
-            const [p0,p1,p2,p3]=flat;
+            const {team1,team2}=balanceTeams(sorted);
+            const [p0,p1,p2,p3]=sorted;
             rrSchedule=[
-                {teamA:[p0,p1],teamB:[p2,p3]},
+                {teamA:team1,teamB:team2},
                 {teamA:[p0,p2],teamB:[p1,p3]},
                 {teamA:[p0,p3],teamB:[p1,p2]}
             ];
