@@ -2070,7 +2070,7 @@ function tryRoundRobinAutoAssign(){
         const court=avail[ci];
         // Find first pending match where neither team's players are busy
         const match=schedule.matches.find(m=>{
-            if(m.completed||m.courtId) return false;
+            if(m.completed||m.courtId||m.winner!=null) return false;
             const tA=schedule.teams[m.teamAIndex].players;
             const tB=schedule.teams[m.teamBIndex].players;
             return ![...tA,...tB].some(p=>busyPlayers.has(p.name));
@@ -2486,6 +2486,7 @@ function confirmScore(){
             const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie};
             S.history.unshift(entry);if(S.history.length>100)S.history.pop();
             match.completed=true;
+            match.courtId=null;
             match.winner=sd.winner; match.scoreA=sd.teamA.score; match.scoreB=sd.teamB.score;
             // Update team standings
             const tA=schedule.teams[match.teamAIndex];
