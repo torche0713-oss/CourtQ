@@ -1749,7 +1749,7 @@ function updateJoinFormMode(){
     const epEl=document.getElementById('extraPlayers');
     if(gtEl) gtEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
     if(gnEl) gnEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
-    if(epEl) epEl.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
+    if(epEl) epEl.style.display=mode==='winnersSplit'||(mode==='roundRobin'&&S.session?.rrGameType==='singles')?'none':'';
     const lbl=document.querySelector('#page-openplay .card .card-title');
     if(lbl) lbl.textContent=mode==='winnersSplit'||mode==='roundRobin'?'🎯 Join Pool':'🎯 Join Queue';
 }
@@ -1779,6 +1779,48 @@ function joinQueue(){
     const p1={name:p1n,skill:sk,color:COLORS[0]};
     if(S.session.mode==='winnersSplit'||S.session.mode==='roundRobin'){
         const rrGT=S.session.mode==='roundRobin'?S.session.rrGameType:'doubles';
+        const isRRDb=S.session.mode==='roundRobin'&&rrGT==='doubles';
+        if(isRRDb){
+            const joinAs=document.querySelector('input[name="joinAs"]:checked')?.value||'team';
+            if(joinAs==='team'){
+                const p2n=document.getElementById('p2').value.trim();
+                if(!p2n){showNotif('Enter your partner\'s name!','error');return;}
+                if(allEx.includes(p2n.toLowerCase())){showNotif(`"${p2n}" already in queue!`,'error');return;}
+                const p2={name:p2n,skill:sk,color:COLORS[1]};
+                const team=[p1,p2]; team.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+                const half={id:++S.nextId,gameType:'doubles',skillLevel:sk,players:team,joinedAt:Date.now(),_halfTeam:true};
+                S.soloQueue.push(half);
+                clearJoinForm();
+                const halves=S.soloQueue.filter(s=>s._halfTeam).length;
+                if(halves>=2) showNotif(`✅ Team ${p1n} & ${p2n} joined! Finding opponent...`,'success');
+                else showNotif(`⏳ Team ${p1n} & ${p2n} joined! Waiting for another team...`,'warning');
+                renderAll(); setTimeout(()=>tryRoundRobinAutoAssign(),400);
+                return;
+            } else {
+                // Solo — push to soloQueue, try pairing
+                const dSolo=S.soloQueue.filter(s=>s._solo);
+                if(dSolo.length>0){
+                    const match=dSolo[0];
+                    S.soloQueue=S.soloQueue.filter(s=>s.id!==match.id);
+                    const p2=match.players[0];
+                    p1.color=COLORS[1]; p2.color=COLORS[0];
+                    const team=[p2,p1];
+                    const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((match.skillLevel+sk)/2),players:team,joinedAt:Math.min(match.joinedAt,Date.now()),_halfTeam:true};
+                    S.soloQueue.push(half);
+                    clearJoinForm();
+                    const halves=S.soloQueue.filter(s=>s._halfTeam).length;
+                    showNotif(`🎉 Paired! ${p2.name} & ${p1n} — ${halves>=2?'looking for opponent team.':'waiting for another team...'}`,halves>=2?'success':'warning');
+                    renderAll(); setTimeout(()=>tryRoundRobinAutoAssign(),400);
+                    return;
+                } else {
+                    S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:sk,players:[p1],joinedAt:Date.now(),_solo:true});
+                    clearJoinForm();
+                    showNotif(`⏳ ${p1n} waiting for a partner...`,'warning');
+                    renderAll();
+                    return;
+                }
+            }
+        }
         S.soloQueue.push({id:++S.nextId,gameType:rrGT||'doubles',skillLevel:sk,players:[p1],joinedAt:Date.now()});
         clearJoinForm(); showNotif(`⏳ ${p1n} joined pool. Waiting for more players...`,'warning'); renderAll();
         setTimeout(()=>S.session.mode==='roundRobin'?tryRoundRobinAutoAssign():tryWinnersAutoAssign(),400);
@@ -1943,24 +1985,43 @@ function tryRoundRobinAutoAssign(){
     const isSingles=S.session.rrGameType==='singles';
     const need=isSingles?2:4;
     if(poolSize<need) return;
-    const flat=[]; const used=[];
-    for(let i=0;i<S.soloQueue.length&&flat.length<need;i++){
-        for(let j=0;j<S.soloQueue[i].players.length&&flat.length<need;j++){
-            flat.push(S.soloQueue[i].players[j]);
-        }
-        used.push(S.soloQueue[i].id);
-    }
-    S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
-    flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-    const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
     if(isSingles){
+        const flat=[]; const used=[];
+        for(let i=0;i<S.soloQueue.length&&flat.length<need;i++){
+            for(let j=0;j<S.soloQueue[i].players.length&&flat.length<need;j++){
+                flat.push(S.soloQueue[i].players[j]);
+            }
+            used.push(S.soloQueue[i].id);
+        }
+        S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
+        flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+        const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
         const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' vs '),gameType:'singles',skillLevel:avg,players:flat,team1:[flat[0]],team2:[flat[1]],joinedAt:Date.now()};
         g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
         const court=avail[0];
         doAssign(court,g);
         showNotif(`🎯 Singles → ${court.name}: ${flat[0].name} vs ${flat[1].name}`,'success');
     } else {
-        // Generate round-robin schedule: each player partners with everyone once
+        // Doubles: pair solos, then combine 2 half-teams into a 4-player pod
+        const halves=S.soloQueue.filter(s=>s._halfTeam);
+        const solos=S.soloQueue.filter(s=>s._solo);
+        // Pair solos into new half-teams
+        for(let i=0;i+1<solos.length;i+=2){
+            const a=solos[i], b=solos[i+1];
+            const allP=[...a.players,...b.players];
+            allP.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+            const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:allP,joinedAt:Math.min(a.joinedAt,b.joinedAt),_halfTeam:true};
+            S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
+            S.soloQueue.push(half);
+            halves.push(half);
+        }
+        if(halves.length<2) return;
+        // Take first 2 half-teams
+        const a=halves[0], b=halves[1];
+        const flat=[...a.players,...b.players];
+        S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
+        flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+        const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
         const [p0,p1,p2,p3]=flat;
         const rrSchedule=[
             {teamA:[p0,p1],teamB:[p2,p3]},
