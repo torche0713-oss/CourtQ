@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourtQ Live</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0a0f;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh;}
+#app{padding:24px 32px;max-width:1920px;margin:0 auto;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;gap:20px;flex-wrap:wrap;}
+.header-left{display:flex;align-items:center;gap:16px;}
+.header-left h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,#4ecdc4,#3498db);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.venue-name{font-size:1.1rem;color:#888;}
+.clock{font-size:1rem;color:#f39c12;font-weight:600;font-variant-numeric:tabular-nums;}
+.session-badge{font-size:0.82rem;padding:6px 14px;border-radius:20px;font-weight:600;}
+.session-badge.active{background:rgba(78,205,196,0.15);color:#4ecdc4;border:1px solid rgba(78,205,196,0.3);}
+.session-badge.inactive{background:rgba(255,255,255,0.05);color:#555;border:1px solid rgba(255,255,255,0.08);}
+.controls{display:flex;gap:10px;align-items:center;}
+.controls button{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#aaa;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;transition:all 0.2s;}
+.controls button:hover{background:rgba(255,255,255,0.12);color:#fff;}
+.controls button.fullscreen{background:rgba(78,205,196,0.1);border-color:rgba(78,205,196,0.2);color:#4ecdc4;}
+.controls button.fullscreen:hover{background:rgba(78,205,196,0.2);}
+.court-grid{display:grid;gap:16px;margin-bottom:28px;}
+.court-grid.cols-1{grid-template-columns:1fr;}
+.court-grid.cols-2{grid-template-columns:1fr 1fr;}
+.court-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.court-grid.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.court-grid.cols-5{grid-template-columns:1fr 1fr 1fr 1fr 1fr;}
+.court-grid.cols-6{grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;}
+.court-card{background:linear-gradient(145deg,#13131e,#1a1a2e);border-radius:16px;padding:20px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.2s,box-shadow 0.2s;}
+.court-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3);}
+.court-card.available{border-color:rgba(78,205,196,0.15);}
+.court-card.available .court-status{color:#4ecdc4;}
+.court-card.occupied{border-color:rgba(52,152,219,0.2);}
+.court-card.occupied .court-status{color:#3498db;}
+.court-card.maintenance{opacity:0.5;border-color:rgba(231,76,60,0.15);}
+.court-card.maintenance .court-status{color:#e74c3c;}
+.court-card .color-bar{position:absolute;top:0;left:0;right:0;height:3px;}
+.court-card .color-bar.available{background:linear-gradient(90deg,#4ecdc4,#2ecc71);}
+.court-card .color-bar.occupied{background:linear-gradient(90deg,#3498db,#2980b9);}
+.court-card .color-bar.maintenance{background:linear-gradient(90deg,#e74c3c,#c0392b);}
+.court-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.court-name{font-size:1.15rem;font-weight:700;}
+.court-status{font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.court-meta{font-size:0.75rem;color:#666;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.court-players{display:flex;gap:16px;margin-top:6px;}
+.court-players .team{flex:1;}
+.court-players .team-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px;font-weight:600;}
+.court-players .team-label.team-a{color:#4ecdc4;}
+.court-players .team-label.team-b{color:#e74c3c;}
+.player-avatar{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);padding:4px 10px 4px 6px;border-radius:20px;margin:2px;}
+.player-avatar .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.player-avatar .name{font-size:0.85rem;font-weight:600;}
+.player-avatar .skill{font-size:0.7rem;color:#666;margin-left:2px;}
+.court-score{font-size:1.8rem;font-weight:800;text-align:center;padding:8px 0;letter-spacing:4px;}
+.court-score .score-a{color:#4ecdc4;}
+.court-score .score-b{color:#e74c3c;}
+.court-score .vs{font-size:0.9rem;color:#444;margin:0 8px;font-weight:400;}
+.rr-round{font-size:0.72rem;color:#f39c12;background:rgba(243,156,18,0.1);padding:3px 10px;border-radius:12px;display:inline-block;font-weight:600;}
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;}
+.queue-panel,.tournament-panel{background:linear-gradient(145deg,#13131e,#1a1a2e);border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,0.06);}
+.panel-title{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f39c12;margin-bottom:12px;}
+.queue-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.queue-item:last-child{border-bottom:none;}
+.queue-item .q-name{font-size:0.85rem;font-weight:600;}
+.queue-item .q-meta{font-size:0.72rem;color:#666;}
+.queue-item .q-wait{font-size:0.72rem;color:#f39c12;font-weight:600;}
+.empty-msg{color:#444;font-size:0.85rem;text-align:center;padding:20px 0;}
+.none-msg{color:#333;font-size:0.78rem;text-align:center;padding:8px 0;}
+.tournament-match{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:0.82rem;}
+.tournament-match:last-child{border-bottom:none;}
+.tournament-match .t-players{display:flex;gap:8px;align-items:center;}
+.tournament-match .t-stage{font-size:0.68rem;color:#666;text-transform:uppercase;}
+.leaderboard-scroll{max-height:300px;overflow-y:auto;}
+.leaderboard-scroll::-webkit-scrollbar{width:4px;}
+.leaderboard-scroll::-webkit-scrollbar-track{background:transparent;}
+.leaderboard-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+@media(max-width:1200px){.court-grid.cols-4,.court-grid.cols-5,.court-grid.cols-6{grid-template-columns:1fr 1fr 1fr;}}
+@media(max-width:900px){.court-grid.cols-3,.court-grid.cols-4,.court-grid.cols-5,.court-grid.cols-6{grid-template-columns:1fr 1fr;}.bottom-row{grid-template-columns:1fr;}}
+@media(max-width:600px){#app{padding:16px;}.court-grid{grid-template-columns:1fr!important;}.header{flex-direction:column;align-items:flex-start;}}
+</style>
+</head>
+<body>
+<div id="app">
+    <div class="header">
+        <div class="header-left">
+            <h1>🏓 CourtQ</h1>
+            <span class="venue-name" id="venueName">—</span>
+            <span class="session-badge inactive" id="sessionBadge">No Active Session</span>
+        </div>
+        <div class="controls">
+            <span class="clock" id="clockDisplay">--:--:--</span>
+            <button onclick="toggleFullscreen()" class="fullscreen" title="Fullscreen">⛶ Fullscreen</button>
+        </div>
+    </div>
+    <div id="courtGrid" class="court-grid cols-3"></div>
+    <div class="bottom-row">
+        <div class="queue-panel">
+            <div class="panel-title">⏳ Queue</div>
+            <div id="queueList"></div>
+        </div>
+        <div class="tournament-panel">
+            <div class="panel-title">🏆 Tournament</div>
+            <div id="tournamentList"></div>
+        </div>
+    </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBWqvEMy-q_DJWGYhOJfHsRrFQNl3ZJK9Y",
+  authDomain: "courtq-2e744.firebaseapp.com",
+  projectId: "courtq-2e744",
+  storageBucket: "courtq-2e744.firebasestorage.app",
+  messagingSenderId: "4841304416",
+  appId: "1:4841304416:web:7a26d85566af1d47d4ee05"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const SKILL_LABELS={2:'Beginner',3:'Intermediate',4:'Advanced',5:'Pro'};
+let VENUE_ID = null;
+let unsub = null;
+
+function phtNow(){
+    const d=new Date();
+    d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+480);
+    return d;
+}
+
+function updateClock(){
+    document.getElementById('clockDisplay').textContent=phtNow().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Manila'});
+}
+setInterval(updateClock,1000);updateClock();
+
+function toggleFullscreen(){
+    if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(()=>{});}
+    else{document.exitFullscreen().catch(()=>{});}
+}
+
+function getCourtCols(n){
+    if(n<=3) return n;
+    if(n<=4) return 4;
+    if(n<=6) return 6;
+    return 6;
+}
+
+function getGTLabel(gt){return gt==='singles'?'1v1':gt==='doubles'?'2v2':gt||'—';}
+function getWait(m){if(m<1)return '<1m';if(m<60)return m+'m';const h=Math.floor(m/60);return h+'h'+(m%60?m%60+'m':'')}
+
+function render(data){
+    const courts=data.courts||[];
+    const queue=data.queue||[];
+    const soloQueue=data.soloQueue||[];
+    const session=data.session;
+    const tournaments=data.tournaments||[];
+
+    // Venue name
+    document.getElementById('venueName').textContent=data.venueName||'—';
+
+    // Session badge
+    const sb=document.getElementById('sessionBadge');
+    if(session&&session.active){
+        const modeLabels={winnersSplit:'Winners Split',roundRobin:'Round Robin',fourOnFour:'4 on/4 off'};
+        const ml=modeLabels[session.mode]||session.mode||'Open Play';
+        sb.textContent='● '+ml;
+        sb.className='session-badge active';
+    } else {
+        sb.textContent='○ No Active Session';
+        sb.className='session-badge inactive';
+    }
+
+    // Courts grid
+    const grid=document.getElementById('courtGrid');
+    grid.className='court-grid cols-'+getCourtCols(courts.length);
+    grid.innerHTML=courts.map(c=>{
+        const occ=c.status==='occupied';
+        const maint=c.status==='maintenance';
+        const isSingles=c.gameType==='singles';
+        const isDoubles=c.gameType==='doubles';
+        const mid=Math.ceil(c.players.length/2);
+        const teamA=c.team1||c.players.slice(0,mid);
+        const teamB=c.team2||c.players.slice(mid);
+        const showScore=c.rrScore||(occ&&c.gameType);
+
+        let playersHTML='';
+        if(occ&&c.players.length>0){
+            if(isSingles||c.players.length<=2){
+                playersHTML=`
+                    <div class="court-players" style="justify-content:center;">
+                        ${c.players.map((p,i)=>`<span class="player-avatar"><span class="dot" style="background:${p.color||(i===0?'#4ecdc4':'#e74c3c')}"></span><span class="name">${p.name}</span></span>`).join('<span style="color:#444;font-weight:700;">vs</span>')}
+                    </div>`;
+            } else {
+                playersHTML=`
+                    <div class="court-players">
+                        <div class="team">
+                            <div class="team-label team-a">● Team A</div>
+                            ${teamA.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#4ecdc4'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}
+                        </div>
+                        <div class="team">
+                            <div class="team-label team-b">● Team B</div>
+                            ${teamB.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#e74c3c'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}
+                        </div>
+                    </div>`;
+            }
+        }
+
+        const rrHTML=c.rr?`<span class="rr-round" style="margin-top:6px;">🔄 Round ${c.rr.round+1}/3</span>`:'';
+
+        return `
+            <div class="court-card ${c.status}">
+                <div class="color-bar ${c.status}"></div>
+                <div class="court-header">
+                    <span class="court-name" style="color:${c.color||'#fff'}">${c.name}</span>
+                    <span class="court-status">${c.status==='available'?'● Available':c.status==='occupied'?'● In Play':c.status==='maintenance'?'● Maintenance':'—'}</span>
+                </div>
+                <div class="court-meta">
+                    ${c.location?`<span>📍 ${c.location}</span>`:''}
+                    ${occ?`<span>🎮 ${getGTLabel(c.gameType)}</span>`:''}
+                    ${c.rate?`<span>₱${c.rate}</span>`:''}
+                </div>
+                ${occ?playersHTML:''}
+                ${occ&&showScore?`<div class="court-score"><span class="score-a">${c.scoreA||0}</span><span class="vs">vs</span><span class="score-b">${c.scoreB||0}</span></div>`:''}
+                ${rrHTML}
+                ${maint?'<div style="font-size:0.78rem;color:#e74c3c;margin-top:8px;text-align:center;">🔧 Under Maintenance</div>':''}
+                ${c.status==='available'?'<div style="font-size:1.2rem;text-align:center;padding:12px 0;opacity:0.3;">✓</div>':''}
+            </div>`;
+    }).join('');
+
+    // Queue
+    const ql=document.getElementById('queueList');
+    const totalQ=queue.filter(g=>!g._halfTeam).length;
+    const soloCount=soloQueue.reduce((a,s)=>a+s.players.length,0);
+    const poolMode=session&&(session.mode==='winnersSplit'||session.mode==='roundRobin');
+    if(poolMode){
+        if(soloCount===0){ql.innerHTML='<div class="empty-msg">Pool is empty</div>';}
+        else {
+            const entries=session.mode==='roundRobin'&&session.rrGameType==='singles'
+                ?soloQueue.map(e=>`<div class="queue-item"><span class="q-name">${e.players.map(p=>p.name).join(', ')}</span><span class="q-wait">waiting</span></div>`).join('')
+                :soloQueue.map(e=>{
+                    const label=e._halfTeam?'👫 '+e.players.map(p=>p.name).join(' & '):e._solo?'🙋 '+e.players[0].name:e.players.map(p=>p.name).join(', ');
+                    const skill=e.players[0]?SKILL_LABELS[e.skillLevel]||'—':'—';
+                    return `<div class="queue-item"><span class="q-name">${label}</span><span class="q-meta">⭐${skill}</span><span class="q-wait">${getWait(Math.floor((Date.now()-e.joinedAt)/60000))}</span></div>`;
+                }).join('');
+            ql.innerHTML=entries+'<div class="queue-item" style="color:#f39c12;font-size:0.72rem;font-weight:600;">👥 '+soloCount+' player'+(soloCount>1?'s':'')+' in pool</div>';
+        }
+    } else {
+        const full=queue.filter(g=>!g._halfTeam);
+        if(full.length===0&&soloCount===0){ql.innerHTML='<div class="empty-msg">Queue is empty</div>';}
+        else {
+            let html='';
+            full.forEach(g=>{
+                html+=`<div class="queue-item"><span class="q-name">${g.groupName||g.players.map(p=>p.name).join(' & ')}</span><span class="q-meta">${getGTLabel(g.gameType)} · ⭐${SKILL_LABELS[g.skillLevel]||'?'}</span><span class="q-wait">${getWait(Math.floor((Date.now()-g.joinedAt)/60000))}</span></div>`;
+            });
+            if(soloCount>0){
+                html+='<div class="queue-item"><span class="q-name" style="color:#f39c12;">⏳ '+soloCount+' waiting for partner</span></div>';
+            }
+            ql.innerHTML=html;
+        }
+    }
+
+    // Tournament
+    const tl=document.getElementById('tournamentList');
+    const activeTour=tournaments.find(t=>t.status==='active');
+    if(!activeTour){tl.innerHTML='<div class="empty-msg">No active tournament</div>';}
+    else {
+        const groups=activeTour.groups||[];
+        const elim=activeTour.elimination||[];
+        let html=`<div style="font-size:0.82rem;font-weight:700;color:#4ecdc4;margin-bottom:8px;">${activeTour.name}</div>`;
+        if(groups.length>0){
+            html+=groups.map(g=>`<div style="font-size:0.75rem;color:#888;margin-bottom:2px;">📊 ${g.name}: ${g.players.map(p=>p.name).join(', ')}</div>`).join('');
+        }
+        if(elim.length>0){
+            html+='<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Elimination</div>';
+            html+=elim.slice(0,10).map(m=>{
+                const p=m.players||[];
+                const s=m.score?`${m.scoreA||0}-${m.scoreB||0}`:'';
+                return `<div class="tournament-match"><span class="t-players">${p.map(p=>p.name).join(' vs ')||'TBD'}</span><span style="font-size:0.72rem;color:#888;">${m.stage||'—'}${s?' · '+s:''}</span></div>`;
+            }).join('');
+        }
+        tl.innerHTML=html;
+    }
+}
+
+async function init(){
+    const params=new URLSearchParams(window.location.search);
+    let venueSlug=params.get('venue');
+    if(!venueSlug){
+        const pathParts=window.location.pathname.split('/').filter(Boolean);
+        if(pathParts.length>=2&&pathParts[1]==='tv') venueSlug=pathParts[0];
+    }
+    if(!venueSlug){
+        document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;"><div style="font-size:3rem;margin-bottom:20px;">🏓</div><h2 style="color:#888;margin-bottom:10px;">CourtQ Live TV</h2><p style="color:#555;">Add <code style="background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">?venue=your-slug</code> to the URL.</p></div>';
+        return;
+    }
+    try {
+        const slugDoc=await db.collection('slugs').doc(venueSlug).get();
+        if(!slugDoc.exists){document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;color:#e74c3c;">❌ Venue not found</div>';return;}
+        VENUE_ID=slugDoc.data().venueId;
+        document.title='CourtQ Live · '+venueSlug;
+        unsub=db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
+            if(snap.exists) render(snap.data());
+        },err=>{
+            console.warn('onSnapshot error:',err);
+            // Fallback: poll every 3s
+            if(unsub){unsub();unsub=null;}
+            setInterval(async()=>{
+                try{const doc=await db.collection('venues').doc(VENUE_ID).get();if(doc.exists)render(doc.data());}catch(e){}
+            },3000);
+        });
+    } catch(e){
+        document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;color:#e74c3c;">❌ Error loading venue</div>';
+    }
+}
+init();
+</script>
+</body>
+</html>
