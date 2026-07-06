@@ -1659,7 +1659,7 @@ function onOpModeChange(mode){
     const info={
         fourOnFour:'Groups of 4 rotate in and out together on each timer.',
         winnersSplit:'Winners stay, losers rotate. Teams split and reform each game.',
-        roundRobin:'Doubles (4 players, rotating partners) or Singles (1v1, both back to pool after each game).'
+        roundRobin:'Everyone plays everyone — full round-robin schedule generated when enough players/teams join. Matches auto-assigned across all courts. Standings tracked until all matches done.'
     };
     document.getElementById('sesModeInfo').textContent=info[mode]||'';
     document.getElementById('loopingLabel').style.display=mode==='fourOnFour'?'flex':'none';
@@ -1741,7 +1741,7 @@ function addSessionCourt(cId){
 function endSession(){
     if(!S.session) return;
     S.session.active=false; S.session=null;
-    S.courts.forEach(c=>{ if(c.status==='occupied') completeRelease(c,null); if(c.rr) delete c.rr; });
+    S.courts.forEach(c=>{ if(c.status==='occupied') completeRelease(c,null); if(c.rr) delete c.rr; delete c._rrMatchId; });
     updateJoinFormMode();
     showNotif('⏹ Session ended.','warning');
     announce('Open Play session ended. Thank you!');
@@ -1990,70 +1990,76 @@ function tryRoundRobinAutoAssign(){
     if(!S.session||S.session.mode!=='roundRobin') return;
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
-    const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
     const isSingles=S.session.rrGameType==='singles';
-    const need=isSingles?2:4;
-    if(poolSize<need) return;
-    if(isSingles){
-        const flat=[]; const used=[];
-        for(let i=0;i<S.soloQueue.length&&flat.length<need;i++){
-            for(let j=0;j<S.soloQueue[i].players.length&&flat.length<need;j++){
-                flat.push(S.soloQueue[i].players[j]);
-            }
-            used.push(S.soloQueue[i].id);
-        }
-        S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
-        flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-        const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
-        const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' vs '),gameType:'singles',skillLevel:avg,players:flat,team1:[flat[0]],team2:[flat[1]],joinedAt:Date.now()};
-        g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
-        const court=avail[0];
-        doAssign(court,g);
-        showNotif(`🎯 Singles → ${court.name}: ${flat[0].name} vs ${flat[1].name}`,'success');
-    } else {
-        // Doubles: pair solos, then combine 2 half-teams into a 4-player pod
-        const halves=S.soloQueue.filter(s=>s._halfTeam);
-        const solos=S.soloQueue.filter(s=>s._solo);
-        // Pair solos into new half-teams
-        for(let i=0;i+1<solos.length;i+=2){
-            const a=solos[i], b=solos[i+1];
-            const allP=[...a.players,...b.players];
-            allP.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-            const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:allP,joinedAt:Math.min(a.joinedAt,b.joinedAt),_halfTeam:true,_fixedTeam:false};
-            S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
-            S.soloQueue.push(half);
-            halves.push(half);
-        }
-        if(halves.length<2) return;
-        // Take first 2 half-teams
-        const a=halves[0], b=halves[1];
-        const flat=[...a.players,...b.players];
-        S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
-        flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-        const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
-        const sorted=[...flat].sort((x,y)=>y.skill-x.skill);
-        let rrSchedule;
-        if(a._fixedTeam&&b._fixedTeam){
-            rrSchedule=[
-                {teamA:[...a.players],teamB:[...b.players]},
-                {teamA:[...a.players],teamB:[...b.players]},
-                {teamA:[...a.players],teamB:[...b.players]}
-            ];
+    const poolSize=S.soloQueue.reduce((a,s)=>a+s.players.length,0);
+
+    // Auto-reset completed schedule if enough players waiting
+    if(S.session.rrSchedule&&S.session.rrSchedule.completed){
+        const minPlayers=isSingles?4:8;
+        if(poolSize>=minPlayers){
+            delete S.session.rrSchedule;
+        } else return;
+    }
+
+    if(!S.session.rrSchedule){
+        const minPlayers=isSingles?4:8;
+        if(poolSize<minPlayers) return;
+        let teams;
+        if(isSingles){
+            const flat=[]; const used=[];
+            for(let i=0;i<S.soloQueue.length&&flat.length<10;i++){
+                for(let j=0;j<S.soloQueue[i].players.length&&flat.length<10;j++){
+                    flat.push(S.soloQueue[i].players[j]);}
+                used.push(S.soloQueue[i].id);}
+            if(flat.length<minPlayers) return;
+            S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
+            flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+            teams=flat.map((p,i)=>({id:'T'+i,players:[p],name:p.name,wins:0,losses:0,draws:0,pointsFor:0,pointsAgainst:0}));
         } else {
-            const {team1,team2}=balanceTeams(sorted);
-            const [p0,p1,p2,p3]=sorted;
-            rrSchedule=[
-                {teamA:team1,teamB:team2},
-                {teamA:[p0,p2],teamB:[p1,p3]},
-                {teamA:[p0,p3],teamB:[p1,p2]}
-            ];
+            const halves=S.soloQueue.filter(s=>s._halfTeam);
+            const solos=S.soloQueue.filter(s=>s._solo);
+            for(let i=0;i+1<solos.length;i+=2){
+                const a=solos[i],b=solos[i+1];
+                const allP=[...a.players,...b.players];
+                allP.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
+                const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:allP,joinedAt:Math.min(a.joinedAt,b.joinedAt),_halfTeam:true,_fixedTeam:false};
+                S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
+                S.soloQueue.push(half); halves.push(half);}
+            if(halves.length<4) return;
+            const maxT=Math.min(halves.length,8);
+            const usedTeams=halves.slice(0,maxT);
+            usedTeams.forEach(h=>S.soloQueue=S.soloQueue.filter(s=>s.id!==h.id));
+            teams=usedTeams.map((h,i)=>{
+                h.players.forEach(p=>p.color=COLORS[i%COLORS.length]);
+                return {id:'T'+i,players:h.players,name:h.players.map(p=>p.name).join(' & '),wins:0,losses:0,draws:0,pointsFor:0,pointsAgainst:0};});
         }
-        const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:flat,team1:rrSchedule[0].teamA,team2:rrSchedule[0].teamB,joinedAt:Date.now()};
-        g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
-        const court=avail[0];
-        court.rr={round:0,schedule:rrSchedule};
+        const matches=[];
+        for(let i=0;i<teams.length;i++){
+            for(let j=i+1;j<teams.length;j++){
+                matches.push({id:'RRM'+Date.now().toString(36).toUpperCase()+matches.length,teamAIndex:i,teamBIndex:j,completed:false,winner:null,scoreA:null,scoreB:null,courtId:null});}
+        }
+        S.session.rrSchedule={teams,matches,startedAt:Date.now(),completed:false};
+        showNotif(`🎯 Round Robin started! ${teams.length} ${isSingles?'players':'teams'}, ${matches.length} matches.`,'success');
+    }
+    const schedule=S.session.rrSchedule;
+    if(schedule.completed) return;
+    const pending=schedule.matches.filter(m=>!m.completed&&!m.courtId);
+    const assignCount=Math.min(avail.length,pending.length);
+    for(let i=0;i<assignCount;i++){
+        const match=pending[i];
+        const court=avail[i];
+        const tA=schedule.teams[match.teamAIndex].players;
+        const tB=schedule.teams[match.teamBIndex].players;
+        const tAN=schedule.teams[match.teamAIndex].name;
+        const tBN=schedule.teams[match.teamBIndex].name;
+        match.courtId=court.id;
+        const flat=[...tA,...tB];
+        const gt=isSingles?'singles':'doubles';
+        const avg=Math.round(flat.reduce((a,p)=>a+(p.skill||3),0)/flat.length);
+        const g={id:++S.nextId,groupName:tAN+' vs '+tBN,gameType:gt,skillLevel:avg,players:flat,team1:tA,team2:tB,joinedAt:Date.now()};
+        court._rrMatchId=match.id;
         doAssign(court,g);
-        showNotif(`🎯 Round Robin (round 1/3) → ${court.name}: ${flat.map(p=>p.name).join(', ')}`,'success');
+        showNotif(`🎯 ${tAN} vs ${tBN} → ${court.name}`,'success');
     }
     renderAll();
 }
@@ -2439,39 +2445,40 @@ function confirmScore(){
         closeModal('scoreModal');renderAll();setTimeout(()=>tryWinnersAutoAssign(),500);
         return;
     }
-    // Round-robin singles: both players back to pool after scoring
-    if(S.session?.mode==='roundRobin'&&S.session?.rrGameType==='singles'&&!sd.isTie){
-        const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
-        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:'singles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
-        const wt=sd.winner==='A'?sd.teamA:sd.teamB;
-        (wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
-        S.history.unshift(entry);if(S.history.length>100)S.history.pop();
-        // Both players go back to pool
-        c.players.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'singles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now()});});
-        c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;
-        showNotif(`🏆 ${wt.players.map(p=>p.name).join(' & ')} won! Both back to pool.`,'success');
-        closeModal('scoreModal');renderAll();setTimeout(()=>tryRoundRobinAutoAssign(),500);
-        return;
-    }
-    // Round-robin doubles: advance to next round instead of freeing
-    if(S.session?.mode==='roundRobin'&&c.rr&&!sd.isTie){
-        const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
-        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
-        const wt=sd.winner==='A'?sd.teamA:sd.teamB;
-        (wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
-        S.history.unshift(entry);if(S.history.length>100)S.history.pop();
-        c.rr.round++;
-        if(c.rr.round>=3){
-            delete c.rr;
-            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;
-            showNotif(`🏆 Round Robin complete! ${c.name} is free.`,'success');
-            announce(`Round Robin finished on ${c.name}!`);
-        } else {
-            const next=c.rr.schedule[c.rr.round];
-            c.team1=next.teamA; c.team2=next.teamB; c.startTime=Date.now();
-            showNotif(`🔄 Round ${c.rr.round+1}/3 → ${next.teamA.map(p=>p.name).join(' & ')} vs ${next.teamB.map(p=>p.name).join(' & ')}`,'success');
+    // Round-robin schedule match result
+    if(S.session?.mode==='roundRobin'&&c._rrMatchId&&S.session.rrSchedule){
+        const schedule=S.session.rrSchedule;
+        const match=schedule.matches.find(m=>m.id===c._rrMatchId);
+        if(match&&!match.completed){
+            const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
+            const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie};
+            S.history.unshift(entry);if(S.history.length>100)S.history.pop();
+            match.completed=true;
+            match.winner=sd.winner; match.scoreA=sd.teamA.score; match.scoreB=sd.teamB.score;
+            // Update team standings
+            const tA=schedule.teams[match.teamAIndex];
+            const tB=schedule.teams[match.teamBIndex];
+            tA.pointsFor+=sd.teamA.score; tA.pointsAgainst+=sd.teamB.score;
+            tB.pointsFor+=sd.teamB.score; tB.pointsAgainst+=sd.teamA.score;
+            if(sd.isTie){tA.draws++;tB.draws++;}
+            else if(sd.winner==='A'){tA.wins++;tB.losses++;const wt=sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});}
+            else{tB.wins++;tA.losses++;const wt=sd.teamB;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});}
+            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;
+            const allDone=schedule.matches.every(m=>m.completed);
+            if(allDone){
+                schedule.completed=true;
+                const sorted=[...schedule.teams].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||(b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst));
+                showNotif(`🏆 Round Robin Complete! Winner: ${sorted[0].name}`,'success');
+                announce(`Round Robin finished! ${sorted[0].name} wins!`);
+            } else {
+                const done=schedule.matches.filter(m=>m.completed).length;
+                showNotif(`🏁 Match done! ${done}/${schedule.matches.length}`,'success');
+            }
+        } else if(match&&match.completed){
+            showNotif('This match was already scored.','warning');
         }
-        closeModal('scoreModal');renderAll();setTimeout(()=>tryRoundRobinAutoAssign(),500);
+        closeModal('scoreModal');renderAll();
+        if(!schedule.completed) setTimeout(()=>tryRoundRobinAutoAssign(),500);
         return;
     }
     // Default 4 on/4 off
@@ -2495,15 +2502,25 @@ function skipScore(){
     }
     const c=S.courts.find(x=>x.id===S.currentScore.courtId);
     if(c){
+        // Round-robin schedule: free court, keep players in schedule
+        if(S.session?.mode==='roundRobin'&&c._rrMatchId&&S.session.rrSchedule){
+            const match=S.session.rrSchedule.matches.find(m=>m.id===c._rrMatchId);
+            if(match) match.courtId=null;
+            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;
+            showNotif('⏭ Match freed — will reassign.','info');
+            closeModal('scoreModal');renderAll();
+            setTimeout(()=>tryRoundRobinAutoAssign(),500);
+            return;
+        }
         if(S.session?.looping&&S.session?.mode==='fourOnFour'&&c.players.length>0){
             const gt=c.gameType||(c.players.length>2?'doubles':'singles');
             const loopGroup={id:++S.nextId,groupName:c.players.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(c.players.reduce((a,p)=>a+p.skill,0)/c.players.length),players:[...c.players],team1:null,team2:null,joinedAt:Date.now()};
             S.queue.push(loopGroup);
         }
-        // Re-add singles RR players to pool before completeRelease clears them
-        const rrSingles=S.session?.mode==='roundRobin'&&S.session?.rrGameType==='singles'?[...c.players]:null;
+        // Re-add RR players to pool before completeRelease clears them
+        const rrPlayers=S.session?.mode==='roundRobin'?[...c.players]:null;
         completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);
-        if(rrSingles) rrSingles.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'singles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now()});});
+        if(rrPlayers) rrPlayers.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now(),_solo:true});});
     }
     closeModal('scoreModal');renderAll();setTimeout(()=>S.session?.mode==='roundRobin'?tryRoundRobinAutoAssign():S.session?.mode==='winnersSplit'?tryWinnersAutoAssign():tryAutoAssign(),500);
 }
@@ -3642,6 +3659,15 @@ function renderSession(){
                 <div class="ss-card"><div class="ss-num" style="color:#e74c3c;">${locked}</div><div class="ss-lbl">Booked/Locked</div></div>
                 <div class="ss-card"><div class="ss-num" style="color:#f39c12;">${inQ}</div><div class="ss-lbl">In Queue</div></div>
             </div>
+            ${ses.mode==='roundRobin'&&ses.rrSchedule?(()=>{
+                const s=ses.rrSchedule;
+                if(s.completed){
+                    const sorted=[...s.teams].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||(b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst));
+                    return `<div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:8px;padding:8px 12px;font-size:0.78rem;margin-top:8px;"><strong style="color:#2ecc71;">🏆 Round Robin Complete!</strong> Winner: ${sorted[0].name}<br><span style="color:#aaa;">${s.teams.map(t=>t.name+' ('+t.wins+'W/'+t.losses+'L'+(t.draws?'/'+t.draws+'D':'')+')').join(' · ')}</span></div>`;
+                }
+                const done=s.matches.filter(m=>m.completed).length;
+                return `<div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:8px;padding:8px 12px;font-size:0.78rem;margin-top:8px;"><strong style="color:#9b59b6;">🔄 Round Robin</strong> ${done}/${s.matches.length} matches · ${s.teams.length} ${ses.rrGameType==='singles'?'players':'teams'}<br><span style="color:#aaa;">${s.teams.map(t=>t.name+' ('+t.wins+'W/'+t.losses+'L'+(t.draws?'/'+t.draws+'D':'')+')').join(' · ')}</span></div>`;
+            })():''}
             <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;">
                 <span style="font-size:0.75rem;color:#aaa;">🎯 Courts:</span>
                 ${S.courts.map(c=>{
