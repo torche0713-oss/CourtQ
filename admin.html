@@ -2057,9 +2057,21 @@ function tryRoundRobinAutoAssign(){
     if(avail.length===0) return;
     const isSingles=S.session.rrGameType==='singles';
     const schedule=S.session.rrSchedule;
-    const pending=schedule.matches.filter(m=>!m.completed&&!m.courtId);
-    const assignCount=Math.min(avail.length,pending.length);
-    for(let i=0;i<assignCount;i++){
+    // Collect player names already on a court right now
+    const busyPlayers=new Set();
+    S.courts.forEach(c=>{
+        if(c._rrMatchId&&c.status==='occupied'&&c.players){
+            c.players.forEach(p=>busyPlayers.add(p.name));
+        }
+    });
+    const pending=schedule.matches.filter(m=>{
+        if(m.completed||m.courtId) return false;
+        const tA=schedule.teams[m.teamAIndex].players;
+        const tB=schedule.teams[m.teamBIndex].players;
+        return ![...tA,...tB].some(p=>busyPlayers.has(p.name));
+    });
+    const toAssign=Math.min(avail.length,pending.length);
+    for(let i=0;i<toAssign;i++){
         const match=pending[i];
         const court=avail[i];
         const tA=schedule.teams[match.teamAIndex].players;
