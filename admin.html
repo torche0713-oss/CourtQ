@@ -569,6 +569,12 @@
                     </div>
                     <div id="teamFields">
                         <div class="form-group"><label>Partner Name</label><input type="text" id="p2" placeholder="Your teammate's name"></div>
+                        <div class="form-group" style="margin-top:4px;">
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.75rem;color:#aaa;">
+                                <input type="checkbox" id="fixedTeam" checked>
+                                <span>🔒 Fixed teammates (stay together each round)</span>
+                            </label>
+                        </div>
                     </div>
                     <div id="soloFields" style="display:none;">
                         <div class="form-group" style="padding:8px 12px;background:rgba(243,156,18,0.06);border-radius:8px;font-size:0.75rem;color:#aaa;">You'll be paired with another solo player to form a team.</div>
@@ -1788,7 +1794,7 @@ function joinQueue(){
                 if(allEx.includes(p2n.toLowerCase())){showNotif(`"${p2n}" already in queue!`,'error');return;}
                 const p2={name:p2n,skill:sk,color:COLORS[1]};
                 const team=[p1,p2]; team.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-                const half={id:++S.nextId,gameType:'doubles',skillLevel:sk,players:team,joinedAt:Date.now(),_halfTeam:true};
+                const half={id:++S.nextId,gameType:'doubles',skillLevel:sk,players:team,joinedAt:Date.now(),_halfTeam:true,_fixedTeam:document.getElementById('fixedTeam').checked};
                 S.soloQueue.push(half);
                 clearJoinForm();
                 const halves=S.soloQueue.filter(s=>s._halfTeam).length;
@@ -1805,7 +1811,7 @@ function joinQueue(){
                     const p2=match.players[0];
                     p1.color=COLORS[1]; p2.color=COLORS[0];
                     const team=[p2,p1];
-                    const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((match.skillLevel+sk)/2),players:team,joinedAt:Math.min(match.joinedAt,Date.now()),_halfTeam:true};
+                    const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((match.skillLevel+sk)/2),players:team,joinedAt:Math.min(match.joinedAt,Date.now()),_halfTeam:true,_fixedTeam:false};
                     S.soloQueue.push(half);
                     clearJoinForm();
                     const halves=S.soloQueue.filter(s=>s._halfTeam).length;
@@ -1864,7 +1870,7 @@ function joinQueue(){
             const p2={name:p2n,skill:sk,color:COLORS[1]};
             const team=[p1,p2];
             team.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-            const half={id:++S.nextId,groupName:`${p1n} & ${p2n}`,gameType:'doubles',skillLevel:sk,players:team,team1:null,team2:null,joinedAt:Date.now(),_halfTeam:true};
+            const half={id:++S.nextId,groupName:`${p1n} & ${p2n}`,gameType:'doubles',skillLevel:sk,players:team,team1:null,team2:null,joinedAt:Date.now(),_halfTeam:true,_fixedTeam:document.getElementById('fixedTeam').checked};
             half.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
             S.queue.push(half);
             clearJoinForm();
@@ -1882,7 +1888,7 @@ function joinQueue(){
                 const p2=match.players[0];
                 p1.color=COLORS[1]; p2.color=COLORS[0];
                 const team=[p2,p1];
-                const half={id:++S.nextId,groupName:`${p2.name} & ${p1n}`,gameType:'doubles',skillLevel:Math.round((match.skillLevel+sk)/2),players:team,team1:null,team2:null,joinedAt:Math.min(match.joinedAt,Date.now()),_halfTeam:true};
+                const half={id:++S.nextId,groupName:`${p2.name} & ${p1n}`,gameType:'doubles',skillLevel:Math.round((match.skillLevel+sk)/2),players:team,team1:null,team2:null,joinedAt:Math.min(match.joinedAt,Date.now()),_halfTeam:true,_fixedTeam:false};
                 half.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
                 S.queue.push(half);
                 clearJoinForm();
@@ -1906,8 +1912,11 @@ function tryCombineTeams(){
         const b=halves.shift();
         const all=[...a.players,...b.players];
         all.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-        const {team1,team2}=balanceTeams(all);
-        const full={id:++S.nextId,groupName:`${a.groupName} vs ${b.groupName}`,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:all,team1,team2,joinedAt:Math.min(a.joinedAt,b.joinedAt)};
+        const bothFixed=a._fixedTeam&&b._fixedTeam;
+        const team1=bothFixed?a.players:b.players;
+        const team2=bothFixed?b.players:a.players;
+        const {team1:bal1,team2:bal2}=bothFixed?{team1,team2}:balanceTeams(all);
+        const full={id:++S.nextId,groupName:`${a.groupName} vs ${b.groupName}`,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:all,team1:bal1,team2:bal2,joinedAt:Math.min(a.joinedAt,b.joinedAt)};
         // Remove halves from queue, add full group
         S.queue=S.queue.filter(g=>g.id!==a.id&&g.id!==b.id);
         S.queue.push(full);
@@ -2010,7 +2019,7 @@ function tryRoundRobinAutoAssign(){
             const a=solos[i], b=solos[i+1];
             const allP=[...a.players,...b.players];
             allP.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-            const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:allP,joinedAt:Math.min(a.joinedAt,b.joinedAt),_halfTeam:true};
+            const half={id:++S.nextId,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:allP,joinedAt:Math.min(a.joinedAt,b.joinedAt),_halfTeam:true,_fixedTeam:false};
             S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
             S.soloQueue.push(half);
             halves.push(half);
@@ -2022,12 +2031,21 @@ function tryRoundRobinAutoAssign(){
         S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
         flat.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
         const avg=Math.round(flat.reduce((a,p)=>a+p.skill,0)/flat.length);
-        const [p0,p1,p2,p3]=flat;
-        const rrSchedule=[
-            {teamA:[p0,p1],teamB:[p2,p3]},
-            {teamA:[p0,p2],teamB:[p1,p3]},
-            {teamA:[p0,p3],teamB:[p1,p2]}
-        ];
+        let rrSchedule;
+        if(a._fixedTeam&&b._fixedTeam){
+            rrSchedule=[
+                {teamA:[...a.players],teamB:[...b.players]},
+                {teamA:[...a.players],teamB:[...b.players]},
+                {teamA:[...a.players],teamB:[...b.players]}
+            ];
+        } else {
+            const [p0,p1,p2,p3]=flat;
+            rrSchedule=[
+                {teamA:[p0,p1],teamB:[p2,p3]},
+                {teamA:[p0,p2],teamB:[p1,p3]},
+                {teamA:[p0,p3],teamB:[p1,p2]}
+            ];
+        }
         const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:flat,team1:rrSchedule[0].teamA,team2:rrSchedule[0].teamB,joinedAt:Date.now()};
         g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
         const court=avail[0];
