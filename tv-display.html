@@ -228,8 +228,6 @@ function render(data){
             upcomingBookings[b.courtId].push(b);
         }
     });
-    const activeTour=tournaments.find(t=>t.status==='active');
-
     // Courts grid
     const grid=document.getElementById('courtGrid');
     grid.className='court-grid cols-'+getCourtCols(courts.length);
