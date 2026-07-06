@@ -2020,7 +2020,7 @@ function startRoundRobin(){
     const fmt=document.getElementById('rrSetupFormat').value;
     const raw=document.getElementById('rrPlayers').value.trim();
     const players=raw.split('\n').map(s=>s.trim()).filter(Boolean);
-    if(players.length<4){showNotif('Enter at least 4 players/teams.','error');return;}
+    if(players.length<2){showNotif('Enter at least 2 players/teams.','error');return;}
     S.session.rrGameType=fmt;
     // Build teams
     const isSingles=fmt==='singles';
