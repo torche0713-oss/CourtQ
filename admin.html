@@ -1699,6 +1699,18 @@ function startSession(){
     if(endDT<=startDT){showNotif('End must be after start!','error');return;}
     const selectedCourts=[...document.querySelectorAll('#sesCourtCheckboxes .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
     if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
+    // Check for booking conflicts before starting
+    const sesS=timeToMin(st), sesE=timeToMin(et);
+    let conflicts=[];
+    S.courts.forEach(c=>{
+        if(!selectedCourts.includes(c.id)) return;
+        getBookingsForCourt(c.id,sd,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
+        if(sd!==ed) getBookingsForCourt(c.id,ed,0,sesE).forEach(b=>conflicts.push({court:c.name,b}));
+    });
+    if(conflicts.length>0){
+        showNotif(`⚠️ Cannot start — ${conflicts.length} booking overlap(s) detected! (e.g. ${conflicts[0].court}: ${conflicts[0].b.customer} ${conflicts[0].b.startTime}–${conflicts[0].b.endTime})`,'error');
+        return;
+    }
     const rrGameType=mode==='roundRobin'?(document.querySelector('input[name="rrGameType"]:checked')?.value||'doubles'):null;
     S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked};
     updateJoinFormMode();
@@ -2492,7 +2504,7 @@ function confirmScore(){
         const match=schedule.matches.find(m=>m.id===c._rrMatchId);
         if(match&&!match.completed){
             const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
-            const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie};
+            const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie,timestamp:Date.now()};
             S.history.unshift(entry);if(S.history.length>100)S.history.pop();
             match.completed=true;
             match.courtId=null;
