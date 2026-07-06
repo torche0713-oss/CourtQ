@@ -100,7 +100,7 @@ body{background:#0a0a0f;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans
 <div id="app">
     <div class="header">
         <div class="header-left">
-            <h1><img src="Logo.png" alt="CourtQ" style="height:32px;vertical-align:middle;"></h1>
+            <h1><img src="./Logo.jpg" alt="" style="height:32px;vertical-align:middle;"></h1>
             <span class="venue-name" id="venueName">—</span>
             <span class="session-badge inactive" id="sessionBadge">No Active Session</span>
         </div>
@@ -428,7 +428,7 @@ async function init(){
         if(pathParts.length>=2&&pathParts[1]==='tv') venueSlug=pathParts[0];
     }
     if(!venueSlug){
-        document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;"><div style="font-size:3rem;margin-bottom:20px;">🏓</div><h2 style="color:#888;margin-bottom:10px;">CourtQ Live TV</h2><p style="color:#555;">Add <code style="background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">?venue=your-slug</code> to the URL.</p></div>';
+        document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;"><img src="./Logo.jpg" alt="" style="height:48px;margin-bottom:20px;opacity:0.5;"><h2 style="color:#888;margin-bottom:10px;">Live TV</h2><p style="color:#555;">Add <code style="background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">?venue=your-slug</code> to the URL.</p></div>';
         return;
     }
     try {
