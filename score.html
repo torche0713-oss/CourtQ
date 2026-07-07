@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CourtQ Score</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0a0f;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans-serif;min-height:100vh;}
+#app{padding:16px;max-width:480px;margin:0 auto;}
+header{text-align:center;padding:16px 0 24px;}
+header h1{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,#4ecdc4,#3498db);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+header .venue{font-size:0.9rem;color:#888;margin-top:4px;}
+header .hint{font-size:0.72rem;color:#444;margin-top:6px;}
+.court-card{background:linear-gradient(145deg,#13131e,#1a1a2e);border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.06);}
+.court-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.court-name{font-size:1.1rem;font-weight:700;}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ecdc4;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.court-players{font-size:0.8rem;color:#888;margin-bottom:16px;text-align:center;}
+.score-row{display:flex;align-items:center;justify-content:space-around;gap:12px;margin-bottom:16px;}
+.team{text-align:center;flex:1;}
+.team-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;}
+.team-label.a{color:#4ecdc4;}
+.team-label.b{color:#e74c3c;}
+.score-num{font-size:2.8rem;font-weight:800;margin:4px 0;line-height:1;}
+.team.a .score-num{color:#4ecdc4;}
+.team.b .score-num{color:#e74c3c;}
+.vs{font-size:1rem;color:#555;font-weight:700;text-transform:uppercase;}
+.score-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.score-btn{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#fff;font-size:1.6rem;cursor:pointer;transition:all 0.15s;font-weight:700;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;}
+.score-btn:active{transform:scale(0.88);background:rgba(255,255,255,0.12);}
+.score-btn.a-plus{border-color:rgba(78,205,196,0.3);color:#4ecdc4;}
+.score-btn.a-minus{border-color:rgba(78,205,196,0.15);color:#4ecdc4;}
+.score-btn.b-plus{border-color:rgba(231,76,60,0.3);color:#e74c3c;}
+.score-btn.b-minus{border-color:rgba(231,76,60,0.15);color:#e74c3c;}
+.reset-btn{background:rgba(255,255,255,0.04);color:#666;border:1px solid rgba(255,255,255,0.08);width:100%;padding:10px;border-radius:10px;font-size:0.8rem;font-weight:600;cursor:pointer;margin-top:8px;transition:all 0.2s;}
+.reset-btn:active{background:rgba(231,76,60,0.1);color:#e74c3c;}
+.empty-msg{text-align:center;padding:80px 20px;color:#555;font-size:0.9rem;}
+.empty-msg .big{font-size:2.5rem;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div id="app">
+    <header>
+        <h1>🏆 CourtQ Score</h1>
+        <div class="venue" id="venueName">—</div>
+        <div class="hint">Scores update live on the TV display</div>
+    </header>
+    <div id="courtList"><div class="empty-msg"><div class="big">📱</div>Enter a venue slug in the URL:<br><code style="background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;font-size:0.78rem;">?venue=your-slug</code></div></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBWqvEMy-q_DJWGYhOJfHsRrFQNl3ZJK9Y",
+  authDomain: "courtq-2e744.firebaseapp.com",
+  projectId: "courtq-2e744",
+  storageBucket: "courtq-2e744.firebasestorage.app",
+  messagingSenderId: "4841304416",
+  appId: "1:4841304416:web:7a26d85566af1d47d4ee05"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+let VENUE_ID = null;
+let _unsubVenue = null;
+let _unsubScores = null;
+
+async function init(){
+    const params = new URLSearchParams(window.location.search);
+    let slug = params.get('venue') || params.get('v');
+    if(!slug) return;
+    try {
+        const slugDoc = await db.collection('slugs').doc(slug).get();
+        if(!slugDoc.exists){
+            document.getElementById('courtList').innerHTML = '<div class="empty-msg"><div class="big">❌</div>Venue not found</div>';
+            return;
+        }
+        VENUE_ID = slugDoc.data().venueId;
+        document.getElementById('courtList').innerHTML = '<div class="empty-msg"><div class="big">⏳</div>Loading...</div>';
+        // Listen to venue for court names/players/status
+        _unsubVenue = db.collection('venues').doc(VENUE_ID).onSnapshot(snap => {
+            if(snap.exists){
+                const d = snap.data();
+                document.getElementById('venueName').textContent = d.venueName || '';
+                _lastSession = d.session || null;
+                renderCourts(d.courts||[]);
+            }
+        });
+        // Listen to live scores
+        _unsubScores = db.collection('liveScores').where('venueId', '==', VENUE_ID).onSnapshot(snap => {
+            _liveScores = {};
+            snap.forEach(doc => { const d = doc.data(); _liveScores[d.courtId] = d; });
+            // Re-render to show updated scores on existing cards
+            document.querySelectorAll('.court-card').forEach(el => {
+                const cid = el.dataset.courtId;
+                if(cid && _liveScores[cid]){
+                    const elA = el.querySelector('.sc-a');
+                    const elB = el.querySelector('.sc-b');
+                    if(elA) elA.textContent = _liveScores[cid].scoreA || 0;
+                    if(elB) elB.textContent = _liveScores[cid].scoreB || 0;
+                }
+            });
+        });
+    } catch(e) {
+        document.getElementById('courtList').innerHTML = '<div class="empty-msg"><div class="big">⚠️</div>Error loading venue</div>';
+    }
+}
+
+let _liveScores = {};
+let _lastCourts = [];
+let _lastSession = null;
+
+function renderCourts(courts){
+    _lastCourts = courts;
+    const occupied = courts.filter(c => c.status === 'occupied' && !c._tournamentId && !(_lastSession && _lastSession.active));
+    const list = document.getElementById('courtList');
+    if(occupied.length === 0){
+        list.innerHTML = '<div class="empty-msg"><div class="big">🏓</div>No active games right now</div>';
+        return;
+    }
+    list.innerHTML = occupied.map(court => {
+        const ls = _liveScores[court.id] || { scoreA: 0, scoreB: 0 };
+        const isSingles = court.gameType === 'singles' || court.players.length <= 2;
+        const mid = Math.ceil(court.players.length / 2);
+        const teamA = court.team1 || court.players.slice(0, mid);
+        const teamB = court.team2 || court.players.slice(mid);
+        const aNames = teamA.map(p => p.name).join(' & ');
+        const bNames = teamB.map(p => p.name).join(' & ');
+        return `
+            <div class="court-card" data-court-id="${court.id}">
+                <div class="court-header">
+                    <span class="court-name" style="color:${court.color||'#fff'}">${court.name}</span>
+                    <span><span class="live-dot"></span></span>
+                </div>
+                <div class="court-players">${aNames} vs ${bNames}</div>
+                <div class="score-row">
+                    <div class="team a">
+                        <div class="team-label a">● ${isSingles?'Player A':'Team A'}</div>
+                        <div class="score-num sc-a">${ls.scoreA}</div>
+                    </div>
+                    <div class="vs">vs</div>
+                    <div class="team b">
+                        <div class="team-label b">● ${isSingles?'Player B':'Team B'}</div>
+                        <div class="score-num sc-b">${ls.scoreB}</div>
+                    </div>
+                </div>
+                <div class="score-btns">
+                    <button class="score-btn a-minus" onclick="adjScore('${court.id}',-1,'a')">−</button>
+                    <button class="score-btn a-plus"  onclick="adjScore('${court.id}',+1,'a')">+</button>
+                    <button class="score-btn b-minus" onclick="adjScore('${court.id}',-1,'b')">−</button>
+                    <button class="score-btn b-plus"  onclick="adjScore('${court.id}',+1,'b')">+</button>
+                </div>
+                <button class="reset-btn" onclick="resetScore('${court.id}')">↺ Reset to 0-0</button>
+            </div>`;
+    }).join('');
+    // Sync displayed scores with latest _liveScores data
+    if(Object.keys(_liveScores).length > 0){
+        document.querySelectorAll('.court-card').forEach(el => {
+            const cid = el.dataset.courtId;
+            if(cid && _liveScores[cid]){
+                const elA = el.querySelector('.sc-a');
+                const elB = el.querySelector('.sc-b');
+                if(elA) elA.textContent = _liveScores[cid].scoreA || 0;
+                if(elB) elB.textContent = _liveScores[cid].scoreB || 0;
+            }
+        });
+    }
+}
+
+function adjScore(courtId, delta, team){
+    const card = document.querySelector(`.court-card[data-court-id="${courtId}"]`);
+    if(!card) return;
+    const elA = card.querySelector('.sc-a');
+    const elB = card.querySelector('.sc-b');
+    if(!elA || !elB) return;
+    let a = parseInt(elA.textContent) || 0;
+    let b = parseInt(elB.textContent) || 0;
+    if(team === 'a') a = Math.max(0, a + delta);
+    else b = Math.max(0, b + delta);
+    elA.textContent = a;
+    elB.textContent = b;
+    debounceSave(courtId, a, b);
+}
+
+function resetScore(courtId){
+    const card = document.querySelector(`.court-card[data-court-id="${courtId}"]`);
+    if(!card) return;
+    card.querySelector('.sc-a').textContent = '0';
+    card.querySelector('.sc-b').textContent = '0';
+    debounceSave(courtId, 0, 0);
+}
+
+const _saveTimers = {};
+function debounceSave(courtId, scoreA, scoreB){
+    clearTimeout(_saveTimers[courtId]);
+    _saveTimers[courtId] = setTimeout(() => {
+        db.collection('liveScores').doc(VENUE_ID + '_' + courtId).set({
+            venueId: VENUE_ID,
+            courtId: courtId,
+            scoreA: scoreA,
+            scoreB: scoreB,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(e => console.error('save error:', e));
+    }, 250);
+}
+
+init();
+</script>
+</body>
+</html>

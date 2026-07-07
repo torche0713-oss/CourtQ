@@ -260,6 +260,8 @@ function getBookingsForCourtTV(cId,date,sMin,eMin,bookings){
 }
 
 let lastData=null;
+let _lastLiveScores={};
+let _unsubLiveScores=null;
 let showTimeline=false;
 
 function toggleTimeline(){
@@ -450,6 +452,12 @@ function render(data){
                 ${occ?playersHTML:''}
                 ${rrHTML}
                 ${bookingHTML}
+                ${occ&&!isTournament&&!isOpenPlay&&_lastLiveScores[c.id]?`
+                    <div style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                        <span style="font-size:1.6rem;font-weight:800;color:#4ecdc4;">${_lastLiveScores[c.id].scoreA||0}</span>
+                        <span style="font-size:0.7rem;color:#555;font-weight:600;letter-spacing:1px;">SCORE</span>
+                        <span style="font-size:1.6rem;font-weight:800;color:#e74c3c;">${_lastLiveScores[c.id].scoreB||0}</span>
+                    </div>`:''}
                 ${maint?'<div style="font-size:0.78rem;color:#e74c3c;margin-top:8px;text-align:center;">🔧 Under Maintenance</div>':''}
                 ${cardType==='available'?'<div style="font-size:1.2rem;text-align:center;padding:12px 0;opacity:0.3;">✓ Available</div>':''}
                 ${!occ&&!maint&&cardType==='booked'&&!hasActiveBookings&&!hasUpcoming?'<div style="font-size:0.9rem;text-align:center;padding:12px 0;opacity:0.3;">—</div>':''}
@@ -603,6 +611,18 @@ async function init(){
                 try{const doc=await db.collection('venues').doc(VENUE_ID).get();if(doc.exists)render(doc.data());}catch(e){}
             },3000);
         });
+        // Listen to live scores
+        _unsubLiveScores=db.collection('liveScores').where('venueId','==',VENUE_ID).onSnapshot(snap=>{
+            _lastLiveScores={};
+            snap.forEach(doc=>{const d=doc.data();_lastLiveScores[d.courtId]=d;});
+            if(lastData) render(lastData);
+        },()=>{});
+        // Show score URL at bottom
+        const el=document.createElement('div');
+        el.id='scoreUrlHint';
+        el.style.cssText='text-align:center;padding:12px 0 4px;color:#444;font-size:0.72rem;letter-spacing:0.5px;';
+        el.textContent='📱 Update scores: '+window.location.origin+'/score.html?venue='+venueSlug;
+        document.getElementById('app').appendChild(el);
     } catch(e){
         document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;color:#e74c3c;">❌ Error loading venue</div>';
     }

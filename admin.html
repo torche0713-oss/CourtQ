@@ -1466,6 +1466,7 @@ function nowMin(){ const n=phtNow(); return n.getHours()*60+n.getMinutes(); }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function clearLiveScore(courtId){ if(!VENUE_ID) return; db.collection('liveScores').doc(VENUE_ID+'_'+courtId).delete().catch(()=>{}); }
 function inSession(date, sMin, eMin, courtId){
     if(!S.session||!S.session.active) return false;
     if(courtId!=null && S.session.courts && !S.session.courts.includes(courtId)) return false;
@@ -2660,7 +2661,7 @@ function confirmScore(){
             announce(`${wn} won on ${c.name}! Winners stay & split.`);
         } else {
             // Not enough players, free the court
-            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;
+            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;clearLiveScore(c.id);
             showNotif(`🏆 ${winners.map(p=>p.name).join(' & ')} won! Court freed (need more players).`,'success');
             announce(`${winners.map(p=>p.name).join(' & ')} won on ${c.name}!`);
         }
@@ -2686,7 +2687,7 @@ function confirmScore(){
             if(sd.isTie){tA.draws++;tB.draws++;[...(sd.teamA.players||[]),...(sd.teamB.players||[])].forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=25;});}
             else if(sd.winner==='A'){tA.wins++;tB.losses++;const wt=sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});const lt=sd.teamB;(lt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=15;});}
             else{tB.wins++;tA.losses++;const wt=sd.teamB;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});const lt=sd.teamA;(lt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=15;});}
-            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;
+            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;clearLiveScore(c.id);
             const allDone=schedule.matches.every(m=>m.completed);
             if(allDone){
                 schedule.completed=true;
@@ -2730,7 +2731,7 @@ function skipScore(){
         if(S.session?.mode==='roundRobin'&&c._rrMatchId&&S.session.rrSchedule){
             const match=S.session.rrSchedule.matches.find(m=>m.id===c._rrMatchId);
             if(match) match.courtId=null;
-            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;
+            c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;clearLiveScore(c.id);
             showNotif('⏭ Match freed — will reassign.','info');
             closeModal('scoreModal');renderAll();
             setTimeout(()=>tryRoundRobinAutoAssign(),500);
@@ -2759,7 +2760,7 @@ function completeRelease(court,sd){
         else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const lt=sd.winner==='A'?sd.teamB:sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});(lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});}
     }
     S.history.unshift(entry);if(S.history.length>100)S.history.pop();
-    court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;if(court.rr) delete court.rr;
+    court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;if(court.rr) delete court.rr;clearLiveScore(court.id);
 }
 
 // ===================== BOOKINGS =====================
