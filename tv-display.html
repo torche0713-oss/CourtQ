@@ -94,6 +94,28 @@ body{background:#0a0a0f;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans
 @media(max-width:1200px){.court-grid.cols-4,.court-grid.cols-5,.court-grid.cols-6{grid-template-columns:1fr 1fr 1fr;}}
 @media(max-width:900px){.court-grid.cols-3,.court-grid.cols-4,.court-grid.cols-5,.court-grid.cols-6{grid-template-columns:1fr 1fr;}.bottom-row{grid-template-columns:1fr;}}
 @media(max-width:600px){#app{padding:16px;}.court-grid{grid-template-columns:1fr!important;}.header{flex-direction:column;align-items:flex-start;}}
+
+/* Timeline for TV */
+.tv-timeline-wrap{margin-bottom:28px;}
+.tv-timeline-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.tv-timeline-scroll{overflow-x:auto;overflow-y:hidden;}
+.tv-timeline-scroll::-webkit-scrollbar{height:6px;}
+.tv-timeline-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,0.03);border-radius:3px;}
+.tv-timeline-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px;}
+.tv-timeline-scroll .timeline-grid{min-width:800px;background:linear-gradient(145deg,rgba(0,0,0,0.3),rgba(0,0,0,0.15));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.06);}
+.tv-timeline-scroll .tl-hours{display:flex;margin-left:100px;margin-bottom:8px;}
+.tv-timeline-scroll .tl-hour{flex:1;font-size:0.6rem;color:#555;text-align:center;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+.tv-timeline-scroll .tl-row{display:flex;align-items:center;margin-bottom:5px;height:32px;border-radius:6px;}
+.tv-timeline-scroll .tl-label{width:100px;font-size:0.72rem;font-weight:700;flex-shrink:0;padding-right:8px;}
+.tv-timeline-scroll .tl-slots{flex:1;height:100%;position:relative;background:rgba(255,255,255,0.03);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.04);}
+.tv-timeline-scroll .tl-slot{position:absolute;top:2px;bottom:2px;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:0.6rem;font-weight:700;white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,0.4);z-index:2;}
+.tv-timeline-scroll .tl-op{background:linear-gradient(135deg,rgba(78,205,196,0.35),rgba(78,205,196,0.15));color:#4ecdc4;border:1px solid rgba(78,205,196,0.4);}
+.tv-timeline-scroll .tl-tournament{background:linear-gradient(135deg,rgba(155,89,182,0.35),rgba(155,89,182,0.15));color:#d4a5e8;border:1px solid rgba(155,89,182,0.4);}
+.tv-timeline-scroll .tl-booked{background:linear-gradient(135deg,rgba(231,76,60,0.4),rgba(231,76,60,0.15));color:#ff8a80;border:1px solid rgba(231,76,60,0.4);}
+.tv-timeline-scroll .tl-playing{background:linear-gradient(135deg,rgba(46,204,113,0.4),rgba(46,204,113,0.15));color:#69f0ae;border:1px solid rgba(46,204,113,0.4);}
+.tv-timeline-scroll .tl-gridline{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.04);z-index:0;}
+.tv-timeline-scroll .tl-now{position:absolute;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#f39c12,#e74c3c);z-index:5;box-shadow:0 0 10px rgba(243,156,18,0.4);}
+.tv-timeline-scroll .tl-now-lbl{position:absolute;top:-16px;font-size:0.55rem;color:#f39c12;transform:translateX(-50%);font-weight:800;text-shadow:0 0 8px rgba(243,156,18,0.4);}
 </style>
 </head>
 <body>
@@ -106,10 +128,19 @@ body{background:#0a0a0f;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans
         </div>
         <div class="controls">
             <span class="clock" id="clockDisplay">--:--:--</span>
+            <button onclick="toggleTimeline()" id="tlToggleBtn" style="background:rgba(243,156,18,0.08);border-color:rgba(243,156,18,0.15);color:#f39c12;">📅 Schedule</button>
             <button onclick="toggleFullscreen()" class="fullscreen" title="Fullscreen">⛶ Fullscreen</button>
         </div>
     </div>
     <div id="courtGrid" class="court-grid cols-3"></div>
+    <div id="tvTimelineWrap" class="tv-timeline-wrap" style="display:none;">
+        <div class="tv-timeline-header">
+            <span class="panel-title">📅 Today's Schedule</span>
+        </div>
+        <div class="tv-timeline-scroll">
+            <div class="timeline-grid" id="tvTlGrid"></div>
+        </div>
+    </div>
     <div class="bottom-row">
         <div class="queue-panel">
             <div class="panel-title">⏳ Queue</div>
@@ -198,6 +229,106 @@ function isBookingUpcoming(b, now){
 function nextBooking(b, now, bookings){
     // Already handled by isBookingActive/Upcoming per court
     return null;
+}
+
+// ── Timeline helpers ──
+function escapeHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function getTodayISO(){return phtNow().toISOString().split('T')[0];}
+function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
+function minToTime(m){const h=Math.floor(m/60),mn=m%60;return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`;}
+function nowMin(){const n=phtNow();return n.getHours()*60+n.getMinutes();}
+
+function inSessionTV(date,sMin,eMin,courtId,session){
+    if(!session||!session.active) return false;
+    if(courtId!=null&&session.courts&&!session.courts.includes(courtId)) return false;
+    const sd=session.startDate||date,ed=session.endDate||sd;
+    const ss=timeToMin(session.startTime||session.start),se=timeToMin(session.endTime||session.end);
+    if(date<sd||date>ed) return false;
+    if(sd===ed) return sMin<se&&eMin>ss;
+    if(date===sd) return eMin>ss;
+    if(date===ed) return sMin<se;
+    return true;
+}
+
+function getBookingsForCourtTV(cId,date,sMin,eMin,bookings){
+    return bookings.filter(b=>{
+        if(b.courtId!==cId||b.date!==date||b.status==='cancelled') return false;
+        const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+        return sMin<be&&eMin>bs;
+    });
+}
+
+let lastData=null;
+let showTimeline=false;
+
+function toggleTimeline(){
+    showTimeline=!showTimeline;
+    const wrap=document.getElementById('tvTimelineWrap');
+    wrap.style.display=showTimeline?'block':'none';
+    document.getElementById('tlToggleBtn').textContent=showTimeline?'⊞ Live':'📅 Schedule';
+    if(showTimeline&&lastData) renderTVTimeline(lastData);
+}
+
+function renderTVTimeline(data){
+    const grid=document.getElementById('tvTlGrid');
+    if(!grid) return;
+    const date=getTodayISO();
+    const courts=data.courts||[];
+    const bookings=data.bookings||[];
+    const session=data.session;
+    const sH=0,eH=23,total=24;
+    const nMin=nowMin();
+    let html=`<div class="tl-hours">`;
+    for(let h=sH;h<=eH;h++) html+=`<div class="tl-hour">${h%12||12}${h<12?'am':'pm'}</div>`;
+    html+='</div>';
+    const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
+    let gridlines='';
+    for(let h=1;h<=eH;h++) gridlines+=`<div class="tl-gridline" style="left:${(h/total)*100}%;"></div>`;
+    courts.forEach(court=>{
+        let slots=gridlines;
+        const tournamentInfo=(()=>{
+            if(!court._tournamentId) return null;
+            const t=(data.tournaments||[]).find(x=>x.id===court._tournamentId);
+            if(!t||t.status==='completed') return null;
+            return {name:t.name,status:t.status};
+        })();
+        if(tournamentInfo) slots+=`<div class="tl-slot tl-tournament" style="left:0%;width:100%;">🔮 ${tournamentInfo.name}</div>`;
+        if(session&&session.active&&inSessionTV(date,sH*60,(eH+1)*60,court.id,session)){
+            const ss=timeToMin(session.startTime||session.start),se=timeToMin(session.endTime||session.end);
+            const sd=session.startDate||date,ed=session.endDate||sd;
+            const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
+            const sesEnd=sd!==ed&&date===sd?24*60:Math.min(se,(eH+1)*60);
+            const bks=getBookingsForCourtTV(court.id,date,sesStart,sesEnd,bookings).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+            let cur=sesStart;
+            bks.forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">Open Play</div>`;
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+                cur=be;
+            });
+            if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
+        } else {
+            bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+            });
+        }
+        if(court.status==='occupied'&&court.startTime){
+            const el=Math.floor((Date.now()-court.startTime)/60000);
+            const ps=nMin-el;
+            const l=((ps-sH*60)/(total*60))*100;
+            const w=(el/(total*60))*100;
+            if(l>=0) slots+=`<div class="tl-slot tl-playing" style="left:${l}%;width:${Math.max(w,0.5)}%;">Playing</div>`;
+        }
+        const nowLine=`<div class="tl-now" style="left:${((nMin-sH*60)/(total*60))*100}%;"><span class="tl-now-lbl">NOW</span></div>`;
+        html+=`<div class="tl-row"><div class="tl-label" style="color:${court.color||'#fff'};">${court.name}</div><div class="tl-slots">${slots}${nowLine}</div></div>`;
+    });
+    grid.innerHTML=html;
+    const scrollWrap=document.querySelector('.tv-timeline-scroll');
+    if(scrollWrap){
+        const scrollPct=nMin/(24*60);
+        scrollWrap.scrollLeft=scrollWrap.scrollWidth*scrollPct-scrollWrap.clientWidth/2;
+    }
 }
 
 function render(data){
@@ -441,6 +572,8 @@ function render(data){
         if(!tourCourts.length&&!groups.length&&!elim.length) html+='<div class="empty-msg">Setting up...</div>';
         tl.innerHTML=html;
     }
+    lastData=data;
+    if(showTimeline) renderTVTimeline(data);
 }
 
 async function init(){
