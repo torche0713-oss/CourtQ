@@ -171,7 +171,7 @@
                 <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
                 <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
                 <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="startDemo()">🎮 Try Demo</button>
+                <button class="btn btn-outline btn-full" onclick="openDemoLeadForm()">🎮 Try Demo</button>
             </div>
 
             <!-- SIGNUP -->
@@ -183,7 +183,7 @@
                 <div class="form-group"><label>Password *</label><input type="password" id="signupPass" placeholder="At least 6 characters"></div>
                 <button class="btn btn-success btn-full" onclick="signup()">Continue →</button>
                 <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="startDemo()">🎮 Try Demo</button>
+                <button class="btn btn-outline btn-full" onclick="openDemoLeadForm()">🎮 Try Demo</button>
             </div>
         </div>
 
@@ -259,6 +259,28 @@
             <a onclick="showLegal('terms')">Terms</a><span class="dot"> · </span>
             <a onclick="showLegal('disclaimer')">Disclaimer</a><span class="dot"> · </span>
             <a onclick="showLegal('contact')">Contact</a>
+        </div>
+    </div>
+
+    <!-- Demo Lead Modal -->
+    <div class="modal-overlay" id="demoLeadModal" onclick="if(event.target===this)closeDemoLead()">
+        <div class="modal-box" style="max-width:420px;">
+            <button class="modal-close" onclick="closeDemoLead()">✕</button>
+            <div id="demoLeadContent">
+                <div id="demoLeadForm">
+                    <h2>🎮 Try CourtQ Pro</h2>
+                    <p style="margin-bottom:16px;">Enter your name and real email to try the demo.</p>
+                    <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Juan dela Cruz"></div>
+                    <div class="form-group"><label>Email *</label><input type="email" id="demoLeadEmail" placeholder="you@email.com"></div>
+                    <div id="demoLeadError" class="error-msg"></div>
+                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">🎮 Start Demo</button>
+                </div>
+                <div id="demoLeadSuccess" style="display:none;text-align:center;padding:20px 0;">
+                    <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
+                    <h2>Setting up your demo...</h2>
+                    <div class="spinner"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -532,6 +554,233 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'block';
                 showSetupError(e.message);
+            }
+        }
+
+        // ── Demo lead capture ──
+        const DISPOSABLE_DOMAINS = new Set([
+            '10minutemail.com','10minemail.com','1ce.us','1chirp.com','1pad.de','1st-forex.com',
+            '2ether.net','2prong.com','30minutemail.com','33mail.com','3d-painting.com',
+            '4warding.com','4warding.net','4warding.org','5mail.cf','5mail.co','5mail.ga',
+            '5mail.gq','5minutemail.net','6paq.com','7tags.com','9ox.net','a-bc.net',
+            'ajaxapp.net','amilegit.com','amoremail.com','anonymail.me','anonbox.net',
+            'anonymousemail.me','anonymouse.org','antireg.com','antispam24.de','armyspy.com',
+            'asdasd.nl','asdasd.ru','at0mik.org','auti.st','avastc.com','awatum.de',
+            'azazazatashkent.tk','b1of96u.com','badtrahix.biz','baxomale.ht.cx','beefmilk.com',
+            'binkmail.com','bio-muesli.info','blip.ch','bluebottle.com','bofthew.biz',
+            'bonobo.email','boopity.skin','boun.cr','bounce2020.com','boxformail.com',
+            'brefmail.com','brennendesreich.de','brkzr.de','bund.us','bunsenhoneydew.com',
+            'burnthespam.info','buyusedlibrarybooks.org','c2.hu','candymail.de','casualdx.com',
+            'cbair.com','cek.pm','cellurl.com','centermail.com','centermail.net',
+            'chacuo.net','chibakenma.ml','chicmail.me','choicemail1.com','classicalk.com',
+            'clrmail.com','cmail.com','cnmsg.net','cobarekyo1.ml','cool.fr.nf','correo.blogos.net',
+            'cosmorph.com','courriel.fr.nf','courrieltemporaire.com','crapmail.org','crazymailing.com',
+            'cubiclink.com','curryworld.de','cust.in','cutout.club','cybers-romance.com',
+            'dab.ro','dacoolest.com','dandikmail.com','dayrep.com','deadaddress.com',
+            'deadspam.com','de-fake.instafly.cf','delikkt.de','der-kombi.de','devnullmail.com',
+            'dfgh.net','digiprice.digital','discard.email','discard.ga','discordmail.com',
+            'disposable-email.ml','disposable.dnyappa.com','disposable4.me','dispose.it',
+            'dispostable.com','dm.w3internet.co.uk','dndent.com','dodgeit.com','doiea.com',
+            'dolphinnet.net','domforfb1.tk','domforfb2.tk','domforfb3.tk','domforfb4.tk',
+            'domforfb5.tk','domforfb6.tk','domforfb7.tk','domforfb8.tk','domozmail.com',
+            'dot-ml.ml','dotmsg.com','dr69.site','drdrb.net','dspam.com','dstngr.com',
+            'dumb1.com','dump-email.info','dumpmail.de','dumpmail.me','dumpyemail.com',
+            'e4ward.com','easy-trash-mail.com','einrot.com','email60.com','emailage.cf',
+            'emailage.ga','emailage.gq','emailfake.ml','emailfake.nut.cc','emailfreedom.ml',
+            'emailgenerator.de','emailgo.de','emailias.com','emailigo.de','emailinfive.com',
+            'emaillime.com','emailmiser.com','emailnator.com','emailondeck.com','emailproxsy.com',
+            'emails.ga','emails.incisivowebservices.co.uk','emailshelter.com','emailtemp.org',
+            'emailto.de','emailtmp.com','emailwarden.com','emailx.at','emailx.de','emailx.org',
+            'emailya.net','emz.net','enayu.com','ephemeral.email','etere.com','eth2btc.info',
+            'ether123.net','everytg.ml','exbte.com','expirebox.com','explodemail.com',
+            'fake-email.pp.ua','fake-mail.cf','fake-mail.ga','fake-mail.ml','fakedemail.com',
+            'fakeinbox.cf','fakeinbox.com','fakeinbox.ga','fakeinbox.ml','fakemail.fr',
+            'fakemail.io','fakemailgenerator.com','fakemailz.com','fastacura.com','fastkawasaki.com',
+            'fastmazda.com','fastmitsubishi.com','fastnissan.com','fastsubaru.com','fastsuzuki.com',
+            'fasttoyota.com','fastyamaha.com','fatflap.com','fdfdsfds.com','fightallspam.com',
+            'fiifke.de','filzmail.com','fivemail.de','fixmail.tk','fizmail.com','fleckens.de',
+            'flyinggeek.net','forgetmail.com','fr33mail.info','freakmail.de','freeschool.email',
+            'freemail.tm','freemail.hu','freemails.cf','freemails.ga','freemails.ml',
+            'freezzzm.site','friendlymail.co.uk','front14.org','fuckingduh.com','fuwamofu.com',
+            'fxnxs.com','g00g.indield.com','garrymccooey.com','getairmail.com','getmails.eu',
+            'getnada.com','getnowmail.com','getonemail.com','gishpuppy.com','glubex.com',
+            'gmial.com','gmx.us','goemailgo.com','gomail.in','gorillaswithdirtyarmpits.com',
+            'gotmail.com','gotmail.org','grr.la','gsrv.co.uk','guerillamail.biz','guerillamail.com',
+            'guerillamail.de','guerillamail.info','guerillamail.net','guerillamail.org',
+            'guerillamailblock.com','gustr.com','h8s.org','haltospam.com','harakirimail.com',
+            'hartbot.de','hatespam.org','hellodino.ml','herp.in','hidemail.de','hochsitze.com',
+            'hotpop.com','hstermail.com','hulapla.de','ieatspam.eu','ieatspam.info',
+            'ignoremail.com','ihateyoualot.info','ikbenspamvrij.nl','ilovespam.co.uk',
+            'imails.info','imgjar.com','imstations.com','inbax.tk','inbox.si','inboxalias.com',
+            'inboxbear.com','inboxclean.com','inboxclean.org','inboxed.im','inboxkitten.com',
+            'inboxproxy.com','incognitomail.com','incognitomail.net','incognitomail.org',
+            'ind.st','inoutmail.de','inoutmail.eu','inoutmail.info','ip6.li','ipoo.org',
+            'irish2me.com','iwi.net','jafps.com','jajxz.com','jetable.com','jetable.net',
+            'jetable.org','jmail.com','jopho.com','jungkamushukum.com','kademen.com',
+            'kadokawa.cf','kapoorweb.com','killmail.com','killmail.net','kiois.com','klassmaster.com',
+            'klassmaster.net','kldfkd.com','kmail.mooo.com','kms0rc.com','knolpower.nl',
+            'koszmail.pl','kulturbetrieb.info','kurzepost.de','laossm.com','lastmail.co',
+            'lazyinbox.com','legitmail.club','letthemeatspam.com','lhsdv.com','linuxmail.so',
+            'litedrop.com','lkgn.se','loadby.us','loan101.pro','loin.in','lol.ovpn.to',
+            'lolfreak.net','lookugly.com','lopl.co.cc','lortemail.dk','lovemeet.faith',
+            'lpfmgmtltd.com','lr78.com','lroid.com','lukecarriere.com','luv2.us','m4ilweb.info',
+            'mabjbo.com','mail-online.ga','mail-temp.com','mail1a.de','mail21.cc','mail2rss.org',
+            'mail333.com','mail4trash.com','mail666.ru','mail7.io','mailabp.com','mailbiz.biz',
+            'mailbucket.org','mailcat.biz','mailcatch.com','mailde.de','mailde.info',
+            'maildrop.cc','maildu.de','maildx.com','maileater.com','mailexpire.com',
+            'mailfa.tk','mailforspam.com','mailfree.ga','mailfree.gq','mailfs.com','mailguard.me',
+            'mailgutter.com','mailhazard.com','mailhazard.us','mailhex.com','mailhook.com',
+            'mailhub.top','mailimate.com','mailin8r.com','mailincubator.com','mailinator.co.uk',
+            'mailinator.com','mailinator.gq','mailinator.info','mailinator.net','mailinator.org',
+            'mailinator.us','mailinator2.com','mailincloud.com','mailinterest.com','mailismagic.com',
+            'mailjunk.org','mailmate.com','mailme.ga','mailme.gq','mailmetrash.com','mailmoat.com',
+            'mailmoth.com','mailnator.com','mailnesia.com','mailnull.com','mailonaut.com',
+            'mailorc.com','mailorg.org','mailox.fun','mailpick.biz','mailpooch.com','mailproxsy.com',
+            'mailquack.com','mailrocket.biz','mailsac.com','mailscrap.com','mailseal.de','mailshiv.com',
+            'mailsloth.net','mailspam.xyz','mailspam.me','mailspam.net','mailspam.org',
+            'mailexpire.com','mailtemp.net','mailtemporaire.com','mailtester.com','mailto.plus',
+            'mailtothis.com','mailtrey.com','mailtrash.net','mailtv.net','mailtv.tv','mailuniverse.co.uk',
+            'mailv2.com','mailwaste.com','mailwithyou.com','mailzilla.org','makemetheking.com',
+            'manybrain.com','mbt01.com','mbx.cc','mciek.com','mega.zik.dj','meinspamschutz.de',
+            'messagebeamer.de','messwiththebestdielikethe.rest','mhzayt.online','midcoastcustoms.com',
+            'midcoastcustoms.net','millionaireintraining.com','mindless.com','mini-mail.net',
+            'mintemail.com','misterpinball.com','mjukglass.nu','mkpfilm.com','ml8.ca',
+            'mobilevpn.top','moii3z.buzz','moolee.ru','mox.pp.ua','mrresourcepacks.com',
+            'msa.minsmail.com','mt2009.com','mtmdev.com','mx0.wwwnew.eu','my10minutemail.com',
+            'mycleaninbox.net','myde.ml','myemailboxy.com','myfake.cable.nu','myfake.info',
+            'myinteriasthai.com','mykazakhstansite.com','mymailoasis.com','myphantomemail.com',
+            'myspamless.com','mytemp.email','mytempemail.com','mytruemail.net','n1nja.org',
+            'negated.com','neomailbox.com','nepwk.com','nervmich.net','netscapet.net',
+            'neverbox.com','nextpwr.com','nicebush.com','nicewood.com','nincsmail.hu',
+            'nnh.com','nnot.net','no-spam.ws','nobulk.com','noclickemail.com','nokiamail.com',
+            'noopmail.org','noref.in','nospam.ze.tc','nospam4.us','nospamfor.us','nospamthanks.info',
+            'nothingtoseehere.ca','nowhere.org','nowmymail.com','ntlhelp.net','nwldx.com',
+            'o2stk.org','obobbo.com','odaymail.com','ohiotaxfixer.com','oida.icu','oistato.com',
+            'okrent.org','olypmall.ru','omail.pro','omnievents.org','one-time.email','one2mail.info',
+            'oneoffemail.com','oneoffmail.com','onlatedotcom.info','online.xyz','onmail.win',
+            'opayq.com','ordinaryamerican.net','otherinbox.com','outlawspam.com','ovpn.to',
+            'owlpic.com','pa9e.com','pagamenti.tk','pancakemail.com','paplease.com','paris2k.xyz',
+            'pcusers.otherinbox.com','pepbot.com','pfui.ru','phentermine-mortgage-news-viagra.biz',
+            'pig.pp.ua','pincoffee.com','pinkrabbit.skin','pjjkp.com','plexolan.de','pluno.com',
+            'pojok.ml','pokemail.net','polarkingxx.ml','ponp.in','ppetw.com','premyum.com',
+            'prin.be','privacy.net','privy-mail.com','privy-mail.de','privymail.de','proxymail.eu',
+            'prtz.eu','psoxs.com','puppetmail.de','put2.net','putthisinyourspamdatabase.com',
+            'pwrby.com','quickmail.in','qvy.me','qwickmail.com','r0.icyb.net.au','r4nd0m.de',
+            'r8yqnp1.com','rainbowly.ml','rakx.de','randomail.net','rarefind.com','rax.la',
+            'rbb.org','rcpt.at','receiveee.com','receptive.sale','reconmail.com','recyclemail.dk',
+            'reddit.ois.workers.dev','regbypass.com','regspaces.tk','rejo.technology','reliable-mail.com',
+            'remail.cf','remail.ga','rhyta.com','richfinances.pw','rm2lf.com','robertspcrepair.com',
+            'rollindo.agency','ronnierage.net','rotaniliam.com','rover.info','rtrtr.com',
+            's0ny.net','safe-mail.net','safersignup.com','safetymail.info','safetypost.de',
+            'sandelf.de','saynotospams.com','scam-mail.cf','scatmail.com','schachrol.com',
+            'schmeissweg.tk','sd3.in','secmail.pw','secretarea.net','secure-mail.biz',
+            'selfdestructingmail.com','selfdestructingmail.org','sendfree.org','sendhere.ru',
+            'sendspam.org','senseless-entertainment.com','server.ms','services.virus.nl',
+            'shararmail.ml','sharklasers.com','shieldedmail.com','shmeriously.com','shortmail.net',
+            'shotmail.ru','showslow.de','sibmail.com','sinnlos-mail.de','siteposter.net',
+            'skeefmail.com','skrx.tk','slapsfromlastnight.com','slaskpost.se','slave-auctions.net',
+            'slopsbox.com','slushmail.com','smashmail.de','smellfear.com','smellypotato.tk',
+            'smtp33.com','snakware.com','snapwet.com','sneakemail.com','sneakerbunko.ml',
+            'snkmail.com','sofort-mail.de','sogetthis.com','sohu.com','solvemail.info',
+            'spam-be-gone.com','spam.la','spam.su','spam4.me','spamail.de','spamarrest.com',
+            'spamavert.com','spambob.com','spambob.net','spambob.org','spambog.com','spambog.de',
+            'spambog.net','spambog.ru','spambox.info','spambox.irishspringrealty.com','spambox.us',
+            'spamcannon.com','spamcannon.net','spamcero.com','spamcon.org','spamcorptastic.com',
+            'spamcowboy.com','spamcowboy.net','spamcowboy.org','spamday.com','spamex.com',
+            'spamfree24.com','spamfree24.de','spamfree24.eu','spamfree24.info','spamfree24.net',
+            'spamfree24.org','spamgoes.in','spamgourmet.com','spamgourmet.net','spamgourmet.org',
+            'spamherelots.com','spamhereplease.com','spamhole.com','spamify.com','spaminator.de',
+            'spamkill.info','spaml.com','spamlot.net','spammbox.com','spammehere.com',
+            'spammehere.net','spammotel.com','spammy.host','spamobox.com','spamoff.de',
+            'spamsalad.in','spamslicer.com','spamspot.com','spamstack.net','spamthis.co.uk',
+            'spamthisplease.com','spamtrail.com','spamtroll.net','speed.1s.fr','spoofmail.de',
+            'squizzy.ml','ssoia.com','startfu.com','stinkefinger.net','stop-my-spam.com',
+            'streetwisemail.com','suckmyd.com','sunilbajpai.com','super-auswahl.de','supergreatmail.com',
+            'supermailer.jp','superplatyna.com','suportegen.com','surfings.ru','susanoo.jp',
+            'sute.jp','svxr.org','sweetxxx.de','tafmail.com','tagmymedia.com','talkinator.com',
+            'tanukis.org','tapchicuoihoi.com','teewars.org','telefonkostenlos.de','telegmail.com',
+            'teleworm.com','teleworm.us','temp-emails.com','temp-mail.com','temp-mail.de',
+            'temp-mail.org','temp-mail.ru','tempail.com','tempemail.biz','tempemail.co.za',
+            'tempemail.com','tempemail.net','tempinbox.co.uk','tempinbox.com','tempmail.co',
+            'tempmail.de','tempmail.eu','tempmail.info','tempmail.io','tempmail.net',
+            'tempmail.space','tempmail.top','tempmail.us','tempmail2.com','tempmaildemo.com',
+            'tempmailer.com','tempomail.fr','temporarily.de','temporarioemail.com.br',
+            'temporary-email.com','temporary-email.world','temporaryemail.net','temporaryemail.us',
+            'temporaryforwarding.com','temporaryinbox.com','temporarymail.org','thankyou2010.com',
+            'thc.st','thembones.com.au','themostemail.com','thisisnotmyrealemail.com',
+            'thismail.net','thnikka.com','thrma.com','throam.com','throwaway.email','throwaway.io',
+            'throwaway.mailinator.com','throwawayemail.com','tilien.com','timgiarevn.com',
+            'tmpeml.info','tmpjr.me','toddsbighug.com','toiea.com','tokem.co','top101.de',
+            'topranklist.de','tormail.org','trandpet.com','trash-2009.com','trash-dev.at',
+            'trash-me.com','trash2009.com','trash2010.com','trash2011.com','trash247.com',
+            'trashbox.eu','trashcanmail.com','trashdevil.de','trashemail.de','trashemails.de',
+            'trashinbox.com','trashmail.at','trashmail.com','trashmail.de','trashmail.ga',
+            'trashmail.gq','trashmail.io','trashmail.me','trashmail.net','trashmail.org',
+            'trashmail.ws','trashmailer.com','trashmails.com','trashymail.com','trashymail.net',
+            'trbvm.com','trialmail.de','trillianpro.com','tryalert.com','turual.com',
+            'twinmail.de','twoweirdtacos.com','tyldd.com','uggsrock.com','uk.to','umail.net',
+            'undo.it','unlimit.ml','unmail.ru','upliftnow.com','uplipht.com','uploadnolimit.com',
+            'urfunktion.se','uroid.com','us.af','ux.dob.jp','uyhip.com','v10mail.com',
+            'valemail.net','vanbil.tk','vevs.de','vgmails.com','viralplays.com','vjtimail.com',
+            'vnedu.me','voidbay.com','vomoto.com','vpn99.top','vsimcard.com','vssms.com',
+            'vw-cc.com','vxmail.net','w3internet.co.uk','walala.org','wantplay.site',
+            'wasd.10mail.org','webm4il.info','webmail.ericyi.com','weg-werf-email.de','wegwerf-emails.de',
+            'wegwerfmail.de','wegwerfmail.info','wegwerfmail.net','wegwerfmail.org','wegwerfmailadresse.com',
+            'wh4f.org','whatifas.tk','whippedmuffin.com','whyspam.me','williamcastillo.me',
+            'winemaven.info','wlist.ro','wmail.cf','wmail.ga','wmail.gq','wokcy.com',
+            'wolfsmail.tk','work4freedom.com','wronghead.com','wuzup.net','xagloo.com','xemaps.com',
+            'xents.com','xmaily.com','xoxy.net','xwaretech.com','xww.ro','xyzfree.net',
+            'yapped.net','ybers.eu','yep.it','yogamaven.com','yomail.info','yopmail.com',
+            'yopmail.fr','yopmail.gq','yopmail.net','yopmail.org','ypmail.webarnak.fr.eu.org',
+            'ytbmit.com','yuurok.com','zehnminutenmail.de','zetmail.com','zippymail.info',
+            'zoaxe.com','zoemail.com','zoemail.net','zoemail.org','zomg.info','zxcv.com',
+            'zxcvbnm.com','zzz.com'
+        ]);
+        const DEMO_LEAD_COOLDOWN_MS = 5 * 60 * 1000; // 5 min between demo lead saves per email
+
+        function openDemoLeadForm(){
+            hideMsgs();
+            document.getElementById('demoLeadForm').style.display = 'block';
+            document.getElementById('demoLeadSuccess').style.display = 'none';
+            document.getElementById('demoLeadError').style.display = 'none';
+            document.getElementById('demoLeadName').value = '';
+            document.getElementById('demoLeadEmail').value = '';
+            document.getElementById('demoLeadModal').classList.add('active');
+        }
+
+        function closeDemoLead(){
+            document.getElementById('demoLeadModal').classList.remove('active');
+        }
+
+        async function submitDemoLead(){
+            const name = document.getElementById('demoLeadName').value.trim();
+            const email = document.getElementById('demoLeadEmail').value.trim();
+            const errEl = document.getElementById('demoLeadError');
+            errEl.style.display = 'none';
+            if(!name || !email){ errEl.textContent = 'Fill in all fields.'; errEl.style.display = 'block'; return; }
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!re.test(email)){ errEl.textContent = 'Enter a valid email address.'; errEl.style.display = 'block'; return; }
+            const domain = email.split('@')[1].toLowerCase();
+            if(DISPOSABLE_DOMAINS.has(domain)){
+                errEl.textContent = 'Temporary or disposable emails are not allowed. Please use your real email address.';
+                errEl.style.display = 'block';
+                return;
+            }
+            try {
+                const docRef = db.collection('demoLeads').doc();
+                await docRef.set({
+                    name, email, verified: true, source: 'try-demo',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('demoLeadForm').style.display = 'none';
+                document.getElementById('demoLeadSuccess').style.display = 'block';
+                setTimeout(() => {
+                    closeDemoLead();
+                    startDemo();
+                }, 800);
+            } catch(e) {
+                errEl.textContent = 'Something went wrong: ' + e.message;
+                errEl.style.display = 'block';
             }
         }
 

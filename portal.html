@@ -400,6 +400,7 @@ let S = {
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
 };
 let VENUE_ID = null;
+let unsub = null;
 
 // ===================== HELPERS =====================
 function getTodayISO(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000).toISOString().split('T')[0]; }
@@ -707,20 +708,26 @@ function processPortalPayment(){
         const slugDoc = await db.collection('slugs').doc(venueSlug).get();
         if (!slugDoc.exists) { document.getElementById('heroVenueName').textContent = 'Venue not found'; return; }
         VENUE_ID = slugDoc.data().venueId;
-        const venueDoc = await db.collection('venues').doc(VENUE_ID).get();
-        if (!venueDoc.exists) { document.getElementById('heroVenueName').textContent = 'Venue not found'; return; }
-        const data = venueDoc.data();
-        S.venueName = data.name || 'Court';
-        S.logoUrl = data.logoUrl || '';
-        S.courts = data.courts || [];
-        S.bookings = data.bookings || [];
-        S.session = data.session || null;
-        S.nextBId = data.nextBId || 1;
-        S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
-        const logoHtml=S.logoUrl?`<img src="${S.logoUrl}" style="height:28px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">`:'';
-        document.getElementById('heroVenueName').innerHTML = logoHtml + S.venueName;
-        document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${S.logoUrl}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${S.venueName}`:S.venueName;
-        renderCourtPicker();
+        document.title='CourtQ · '+venueSlug;
+        unsub=db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
+            if(!snap.exists) return;
+            const data = snap.data();
+            S.venueName = data.name || 'Court';
+            S.logoUrl = data.logoUrl || '';
+            S.courts = data.courts || [];
+            S.bookings = data.bookings || [];
+            S.session = data.session || null;
+            S.nextBId = data.nextBId || 1;
+            S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
+            const logoHtml=S.logoUrl?`<img src="${S.logoUrl}" style="height:28px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">`:'';
+            document.getElementById('heroVenueName').innerHTML = logoHtml + S.venueName;
+            document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${S.logoUrl}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${S.venueName}`:S.venueName;
+            renderCourtPicker();
+            // Re-render slots if on step 2
+            if(S.portal?.step===2) renderSlots();
+        }, err=>{
+            console.warn('onSnapshot error:', err);
+        });
     } catch(e) {
         console.error(e);
         document.getElementById('heroVenueName').textContent = 'Error loading venue';

@@ -1102,12 +1102,12 @@
     <div class="modal">
         <div class="modal-title">▶ Start Open Play Session</div>
         <div class="form-row">
-            <div class="form-group"><label>Start Date</label><input type="date" id="sesStartDate"></div>
-            <div class="form-group"><label>Start Time</label><input type="time" id="sesStart" value="17:00"></div>
+            <div class="form-group"><label>Start Date</label><input type="date" id="sesStartDate" onchange="updateConflictPreview()"></div>
+            <div class="form-group"><label>Start Time</label><input type="time" id="sesStart" value="17:00" onchange="updateConflictPreview()"></div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>End Date</label><input type="date" id="sesEndDate"></div>
-            <div class="form-group"><label>End Time</label><input type="time" id="sesEnd" value="21:00"></div>
+            <div class="form-group"><label>End Date</label><input type="date" id="sesEndDate" onchange="updateConflictPreview()"></div>
+            <div class="form-group"><label>End Time</label><input type="time" id="sesEnd" value="21:00" onchange="updateConflictPreview()"></div>
         </div>
         <div class="form-row">
             <div class="form-group"><label>Rotation (min)</label>
@@ -1650,16 +1650,24 @@ function openStartSession(){
     // Populate court checkboxes
     const ckContainer=document.getElementById('sesCourtCheckboxes');
     ckContainer.innerHTML=S.courts.map(c=>`
-        <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected')">
+        <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected');updateConflictPreview()">
             <span class="ck">✓</span><span>${c.name}</span>
         </div>
     `).join('');
+    updateConflictPreview();
+    document.getElementById('sessionModal').classList.add('active');
+}
+
+function updateConflictPreview(){
+    const today=getTodayISO();
     const sesStartDate=document.getElementById('sesStartDate').value||today;
     const sesEndDate=document.getElementById('sesEndDate').value||today;
     const sesS=timeToMin(document.getElementById('sesStart').value||'17:00');
     const sesE=timeToMin(document.getElementById('sesEnd').value||'21:00');
+    const selectedCourts=[...document.querySelectorAll('#sesCourtCheckboxes .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
     let conflicts=[];
     S.courts.forEach(c=>{
+        if(!selectedCourts.includes(c.id)) return;
         getBookingsForCourt(c.id,sesStartDate,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
         if(sesStartDate!==sesEndDate) getBookingsForCourt(c.id,sesEndDate,0,sesE).forEach(b=>conflicts.push({court:c.name,b}));
     });
@@ -1671,7 +1679,6 @@ function openStartSession(){
             <div style="margin-top:6px;font-size:0.75rem;">These courts will be auto-excluded during their booked times.</div>
         </div>`
     :`<div style="color:#2ecc71;font-size:0.8rem;padding:6px;">✅ No conflicts found!</div>`;
-    document.getElementById('sessionModal').classList.add('active');
 }
 
 function onOpModeChange(mode){
