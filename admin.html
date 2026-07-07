@@ -526,7 +526,6 @@
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
     <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
     <button class="nav-tab" onclick="showPage('tournaments',this)">🏆 Tournaments</button>
-    <button class="nav-tab" onclick="showPage('leads',this)">📋 Leads</button>
 </nav>
 
 <!-- PENDING APPROVAL SCREEN (shown when venue.status === 'pending') -->
@@ -940,6 +939,32 @@
             </div>
         </div>
         <div class="card">
+            <div class="card-title">
+                <span>📋 Demo Leads</span>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-outline btn-sm" onclick="exportLeadsCSV()">📥 Export CSV</button>
+                    <button class="btn btn-primary btn-sm" onclick="openEmailCampaign()">📧 Email Campaign</button>
+                </div>
+            </div>
+            <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">Collected from "Try Demo" on the login page. Stored independently from venue accounts.</div>
+            <div id="leadsTableWrap" style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                    <thead>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Name</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Email</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Date</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Status</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTableBody"></tbody>
+                </table>
+            </div>
+            <div id="leadsEmpty" class="empty-state" style="display:none;"><div class="ei">📭</div><p>No demo leads yet.</p></div>
+            <div id="leadsLoading" style="text-align:center;padding:20px;"><div class="spinner"></div></div>
+        </div>
+        <div class="card">
             <div class="card-title">📢 Announcements</div>
             <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
                 <input type="text" id="announceTitle" placeholder="Title" style="flex:2;min-width:120px;padding:6px 10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
@@ -949,6 +974,27 @@
             <div id="devAnnouncements">
                 <div class="empty-state"><div class="ei">📢</div><p>No announcements yet.</p></div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- EMAIL CAMPAIGN MODAL -->
+<div class="modal-overlay" id="emailCampaignModal">
+    <div class="modal" style="max-width:560px;">
+        <div class="modal-title">📧 Email Campaign</div>
+        <div class="form-group"><label>To</label>
+            <select id="campaignRecipients" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
+                <option value="verified">Verified leads only</option>
+                <option value="all">All leads</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Subject</label><input type="text" id="campaignSubject" placeholder="e.g. New features on CourtQ Pro"></div>
+        <div class="form-group"><label>Message</label><textarea id="campaignBody" rows="8" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;resize:vertical;" placeholder="Write your email message..."></textarea></div>
+        <div id="campaignError" class="error-msg"></div>
+        <div id="campaignStatus" style="font-size:0.78rem;color:#aaa;margin-bottom:8px;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="sendEmailCampaign()">📤 Send Campaign</button>
+            <button class="btn btn-outline" onclick="closeModal('emailCampaignModal')">Cancel</button>
         </div>
     </div>
 </div>
@@ -971,57 +1017,6 @@
                 <button class="btn btn-outline btn-sm" onclick="backToTournamentList()">← Back</button>
             </div>
             <div id="tournamentDetailContent"></div>
-        </div>
-    </div>
-</div>
-
-<!-- LEADS PAGE -->
-<div class="page" id="page-leads">
-    <div class="card">
-        <div class="card-title">
-            <span>📋 Demo Leads</span>
-            <div style="display:flex;gap:8px;">
-                <button class="btn btn-outline btn-sm" onclick="exportLeadsCSV()">📥 Export CSV</button>
-                <button class="btn btn-primary btn-sm" onclick="openEmailCampaign()">📧 Email Campaign</button>
-            </div>
-        </div>
-        <div style="font-size:0.78rem;color:#aaa;margin-bottom:12px;">Collected from "Try Demo" on the login page. Stored independently from venue accounts.</div>
-        <div id="leadsTableWrap" style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
-                <thead>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
-                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Name</th>
-                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Email</th>
-                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Date</th>
-                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Status</th>
-                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="leadsTableBody"></tbody>
-            </table>
-        </div>
-        <div id="leadsEmpty" class="empty-state" style="display:none;"><div class="ei">📭</div><p>No demo leads yet.</p></div>
-        <div id="leadsLoading" style="text-align:center;padding:20px;"><div class="spinner"></div></div>
-    </div>
-</div>
-
-<!-- EMAIL CAMPAIGN MODAL -->
-<div class="modal-overlay" id="emailCampaignModal">
-    <div class="modal" style="max-width:560px;">
-        <div class="modal-title">📧 Email Campaign</div>
-        <div class="form-group"><label>To</label>
-            <select id="campaignRecipients" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
-                <option value="verified">Verified leads only</option>
-                <option value="all">All leads</option>
-            </select>
-        </div>
-        <div class="form-group"><label>Subject</label><input type="text" id="campaignSubject" placeholder="e.g. New features on CourtQ Pro"></div>
-        <div class="form-group"><label>Message</label><textarea id="campaignBody" rows="8" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;resize:vertical;" placeholder="Write your email message..."></textarea></div>
-        <div id="campaignError" class="error-msg"></div>
-        <div id="campaignStatus" style="font-size:0.78rem;color:#aaa;margin-bottom:8px;"></div>
-        <div class="modal-actions">
-            <button class="btn btn-primary" onclick="sendEmailCampaign()">📤 Send Campaign</button>
-            <button class="btn btn-outline" onclick="closeModal('emailCampaignModal')">Cancel</button>
         </div>
     </div>
 </div>
@@ -1677,8 +1672,7 @@ function showPage(id,el){
         history:renderHistory,
         confirmations:renderConfirmations,
         financials:()=>{if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();},
-        dev:()=>{renderDevDashboard();startDemoMonitor();},
-        leads:renderLeads,
+        dev:()=>{renderDevDashboard();startDemoMonitor();renderLeads();},
     };
     if(actions[id]) actions[id]();
 }
