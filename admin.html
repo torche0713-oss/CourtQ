@@ -1942,7 +1942,8 @@ function addSessionCourt(cId){
 function endSession(){
     if(!S.session) return;
     S.session.active=false; S.session=null;
-    S.courts.forEach(c=>{ if(c.status==='occupied') completeRelease(c,null); if(c.rr) delete c.rr; delete c._rrMatchId; });
+    const sessionCourts=S.session?.courts||[];
+    S.courts.forEach(c=>{ if(c.status==='occupied'&&sessionCourts.includes(c.id)) completeRelease(c,null); if(c.rr) delete c.rr; delete c._rrMatchId; });
     updateJoinFormMode();
     showNotif('⏹ Session ended.','warning');
     announce('Open Play session ended. Thank you!');
