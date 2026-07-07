@@ -2654,10 +2654,20 @@ function confirmScore(){
         S.soloQueue=S.soloQueue.filter(s=>!used.includes(s.id));
         if(flat.length>=4){
             flat.slice(0,4).forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-            const {team1,team2}=balanceTeams(flat.slice(0,4));
-            c.players=flat.slice(0,4);c.startTime=Date.now();c.team1=team1;c.team2=team2;c.gameType='doubles';
+            c.gameType='doubles';
+            // Ensure winners are split onto opposite teams, then balance
+            const others=flat.slice(0,4).filter(p=>!winners.includes(p)).sort((a,b)=>b.skill-a.skill);
+            const wSorted=[...winners].sort((a,b)=>b.skill-a.skill);
+            if(winners.length>=2){
+                c.team1=[wSorted[0],others[others.length-1]];
+                c.team2=[wSorted[1],others[0]];
+            } else {
+                const balanced=balanceTeams(flat.slice(0,4));
+                c.team1=balanced.team1;c.team2=balanced.team2;
+            }
+            c.players=flat.slice(0,4);c.startTime=Date.now();
             const wn=winners.map(p=>p.name).join(' & ');
-            showNotif(`🏆 ${wn} won! Winners stay, new teams formed.`,'success');
+            showNotif(`🏆 ${wn} won! Winners stay & split.`,'success');
             announce(`${wn} won on ${c.name}! Winners stay & split.`);
         } else {
             // Not enough players, free the court
@@ -2665,6 +2675,7 @@ function confirmScore(){
             showNotif(`🏆 ${winners.map(p=>p.name).join(' & ')} won! Court freed (need more players).`,'success');
             announce(`${winners.map(p=>p.name).join(' & ')} won on ${c.name}!`);
         }
+        saveState();
         closeModal('scoreModal');renderAll();setTimeout(()=>tryWinnersAutoAssign(),500);
         return;
     }
