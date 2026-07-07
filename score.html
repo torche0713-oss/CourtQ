@@ -113,7 +113,7 @@ let _lastSession = null;
 
 function renderCourts(courts){
     _lastCourts = courts;
-    const occupied = courts.filter(c => c.status === 'occupied' && !c._tournamentId && !(_lastSession && _lastSession.active));
+    const occupied = courts.filter(c => c.status === 'occupied');
     const list = document.getElementById('courtList');
     if(occupied.length === 0){
         list.innerHTML = '<div class="empty-msg"><div class="big">🏓</div>No active games right now</div>';

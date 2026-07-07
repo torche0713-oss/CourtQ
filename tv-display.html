@@ -452,7 +452,7 @@ function render(data){
                 ${occ?playersHTML:''}
                 ${rrHTML}
                 ${bookingHTML}
-                ${occ&&!isTournament&&!isOpenPlay&&_lastLiveScores[c.id]?`
+                ${occ&&_lastLiveScores[c.id]?`
                     <div style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
                         <span style="font-size:1.6rem;font-weight:800;color:#4ecdc4;">${_lastLiveScores[c.id].scoreA||0}</span>
                         <span style="font-size:0.7rem;color:#555;font-weight:600;letter-spacing:1px;">SCORE</span>
