@@ -1778,7 +1778,7 @@ function getBookingsForCourt(cId,date,sMin,eMin,excludeId=null){
 
 function getBookingNow(cId){
     const now=nowMin(),today=getTodayISO();
-    return S.bookings.find(b=>b.courtId===cId&&b.date===today&&b.status!=='cancelled'&&now>=timeToMin(b.startTime)&&now<timeToMin(b.endTime));
+    return S.bookings.find(b=>b.courtId===cId&&b.date===today&&(b.status==='pending'||b.status==='confirmed')&&now>=timeToMin(b.startTime)&&now<timeToMin(b.endTime));
 }
 
 function getCourtStatus(cId){
@@ -2852,7 +2852,21 @@ function openBookingDetail(bId){
     if(b.status==='confirmed'){
         const ci=document.createElement('button');
         ci.className='btn btn-success';ci.textContent='✅ Check In';
-        ci.onclick=()=>{b.status='checkedin';closeModal('bookingDetailModal');showNotif(`${b.customer} checked in!`,'success');renderBookings();renderAll();};
+        ci.onclick=()=>{
+            b.status='checkedin';
+            const court=S.courts.find(c=>c.id===b.courtId);
+            if(court){
+                const names=(b.players||b.customer).split(',').map(s=>s.trim()).filter(Boolean);
+                court.players=names.map((n,i)=>({name:n,color:COLORS[i%COLORS.length],skill:3}));
+                court.status='occupied';
+                court.startTime=Date.now();
+                court.gameType=b.gameType||'singles';
+                saveState();
+            }
+            closeModal('bookingDetailModal');
+            showNotif(`${b.customer} checked in — court now occupied!`,'success');
+            renderBookings();renderAll();
+        };
         acts.appendChild(ci);
     }
     if(b.status!=='cancelled'&&b.status!=='completed'){
@@ -3977,6 +3991,15 @@ function renderCourtsManage(){
         const hasBk=S.bookings.filter(b=>b.courtId===court.id&&b.status!=='cancelled'&&b.date>=getTodayISO()).length;
         const card=document.createElement('div');
         card.className=`court-manage-card ${isOcc?'occupied':opS==='booked'?'booked':opS==='tournament'?'tournament':court.status==='maintenance'?'maintenance':'available'}`;
+        card.style.cursor=opS==='booked'||isOcc?'pointer':'default';
+        if(opS==='booked'){
+            const now=phtNow();
+            const cur=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            const bk=S.bookings.find(b=>b.courtId===court.id&&b.date===getTodayISO()&&b.status==='confirmed'&&timeToMin(b.startTime)<=timeToMin(cur)&&timeToMin(b.endTime)>=timeToMin(cur));
+            if(bk) card.onclick=()=>openBookingDetail(bk.id);
+        }else if(isOcc){
+            card.onclick=()=>freeCourt(court.id);
+        }
         card.innerHTML=`
             <div class="court-color-bar" style="background:${court.color};"></div>
             <div class="court-manage-header">
