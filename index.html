@@ -822,7 +822,7 @@
                         activeDemos++;
                     }
                 });
-                await Promise.all(deletes);
+                try { await Promise.all(deletes); } catch(_) { /* cleanup best-effort */ }
                 if (activeDemos >= 5) {
                     document.getElementById('authCard').style.display = 'block';
                     document.getElementById('loadingScreen').style.display = 'none';
