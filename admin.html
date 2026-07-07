@@ -526,6 +526,7 @@
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
     <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
     <button class="nav-tab" onclick="showPage('tournaments',this)">🏆 Tournaments</button>
+    <button class="nav-tab" onclick="showPage('leads',this)">📋 Leads</button>
 </nav>
 
 <!-- PENDING APPROVAL SCREEN (shown when venue.status === 'pending') -->
@@ -974,6 +975,57 @@
     </div>
 </div>
 
+<!-- LEADS PAGE -->
+<div class="page" id="page-leads">
+    <div class="card">
+        <div class="card-title">
+            <span>📋 Demo Leads</span>
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline btn-sm" onclick="exportLeadsCSV()">📥 Export CSV</button>
+                <button class="btn btn-primary btn-sm" onclick="openEmailCampaign()">📧 Email Campaign</button>
+            </div>
+        </div>
+        <div style="font-size:0.78rem;color:#aaa;margin-bottom:12px;">Collected from "Try Demo" on the login page. Stored independently from venue accounts.</div>
+        <div id="leadsTableWrap" style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Name</th>
+                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Email</th>
+                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Date</th>
+                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Status</th>
+                        <th style="text-align:left;padding:8px 10px;color:#aaa;font-weight:600;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsTableBody"></tbody>
+            </table>
+        </div>
+        <div id="leadsEmpty" class="empty-state" style="display:none;"><div class="ei">📭</div><p>No demo leads yet.</p></div>
+        <div id="leadsLoading" style="text-align:center;padding:20px;"><div class="spinner"></div></div>
+    </div>
+</div>
+
+<!-- EMAIL CAMPAIGN MODAL -->
+<div class="modal-overlay" id="emailCampaignModal">
+    <div class="modal" style="max-width:560px;">
+        <div class="modal-title">📧 Email Campaign</div>
+        <div class="form-group"><label>To</label>
+            <select id="campaignRecipients" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
+                <option value="verified">Verified leads only</option>
+                <option value="all">All leads</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Subject</label><input type="text" id="campaignSubject" placeholder="e.g. New features on CourtQ Pro"></div>
+        <div class="form-group"><label>Message</label><textarea id="campaignBody" rows="8" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;resize:vertical;" placeholder="Write your email message..."></textarea></div>
+        <div id="campaignError" class="error-msg"></div>
+        <div id="campaignStatus" style="font-size:0.78rem;color:#aaa;margin-bottom:8px;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="sendEmailCampaign()">📤 Send Campaign</button>
+            <button class="btn btn-outline" onclick="closeModal('emailCampaignModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <!-- CREATE TOURNAMENT MODAL -->
 <div class="modal-overlay" id="createTournamentModal">
     <div class="modal" style="max-width:500px;">
@@ -1418,6 +1470,7 @@ function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).pad
 function nowMin(){ const n=phtNow(); return n.getHours()*60+n.getMinutes(); }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function inSession(date, sMin, eMin, courtId){
     if(!S.session||!S.session.active) return false;
     if(courtId!=null && S.session.courts && !S.session.courts.includes(courtId)) return false;
@@ -1462,6 +1515,120 @@ async function loadState(){
         }
     } catch(e){
         console.warn('Firestore load failed, using defaults:', e);
+    }
+}
+
+// ===================== LEADS =====================
+function renderLeads(){
+    const tbody=document.getElementById('leadsTableBody');
+    const empty=document.getElementById('leadsEmpty');
+    const loading=document.getElementById('leadsLoading');
+    tbody.innerHTML='';
+    loading.style.display='block';
+    empty.style.display='none';
+    db.collection('demoLeads').orderBy('createdAt','desc').get().then(snap=>{
+        loading.style.display='none';
+        if(snap.empty){ empty.style.display='block'; return; }
+        let html='';
+        snap.forEach(doc=>{
+            const d=doc.data();
+            const date=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString():'—';
+            const status=d.verified?'<span style="color:#2ecc71;">✓ Verified</span>':'<span style="color:#f39c12;">⏳ Pending</span>';
+            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:8px 10px;">${escapeHtml(d.name||'—')}</td>
+                <td style="padding:8px 10px;">${escapeHtml(d.email||'—')}</td>
+                <td style="padding:8px 10px;">${date}</td>
+                <td style="padding:8px 10px;">${status}</td>
+                <td style="padding:8px 10px;"><button class="btn btn-outline btn-sm" onclick="deleteLead('${doc.id}')" style="font-size:0.7rem;padding:3px 8px;">🗑️</button></td>
+            </tr>`;
+        });
+        tbody.innerHTML=html;
+    }).catch(e=>{
+        loading.style.display='none';
+        tbody.innerHTML=`<tr><td colspan="5" style="padding:20px;text-align:center;color:#e74c3c;">Error loading leads: ${escapeHtml(e.message)}</td></tr>`;
+    });
+}
+
+function deleteLead(id){
+    if(!confirm('Delete this lead?')) return;
+    db.collection('demoLeads').doc(id).delete().then(()=>{
+        showNotif('Lead deleted','success');
+        renderLeads();
+    }).catch(e=>showNotif('Delete failed: '+e.message,'error'));
+}
+
+function exportLeadsCSV(){
+    db.collection('demoLeads').orderBy('createdAt','desc').get().then(snap=>{
+        let csv='Name,Email,Date,Verified\n';
+        snap.forEach(doc=>{
+            const d=doc.data();
+            const date=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString():'';
+            const v=d.verified?'Yes':'No';
+            const n=(d.name||'').replace(/"/g,'""');
+            const e=(d.email||'').replace(/"/g,'""');
+            csv+=`"${n}","${e}","${date}","${v}"\n`;
+        });
+        const blob=new Blob([csv],{type:'text/csv'});
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='demo-leads-'+new Date().toISOString().split('T')[0]+'.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showNotif('CSV exported','success');
+    }).catch(e=>showNotif('Export failed: '+e.message,'error'));
+}
+
+function openEmailCampaign(){
+    document.getElementById('campaignSubject').value='';
+    document.getElementById('campaignBody').value='';
+    document.getElementById('campaignError').style.display='none';
+    document.getElementById('campaignStatus').textContent='';
+    document.getElementById('emailCampaignModal').classList.add('active');
+}
+
+async function sendEmailCampaign(){
+    const subject=document.getElementById('campaignSubject').value.trim();
+    const body=document.getElementById('campaignBody').value.trim();
+    const mode=document.getElementById('campaignRecipients').value;
+    const errEl=document.getElementById('campaignError');
+    const statusEl=document.getElementById('campaignStatus');
+    errEl.style.display='none';
+    if(!subject||!body){ errEl.textContent='Fill in subject and message.'; errEl.style.display='block'; return; }
+    const btn=document.querySelector('#emailCampaignModal .btn-primary');
+    btn.disabled=true; btn.textContent='⏳ Sending...';
+    statusEl.textContent='Fetching leads...';
+    try {
+        const snap=await db.collection('demoLeads').get();
+        let leads=[];
+        snap.forEach(doc=>{
+            const d=doc.data();
+            if(mode==='verified'&&!d.verified) return;
+            leads.push(d);
+        });
+        if(leads.length===0){ errEl.textContent='No leads match the selected filter.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='📤 Send Campaign'; return; }
+        // Load EmailJS config
+        const cfg=await db.collection('config').doc('emailjs').get();
+        if(!cfg.exists){ errEl.textContent='EmailJS not configured. Set it up in Dev Dashboard first.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='📤 Send Campaign'; return; }
+        const ej=cfg.data();
+        emailjs.init(ej.publicKey);
+        let sent=0,failed=0;
+        for(let i=0;i<leads.length;i++){
+            try {
+                await emailjs.send(ej.serviceId, ej.templateAuto, {
+                    to_email: leads[i].email, to_name: leads[i].name||'there',
+                    subject, body
+                });
+                sent++;
+            } catch(e){ failed++; console.warn('Failed to send to',leads[i].email,e); }
+            statusEl.textContent=`Sent ${sent}/${leads.length}${failed?` (${failed} failed)`:''}...`;
+        }
+        statusEl.textContent=sent>0?`✅ Campaign sent to ${sent} recipient(s).${failed?` ${failed} failed.`:''}`:'❌ All sends failed. Check EmailJS config.';
+        btn.disabled=false; btn.textContent='📤 Send Campaign';
+        showNotif(`Campaign sent to ${sent} leads`,'success');
+    } catch(e){
+        errEl.textContent='Campaign failed: '+e.message;
+        errEl.style.display='block';
+        btn.disabled=false; btn.textContent='📤 Send Campaign';
     }
 }
 
@@ -1511,6 +1678,7 @@ function showPage(id,el){
         confirmations:renderConfirmations,
         financials:()=>{if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();},
         dev:()=>{renderDevDashboard();startDemoMonitor();},
+        leads:renderLeads,
     };
     if(actions[id]) actions[id]();
 }
