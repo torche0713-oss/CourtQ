@@ -1467,6 +1467,14 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function clearLiveScore(courtId){ if(!VENUE_ID) return; db.collection('liveScores').doc(VENUE_ID+'_'+courtId).delete().catch(()=>{}); }
+function startDemoHeartbeat(){
+    const sessionId=db.collection('demo_sessions').doc().id;
+    const touch=()=>{db.collection('demo_sessions').doc(sessionId).set({lastSeen:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp(),userAgent:(navigator.userAgent||'').substring(0,100),startedDemo:true,demoVenueId:VENUE_ID||'',demoVenueName:S.venueName||''},{merge:true}).catch(()=>{});};
+    touch();
+    db.collection('demo_stats').doc('stats').set({visitorCount:firebase.firestore.FieldValue.increment(1)},{merge:true}).catch(()=>{});
+    setInterval(touch,30000);
+    window.addEventListener('beforeunload',()=>{db.collection('demo_sessions').doc(sessionId).delete().catch(()=>{});});
+}
 function inSession(date, sMin, eMin, courtId){
     if(!S.session||!S.session.active) return false;
     if(courtId!=null && S.session.courts && !S.session.courts.includes(courtId)) return false;
@@ -3406,6 +3414,7 @@ async function renderDevDashboard(){
                     }
                 } catch(e){ ownerMap[venueId]={ email:'', name:vData.ownerName||'', mobile:vData.mobile||'' }; }
             }
+            if(vData.ownerId==='demo') continue; // skip demo venues
             if(vData.status==='pending'){
                 pending.push({slug:slugDoc.id,venueId,data:vData,owner:ownerMap[venueId]});
                 continue;
@@ -4872,6 +4881,7 @@ function deleteTournament(id){
             }
         }
 
+        if(VENUE_OWNER_ID==='demo') startDemoHeartbeat();
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
         setInterval(()=>{renderOpCourts();renderOpStats();renderSession();},30000);
