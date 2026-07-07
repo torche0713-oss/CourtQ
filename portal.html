@@ -394,6 +394,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 // ===================== STATE =====================
 let S = {
     venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
@@ -441,7 +443,7 @@ function getBookingsForCourt(cId,date,sMin,eMin){
 // ===================== PORTAL =====================
 function openPortal(){
     S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
-    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${S.logoUrl}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${S.venueName}`:S.venueName;
+    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
     document.getElementById('pDate').value=getTodayISO();
     goPortalStep(1);
     renderCourtPicker();
@@ -492,12 +494,12 @@ function renderCourtPicker(){
         const card=document.createElement('div');
         card.className=`court-picker-card ${!avail?'unavailable':''} ${S.portal.courtId===court.id?'selected':''}`;
         card.innerHTML=`<div style="font-size:2rem;margin-bottom:8px;">🏟️</div>
-            <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${court.name}</div>
+            <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${escapeHtml(court.name)}</div>
             ${court._tournamentId?`<div style="font-size:0.65rem;color:#9b59b6;margin-bottom:4px;">🔮 Tournament</div>`:''}
-            <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;">📍 ${court.location}</div>
+            <div style="font-size:0.72rem;color:#aaa;margin-bottom:6px;">📍 ${escapeHtml(court.location)}</div>
             <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">
-                <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${court.surface}</span>
-                <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${court.env}</span>
+                <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${escapeHtml(court.surface)}</span>
+                <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${escapeHtml(court.env)}</span>
             </div>
             <div style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">₱${court.rate}<span style="font-size:0.7rem;color:#aaa;font-weight:400;">/hr</span></div>`;
         if(avail) card.onclick=()=>{S.portal.courtId=court.id;document.querySelectorAll('.court-picker-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');};
@@ -531,8 +533,8 @@ function renderBookingSummary(){
     S.portal.total=total;
     document.getElementById('bookingSummaryBox').innerHTML=`<div style="font-weight:700;margin-bottom:8px;color:#4ecdc4;">📋 Booking Summary</div>
         <div style="display:grid;gap:4px;font-size:0.82rem;">
-            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Court:</span><strong>${court.name}</strong></div>
-            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Date:</span><strong>${S.portal.date}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Court:</span><strong>${escapeHtml(court.name)}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Date:</span><strong>${escapeHtml(S.portal.date)}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Time:</span><strong>${minToTime(S.portal.slot)} – ${minToTime(S.portal.slot+dur)}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Duration:</span><strong>${dur}min</strong></div>
             <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#4ecdc4;font-size:1rem;">Total:</span><strong style="color:#4ecdc4;font-size:1rem;">₱${total}</strong></div>
@@ -549,8 +551,8 @@ function selPortalPay(btn,method){
         area.innerHTML=`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
             <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${method==='GCash'?'📱 Send to GCash':'💜 Send to Maya'}</div>
             <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
-                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${info.number||'Not set'}</strong></div>
-                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${info.name||'Not set'}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Amount:</span><strong style="color:#4ecdc4;">₱${S.portal.total||0}</strong></div>
             </div>
             <div class="form-group"><label>Reference Number *</label><input type="text" id="portalRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
@@ -601,7 +603,7 @@ function processPortalPayment(){
                 }
             });
         }
-        const payInfo='₱'+total+(refNum?' (Ref: '+refNum+')':'');
+        const payInfo='₱'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
         conf.innerHTML=`<div class="payment-success">
             <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
             <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">Payment Submitted!</div>
@@ -612,14 +614,14 @@ function processPortalPayment(){
             </div>
             <div class="receipt-box" style="text-align:left;">
                 <div style="text-align:center;margin-bottom:10px;">
-                    <div style="font-weight:700;color:#4ecdc4;">${S.logoUrl?`<img src="${S.logoUrl}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">`:''}${S.venueName}</div>
+                    <div style="font-weight:700;color:#4ecdc4;">${S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">`:''}${escapeHtml(S.venueName)}</div>
                     <div style="font-size:0.68rem;color:#aaa;">ID: ${bId}</div>
                 </div>
-                <div class="receipt-line"><span>Name</span><span>${b.customer}</span></div>
-                <div class="receipt-line"><span>Court</span><span>${court.name}</span></div>
-                <div class="receipt-line"><span>Date</span><span>${b.date}</span></div>
+                <div class="receipt-line"><span>Name</span><span>${escapeHtml(b.customer)}</span></div>
+                <div class="receipt-line"><span>Court</span><span>${escapeHtml(court.name)}</span></div>
+                <div class="receipt-line"><span>Date</span><span>${escapeHtml(b.date)}</span></div>
                 <div class="receipt-line"><span>Time</span><span>${b.startTime} – ${b.endTime}</span></div>
-                <div class="receipt-line"><span>Reference</span><span>${refNum||'N/A'}</span></div>
+                <div class="receipt-line"><span>Reference</span><span>${escapeHtml(refNum)||'N/A'}</span></div>
                 <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
             </div>
         </div>`;
@@ -719,9 +721,9 @@ function processPortalPayment(){
             S.session = data.session || null;
             S.nextBId = data.nextBId || 1;
             S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
-            const logoHtml=S.logoUrl?`<img src="${S.logoUrl}" style="height:28px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">`:'';
-            document.getElementById('heroVenueName').innerHTML = logoHtml + S.venueName;
-            document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${S.logoUrl}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${S.venueName}`:S.venueName;
+            const logoHtml=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:28px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">`:'';
+            document.getElementById('heroVenueName').innerHTML = logoHtml + escapeHtml(S.venueName);
+            document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
             renderCourtPicker();
             // Re-render slots if on step 2
             if(S.portal?.step===2) renderSlots();

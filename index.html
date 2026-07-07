@@ -315,6 +315,8 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
         // ── Demo session heartbeat ──
         let _demoSessionId = null;
         let _heartbeatInterval = null;
@@ -549,14 +551,14 @@
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
                         <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#4ecdc4;">${ackNum}</div>
-                        <div style="color:#888;">Venue:</div><div style="font-weight:600;">${p.venue}</div>
-                        <div style="color:#888;">Owner:</div><div style="font-weight:600;">${p.name}</div>
-                        <div style="color:#888;">Email:</div><div style="font-weight:600;">${p.email}</div>
-                        <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${p.mobile}</div>
+                        <div style="color:#888;">Venue:</div><div style="font-weight:600;">${escapeHtml(p.venue)}</div>
+                        <div style="color:#888;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
+                        <div style="color:#888;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
+                        <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
                         <div style="color:#888;">Courts:</div><div style="font-weight:600;">${c}</div>
                         <div style="color:#888;">Plan:</div><div style="font-weight:600;">${plan.name}</div>
                         <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">₱${monthly.toLocaleString()}</div>
-                        <div style="color:#888;">Payment Ref:</div><div style="font-weight:600;">${ref}</div>
+                        <div style="color:#888;">Payment Ref:</div><div style="font-weight:600;">${escapeHtml(ref)}</div>
                         <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
                     </div>`;
             } catch (e) {

@@ -60,6 +60,7 @@ const firebaseConfig = {
   messagingSenderId: "4841304416",
   appId: "1:4841304416:web:7a26d85566af1d47d4ee05"
 };
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let VENUE_ID = null;
@@ -128,12 +129,12 @@ function renderCourts(courts){
         const aNames = teamA.map(p => p.name).join(' & ');
         const bNames = teamB.map(p => p.name).join(' & ');
         return `
-            <div class="court-card" data-court-id="${court.id}">
+            <div class="court-card" data-court-id="${escapeHtml(court.id)}">
                 <div class="court-header">
-                    <span class="court-name" style="color:${court.color||'#fff'}">${court.name}</span>
+                    <span class="court-name" style="color:${escapeHtml(court.color||'#fff')}">${escapeHtml(court.name)}</span>
                     <span><span class="live-dot"></span></span>
                 </div>
-                <div class="court-players">${aNames} vs ${bNames}</div>
+                <div class="court-players">${escapeHtml(aNames)} vs ${escapeHtml(bNames)}</div>
                 <div class="score-row">
                     <div class="team a">
                         <div class="team-label a">● ${isSingles?'Player A':'Team A'}</div>
@@ -146,12 +147,12 @@ function renderCourts(courts){
                     </div>
                 </div>
                 <div class="score-btns">
-                    <button class="score-btn a-minus" onclick="adjScore('${court.id}',-1,'a')">−</button>
-                    <button class="score-btn a-plus"  onclick="adjScore('${court.id}',+1,'a')">+</button>
-                    <button class="score-btn b-minus" onclick="adjScore('${court.id}',-1,'b')">−</button>
-                    <button class="score-btn b-plus"  onclick="adjScore('${court.id}',+1,'b')">+</button>
+                    <button class="score-btn a-minus" onclick="adjScore('${escapeHtml(court.id)}',-1,'a')">−</button>
+                    <button class="score-btn a-plus"  onclick="adjScore('${escapeHtml(court.id)}',+1,'a')">+</button>
+                    <button class="score-btn b-minus" onclick="adjScore('${escapeHtml(court.id)}',-1,'b')">−</button>
+                    <button class="score-btn b-plus"  onclick="adjScore('${escapeHtml(court.id)}',+1,'b')">+</button>
                 </div>
-                <button class="reset-btn" onclick="resetScore('${court.id}')">↺ Reset to 0-0</button>
+                <button class="reset-btn" onclick="resetScore('${escapeHtml(court.id)}')">↺ Reset to 0-0</button>
             </div>`;
     }).join('');
     // Sync displayed scores with latest _liveScores data
