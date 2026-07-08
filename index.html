@@ -793,7 +793,7 @@
                 document.getElementById('demoLeadSuccess').style.display = 'block';
                 setTimeout(() => {
                     closeDemoLead();
-                    startDemo();
+                    startDemo(docRef.id);
                 }, 800);
             } catch(e) {
                 errEl.textContent = 'Something went wrong: ' + e.message;
@@ -801,8 +801,18 @@
             }
         }
 
-        async function startDemo() {
+        async function startDemo(leadId) {
             hideMsgs();
+            if(!leadId){
+                showError('Invalid demo request.');
+                return;
+            }
+            // Verify the lead exists and isn't already used
+            const leadDoc = await db.collection('demoLeads').doc(leadId).get();
+            if(!leadDoc.exists || leadDoc.data().used){
+                showError('Invalid or expired demo request.');
+                return;
+            }
             document.getElementById('demoBadge').style.display = 'block';
             showLoading('Creating demo venue...');
             try {
@@ -831,7 +841,7 @@
                     showError('Too many active demos right now. Please try again later.');
                     return;
                 }
-                const slug = 'demo-' + Date.now().toString(36);
+                const slug = 'demo-' + crypto.randomUUID();
                 const venueId = db.collection('venues').doc().id;
                 const defaultCourts = [
                     {id:1,name:'Court 1',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#4ecdc4',rate:300,status:'available',players:[],startTime:null,gameType:null,desc:''},
@@ -846,6 +856,8 @@
                     paymentInfo:{gcash:{number:'09998830291',name:'Hector Lopez'},maya:{number:'09998830291',name:'Hector Lopez'}}
                 });
                 await db.collection('slugs').doc(slug).set({ venueId });
+                // Mark lead as used
+                await db.collection('demoLeads').doc(leadId).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 // Tag this session as having started a demo
                 if (_demoSessionId) {
                   db.collection('demo_sessions').doc(_demoSessionId).update({
