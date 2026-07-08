@@ -1817,7 +1817,7 @@ function isBookingExpired(cId){
     const now=phtNow();
     const curMin=now.getHours()*60+now.getMinutes();
     const today=getTodayISO();
-    return S.bookings.some(b=>b.courtId===cId&&b.date===today&&b.status==='checkedin'&&timeToMin(b.endTime)<=curMin);
+    return S.bookings.some(b=>b.courtId===cId&&b.status==='checkedin'&&(b.date<today||(b.date===today&&timeToMin(b.endTime)<=curMin)));
 }
 
 function autoFreeExpiredBookings(){
@@ -1825,7 +1825,7 @@ function autoFreeExpiredBookings(){
     const now=phtNow();
     const curMin=now.getHours()*60+now.getMinutes();
     S.bookings.forEach(b=>{
-        if(b.date===today&&b.status==='checkedin'&&timeToMin(b.endTime)<=curMin){
+        if(b.status==='checkedin'&&(b.date<today||(b.date===today&&timeToMin(b.endTime)<=curMin))){
             b.status='completed';
             const c=S.courts.find(x=>x.id===b.courtId);
             if(c&&c.status==='occupied'){
