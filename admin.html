@@ -2543,7 +2543,7 @@ function doAssign(court,group){
 function freeCourt(cId){
     const c=S.courts.find(x=>x.id===cId);
     if(!c||c.status!=='occupied'){showNotif('Court not occupied!','error');return;}
-    const pl=c.players&&c.players.length?c.players:[{name:'Player 1',color:'#4ecdc4',skill:3},{name:'Player 2',color:'#e74c3c',skill:3}];
+    const pl=c.players&&c.players.filter(Boolean).length?c.players.filter(Boolean):[{name:'Player 1',color:'#4ecdc4',skill:3},{name:'Player 2',color:'#e74c3c',skill:3}];
     c.players=pl;
     const gt=c.gameType||(pl.length>2?'doubles':'singles');
     const tA=c.team1&&c.team1.filter(Boolean).length?c.team1.filter(Boolean):(gt==='singles'?[pl[0]]:[pl[0],pl[1]]);
@@ -2556,8 +2556,8 @@ function freeCourt(cId){
 function renderScoreModal(){
     const sd=S.currentScore;
     const court=S.courts.find(c=>c.id===sd.courtId);
-    const tAN=sd.teamA.players.map(p=>escapeHtml(p.name)).join(' & ');
-    const tBN=(sd.teamB.players||[]).map(p=>escapeHtml(p.name)).join(' & ');
+    const tAN=(sd.teamA.players||[]).filter(Boolean).map(p=>escapeHtml(p.name)).join(' & ');
+    const tBN=(sd.teamB.players||[]).filter(Boolean).map(p=>escapeHtml(p.name)).join(' & ');
     document.getElementById('scoreBody').innerHTML=`
         <p style="text-align:center;color:#aaa;font-size:0.82rem;margin-bottom:12px;">🏟️ <strong style="color:#fff">${court?escapeHtml(court.name):''}</strong> · ${escapeHtml(sd.gameType)}</p>
         <div class="score-vs">
@@ -2598,7 +2598,8 @@ function confirmScore(){
         const tp=S.tournamentPending;
         const sd=S.currentScore;
         if(sd.isTie||!sd.winner||sd.winner==='tie'){showNotif('Select a winner first.','error');return;}
-        const winnerName=sd.winner==='A'?sd.teamA.players[0].name:sd.teamB.players[0].name;
+        const wa=(sd.teamA.players||[]).filter(Boolean),wb=(sd.teamB.players||[]).filter(Boolean);
+        const winnerName=sd.winner==='A'?(wa[0]?wa[0].name:'Player A'):(wb[0]?wb[0].name:'Player B');
         tp.match.completed=true;
         tp.match.winner=winnerName;
         tp.match.s1=sd.teamA.score;
