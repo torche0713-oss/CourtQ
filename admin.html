@@ -2252,7 +2252,7 @@ function tryRoundRobinAutoAssign(){
     const busyPlayers=new Set();
     S.courts.forEach(c=>{
         if(c._rrMatchId&&c.status==='occupied'&&c.players){
-            c.players.forEach(p=>busyPlayers.add(p.name));
+            (c.players||[]).filter(Boolean).forEach(p=>busyPlayers.add(p.name));
         }
     });
     const toAssign=Math.min(avail.length, schedule.matches.length);
@@ -2534,7 +2534,7 @@ function promptAssignGroup(gId){
 function doAssign(court,group){
     court.status='occupied';court.players=group.players;court.startTime=Date.now();court.gameType=group.gameType;
     if(group.team1&&group.team2){court.team1=group.team1;court.team2=group.team2;}else{court.team1=null;court.team2=null;}
-    group.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].games++;S.leaderboard[p.name].points+=10;});
+    (group.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].games++;S.leaderboard[p.name].points+=10;});
     const i=S.queue.findIndex(g=>g.id===group.id);
     if(i!==-1) S.queue.splice(i,1);
 }
@@ -2647,13 +2647,14 @@ function confirmScore(){
         const lt=sd.winner==='A'?sd.teamB:sd.teamA;
         // Record game in history
         const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
-        const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
-        (wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
-        (lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});
+        const cp=(c.players||[]).filter(Boolean);
+        const entry={court:c.name,players:[...cp],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
+        (wt.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
+        (lt.players||[]).filter(Boolean).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});
         S.history.unshift(entry);if(S.history.length>100)S.history.pop();
         // Winners stay, losers go to queue
-        const winners=wt.players||[];
-        const losers=lt.players||[];
+        const winners=(wt.players||[]).filter(Boolean);
+        const losers=(lt.players||[]).filter(Boolean);
         losers.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now()});});
         // Pull from solo queue to fill up to 4
         const needed=4-winners.length;
@@ -2707,9 +2708,9 @@ function confirmScore(){
             const tB=schedule.teams[match.teamBIndex];
             tA.pointsFor+=sd.teamA.score; tA.pointsAgainst+=sd.teamB.score;
             tB.pointsFor+=sd.teamB.score; tB.pointsAgainst+=sd.teamA.score;
-            if(sd.isTie){tA.draws++;tB.draws++;[...(sd.teamA.players||[]),...(sd.teamB.players||[])].forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=25;});}
-            else if(sd.winner==='A'){tA.wins++;tB.losses++;const wt=sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});const lt=sd.teamB;(lt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=15;});}
-            else{tB.wins++;tA.losses++;const wt=sd.teamB;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});const lt=sd.teamA;(lt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=15;});}
+            if(sd.isTie){tA.draws++;tB.draws++;[...(sd.teamA.players||[]).filter(Boolean),...(sd.teamB.players||[]).filter(Boolean)].forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=25;});}
+            else if(sd.winner==='A'){tA.wins++;tB.losses++;const wt=sd.teamA;(wt.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});const lt=sd.teamB;(lt.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=15;});}
+            else{tB.wins++;tA.losses++;const wt=sd.teamB;(wt.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});const lt=sd.teamA;(lt.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=15;});}
             c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;clearLiveScore(c.id);
             const allDone=schedule.matches.every(m=>m.completed);
             if(allDone){
@@ -2731,14 +2732,15 @@ function confirmScore(){
     }
     // Default 4 on/4 off
     if(S.session?.looping){
-        const gt=c.gameType||(c.players.length>2?'doubles':'singles');
-        const loopGroup={id:++S.nextId,groupName:c.players.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(c.players.reduce((a,p)=>a+p.skill,0)/c.players.length),players:[...c.players],team1:null,team2:null,joinedAt:Date.now()};
+        const pl2=(c.players||[]).filter(Boolean);
+        const gt=c.gameType||(pl2.length>2?'doubles':'singles');
+        const loopGroup={id:++S.nextId,groupName:pl2.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(pl2.reduce((a,p)=>a+p.skill,0)/pl2.length),players:[...pl2],team1:null,team2:null,joinedAt:Date.now()};
         S.queue.push(loopGroup);
         showNotif('🔄 Looping — all players back to queue!','info');
     }
     completeRelease(c,sd);
     if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
-    else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=wt.players.map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
+    else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=(wt.players||[]).filter(Boolean).map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
     closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
 }
 
@@ -2760,9 +2762,10 @@ function skipScore(){
             setTimeout(()=>tryRoundRobinAutoAssign(),500);
             return;
         }
-        if(S.session?.looping&&S.session?.mode==='fourOnFour'&&c.players.length>0){
-            const gt=c.gameType||(c.players.length>2?'doubles':'singles');
-            const loopGroup={id:++S.nextId,groupName:c.players.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(c.players.reduce((a,p)=>a+p.skill,0)/c.players.length),players:[...c.players],team1:null,team2:null,joinedAt:Date.now()};
+        const pl3=(c.players||[]).filter(Boolean);
+        if(S.session?.looping&&S.session?.mode==='fourOnFour'&&pl3.length>0){
+            const gt=c.gameType||(pl3.length>2?'doubles':'singles');
+            const loopGroup={id:++S.nextId,groupName:pl3.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(pl3.reduce((a,p)=>a+p.skill,0)/pl3.length),players:[...pl3],team1:null,team2:null,joinedAt:Date.now()};
             S.queue.push(loopGroup);
         }
         completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);
@@ -2779,8 +2782,8 @@ function completeRelease(court,sd){
         entry.teamA=sd.teamA.players;entry.teamB=sd.teamB.players||[];
         entry.scoreA=sd.teamA.score;entry.scoreB=sd.teamB.score;
         entry.winner=sd.winner;entry.isTie=sd.isTie;
-        if(sd.isTie){[...sd.teamA.players,...(sd.teamB.players||[])].forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=25;});}
-        else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const lt=sd.winner==='A'?sd.teamB:sd.teamA;(wt.players||[]).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});(lt.players||[]).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});}
+        if(sd.isTie){[...(sd.teamA.players||[]).filter(Boolean),...(sd.teamB.players||[]).filter(Boolean)].forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=25;});}
+        else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const lt=sd.winner==='A'?sd.teamB:sd.teamA;(wt.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});(lt.players||[]).filter(Boolean).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});}
     }
     S.history.unshift(entry);if(S.history.length>100)S.history.pop();
     court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;if(court.rr) delete court.rr;clearLiveScore(court.id);
