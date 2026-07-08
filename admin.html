@@ -2892,7 +2892,16 @@ function openBookingDetail(bId){
     if(b.status!=='cancelled'&&b.status!=='completed'){
         const cc=document.createElement('button');
         cc.className='btn btn-danger';cc.textContent='✕ Cancel';
-        cc.onclick=()=>{b.status='cancelled';closeModal('bookingDetailModal');showNotif(`Cancelled for ${b.customer}.`,'warning');renderBookings();renderAll();};
+        cc.onclick=()=>{
+            b.status='cancelled';
+            const court=S.courts.find(c=>c.id===b.courtId);
+            if(court&&court.status==='occupied'){
+                court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;clearLiveScore(court.id);
+            }
+            closeModal('bookingDetailModal');
+            showNotif(`Cancelled for ${b.customer}.`,'warning');
+            renderBookings();renderAll();
+        };
         acts.appendChild(cc);
     }
     const cl=document.createElement('button');cl.className='btn btn-outline';cl.textContent='Close';cl.onclick=()=>closeModal('bookingDetailModal');
@@ -3943,12 +3952,15 @@ function renderOpCourts(){
     grid.innerHTML='';
     const assigned=S.session&&S.session.active?(S.session.courts||S.courts.map(c=>c.id)):[];
     S.courts.forEach(court=>{
+        const isSessionOccupied=court.status==='occupied'&&S.session?.active&&(S.session.courts||S.courts.map(c=>c.id)).includes(court.id);
         const opS=getCourtStatus(court.id);
         const bk=getBookingNow(court.id);
-        const elapsed=court.startTime?Math.floor((Date.now()-court.startTime)/60000):0;
+        const elapsed=court.startTime&&isSessionOccupied?Math.floor((Date.now()-court.startTime)/60000):0;
         const rotMs=(S.session?.rot||20)*60000;
-        const pct=court.startTime?Math.min((Date.now()-court.startTime)/rotMs*100,100):0;
-        const remaining=court.startTime?Math.max(0,Math.round((rotMs-(Date.now()-court.startTime))/60000)):0;
+        const pct=court.startTime&&isSessionOccupied?Math.min((Date.now()-court.startTime)/rotMs*100,100):0;
+        const remaining=court.startTime&&isSessionOccupied?Math.max(0,Math.round((rotMs-(Date.now()-court.startTime))/60000)):0;
+        // Hide non-session occupied courts from Open Play grid
+        if(court.status==='occupied'&&!isSessionOccupied){return;}
         const c=document.createElement('div');
         c.className=`court-manage-card ${opS==='playing'?'occupied':opS==='booked'?'booked':opS==='tournament'?'tournament':opS==='available'?'available':opS==='maintenance'?'maintenance':''}`;
         c.innerHTML=`
@@ -4016,7 +4028,7 @@ function renderCourtsManage(){
         if(opS==='booked'){
             const now=phtNow();
             const cur=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            const bk=S.bookings.find(b=>b.courtId===court.id&&b.date===getTodayISO()&&b.status==='confirmed'&&timeToMin(b.startTime)<=timeToMin(cur)&&timeToMin(b.endTime)>=timeToMin(cur));
+            const bk=S.bookings.find(b=>b.courtId===court.id&&b.date===getTodayISO()&&(b.status==='pending'||b.status==='confirmed')&&timeToMin(b.startTime)<=timeToMin(cur)&&timeToMin(b.endTime)>=timeToMin(cur));
             if(bk) card.onclick=()=>openBookingDetail(bk.id);
         }else if(isOcc){
             card.onclick=()=>freeCourt(court.id);
@@ -4044,7 +4056,8 @@ function renderCourtsManage(){
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 <button class="btn btn-primary btn-sm" onclick="openEditCourt(${court.id})" style="background:linear-gradient(135deg,${court.color},rgba(0,0,0,0.3));border:none;">✏️ Edit</button>
                 ${court.status!=='occupied'?`<button class="btn btn-sm" style="background:rgba(243,156,18,0.12);border:1px solid rgba(243,156,18,0.2);border-radius:6px;color:#f39c12;padding:5px 10px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onclick="toggleMaint(${court.id})" onmouseover="this.style.background='rgba(243,156,18,0.2)'" onmouseout="this.style.background='rgba(243,156,18,0.12)'">${court.status==='maintenance'?'✅ Open':'🔧 Maint.'}</button>`:''}
-                ${!isOcc?`<button class="btn btn-sm" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.15);border-radius:6px;color:#e74c3c;padding:5px 10px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onclick="promptRemoveCourt(${court.id})" onmouseover="this.style.background='rgba(231,76,60,0.2)'" onmouseout="this.style.background='rgba(231,76,60,0.1)'">🗑️ Remove</button>`:`<button class="btn btn-sm" style="background:rgba(78,205,196,0.15);color:#4ecdc4;border:1px solid rgba(78,205,196,0.2);" disabled>🔒 In Use</button>`}
+                ${isOcc?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">🏁 End Game</button>`:''}
+                ${!isOcc?`<button class="btn btn-sm" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.15);border-radius:6px;color:#e74c3c;padding:5px 10px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onclick="promptRemoveCourt(${court.id})" onmouseover="this.style.background='rgba(231,76,60,0.2)'" onmouseout="this.style.background='rgba(231,76,60,0.1)'">🗑️ Remove</button>`:' '}
             </div>`;
         grid.appendChild(card);
     });
