@@ -378,7 +378,7 @@ function render(data){
     grid.innerHTML=courts.map(c=>{
         const occ=c.status==='occupied';
         const maint=c.status==='maintenance';
-        const isTournament=occ&&c._tournamentId;
+        const isTournament=!!c._tournamentId&&tournaments.some(t=>t.id===c._tournamentId&&(t.status==='groups'||t.status==='elimination'));
         const hasActiveBookings=activeBookings[c.id]&&activeBookings[c.id].length>0;
         const hasUpcoming=upcomingBookings[c.id]&&upcomingBookings[c.id].length>0;
         const isBookingOcc=occ&&!c._tournamentId&&hasActiveBookings;
@@ -416,6 +416,16 @@ function render(data){
                         </div>
                     </div>`;
             }
+        } else if(isTournament&&!occ){
+            const tour=tournaments.find(t=>t.id===c._tournamentId);
+            const tMatch=tour?(tour.groups||[]).reduce((found,g)=>(found||(g.matches||[]).find(m=>m.courtId===c.id)),null)
+                ||(tour.elimination?tour.elimination.rounds.reduce((found,r)=>(found||(r.matches||[]).find(m=>m.courtId===c.id&&m.p1&&m.p2)),null):null):null;
+            if(tMatch) playersHTML=`
+                <div class="court-players" style="justify-content:center;">
+                    <span class="player-avatar"><span class="dot" style="background:#4ecdc4"></span><span class="name">${escapeHtml(tMatch.p1)}</span></span>
+                    <span style="color:#444;font-weight:700;">vs</span>
+                    <span class="player-avatar"><span class="dot" style="background:#e74c3c"></span><span class="name">${escapeHtml(tMatch.p2)}</span></span>
+                </div>`;
         }
         // Active booking details
         let bookingHTML='';
@@ -453,7 +463,7 @@ function render(data){
                 ${occ?playersHTML:''}
                 ${rrHTML}
                 ${bookingHTML}
-                ${occ&&_lastLiveScores[c.id]?`
+                ${(occ||isTournament)&&_lastLiveScores[c.id]?`
                     <div style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
                         <span style="font-size:1.6rem;font-weight:800;color:#4ecdc4;">${_lastLiveScores[c.id].scoreA||0}</span>
                         <span style="font-size:0.7rem;color:#555;font-weight:600;letter-spacing:1px;">SCORE</span>
@@ -551,35 +561,35 @@ function render(data){
 
     // Tournament
     const tl=document.getElementById('tournamentList');
-    const activeTour=tournaments.find(t=>t.status==='active');
-    if(!activeTour){tl.innerHTML='<div class="empty-msg">No active tournament</div>';}
+    const activeTours=tournaments.filter(t=>t.status==='groups'||t.status==='elimination');
+    if(activeTours.length===0){tl.innerHTML='<div class="empty-msg">No active tournament</div>';}
     else {
-        const groups=activeTour.groups||[];
-        const elim=activeTour.elimination||[];
-        // Find tournament matches currently on courts
-        const tourCourts=courts.filter(c=>c._tournamentId===activeTour.id);
-        let html=`<div style="font-size:0.82rem;font-weight:700;color:#9b59b6;margin-bottom:8px;">🏆 ${activeTour.name}</div>`;
+        const first=activeTours[0];
+        const groups=first.groups||[];
+        const elimRounds=first.elimination?.rounds||[];
+        const tourCourts=courts.filter(c=>c._tournamentId===first.id);
+        let html=`<div style="font-size:0.82rem;font-weight:700;color:#9b59b6;margin-bottom:8px;">🏆 ${escapeHtml(first.name)}</div>`;
         if(tourCourts.length>0){
             html+=`<div style="font-size:0.72rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Live on Court</div>`;
-            html+=tourCourts.map(c=>{
-                const p=c.players||[];
-                return `<div class="tournament-match"><span class="t-players">🔮 ${c.name}: ${p.map(p=>p.name).join(' vs ')}</span></div>`;
-            }).join('');
+            html+=tourCourts.map(c=>`<div class="tournament-match"><span class="t-players">🔮 ${escapeHtml(c.name)}: ${(c.players||[]).map(p=>escapeHtml(p.name||p)).join(' vs ')}</span></div>`).join('');
         }
         if(groups.length>0){
             html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Groups</div>`;
-            html+=groups.map(g=>`<div style="font-size:0.75rem;color:#888;margin-bottom:2px;">📊 ${g.name}: ${g.players.map(p=>p.name).join(', ')}</div>`).join('');
+            html+=groups.map(g=>`<div style="font-size:0.75rem;color:#888;margin-bottom:2px;">📊 ${escapeHtml(g.name)}: ${g.players.map(p=>escapeHtml(p)).join(', ')}</div>`).join('');
         }
-        if(elim.length>0){
+        if(elimRounds.length>0){
+            const rl={r32:'R32',r16:'R16',r8:'R8',qf:'QF',sf:'SF',final:'Final'};
             html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Elimination</div>`;
-            html+=elim.slice(0,10).map(m=>{
-                const p=m.players||[];
-                const s=m.score?`${m.scoreA||0}-${m.scoreB||0}`:'';
-                const courtName=courts.find(c=>c.id===m.courtId)?.name||m.courtName||'';
-                return `<div class="tournament-match"><span class="t-players">${p.map(p=>p.name).join(' vs ')||'TBD'}</span><span style="font-size:0.72rem;color:#888;">${m.stage||'—'}${s?' · '+s:''}${courtName?' · '+courtName:''}</span></div>`;
-            }).join('');
+            elimRounds.forEach(round=>{
+                (round.matches||[]).slice(0,10).forEach(m=>{
+                    const pa=m.p1||'TBD',pb=m.p2||'TBD';
+                    const s=(m.s1!=null&&m.s2!=null)?`${m.s1}-${m.s2}`:'';
+                    const cn=m.courtName||(courts.find(c=>c.id===m.courtId)?.name)||'';
+                    html+=`<div class="tournament-match"><span class="t-players">${escapeHtml(pa)} vs ${escapeHtml(pb)}</span><span style="font-size:0.72rem;color:#888;">${rl[round.name]||round.name}${s?' · '+s:''}${cn?' · '+escapeHtml(cn):''}</span></div>`;
+                });
+            });
         }
-        if(!tourCourts.length&&!groups.length&&!elim.length) html+='<div class="empty-msg">Setting up...</div>';
+        if(!tourCourts.length&&!groups.length&&!elimRounds.length) html+='<div class="empty-msg">Setting up...</div>';
         tl.innerHTML=html;
     }
     lastData=data;
