@@ -403,6 +403,7 @@ let S = {
 };
 let VENUE_ID = null;
 let unsub = null;
+function bkCol(){return db.collection('venues').doc(VENUE_ID).collection('bookings');}
 
 // ===================== HELPERS =====================
 function getTodayISO(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000).toISOString().split('T')[0]; }
@@ -586,22 +587,11 @@ function processPortalPayment(){
         const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode};
         S.bookings.push(b);
         if (VENUE_ID) {
-            db.collection('venues').doc(VENUE_ID).update({
-                bookings: firebase.firestore.FieldValue.arrayUnion(b),
-                nextBId: S.nextBId
-            }).catch(e => {
-                if (e.code === 'not-found') {
-                    db.collection('venues').doc(VENUE_ID).set({
-                        bookings: [b], nextBId: S.nextBId
-                    }, { merge: true }).catch(e2 => {
-                        console.warn('Booking create failed:', e2);
-                        showNotif('Booking failed to save. Please try again or contact the venue.','error');
-                    });
-                } else {
-                    console.warn('Booking save failed:', e);
-                    showNotif('Booking failed to save. Please try again.','error');
-                }
+            bkCol().doc(bId).set(b).catch(e=>{
+                console.warn('Booking save failed:',e);
+                showNotif('Booking failed to save. Please try again or contact the venue.','error');
             });
+            db.collection('venues').doc(VENUE_ID).update({nextBId:S.nextBId}).catch(()=>{});
         }
         const payInfo='₱'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
         conf.innerHTML=`<div class="payment-success">
@@ -627,12 +617,10 @@ function processPortalPayment(){
         </div>`;
         // Watch booking status via real-time listener (1 read on connect + 1 per status change)
         if (!VENUE_ID) return;
-        const unsubStatus = db.collection('venues').doc(VENUE_ID).onSnapshot(snap => {
+        const unsubStatus = bkCol().doc(bId).onSnapshot(snap => {
             try {
                 if (!snap.exists) return;
-                const data = snap.data();
-                const booking = (data.bookings||[]).find(x => x.id === bId);
-                if (!booking) return;
+                const booking = snap.data();
                 if (booking.status === 'confirmed') {
                     unsubStatus();
                     document.getElementById('bookingStatusWait').innerHTML=`
@@ -663,9 +651,9 @@ function processPortalPayment(){
             console.warn('onSnapshot failed, falling back to polling', err);
             const fallbackInterval = setInterval(async () => {
                 try {
-                    const doc = await db.collection('venues').doc(VENUE_ID).get();
-                    if (!doc.exists) return;
-                    const booking = (doc.data().bookings||[]).find(x => x.id === bId);
+                    const snap = await bkCol().doc(bId).get();
+                    if (!snap.exists) return;
+                    const booking = {id:snap.id,...snap.data()};
                     if (!booking) return;
                     if (booking.status === 'confirmed' || booking.status === 'cancelled') {
                         clearInterval(fallbackInterval);
@@ -711,13 +699,13 @@ function processPortalPayment(){
         if (!slugDoc.exists) { document.getElementById('heroVenueName').textContent = 'Venue not found'; return; }
         VENUE_ID = slugDoc.data().venueId;
         document.title='CourtQ · '+venueSlug;
+        bkCol().onSnapshot(snap=>{S.bookings=[];snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));if(S.portal?.step===2)renderSlots();},()=>{});
         unsub=db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
             if(!snap.exists) return;
             const data = snap.data();
             S.venueName = data.name || 'Court';
             S.logoUrl = data.logoUrl || '';
             S.courts = data.courts || [];
-            S.bookings = data.bookings || [];
             S.session = data.session || null;
             S.nextBId = data.nextBId || 1;
             S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};

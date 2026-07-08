@@ -260,8 +260,10 @@ function getBookingsForCourtTV(cId,date,sMin,eMin,bookings){
 }
 
 let lastData=null;
+let _bookings=[];
 let _lastLiveScores={};
 let _unsubLiveScores=null;
+let _unsubBookings=null;
 let _pollTimer=null;
 let showTimeline=false;
 
@@ -278,7 +280,7 @@ function renderTVTimeline(data){
     if(!grid) return;
     const date=getTodayISO();
     const courts=data.courts||[];
-    const bookings=data.bookings||[];
+    const bookings=_bookings.length>0?_bookings:data.bookings||[];
     const session=data.session;
     const sH=0,eH=23,total=24;
     const nMin=nowMin();
@@ -335,44 +337,33 @@ function renderTVTimeline(data){
     }
 }
 
-function render(data){
-    const courts=data.courts||[];
-    const queue=data.queue||[];
-    const soloQueue=data.soloQueue||[];
-    const session=data.session;
-    const tournaments=data.tournaments||[];
-    const bookings=data.bookings||[];
-    const now=phtNow();
-
-    // Venue name
-    document.getElementById('venueName').textContent=data.venueName||'—';
-
-    // Session badge
+function renderVenueName(){
+    if(!lastData)return;
+    document.getElementById('venueName').textContent=lastData.venueName||'—';
     const sb=document.getElementById('sessionBadge');
-    if(session&&session.active){
+    const s=lastData.session;
+    if(s&&s.active){
         const modeLabels={winnersSplit:'Winners Split',roundRobin:'Round Robin',fourOnFour:'4 on/4 off'};
-        const ml=modeLabels[session.mode]||session.mode||'Open Play';
+        const ml=modeLabels[s.mode]||s.mode||'Open Play';
         sb.textContent='● '+ml;
         sb.className='session-badge active';
     } else {
         sb.textContent='○ No Active Session';
         sb.className='session-badge inactive';
     }
-
-    // Classify each court's usage type
+}
+function renderCourts(){
+    if(!lastData)return;
+    const courts=lastData.courts||[];
+    const tournaments=lastData.tournaments||[];
+    const bookings=_bookings.length>0?_bookings:lastData.bookings||[];
+    const now=phtNow();
     const activeBookings={};
     const upcomingBookings={};
     bookings.forEach(b=>{
-        if(isBookingActive(b,now)){
-            if(!activeBookings[b.courtId]) activeBookings[b.courtId]=[];
-            activeBookings[b.courtId].push(b);
-        }
-        if(isBookingUpcoming(b,now)){
-            if(!upcomingBookings[b.courtId]) upcomingBookings[b.courtId]=[];
-            upcomingBookings[b.courtId].push(b);
-        }
+        if(isBookingActive(b,now)){(activeBookings[b.courtId]||(activeBookings[b.courtId]=[])).push(b);}
+        if(isBookingUpcoming(b,now)){(upcomingBookings[b.courtId]||(upcomingBookings[b.courtId]=[])).push(b);}
     });
-    // Courts grid
     const grid=document.getElementById('courtGrid');
     grid.className='court-grid cols-'+getCourtCols(courts.length);
     grid.innerHTML=courts.map(c=>{
@@ -382,16 +373,12 @@ function render(data){
         const hasActiveBookings=activeBookings[c.id]&&activeBookings[c.id].length>0;
         const hasUpcoming=upcomingBookings[c.id]&&upcomingBookings[c.id].length>0;
         const isBookingOcc=occ&&!c._tournamentId&&hasActiveBookings;
-        const isOpenPlay=occ&&!c._tournamentId&&!hasActiveBookings&&session&&session.active;
+        const isOpenPlay=occ&&!c._tournamentId&&!hasActiveBookings&&lastData.session&&lastData.session.active;
         const cardType=maint?'maintenance':isTournament?'tournament':isBookingOcc?'booked':isOpenPlay?'occupied':occ?'occupied':hasActiveBookings?'booked':c.status;
-
-        // Usage badge
         let usageBadge='';
         if(isTournament) usageBadge='<span class="usage-badge tournament">🏆 Tournament</span>';
         else if(isBookingOcc) usageBadge='<span class="usage-badge booking">📅 Booking</span>';
         else if(isOpenPlay) usageBadge='<span class="usage-badge openplay">🎯 Open Play</span>';
-
-        // Players
         const isSingles=c.gameType==='singles';
         const mid=Math.ceil(c.players.length/2);
         const teamA=c.team1||c.players.slice(0,mid);
@@ -399,112 +386,45 @@ function render(data){
         let playersHTML='';
         if(occ&&c.players.length>0){
             if(isSingles||c.players.length<=2){
-                playersHTML=`
-                    <div class="court-players" style="justify-content:center;">
-                        ${c.players.map((p,i)=>`<span class="player-avatar"><span class="dot" style="background:${p.color||(i===0?'#4ecdc4':'#e74c3c')}"></span><span class="name">${p.name}</span></span>`).join('<span style="color:#444;font-weight:700;">vs</span>')}
-                    </div>`;
+                playersHTML=`<div class="court-players" style="justify-content:center;">${c.players.map((p,i)=>`<span class="player-avatar"><span class="dot" style="background:${p.color||(i===0?'#4ecdc4':'#e74c3c')}"></span><span class="name">${p.name}</span></span>`).join('<span style="color:#444;font-weight:700;">vs</span>')}</div>`;
             } else {
-                playersHTML=`
-                    <div class="court-players">
-                        <div class="team">
-                            <div class="team-label team-a">● Team A</div>
-                            ${teamA.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#4ecdc4'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}
-                        </div>
-                        <div class="team">
-                            <div class="team-label team-b">● Team B</div>
-                            ${teamB.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#e74c3c'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}
-                        </div>
-                    </div>`;
+                playersHTML=`<div class="court-players"><div class="team"><div class="team-label team-a">● Team A</div>${teamA.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#4ecdc4'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}</div><div class="team"><div class="team-label team-b">● Team B</div>${teamB.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#e74c3c'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}</div></div>`;
             }
         } else if(isTournament&&!occ){
             const tour=tournaments.find(t=>t.id===c._tournamentId);
-            const tMatch=tour?(tour.groups||[]).reduce((found,g)=>(found||(g.matches||[]).find(m=>m.courtId===c.id)),null)
-                ||(tour.elimination?tour.elimination.rounds.reduce((found,r)=>(found||(r.matches||[]).find(m=>m.courtId===c.id&&m.p1&&m.p2)),null):null):null;
-            if(tMatch) playersHTML=`
-                <div class="court-players" style="justify-content:center;">
-                    <span class="player-avatar"><span class="dot" style="background:#4ecdc4"></span><span class="name">${escapeHtml(tMatch.p1)}</span></span>
-                    <span style="color:#444;font-weight:700;">vs</span>
-                    <span class="player-avatar"><span class="dot" style="background:#e74c3c"></span><span class="name">${escapeHtml(tMatch.p2)}</span></span>
-                </div>`;
+            const tMatch=tour?(tour.groups||[]).reduce((found,g)=>(found||(g.matches||[]).find(m=>m.courtId===c.id)),null)||(tour.elimination?tour.elimination.rounds.reduce((found,r)=>(found||(r.matches||[]).find(m=>m.courtId===c.id&&m.p1&&m.p2)),null):null):null;
+            if(tMatch) playersHTML=`<div class="court-players" style="justify-content:center;"><span class="player-avatar"><span class="dot" style="background:#4ecdc4"></span><span class="name">${escapeHtml(tMatch.p1)}</span></span><span style="color:#444;font-weight:700;">vs</span><span class="player-avatar"><span class="dot" style="background:#e74c3c"></span><span class="name">${escapeHtml(tMatch.p2)}</span></span></div>`;
         }
-        // Active booking details
         let bookingHTML='';
-        if(hasActiveBookings){
-            bookingHTML=activeBookings[c.id].map(b=>`
-                <div style="font-size:0.78rem;color:#f1c40f;margin-top:6px;padding:6px 10px;background:rgba(241,196,15,0.06);border-radius:8px;border:1px solid rgba(241,196,15,0.1);">
-                    📅 ${b.customerName||'Guest'} · ${b.startTime}-${b.endTime}
-                </div>`).join('');
-        } else if(hasUpcoming){
-            bookingHTML=upcomingBookings[c.id].slice(0,2).map(b=>`
-                <div style="font-size:0.72rem;color:#f39c12;margin-top:4px;opacity:0.7;">
-                    ⏳ ${b.startTime} ${b.customerName?'· '+b.customerName:''}
-                </div>`).join('');
-        }
-
+        if(hasActiveBookings) bookingHTML=activeBookings[c.id].map(b=>`<div style="font-size:0.78rem;color:#f1c40f;margin-top:6px;padding:6px 10px;background:rgba(241,196,15,0.06);border-radius:8px;border:1px solid rgba(241,196,15,0.1);">📅 ${b.customerName||'Guest'} · ${b.startTime}-${b.endTime}</div>`).join('');
+        else if(hasUpcoming) bookingHTML=upcomingBookings[c.id].slice(0,2).map(b=>`<div style="font-size:0.72rem;color:#f39c12;margin-top:4px;opacity:0.7;">⏳ ${b.startTime} ${b.customerName?'· '+b.customerName:''}</div>`).join('');
         const rrHTML=c.rr?`<span class="rr-round" style="margin-top:6px;">🔄 Round ${c.rr.round+1}/3</span>`:'';
         const statusLabel=maint?'● Maintenance':isTournament?'● Tournament':isBookingOcc?'● Booked':isOpenPlay?'● In Play':occ?'● In Play':hasActiveBookings?'● Booked':c.status==='available'?'● Available':'—';
-
-        return `
-            <div class="court-card ${cardType}">
-                <div class="color-bar ${cardType}"></div>
-                <div class="court-header">
-                    <span class="court-name" style="color:${c.color||'#fff'}">${c.name}</span>
-                    <span style="display:flex;align-items:center;gap:6px;">
-                        ${usageBadge}
-                        <span class="court-status">${statusLabel}</span>
-                    </span>
-                </div>
-                <div class="court-meta">
-                    ${c.location?`<span>📍 ${c.location}</span>`:''}
-                    ${occ&&c.gameType?`<span>🎮 ${getGTLabel(c.gameType)}</span>`:''}
-                    ${c.rate?`<span>₱${c.rate}</span>`:''}
-                    ${isOpenPlay&&c.startTime?`<span>⏱ ${Math.floor((Date.now()-c.startTime)/60000)}m</span>`:''}
-                </div>
-                ${occ?playersHTML:''}
-                ${rrHTML}
-                ${bookingHTML}
-                ${(occ||isTournament)&&_lastLiveScores[c.id]?`
-                    <div style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
-                        <span style="font-size:1.6rem;font-weight:800;color:#4ecdc4;">${_lastLiveScores[c.id].scoreA||0}</span>
-                        <span style="font-size:0.7rem;color:#555;font-weight:600;letter-spacing:1px;">SCORE</span>
-                        <span style="font-size:1.6rem;font-weight:800;color:#e74c3c;">${_lastLiveScores[c.id].scoreB||0}</span>
-                    </div>`:''}
-                ${maint?'<div style="font-size:0.78rem;color:#e74c3c;margin-top:8px;text-align:center;">🔧 Under Maintenance</div>':''}
-                ${cardType==='available'?'<div style="font-size:1.2rem;text-align:center;padding:12px 0;opacity:0.3;">✓ Available</div>':''}
-                ${!occ&&!maint&&cardType==='booked'&&!hasActiveBookings&&!hasUpcoming?'<div style="font-size:0.9rem;text-align:center;padding:12px 0;opacity:0.3;">—</div>':''}
-            </div>`;
+        return `<div class="court-card ${cardType}"><div class="color-bar ${cardType}"></div><div class="court-header"><span class="court-name" style="color:${c.color||'#fff'}">${c.name}</span><span style="display:flex;align-items:center;gap:6px;">${usageBadge}<span class="court-status">${statusLabel}</span></span></div><div class="court-meta">${c.location?`<span>📍 ${c.location}</span>`:''}${occ&&c.gameType?`<span>🎮 ${getGTLabel(c.gameType)}</span>`:''}${c.rate?`<span>₱${c.rate}</span>`:''}${isOpenPlay&&c.startTime?`<span>⏱ ${Math.floor((Date.now()-c.startTime)/60000)}m</span>`:''}</div>${occ?playersHTML:''}${rrHTML}${bookingHTML}${(occ||isTournament)&&_lastLiveScores[c.id]?`<div style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);"><span style="font-size:1.6rem;font-weight:800;color:#4ecdc4;">${_lastLiveScores[c.id].scoreA||0}</span><span style="font-size:0.7rem;color:#555;font-weight:600;letter-spacing:1px;">SCORE</span><span style="font-size:1.6rem;font-weight:800;color:#e74c3c;">${_lastLiveScores[c.id].scoreB||0}</span></div>`:''}${maint?'<div style="font-size:0.78rem;color:#e74c3c;margin-top:8px;text-align:center;">🔧 Under Maintenance</div>':''}${cardType==='available'?'<div style="font-size:1.2rem;text-align:center;padding:12px 0;opacity:0.3;">✓ Available</div>':''}${!occ&&!maint&&cardType==='booked'&&!hasActiveBookings&&!hasUpcoming?'<div style="font-size:0.9rem;text-align:center;padding:12px 0;opacity:0.3;">—</div>':''}</div>`;
     }).join('');
-
-    // Queue
+}
+function renderQueue(){
+    if(!lastData)return;
+    const queue=lastData.queue||[];
+    const soloQueue=lastData.soloQueue||[];
+    const session=lastData.session;
     const ql=document.getElementById('queueList');
-    const totalQ=queue.filter(g=>!g._halfTeam).length;
     const soloCount=soloQueue.reduce((a,s)=>a+s.players.length,0);
     const poolMode=session&&(session.mode==='winnersSplit'||session.mode==='roundRobin');
     if(poolMode){
-        // Round-robin with schedule — show standings instead of pool
         if(session.mode==='roundRobin'&&session.rrSchedule){
             const s=session.rrSchedule;
             const done=s.matches.filter(m=>m.completed).length;
             if(s.completed){
                 const sorted=[...s.teams].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||(b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst));
-                ql.innerHTML=`<div style="font-size:0.7rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🏆 Round Robin Complete</div>
-                    <div style="background:rgba(46,204,113,0.1);border-radius:6px;padding:6px 10px;margin-bottom:6px;font-weight:700;color:#2ecc71;font-size:0.82rem;">Winner: ${sorted[0].name}</div>
-                    ${s.teams.map((t,i)=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${i+1}. ${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
+                ql.innerHTML=`<div style="font-size:0.7rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🏆 Round Robin Complete</div><div style="background:rgba(46,204,113,0.1);border-radius:6px;padding:6px 10px;margin-bottom:6px;font-weight:700;color:#2ecc71;font-size:0.82rem;">Winner: ${sorted[0].name}</div>${s.teams.map((t,i)=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${i+1}. ${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
             } else {
-                ql.innerHTML=`<div style="font-size:0.68rem;color:#9b59b6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🔄 Round Robin · ${done}/${s.matches.length}</div>
-                    <div style="font-size:0.7rem;color:#888;margin-bottom:6px;">${s.teams.length} ${session.rrGameType==='singles'?'players':'teams'}</div>
-                    ${s.teams.map(t=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
+                ql.innerHTML=`<div style="font-size:0.68rem;color:#9b59b6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🔄 Round Robin · ${done}/${s.matches.length}</div><div style="font-size:0.7rem;color:#888;margin-bottom:6px;">${s.teams.length} ${session.rrGameType==='singles'?'players':'teams'}</div>${s.teams.map(t=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
             }
         } else if(soloCount===0){
             ql.innerHTML='<div class="empty-msg">Pool is empty</div>';
         } else {
-            const entries=session.mode==='roundRobin'&&session.rrGameType==='singles'
-                ?soloQueue.map(e=>`<div class="queue-item"><span class="q-name">${e.players.map(p=>p.name).join(', ')}</span><span class="q-wait">waiting</span></div>`).join('')
-                :soloQueue.map(e=>{
-                    const label=e._halfTeam?'👫 '+e.players.map(p=>p.name).join(' & '):e._solo?'🙋 '+e.players[0].name:e.players.map(p=>p.name).join(', ');
-                    const skill=e.players[0]?SKILL_LABELS[e.skillLevel]||'—':'—';
-                    return `<div class="queue-item"><span class="q-name">${label}</span><span class="q-meta">⭐${skill}</span><span class="q-wait">${getWait(Math.floor((Date.now()-e.joinedAt)/60000))}</span></div>`;
-                }).join('');
+            const entries=session.mode==='roundRobin'&&session.rrGameType==='singles'?soloQueue.map(e=>`<div class="queue-item"><span class="q-name">${e.players.map(p=>p.name).join(', ')}</span><span class="q-wait">waiting</span></div>`).join(''):soloQueue.map(e=>{const label=e._halfTeam?'👫 '+e.players.map(p=>p.name).join(' & '):e._solo?'🙋 '+e.players[0].name:e.players.map(p=>p.name).join(', ');const skill=e.players[0]?SKILL_LABELS[e.skillLevel]||'—':'—';return `<div class="queue-item"><span class="q-name">${label}</span><span class="q-meta">⭐${skill}</span><span class="q-wait">${getWait(Math.floor((Date.now()-e.joinedAt)/60000))}</span></div>`;}).join('');
             ql.innerHTML=entries+'<div class="queue-item" style="color:#f39c12;font-size:0.72rem;font-weight:600;">👥 '+soloCount+' player'+(soloCount>1?'s':'')+' in pool</div>';
         }
     } else {
@@ -519,29 +439,19 @@ function render(data){
                 if(i===0&&full.length>0) html+=`<div class="queue-item" style="border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin-bottom:6px;"><span class="q-name" style="color:#4ecdc4;font-size:0.9rem;">▶ ${name}</span><span class="q-wait" style="font-size:0.82rem;">Next Up</span></div>`;
                 else html+=`<div class="queue-item"><span class="q-name">${name}</span><span class="q-meta">${meta}</span><span class="q-wait">${wait}</span></div>`;
             });
-            if(soloCount>0){
-                html+='<div class="queue-item"><span class="q-name" style="color:#f39c12;">⏳ '+soloCount+' waiting for partner</span></div>';
-            }
+            if(soloCount>0) html+='<div class="queue-item"><span class="q-name" style="color:#f39c12;">⏳ '+soloCount+' waiting for partner</span></div>';
             ql.innerHTML=html;
         }
     }
-
-    // Recent Results — collect history from all courts and global history
+}
+function renderResults(){
+    if(!lastData)return;
+    const courts=lastData.courts||[];
     const rl=document.getElementById('resultsList');
     const allHistory=[];
-    courts.forEach(c=>{
-        (c.history||[]).forEach(h=>{
-            allHistory.push({courtName:c.name,courtId:c.id,courtColor:c.color,...h});
-        });
-    });
-    (data.history||[]).forEach(h=>{
-        allHistory.push({...h,courtName:h.court,courtColor:'#555'});
-    });
-    allHistory.sort((a,b)=>{
-        const ta=a.timestamp||0;
-        const tb=b.timestamp||0;
-        return tb-ta;
-    });
+    courts.forEach(c=>{(c.history||[]).forEach(h=>{allHistory.push({courtName:c.name,courtId:c.id,courtColor:c.color,...h});});});
+    (lastData.history||[]).forEach(h=>{allHistory.push({...h,courtName:h.court,courtColor:'#555'});});
+    allHistory.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
     const top=allHistory.slice(0,8);
     if(top.length===0){rl.innerHTML='<div class="empty-msg">No completed games yet</div>';}
     else {
@@ -549,17 +459,16 @@ function render(data){
             const wt=h.winner==='A'?h.teamA:h.winner==='B'?h.teamB:null;
             const winnerName=wt?(Array.isArray(wt)?wt.map(p=>p.name).join(' & '):''):'—';
             const scoreText=(h.scoreA!=null&&h.scoreB!=null)?`${h.scoreA}-${h.scoreB}`:'';
-            const timeStr=h.timestamp?(()=>{
-                const d=new Date(h.timestamp);
-                if(isNaN(d.getTime()))return'';
-                return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Manila'});
-            })():'';
+            const timeStr=h.timestamp?(()=>{const d=new Date(h.timestamp);if(isNaN(d.getTime()))return'';return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Manila'});})():'';
             const playersStr=h.players?h.players.map(p=>typeof p==='string'?p:(p.name||'')).join(' vs '):'';
             return `<div class="result-item"><span class="r-players" style="border-left:3px solid ${h.courtColor||'#555'};padding-left:8px;">${h.courtName?h.courtName+': ':''}${playersStr||'—'}</span><span><span class="r-winner">🏆 ${winnerName}</span>${scoreText?' <span class="r-score">'+scoreText+'</span>':''}${timeStr?' <span class="r-time">'+timeStr+'</span>':''}</span></div>`;
         }).join('');
     }
-
-    // Tournament
+}
+function renderTournament(){
+    if(!lastData)return;
+    const courts=lastData.courts||[];
+    const tournaments=lastData.tournaments||[];
     const tl=document.getElementById('tournamentList');
     const activeTours=tournaments.filter(t=>t.status==='groups'||t.status==='elimination');
     if(activeTours.length===0){tl.innerHTML='<div class="empty-msg">No active tournament</div>';}
@@ -569,31 +478,16 @@ function render(data){
         const elimRounds=first.elimination?.rounds||[];
         const tourCourts=courts.filter(c=>c._tournamentId===first.id);
         let html=`<div style="font-size:0.82rem;font-weight:700;color:#9b59b6;margin-bottom:8px;">🏆 ${escapeHtml(first.name)}</div>`;
-        if(tourCourts.length>0){
-            html+=`<div style="font-size:0.72rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Live on Court</div>`;
-            html+=tourCourts.map(c=>`<div class="tournament-match"><span class="t-players">🔮 ${escapeHtml(c.name)}: ${(c.players||[]).map(p=>escapeHtml(p.name||p)).join(' vs ')}</span></div>`).join('');
-        }
-        if(groups.length>0){
-            html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Groups</div>`;
-            html+=groups.map(g=>`<div style="font-size:0.75rem;color:#888;margin-bottom:2px;">📊 ${escapeHtml(g.name)}: ${g.players.map(p=>escapeHtml(p)).join(', ')}</div>`).join('');
-        }
-        if(elimRounds.length>0){
-            const rl={r32:'R32',r16:'R16',r8:'R8',qf:'QF',sf:'SF',final:'Final'};
-            html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Elimination</div>`;
-            elimRounds.forEach(round=>{
-                (round.matches||[]).slice(0,10).forEach(m=>{
-                    const pa=m.p1||'TBD',pb=m.p2||'TBD';
-                    const s=(m.s1!=null&&m.s2!=null)?`${m.s1}-${m.s2}`:'';
-                    const cn=m.courtName||(courts.find(c=>c.id===m.courtId)?.name)||'';
-                    html+=`<div class="tournament-match"><span class="t-players">${escapeHtml(pa)} vs ${escapeHtml(pb)}</span><span style="font-size:0.72rem;color:#888;">${rl[round.name]||round.name}${s?' · '+s:''}${cn?' · '+escapeHtml(cn):''}</span></div>`;
-                });
-            });
-        }
+        if(tourCourts.length>0){html+=`<div style="font-size:0.72rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Live on Court</div>${tourCourts.map(c=>`<div class="tournament-match"><span class="t-players">🔮 ${escapeHtml(c.name)}: ${(c.players||[]).map(p=>escapeHtml(p.name||p)).join(' vs ')}</span></div>`).join('')}`;}
+        if(groups.length>0){html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Groups</div>${groups.map(g=>`<div style="font-size:0.75rem;color:#888;margin-bottom:2px;">📊 ${escapeHtml(g.name)}: ${g.players.map(p=>escapeHtml(p)).join(', ')}</div>`).join('')}`;}
+        if(elimRounds.length>0){const rl={r32:'R32',r16:'R16',r8:'R8',qf:'QF',sf:'SF',final:'Final'};html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Elimination</div>`;elimRounds.forEach(round=>{(round.matches||[]).slice(0,10).forEach(m=>{const pa=m.p1||'TBD',pb=m.p2||'TBD';const s=(m.s1!=null&&m.s2!=null)?`${m.s1}-${m.s2}`:'';const cn=m.courtName||(courts.find(c=>c.id===m.courtId)?.name)||'';html+=`<div class="tournament-match"><span class="t-players">${escapeHtml(pa)} vs ${escapeHtml(pb)}</span><span style="font-size:0.72rem;color:#888;">${rl[round.name]||round.name}${s?' · '+s:''}${cn?' · '+escapeHtml(cn):''}</span></div>`;});});}
         if(!tourCourts.length&&!groups.length&&!elimRounds.length) html+='<div class="empty-msg">Setting up...</div>';
         tl.innerHTML=html;
     }
-    lastData=data;
-    if(showTimeline) renderTVTimeline(data);
+}
+function renderAll(){
+    renderVenueName();renderCourts();renderQueue();renderResults();renderTournament();
+    if(showTimeline) renderTVTimeline(lastData);
 }
 
 async function init(){
@@ -612,21 +506,26 @@ async function init(){
         if(!slugDoc.exists){document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;color:#e74c3c;">❌ Venue not found</div>';return;}
         VENUE_ID=slugDoc.data().venueId;
         document.title='CourtQ Live · '+venueSlug;
+        _unsubBookings=db.collection('venues').doc(VENUE_ID).collection('bookings').onSnapshot(snap=>{
+            _bookings=[];
+            snap.forEach(d=>_bookings.push({id:d.id,...d.data()}));
+            if(lastData){renderCourts();if(showTimeline)renderTVTimeline(lastData);}
+        },()=>{});
         unsub=db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
-            if(snap.exists) render(snap.data());
+            if(snap.exists){lastData=snap.data();renderAll();}
         },err=>{
             console.warn('onSnapshot error:',err);
             // Fallback: poll every 3s
             if(unsub){unsub();unsub=null;}
             if(!_pollTimer) _pollTimer=setInterval(async()=>{
-                try{const doc=await db.collection('venues').doc(VENUE_ID).get();if(doc.exists)render(doc.data());}catch(e){}
+                try{const doc=await db.collection('venues').doc(VENUE_ID).get();if(doc.exists){lastData=doc.data();renderAll();}}catch(e){}
             },3000);
         });
         // Listen to live scores
         _unsubLiveScores=db.collection('liveScores').where('venueId','==',VENUE_ID).onSnapshot(snap=>{
             _lastLiveScores={};
             snap.forEach(doc=>{const d=doc.data();_lastLiveScores[d.courtId]=d;});
-            if(lastData) render(lastData);
+            if(lastData) renderCourts();
         },()=>{});
         // Show score URL at bottom
         const el=document.createElement('div');

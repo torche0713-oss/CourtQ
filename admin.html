@@ -1498,14 +1498,29 @@ function resetUsage(){
 }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','bookings','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails','tournaments'];
+const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails','tournaments'];
+function bkCol(){return db.collection('venues').doc(VENUE_ID).collection('bookings');}
+function saveBooking(b){if(!VENUE_ID)return;bkCol().doc(b.id).set(b,{merge:true}).catch(()=>{});}
+function deleteBooking(id){if(!VENUE_ID)return;bkCol().doc(id).delete().catch(()=>{});}
+let _unsubBookings=null;
+function loadBookings(){
+    if(_unsubBookings)_unsubBookings();
+    _unsubBookings=bkCol().onSnapshot(snap=>{
+        S.bookings=[];
+        snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));
+    },()=>{});
+}
+let _saveTimer=null;
 function saveState(){
-    if (!VENUE_ID) return;
-    try {
-        const state = {};
-        PERSISTENT_KEYS.forEach(k => state[k] = S[k]);
-        db.collection('venues').doc(VENUE_ID).set(state, { merge: true }).catch(e => console.warn('saveState failed:', e));
-    } catch(e){ console.warn('saveState failed:', e); }
+    if(!VENUE_ID) return;
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(()=>{
+        try{
+            const state={};
+            PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
+            db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>console.warn('saveState failed:',e));
+        }catch(e){console.warn('saveState failed:',e);}
+    },300);
 }
 async function loadState(){
     if (!VENUE_ID) return;
@@ -1756,7 +1771,7 @@ function promptRemoveCourt(id){
         </div>`;
     document.getElementById('removeCourtConfirm').onclick=()=>{
         if(c.status==='occupied'&&c.players.length>0) completeRelease(c,null);
-        S.bookings.forEach(b=>{ if(b.courtId===id&&b.status!=='cancelled'&&b.date>=getTodayISO()) b.status='cancelled'; });
+        S.bookings.forEach(b=>{ if(b.courtId===id&&b.status!=='cancelled'&&b.date>=getTodayISO()){b.status='cancelled';saveBooking(b);} });
         S.courts=S.courts.filter(x=>x.id!==id);
         closeModal('removeCourtModal');
         showNotif(`🗑️ ${c.name} removed.`,'warning');
@@ -1827,6 +1842,7 @@ function autoFreeExpiredBookings(){
     S.bookings.forEach(b=>{
         if(b.status==='checkedin'&&(b.date<today||(b.date===today&&timeToMin(b.endTime)<curMin))){
             b.status='completed';
+            saveBooking(b);
             const c=S.courts.find(x=>x.id===b.courtId);
             if(c&&c.status==='occupied'){
                 c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;clearLiveScore(c.id);
@@ -2199,7 +2215,7 @@ function tryAutoAssign(){
     showAssignModal(avail[0],full[0]);
 }
 
-function tryWinnersAutoAssign(){
+async function tryWinnersAutoAssign(){
     if(!S.session||S.session.mode!=='winnersSplit') return;
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
@@ -2220,8 +2236,7 @@ function tryWinnersAutoAssign(){
     const g={id:++S.nextId,groupName:flat.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:flat,team1,team2,joinedAt:Date.now()};
     g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
     const court=avail[0];
-    doAssign(court,g);
-    showNotif(`🎉 ${court.name} → ${flat.map(p=>p.name).join(', ')}`,'success');
+    if(await doAssign(court,g)) showNotif(`🎉 ${court.name} → ${flat.map(p=>p.name).join(', ')}`,'success');
     saveState();renderAll();
 }
 
@@ -2267,14 +2282,13 @@ function startRoundRobin(){
     tryRoundRobinAutoAssign();
 }
 
-function tryRoundRobinAutoAssign(){
+async function tryRoundRobinAutoAssign(){
     if(!S.session||S.session.mode!=='roundRobin') return;
     if(!S.session.rrSchedule||S.session.rrSchedule.completed) return;
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
     const isSingles=S.session.rrGameType==='singles';
     const schedule=S.session.rrSchedule;
-    // Track players already on a court OR already assigned in this batch
     const busyPlayers=new Set();
     S.courts.forEach(c=>{
         if(c._rrMatchId&&c.status==='occupied'&&c.players){
@@ -2285,7 +2299,6 @@ function tryRoundRobinAutoAssign(){
     let assigned=0;
     for(let ci=0;ci<avail.length&&assigned<toAssign;ci++){
         const court=avail[ci];
-        // Get all pending matches available right now (players not busy)
         const candidates=schedule.matches.filter(m=>{
             if(m.completed||m.courtId||m.winner!=null) return false;
             const tA=schedule.teams[m.teamAIndex].players;
@@ -2293,7 +2306,6 @@ function tryRoundRobinAutoAssign(){
             return ![...tA,...tB].some(p=>busyPlayers.has(p.name));
         });
         if(!candidates.length) break;
-        // Sort by total games played (ascending) — give priority to teams that played less
         candidates.sort((a,b)=>{
             const aPlayed=schedule.teams[a.teamAIndex].wins+schedule.teams[a.teamAIndex].losses+schedule.teams[a.teamAIndex].draws
                          +schedule.teams[a.teamBIndex].wins+schedule.teams[a.teamBIndex].losses+schedule.teams[a.teamBIndex].draws;
@@ -2306,18 +2318,14 @@ function tryRoundRobinAutoAssign(){
         const tB=schedule.teams[match.teamBIndex].players;
         const tAN=schedule.teams[match.teamAIndex].name;
         const tBN=schedule.teams[match.teamBIndex].name;
-        match.courtId=court.id;
-        // Mark these players busy so no other court in this batch gets them
         tA.forEach(p=>busyPlayers.add(p.name));
         tB.forEach(p=>busyPlayers.add(p.name));
         const flat=[...tA,...tB];
         const gt=isSingles?'singles':'doubles';
         const avg=Math.round(flat.reduce((a,p)=>a+(p.skill||3),0)/flat.length);
         const g={id:++S.nextId,groupName:tAN+' vs '+tBN,gameType:gt,skillLevel:avg,players:flat,team1:tA,team2:tB,joinedAt:Date.now()};
-        court._rrMatchId=match.id;
-        doAssign(court,g);
-        showNotif(`🎯 ${tAN} vs ${tBN} → ${court.name}`,'success');
-        assigned++;
+        const ok=await doAssign(court,g,{_rrMatchId:match.id});
+        if(ok){match.courtId=court.id;court._rrMatchId=match.id;showNotif(`🎯 ${tAN} vs ${tBN} → ${court.name}`,'success');assigned++;}
     }
     saveState();renderAll();
 }
@@ -2468,7 +2476,7 @@ function showAssign(court, group){
     document.getElementById('assignConfirm').onclick=()=>{
         const c=S.courts.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.cId));
         const g=S.queue.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.gId));
-        if(c&&g){doAssign(c,g);showNotif(`✅ ${g.groupName} → ${c.name}`,'success');announce(`${g.groupName} now playing on ${c.name}!`);saveState();renderAll();}
+        if(c&&g){if(await doAssign(c,g)){showNotif(`✅ ${g.groupName} → ${c.name}`,'success');announce(`${g.groupName} now playing on ${c.name}!`);}saveState();renderAll();}
         closeModal('assignModal');
     };
     document.getElementById('assignModal').classList.add('active');
@@ -2531,10 +2539,10 @@ function manualAssignToCourt(cId){
     document.getElementById('assignBody').dataset.cId=cId;
     const firstFull=S.queue.filter(g=>!g._halfTeam)[0];
     document.getElementById('assignBody').dataset.gId=firstFull?firstFull.id:null;
-    document.getElementById('assignConfirm').onclick=()=>{
+    document.getElementById('assignConfirm').onclick=async()=>{
         const c=S.courts.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.cId));
         const g=S.queue.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.gId));
-        if(c&&g){doAssign(c,g);showNotif(`✅ ${g.groupName} → ${c.name}`,'success');announce(`${g.groupName} now on ${c.name}!`);saveState();renderAll();}
+        if(c&&g){if(await doAssign(c,g)){showNotif(`✅ ${g.groupName} → ${c.name}`,'success');announce(`${g.groupName} now on ${c.name}!`);}saveState();renderAll();}
         closeModal('assignModal');
     };
     document.getElementById('assignModal').classList.add('active');
@@ -2554,13 +2562,37 @@ function promptAssignGroup(gId){
     showAssignModal(av[0],g);
 }
 
-function doAssign(court,group){
-    if(court.status==='occupied'){showNotif(`${court.name} already occupied!`,'error');return;}
-    court.status='occupied';court.players=group.players;court.startTime=Date.now();court.gameType=group.gameType;
-    if(group.team1&&group.team2){court.team1=group.team1;court.team2=group.team2;}else{court.team1=null;court.team2=null;}
-    (group.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=10;});
-    const i=S.queue.findIndex(g=>g.id===group.id);
-    if(i!==-1) S.queue.splice(i,1);
+async function doAssign(court,group,extraProps){
+    if(!VENUE_ID) return false;
+    try {
+        await db.runTransaction(async transaction => {
+            const doc = await transaction.get(db.collection('venues').doc(VENUE_ID));
+            if(!doc.exists) throw new Error('Venue not found');
+            const data = doc.data();
+            const courts = data.courts || [];
+            const queue = data.queue || [];
+            const cIdx = courts.findIndex(x => x.id === court.id);
+            if(cIdx === -1) throw new Error('Court not found');
+            if(courts[cIdx].status === 'occupied') throw new Error('Court already occupied');
+            courts[cIdx] = {...courts[cIdx], ...extraProps, status:'occupied', players:group.players, startTime:Date.now(), gameType:group.gameType,
+                team1: group.team1&&group.team2?group.team1:null,
+                team2: group.team1&&group.team2?group.team2:null
+            };
+            const qIdx = queue.findIndex(g => g.id === group.id);
+            if(qIdx !== -1) queue.splice(qIdx, 1);
+            transaction.update(db.collection('venues').doc(VENUE_ID), {courts, queue});
+        });
+        court.status='occupied';court.players=group.players;court.startTime=Date.now();court.gameType=group.gameType;
+        if(group.team1&&group.team2){court.team1=group.team1;court.team2=group.team2;}else{court.team1=null;court.team2=null;}
+        if(extraProps) Object.assign(court, extraProps);
+        (group.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].points+=10;});
+        const i=S.queue.findIndex(g=>g.id===group.id);
+        if(i!==-1) S.queue.splice(i,1);
+        return true;
+    } catch(e) {
+        if(e.message!=='Venue not found'&&e.message!=='Court not found'&&e.message!=='Court already occupied') console.warn('doAssign failed:', e.message);
+        return false;
+    }
 }
 
 // ===================== END GAME =====================
@@ -2892,6 +2924,7 @@ function createBooking(){
         status:'confirmed',notes:'',bookedAt:Date.now(),source:'admin',
     };
     S.bookings.push(b);
+    saveBooking(b);
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
     ['bCustomer','bPhone','bEmail','bDate','bStart','bPlayers'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bConflict').innerHTML='';
@@ -2929,6 +2962,7 @@ function openBookingDetail(bId){
         ci.className='btn btn-success';ci.textContent='✅ Check In';
         ci.onclick=()=>{
             b.status='checkedin';
+            saveBooking(b);
             const court=S.courts.find(c=>c.id===b.courtId);
             if(court){
                 const names=(b.players||b.customer).split(',').map(s=>s.trim()).filter(Boolean);
@@ -2949,13 +2983,14 @@ function openBookingDetail(bId){
         cc.className='btn btn-danger';cc.textContent='✕ Cancel';
         cc.onclick=()=>{
             b.status='cancelled';
+            saveBooking(b);
             const court=S.courts.find(c=>c.id===b.courtId);
             if(court&&court.status==='occupied'){
                 court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;clearLiveScore(court.id);
             }
             closeModal('bookingDetailModal');
             showNotif(`Cancelled for ${b.customer}.`,'warning');
-            renderBookings();renderAll();
+            saveState();renderBookings();renderAll();
         };
         acts.appendChild(cc);
     }
@@ -3120,7 +3155,7 @@ function renderConflicts(){
     ).join('');
 }
 
-function cancelB(id){const b=S.bookings.find(x=>x.id===id);if(b){const wasCheckedIn=b.status==='checkedin';b.status='cancelled';if(wasCheckedIn){const c=S.courts.find(x=>x.id===b.courtId);if(c&&c.status==='occupied'){c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;clearLiveScore(c.id);}}showNotif(`Cancelled: ${b.customer}.`,'warning');renderBookingTimeline();renderConflicts();renderBookings();saveState();}}
+function cancelB(id){const b=S.bookings.find(x=>x.id===id);if(b){const wasCheckedIn=b.status==='checkedin';b.status='cancelled';saveBooking(b);if(wasCheckedIn){const c=S.courts.find(x=>x.id===b.courtId);if(c&&c.status==='occupied'){c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;clearLiveScore(c.id);}}showNotif(`Cancelled: ${b.customer}.`,'warning');renderBookingTimeline();renderConflicts();renderBookings();saveState();}}
 
 // ===================== CONFIRMATIONS =====================
 function renderConfirmations(){
@@ -3154,6 +3189,7 @@ function confirmBookingPayment(bId){
     if(!b) return;
     if(inSession(b.date,timeToMin(b.startTime),timeToMin(b.endTime),b.courtId)){showNotif('Cannot confirm — Open Play session overlaps.','error');return;}
     b.status='confirmed';
+    saveBooking(b);
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
     saveState();renderConfirmations();renderBookings();
     showNotif(`✅ ${b.customer}'s payment confirmed!`,'success');
@@ -3162,12 +3198,9 @@ function confirmBookingPayment(bId){
 async function refreshConfirmations(){
     if (!VENUE_ID) return;
     try {
-        const doc = await db.collection('venues').doc(VENUE_ID).get();
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.bookings) S.bookings = data.bookings;
-            if (data.nextBId) S.nextBId = data.nextBId;
-        }
+        const snap = await bkCol().get();
+        S.bookings = [];
+        snap.forEach(d => S.bookings.push({ id: d.id, ...d.data() }));
         renderConfirmations();
         showNotif('🔄 Confirmations refreshed!','success');
     } catch(e) {
@@ -3442,6 +3475,9 @@ function seedJuneData(){
     const costs=[{category:'Rent',amount:50000,desc:'Monthly rent (3 courts)',date:'2026-06-01',createdAt:j(1)},{category:'Utilities',amount:12000,desc:'Electric + Water (extended hours to midnight)',date:'2026-06-30',createdAt:j(30)},{category:'Wages',amount:35000,desc:'Staff salaries (dawn shifts + weekends)',date:'2026-06-30',createdAt:j(30)},{category:'Supplies',amount:5000,desc:'Paddles, balls, nets, lighting',date:'2026-06-10',createdAt:j(10)},{category:'Maintenance',amount:3000,desc:'Court cleaning & repairs',date:'2026-06-20',createdAt:j(20)}];
     if(!S.costs) S.costs=[];
     costs.forEach(c=>{S.costs.push(c);});
+    const batch=db.batch();
+    S.bookings.forEach(b=>batch.set(bkCol().doc(b.id),b));
+    batch.commit().catch(()=>{});
     const maxBk=Math.max(...S.bookings.filter(b=>b.id.startsWith('BK')).map(b=>parseInt(b.id.replace('BK',''))||0),0);
     S.nextBId=Math.max(maxBk,seedId)+50;
     saveState();renderAll();
@@ -4905,6 +4941,19 @@ function deleteTournament(id){
         PERSISTENT_KEYS.forEach(k => {
             if (data[k] !== undefined) S[k] = data[k];
         });
+        if (data.bookings) {
+            S.bookings = data.bookings;
+            // Migrate existing bookings from venue doc to subcollection (one-time)
+            (async()=>{
+                const existing=await bkCol().limit(1).get();
+                if(existing.empty){
+                    const batch=db.batch();
+                    data.bookings.forEach(b=>batch.set(bkCol().doc(b.id),b));
+                    await batch.commit();
+                    await db.collection('venues').doc(VENUE_ID).update({bookings:firebase.firestore.FieldValue.delete()}).catch(()=>{});
+                }
+            })();
+        }
         S.venueSlug = venueSlug;
 
         // Auth check for non-demo venues
@@ -4955,6 +5004,7 @@ function deleteTournament(id){
         if(VENUE_OWNER_ID==='demo') startDemoHeartbeat();
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
+        loadBookings();
         setInterval(()=>{autoFreeExpiredBookings();saveState();renderOpCourts();renderOpStats();renderSession();const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}},30000);
         renderAll();
         // Fetch announcements
@@ -5048,6 +5098,7 @@ function confirmArchive(){
     a.download=`CourtQ_Archive_${cutoff}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
+    oldBookings.forEach(b=>deleteBooking(b.id));
     S.bookings=(S.bookings||[]).filter(b=>new Date(b.date+'T'+b.startTime)>=cutoffDate);
     S.sales=(S.sales||[]).filter(s=>!s.bookedAt||s.bookedAt>=cutoffDate.getTime());
     S.costs=(S.costs||[]).filter(c=>new Date(c.date||c.month+'T00:00:00')>=cutoffDate);
