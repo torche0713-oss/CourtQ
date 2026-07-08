@@ -1949,8 +1949,8 @@ function addSessionCourt(cId){
 
 function endSession(){
     if(!S.session) return;
+    const sessionCourts=S.session.courts||[];
     S.session.active=false; S.session=null;
-    const sessionCourts=S.session?.courts||[];
     S.courts.forEach(c=>{ if(c.status==='occupied'&&sessionCourts.includes(c.id)) completeRelease(c,null); if(c.rr) delete c.rr; delete c._rrMatchId; });
     updateJoinFormMode();
     showNotif('⏹ Session ended.','warning');
@@ -2543,10 +2543,12 @@ function doAssign(court,group){
 function freeCourt(cId){
     const c=S.courts.find(x=>x.id===cId);
     if(!c||c.status!=='occupied'){showNotif('Court not occupied!','error');return;}
-    const gt=c.gameType||(c.players.length>2?'doubles':'singles');
-    const tA=c.team1||(gt==='singles'?[c.players[0]]:[c.players[0],c.players[1]]);
-    const tB=c.team2||(gt==='singles'?[c.players[1]||{name:'P2',color:'#888',skill:3}]:[c.players[2],c.players[3]].filter(Boolean));
-    S.currentScore={courtId:c.id,players:[...c.players],gameType:gt,teamA:{players:tA,score:11},teamB:{players:tB,score:0},isTie:false,winner:'A'};
+    const pl=c.players&&c.players.length?c.players:[{name:'Player 1',color:'#4ecdc4',skill:3},{name:'Player 2',color:'#e74c3c',skill:3}];
+    c.players=pl;
+    const gt=c.gameType||(pl.length>2?'doubles':'singles');
+    const tA=c.team1||(gt==='singles'?[pl[0]]:[pl[0],pl[1]]);
+    const tB=c.team2||(gt==='singles'?[pl[1]||{name:'Player 2',color:'#e74c3c',skill:3}]:[pl[2],pl[3]].filter(Boolean));
+    S.currentScore={courtId:c.id,players:[...pl],gameType:gt,teamA:{players:tA,score:11},teamB:{players:tB,score:0},isTie:false,winner:'A'};
     renderScoreModal();
     document.getElementById('scoreModal').classList.add('active');
 }

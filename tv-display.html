@@ -379,10 +379,10 @@ function render(data){
         const maint=c.status==='maintenance';
         const isTournament=occ&&c._tournamentId;
         const isOpenPlay=occ&&!c._tournamentId&&session&&session.active;
-        const isBookingOcc=occ&&!c._tournamentId&&(!session||!session.active);
         const hasActiveBookings=activeBookings[c.id]&&activeBookings[c.id].length>0;
         const hasUpcoming=upcomingBookings[c.id]&&upcomingBookings[c.id].length>0;
-        const cardType=maint?'maintenance':isTournament?'tournament':isOpenPlay?'occupied':(isBookingOcc||hasActiveBookings)?'booked':c.status;
+        const isBookingOcc=occ&&!c._tournamentId&&(!session||!session.active)&&hasActiveBookings;
+        const cardType=maint?'maintenance':isTournament?'tournament':isOpenPlay?'occupied':isBookingOcc?'booked':occ?'occupied':hasActiveBookings?'booked':c.status;
 
         // Usage badge
         let usageBadge='';
@@ -431,7 +431,7 @@ function render(data){
         }
 
         const rrHTML=c.rr?`<span class="rr-round" style="margin-top:6px;">🔄 Round ${c.rr.round+1}/3</span>`:'';
-        const statusLabel=maint?'● Maintenance':isTournament?'● Tournament':isOpenPlay?'● In Play':(isBookingOcc||hasActiveBookings)?'● Booked':c.status==='available'?'● Available':'—';
+        const statusLabel=maint?'● Maintenance':isTournament?'● Tournament':isOpenPlay?'● In Play':isBookingOcc?'● Booked':occ?'● In Play':hasActiveBookings?'● Booked':c.status==='available'?'● Available':'—';
 
         return `
             <div class="court-card ${cardType}">
