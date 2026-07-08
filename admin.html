@@ -2546,8 +2546,8 @@ function freeCourt(cId){
     const pl=c.players&&c.players.length?c.players:[{name:'Player 1',color:'#4ecdc4',skill:3},{name:'Player 2',color:'#e74c3c',skill:3}];
     c.players=pl;
     const gt=c.gameType||(pl.length>2?'doubles':'singles');
-    const tA=c.team1||(gt==='singles'?[pl[0]]:[pl[0],pl[1]]);
-    const tB=c.team2||(gt==='singles'?[pl[1]||{name:'Player 2',color:'#e74c3c',skill:3}]:[pl[2],pl[3]].filter(Boolean));
+    const tA=c.team1&&c.team1.filter(Boolean).length?c.team1.filter(Boolean):(gt==='singles'?[pl[0]]:[pl[0],pl[1]]);
+    const tB=c.team2&&c.team2.filter(Boolean).length?c.team2.filter(Boolean):(gt==='singles'?[pl[1]||{name:'Player 2',color:'#e74c3c',skill:3}]:[pl[2],pl[3]].filter(Boolean));
     S.currentScore={courtId:c.id,players:[...pl],gameType:gt,teamA:{players:tA,score:11},teamB:{players:tB,score:0},isTie:false,winner:'A'};
     renderScoreModal();
     document.getElementById('scoreModal').classList.add('active');
