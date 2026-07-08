@@ -209,7 +209,7 @@ function getTimeMins(t){
 }
 
 function isBookingActive(b, now){
-    if(b.status==='cancelled'||b.status==='completed'||b.status==='checkedin') return false;
+    if(b.status==='cancelled'||b.status==='completed') return false;
     const today=phtNow().toISOString().slice(0,10);
     if(b.date!==today) return false;
     const nowMins=now.getHours()*60+now.getMinutes();

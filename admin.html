@@ -1813,6 +1813,28 @@ function getOpenPlayCourts(){
     return avail.filter(c=>assigned.includes(c.id));
 }
 
+function isBookingExpired(cId){
+    const now=phtNow();
+    const curMin=now.getHours()*60+now.getMinutes();
+    const today=getTodayISO();
+    return S.bookings.some(b=>b.courtId===cId&&b.date===today&&b.status==='checkedin'&&timeToMin(b.endTime)<=curMin);
+}
+
+function autoFreeExpiredBookings(){
+    const today=getTodayISO();
+    const now=phtNow();
+    const curMin=now.getHours()*60+now.getMinutes();
+    S.bookings.forEach(b=>{
+        if(b.date===today&&b.status==='checkedin'&&timeToMin(b.endTime)<=curMin){
+            b.status='completed';
+            const c=S.courts.find(x=>x.id===b.courtId);
+            if(c&&c.status==='occupied'){
+                c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;clearLiveScore(c.id);
+            }
+        }
+    });
+}
+
 // ===================== SESSION =====================
 function openStartSession(){
     const today=getTodayISO();
@@ -2738,7 +2760,15 @@ function confirmScore(){
         S.queue.push(loopGroup);
         showNotif('🔄 Looping — all players back to queue!','info');
     }
-    completeRelease(c,sd);
+    const hasBk=S.bookings.some(b=>b.courtId===c.id&&b.status==='checkedin');
+    const tmUp=hasBk&&isBookingExpired(c.id);
+    if(hasBk&&!tmUp){
+        recordGameResult(c,sd);
+        showNotif(`✅ Game saved — booking continues.`,'info');
+    } else {
+        if(tmUp) showNotif(`⏰ Booking time has ended — court freed.`,'info');
+        completeRelease(c,sd);
+    }
     if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
     else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=(wt.players||[]).filter(Boolean).map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
     closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
@@ -2768,12 +2798,16 @@ function skipScore(){
             const loopGroup={id:++S.nextId,groupName:pl3.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(pl3.reduce((a,p)=>a+p.skill,0)/pl3.length),players:[...pl3],team1:null,team2:null,joinedAt:Date.now()};
             S.queue.push(loopGroup);
         }
-        completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);
+        if(S.bookings.some(b=>b.courtId===c.id&&b.status==='checkedin')){
+            showNotif(`⏭ Score skipped — booking continues.`,'info');
+        } else {
+            completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);
+        }
     }
     closeModal('scoreModal');renderAll();setTimeout(()=>S.session?.mode==='winnersSplit'?tryWinnersAutoAssign():tryAutoAssign(),500);
 }
 
-function completeRelease(court,sd){
+function recordGameResult(court,sd){
     const dur=Math.floor((Date.now()-(court.startTime||Date.now()))/60000)||1;
     const now=new Date();
     const mid=Math.ceil(court.players.length/2);
@@ -2786,6 +2820,10 @@ function completeRelease(court,sd){
         else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const lt=sd.winner==='A'?sd.teamB:sd.teamA;(wt.players||[]).filter(Boolean).forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});(lt.players||[]).filter(Boolean).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});}
     }
     S.history.unshift(entry);if(S.history.length>100)S.history.pop();
+}
+
+function completeRelease(court,sd){
+    recordGameResult(court,sd);
     court.status='available';court.players=[];court.startTime=null;court.gameType=null;court.team1=null;court.team2=null;if(court.rr) delete court.rr;clearLiveScore(court.id);
 }
 
@@ -3881,6 +3919,7 @@ function copyPortalLink(){
 
 // ===================== RENDER ALL =====================
 function renderAll(){
+    autoFreeExpiredBookings();
     renderVenueDisplay();
     updateJoinFormMode();
     renderSession();
@@ -4903,7 +4942,7 @@ function deleteTournament(id){
         if(VENUE_OWNER_ID==='demo') startDemoHeartbeat();
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
-        setInterval(()=>{renderOpCourts();renderOpStats();renderSession();},30000);
+        setInterval(()=>{autoFreeExpiredBookings();saveState();renderOpCourts();renderOpStats();renderSession();},30000);
         renderAll();
         // Fetch announcements
         try {

@@ -126,8 +126,8 @@ function renderCourts(courts){
         const mid = Math.ceil(court.players.length / 2);
         const teamA = court.team1 || court.players.slice(0, mid);
         const teamB = court.team2 || court.players.slice(mid);
-        const aNames = teamA.map(p => p.name).join(' & ');
-        const bNames = teamB.map(p => p.name).join(' & ');
+        const aNames = (teamA||[]).filter(Boolean).map(p => p.name).join(' & ');
+        const bNames = (teamB||[]).filter(Boolean).map(p => p.name).join(' & ');
         return `
             <div class="court-card" data-court-id="${escapeHtml(court.id)}">
                 <div class="court-header">
