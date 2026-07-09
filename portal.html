@@ -318,7 +318,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Phone *</label><input type="text" id="pPhone" placeholder="+63 900 000 0000"></div>
-                    <div class="form-group"><label>Email *</label><input type="text" id="pEmail" placeholder="you@email.com"></div>
+                    <div class="form-group"><label>Email *</label><input type="text" id="pEmail" placeholder="you@email.com" autocomplete="off"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Game Type</label>
@@ -453,6 +453,7 @@ function openPortal(){
 }
 
 function closePortal(){
+    sessionStorage.removeItem('portalPendingBooking');
     document.getElementById('portalOverlay').classList.remove('active');
     document.getElementById('landingPage').style.display = 'block';
 }
@@ -567,6 +568,7 @@ function selPortalPay(btn,method){
 }
 
 function retryBooking(){
+    sessionStorage.removeItem('portalPendingBooking');
     S.portal = {step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{},ref:''};
     document.getElementById('pDate').value=getTodayISO();
     goPortalStep(1);
@@ -609,95 +611,124 @@ async function processPortalPayment(){
         return;
     }
     S.bookings.push(b);
+    sessionStorage.setItem('portalPendingBooking', bId);
+    showReceiptConfirmation(bId, b, court, refNum, total);
+}
+
+function showReceiptConfirmation(bId, booking, court, refNum, total){
     const payInfo='₱'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
-        conf.innerHTML=`<div class="payment-success">
-            <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
-            <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">Payment Submitted!</div>
-            <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Don't close this page. Please wait for confirmation from Admin.</div>
-            <div id="bookingStatusWait" style="text-align:center;">
-                <div class="payment-spinner" style="margin:10px auto;"></div>
-                <div style="font-size:0.8rem;color:#aaa;">Checking status...</div>
+    const conf=document.getElementById('confirmationContent');
+    conf.innerHTML=`<div class="payment-success">
+        <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">Payment Submitted!</div>
+        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Don't close this page. Please wait for confirmation from Admin.</div>
+        <div id="bookingStatusWait" style="text-align:center;">
+            <div class="payment-spinner" style="margin:10px auto;"></div>
+            <div style="font-size:0.8rem;color:#aaa;">Checking status...</div>
+        </div>
+        <div class="receipt-box" style="text-align:left;">
+            <div style="text-align:center;margin-bottom:10px;">
+                <div style="font-weight:700;color:#4ecdc4;">${S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">`:''}${escapeHtml(S.venueName)}</div>
+                <div style="font-size:0.68rem;color:#aaa;">ID: ${bId}</div>
             </div>
-            <div class="receipt-box" style="text-align:left;">
-                <div style="text-align:center;margin-bottom:10px;">
-                    <div style="font-weight:700;color:#4ecdc4;">${S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">`:''}${escapeHtml(S.venueName)}</div>
-                    <div style="font-size:0.68rem;color:#aaa;">ID: ${bId}</div>
-                </div>
-                <div class="receipt-line"><span>Name</span><span>${escapeHtml(b.customer)}</span></div>
-                <div class="receipt-line"><span>Court</span><span>${escapeHtml(court.name)}</span></div>
-                <div class="receipt-line"><span>Date</span><span>${escapeHtml(b.date)}</span></div>
-                <div class="receipt-line"><span>Time</span><span>${b.startTime} – ${b.endTime}</span></div>
-                <div class="receipt-line"><span>Reference</span><span>${escapeHtml(refNum)||'N/A'}</span></div>
-                <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
-            </div>
-        </div>`;
-        // Watch booking status via real-time listener (1 read on connect + 1 per status change)
-        if (!VENUE_ID) return;
-        const unsubStatus = bkCol().doc(bId).onSnapshot(snap => {
+            <div class="receipt-line"><span>Name</span><span>${escapeHtml(booking.customer)}</span></div>
+            <div class="receipt-line"><span>Court</span><span>${escapeHtml(court.name)}</span></div>
+            <div class="receipt-line"><span>Date</span><span>${escapeHtml(booking.date)}</span></div>
+            <div class="receipt-line"><span>Time</span><span>${booking.startTime} – ${booking.endTime}</span></div>
+            <div class="receipt-line"><span>Reference</span><span>${escapeHtml(refNum)||'N/A'}</span></div>
+            <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
+        </div>
+    </div>`;
+    watchBookingStatus(bId);
+}
+
+function watchBookingStatus(bId){
+    if(!VENUE_ID) return;
+    const unsubStatus = bkCol().doc(bId).onSnapshot(snap => {
+        try {
+            if(!snap.exists) return;
+            const booking = snap.data();
+            if(booking.status === 'confirmed'){
+                unsubStatus(); sessionStorage.removeItem('portalPendingBooking');
+                document.getElementById('bookingStatusWait').innerHTML=`
+                    <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
+                    <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your booking has been confirmed.</div>
+                    <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">Thank you for booking with us!</div>
+                    <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                        Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
+                        <span style="color:#f39c12;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
+                        <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
+                    </div>`;
+            }
+            if(booking.status === 'cancelled'){
+                unsubStatus(); sessionStorage.removeItem('portalPendingBooking');
+                document.getElementById('bookingStatusWait').innerHTML=`
+                    <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                    <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
+                    <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
+                    <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
+            }
+        } catch(e){}
+    }, err => {
+        console.warn('onSnapshot failed, falling back to polling', err);
+        const fb = setInterval(async () => {
             try {
-                if (!snap.exists) return;
-                const booking = snap.data();
-                if (booking.status === 'confirmed') {
-                    unsubStatus();
-                    document.getElementById('bookingStatusWait').innerHTML=`
-                        <div style="font-size:2rem;margin-bottom:10px;">✅</div>
-                        <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
-                        <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your booking has been confirmed.</div>
-                        <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">Thank you for booking with us!</div>
-                        <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
-                            Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
-                            <span style="color:#f39c12;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
-                        </div>
-                        <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
-                            <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
-                            <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
-                        </div>`;
-                }
-                if (booking.status === 'cancelled') {
-                    unsubStatus();
-                    document.getElementById('bookingStatusWait').innerHTML=`
-                        <div style="font-size:2rem;margin-bottom:10px;">😔</div>
-                        <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
-                        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
-                        <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
-                }
-            } catch(e) {}
-        }, err => {
-            // If listener fails, fall back to polling every 30s
-            console.warn('onSnapshot failed, falling back to polling', err);
-            const fallbackInterval = setInterval(async () => {
-                try {
-                    const snap = await bkCol().doc(bId).get();
-                    if (!snap.exists) return;
-                    const booking = {id:snap.id,...snap.data()};
-                    if (!booking) return;
-                    if (booking.status === 'confirmed' || booking.status === 'cancelled') {
-                        clearInterval(fallbackInterval);
-                        if (booking.status === 'confirmed') {
-                            document.getElementById('bookingStatusWait').innerHTML=`
-                                <div style="font-size:2rem;margin-bottom:10px;">✅</div>
-                                <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
-                                <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your booking has been confirmed.</div>
-                                <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">Thank you for booking with us!</div>
-                                <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
-                                    Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
-                                    <span style="color:#f39c12;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
-                                </div>
-                                <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
-                                    <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
-                                    <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
-                                </div>`;
-                        } else {
-                            document.getElementById('bookingStatusWait').innerHTML=`
-                                <div style="font-size:2rem;margin-bottom:10px;">😔</div>
-                                <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
-                                <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
-                                <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
-                        }
+                const snap = await bkCol().doc(bId).get();
+                if(!snap.exists) return;
+                const booking = {id:snap.id,...snap.data()};
+                if(!booking) return;
+                if(booking.status === 'confirmed' || booking.status === 'cancelled'){
+                    clearInterval(fb); sessionStorage.removeItem('portalPendingBooking');
+                    if(booking.status === 'confirmed'){
+                        document.getElementById('bookingStatusWait').innerHTML=`
+                            <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                            <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Booking Confirmed!</div>
+                            <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your booking has been confirmed.</div>
+                            <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">Thank you for booking with us!</div>
+                            <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                                Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
+                                <span style="color:#f39c12;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
+                            </div>
+                            <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+                                <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
+                                <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
+                            </div>`;
+                    } else {
+                        document.getElementById('bookingStatusWait').innerHTML=`
+                            <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                            <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Booking Not Available</div>
+                            <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
+                            <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
                     }
-                } catch(e) {}
-            }, 30000);
-        });
+                }
+            } catch(e){}
+        }, 30000);
+    });
+}
+
+async function showPendingBooking(bId){
+    try {
+        const snap = await bkCol().doc(bId).get();
+        if(!snap.exists){ sessionStorage.removeItem('portalPendingBooking'); return; }
+        const booking = {id:snap.id,...snap.data()};
+        if(booking.status === 'confirmed' || booking.status === 'cancelled'){ sessionStorage.removeItem('portalPendingBooking'); return; }
+        const court = S.courts.find(c=>c.id===booking.courtId);
+        if(!court){ sessionStorage.removeItem('portalPendingBooking'); return; }
+        S.portal = {step:5,courtId:booking.courtId,date:booking.date,slot:timeToMin(booking.startTime),duration:booking.duration,payMethod:booking.paymentMethod,data:{first:booking.customer,last:'',phone:booking.phone,email:booking.email,gameType:booking.gameType,players:booking.players,notes:booking.notes}};
+        document.getElementById('pDate').value=booking.date;
+        document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+        document.getElementById('portalOverlay').classList.add('active');
+        document.getElementById('landingPage').style.display='none';
+        goPortalStep(5);
+        showReceiptConfirmation(bId, booking, court, booking.reference, booking.amount);
+    } catch(e){
+        console.warn('Failed to restore pending booking:', e);
+        sessionStorage.removeItem('portalPendingBooking');
+    }
 }
 
 // ===================== INIT =====================
@@ -715,6 +746,7 @@ async function processPortalPayment(){
         VENUE_ID = slugDoc.data().venueId;
         document.title='CourtQ · '+venueSlug;
         bkCol().onSnapshot(snap=>{S.bookings=[];snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));if(S.portal?.step===2)renderSlots();},()=>{});
+        let _pendingBookingChecked = false;
         unsub=db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
             if(!snap.exists) return;
             const data = snap.data();
@@ -730,6 +762,12 @@ async function processPortalPayment(){
             renderCourtPicker();
             // Re-render slots if on step 2
             if(S.portal?.step===2) renderSlots();
+            // Restore pending booking after refresh
+            if(!_pendingBookingChecked && S.courts.length > 0){
+                _pendingBookingChecked = true;
+                const pid = sessionStorage.getItem('portalPendingBooking');
+                if(pid && VENUE_ID) showPendingBooking(pid);
+            }
         }, err=>{
             console.warn('onSnapshot error:', err);
         });
@@ -738,6 +776,7 @@ async function processPortalPayment(){
         document.getElementById('heroVenueName').textContent = 'Error loading venue';
     }
 })();
+
 function closeLegal(){document.getElementById('legalModal').classList.remove('active');}
 function showLegal(page){
     const c=document.getElementById('legalContent');

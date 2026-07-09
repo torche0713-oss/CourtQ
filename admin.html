@@ -549,7 +549,7 @@
             <div class="card" id="joinCard">
                 <div class="card-title">🎯 Join Queue</div>
                 <div id="pairingAlert" style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.3);border-radius:8px;padding:10px;margin-bottom:12px;font-size:0.8rem;color:#f39c12;display:none;"></div>
-                <div class="form-group"><label>Your Name *</label><input type="text" id="p1" placeholder="Enter your name"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="p1" placeholder="Enter your name" autocomplete="off"></div>
                 <div class="form-group"><label>Game Type</label>
                     <select id="gameType" onchange="onGTChange()">
                         <option value="singles">Singles (2 players)</option>
@@ -570,7 +570,7 @@
                         </div>
                     </div>
                     <div id="teamFields">
-                        <div class="form-group"><label>Partner Name</label><input type="text" id="p2" placeholder="Your teammate's name"></div>
+                        <div class="form-group"><label>Partner Name</label><input type="text" id="p2" placeholder="Your teammate's name" autocomplete="off"></div>
                         <div class="form-group" style="margin-top:4px;">
                             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.75rem;color:#aaa;">
                                 <input type="checkbox" id="fixedTeam" checked>
@@ -649,7 +649,7 @@
                 <div class="form-group"><label>Customer *</label><input type="text" id="bCustomer" placeholder="Full name"></div>
                 <div class="form-row">
                     <div class="form-group"><label>Phone</label><input type="text" id="bPhone" placeholder="+63 900 000 0000"></div>
-                    <div class="form-group"><label>Email</label><input type="text" id="bEmail" placeholder="email@example.com"></div>
+                    <div class="form-group"><label>Email</label><input type="text" id="bEmail" placeholder="email@example.com" autocomplete="off"></div>
                 </div>
                 <div class="form-group"><label>Court *</label><select id="bCourt" onchange="onBCourtChange()"><option value="">Select court...</option></select></div>
                 <div class="form-row">
@@ -740,7 +740,7 @@
         <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
         <div style="font-size:1.1rem;font-weight:700;margin-bottom:6px;">Access Code Required</div>
         <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Enter the owner access code to view financials.</div>
-        <input type="password" id="finAccessInput" placeholder="Enter access code" style="padding:10px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:1rem;text-align:center;max-width:250px;margin:0 auto 12px;display:block;">
+        <input type="password" id="finAccessInput" autocomplete="new-password" placeholder="Enter access code" style="padding:10px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:1rem;text-align:center;max-width:250px;margin:0 auto 12px;display:block;">
         <button class="btn btn-primary" onclick="unlockFinancials()">🔓 Unlock</button>
     </div>
     <div id="financialsContent" style="display:none;">
@@ -1339,7 +1339,7 @@
         <div id="staffSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:none;">
             <div style="font-weight:700;font-size:0.85rem;color:#2ecc71;margin-bottom:10px;">👥 Staff Management</div>
             <div style="display:flex;gap:6px;margin-bottom:8px;">
-                <input type="email" id="sStaffEmail" placeholder="staff@email.com" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;">
+                <input type="email" id="sStaffEmail" autocomplete="off" placeholder="staff@email.com" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;">
                 <button class="btn btn-primary btn-sm" onclick="addStaff()">+ Add</button>
             </div>
             <div id="staffList" style="font-size:0.85rem;"></div>
@@ -1348,7 +1348,7 @@
         <div id="ownerSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:none;">
             <div style="font-weight:700;font-size:0.85rem;color:#e74c3c;margin-bottom:10px;">👑 Co-Owners</div>
             <div style="display:flex;gap:6px;margin-bottom:8px;">
-                <input type="email" id="sOwnerEmail" placeholder="coowner@email.com" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;">
+                <input type="email" id="sOwnerEmail" autocomplete="off" placeholder="coowner@email.com" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;">
                 <button class="btn btn-primary btn-sm" onclick="addOwner()">+ Add</button>
             </div>
             <div id="ownerList" style="font-size:0.85rem;"></div>
