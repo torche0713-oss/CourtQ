@@ -2224,7 +2224,7 @@ function tryAutoAssign(){
     if(full.length===0) return;
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
-    showAssignModal(avail[0],full[0]);
+    showAssign(avail[0],full[0]);
 }
 
 async function tryWinnersAutoAssign(){
@@ -2249,7 +2249,7 @@ async function tryWinnersAutoAssign(){
     g.players.forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};});
     const court=avail[0];
     if(await doAssign(court,g)) showNotif(`🎉 ${court.name} → ${flat.map(p=>p.name).join(', ')}`,'success');
-    saveState();renderAll();
+    saveStateNow();renderAll();
 }
 
 function openRRSetup(){
@@ -2571,7 +2571,7 @@ function promptAssignGroup(gId){
     if(!g) return;
     const av=getOpenPlayCourts();
     if(av.length===0){showNotif('No courts available!','error');return;}
-    showAssignModal(av[0],g);
+    showAssign(av[0],g);
 }
 
 async function doAssign(court,group,extraProps){
