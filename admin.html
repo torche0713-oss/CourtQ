@@ -2797,6 +2797,7 @@ function confirmScore(){
     const tmUp=hasBk&&isBookingExpired(c.id);
     if(hasBk&&!tmUp){
         recordGameResult(c,sd);
+        saveState();
         showNotif(`✅ Game saved — booking continues.`,'info');
     } else {
         // Default 4 on/4 off — only runs for non-booking courts
@@ -2810,6 +2811,7 @@ function confirmScore(){
         }
         if(tmUp) showNotif(`⏰ Booking time has ended — court freed.`,'info');
         completeRelease(c,sd);
+        saveState();
     }
     if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
     else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=(wt.players||[]).filter(Boolean).map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
