@@ -798,7 +798,8 @@ function renderOpSessionList(){
     // Listen for live data if scheduledSessions is available
     const now=phtNow();
     const today=getTodayISO();
-    const upcoming=(S.scheduledSessions||[]).filter(s=>(s.status==='scheduled'||s.status==='active')&&(s.date>today||(s.date===today&&s.endTime>now.getHours()*60+now.getMinutes()))).sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
+    const nowMins=now.getHours()*60+now.getMinutes();
+    const upcoming=(S.scheduledSessions||[]).filter(s=>(s.status==='scheduled'||s.status==='active')&&(s.date>today||(s.date===today&&timeToMin(s.endTime)>nowMins))).sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
     if(upcoming.length===0){
         content.innerHTML=`<div class="empty-state"><div class="ei">🏓</div><p>No upcoming Open Play sessions scheduled right now.<br>Check back later or contact the venue.</p><button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:12px;">← Back</button></div>`;
         return;

@@ -312,10 +312,30 @@ function renderTVTimeline(data){
             });
             if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
         } else {
-            bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled'&&b.status!=='checkedin'&&b.status!=='completed').forEach(b=>{
-                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
-                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+            // Check scheduled Open Play sessions
+            let renderedScheduled=false;
+            (data.scheduledSessions||[]).filter(s=>(s.status==='scheduled'||s.status==='active')&&s.date===date&&(!court.id||!s.courts||s.courts.includes(court.id))).forEach(s=>{
+                renderedScheduled=true;
+                const ss=Math.max(timeToMin(s.startTime),sH*60);
+                const se=Math.min(timeToMin(s.endTime),(eH+1)*60);
+                if(ss<se){
+                    const bks=getBookingsForCourtTV(court.id,date,ss,se,bookings).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+                    let cur=ss;
+                    bks.forEach(b=>{
+                        const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                        if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">📅 Open Play</div>`;
+                        slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+                        cur=be;
+                    });
+                    if(cur<se) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((se-cur)/(total*60))*100,100)}%;">📅 Open Play</div>`;
+                }
             });
+            if(!renderedScheduled){
+                bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled'&&b.status!=='checkedin'&&b.status!=='completed').forEach(b=>{
+                    const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                    slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+                });
+            }
         }
         if(court.status==='occupied'&&court.startTime){
             const el=Math.floor((Date.now()-court.startTime)/60000);
