@@ -329,13 +329,14 @@
                         </select>
                     </div>
                     <div class="form-group"><label>Players</label>
-                        <select id="pPlayers">
+                        <select id="pPlayerCount" onchange="renderPortalPlayerNames()">
                             <option value="1">1</option>
                             <option value="2" selected>2</option>
                             <option value="3">3</option>
                             <option value="4">4</option>
                         </select>
                     </div>
+                    <div id="pPlayerNamesContainer"></div>
                 </div>
                 <div class="form-group"><label>Special Requests</label><textarea id="pNotes" rows="2" placeholder="Anything we should know..."></textarea></div>
                 <div style="display:flex;justify-content:space-between;margin-top:16px;">
@@ -442,6 +443,13 @@ function getBookingsForCourt(cId,date,sMin,eMin){
 }
 
 // ===================== PORTAL =====================
+function renderPortalPlayerNames(){
+    const container=document.getElementById('pPlayerNamesContainer');
+    const count=parseInt(document.getElementById('pPlayerCount').value);
+    container.innerHTML=Array.from({length:count},(_,i)=>
+        `<input type="text" class="portal-input" id="pName${i}" placeholder="Player ${i+1} name (optional)" style="margin-top:6px;">`
+    ).join('');
+}
 function openPortal(){
     S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
     document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
@@ -481,7 +489,11 @@ function portalNext(step){
         const p=document.getElementById('pPhone').value.trim();
         const e=document.getElementById('pEmail').value.trim();
         if(!f||!l||!p||!e){showNotif('Fill all required fields!','error');return;}
-        S.portal.data={first:f,last:l,phone:p,email:e,gameType:document.getElementById('pGameType').value,players:document.getElementById('pPlayers').value,notes:document.getElementById('pNotes').value};
+        S.portal.data={first:f,last:l,phone:p,email:e,gameType:document.getElementById('pGameType').value,players:document.getElementById('pPlayerCount').value,notes:document.getElementById('pNotes').value};
+        // Collect player names if provided
+        const nameInputs=document.querySelectorAll('#pPlayerNamesContainer input');
+        const pNames=Array.from(nameInputs).map(inp=>inp.value.trim()).filter(Boolean);
+        if(pNames.length>0) S.portal.data.players=pNames.join(', ');
         renderBookingSummary();
     }
     if(step===4&&!S.portal.payMethod){showNotif('Select a payment method!','error');return;}
@@ -776,6 +788,7 @@ async function showPendingBooking(bId){
         document.getElementById('heroVenueName').textContent = 'Error loading venue';
     }
 })();
+renderPortalPlayerNames();
 
 function closeLegal(){document.getElementById('legalModal').classList.remove('active');}
 function showLegal(page){

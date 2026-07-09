@@ -1312,8 +1312,31 @@
     <div class="modal">
         <div class="modal-title">📅 Booking Details</div>
         <div id="bookingDetailBody"></div>
-        <div class="modal-actions" id="bookingDetailActions"></div>
+        <div id="bookingDetailActions" class="modal-actions"></div>
     </div>
+</div>
+
+<div class="modal-overlay" id="checkInModal">
+    <div class="modal" style="max-width:400px;">
+        <div class="modal-title">✅ Check In — <span id="checkInCourtName"></span></div>
+        <div id="checkInBody"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" id="confirmCheckIn">✅ Check In</button>
+            <button class="btn btn-outline" onclick="closeModal('checkInModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editPlayersModal">
+    <div class="modal" style="max-width:380px;">
+        <div class="modal-title">✏️ Edit Players — <span id="editPlayersCourtName"></span></div>
+        <div id="editPlayersBody"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="confirmEditPlayers()">💾 Save</button>
+            <button class="btn btn-outline" onclick="closeModal('editPlayersModal')">Cancel</button>
+        </div>
+    </div>
+</div>
 </div>
 
 <div class="modal-overlay" id="settingsModal">
@@ -2974,23 +2997,14 @@ function openBookingDetail(bId){
     if(b.status==='confirmed'){
         const ci=document.createElement('button');
         ci.className='btn btn-success';ci.textContent='✅ Check In';
-        ci.onclick=()=>{
-            b.status='checkedin';
-            saveBooking(b);
-            const court=S.courts.find(c=>c.id===b.courtId);
-            if(court){
-                const names=(b.players||b.customer).split(',').map(s=>s.trim()).filter(Boolean);
-                court.players=names.map((n,i)=>({name:n,color:COLORS[i%COLORS.length],skill:3}));
-                court.status='occupied';
-                court.startTime=Date.now();
-                court.gameType=b.gameType||'singles';
-                saveState();
-            }
-            closeModal('bookingDetailModal');
-            showNotif(`${b.customer} checked in — court now occupied!`,'success');
-            renderBookings();renderAll();
-        };
+        ci.onclick=()=>openCheckInModal(b);
         acts.appendChild(ci);
+    }
+    if(b.status==='checkedin'){
+        const ep=document.createElement('button');
+        ep.className='btn btn-primary';ep.textContent='✏️ Edit Players';
+        ep.onclick=()=>openEditPlayersModal(b);
+        acts.appendChild(ep);
     }
     if(b.status!=='cancelled'&&b.status!=='completed'){
         const cc=document.createElement('button');
@@ -3011,6 +3025,72 @@ function openBookingDetail(bId){
     const cl=document.createElement('button');cl.className='btn btn-outline';cl.textContent='Close';cl.onclick=()=>closeModal('bookingDetailModal');
     acts.appendChild(cl);
     document.getElementById('bookingDetailModal').classList.add('active');
+}
+
+function openCheckInModal(b){
+    document.getElementById('checkInCourtName').textContent=(S.courts.find(c=>c.id===b.courtId)?.name)||'';
+    const body=document.getElementById('checkInBody');
+    const raw=b.players||'';
+    let names=raw.split(',').map(s=>s.trim()).filter(Boolean);
+    let count=2;
+    if(names.length===1&&/^\d+$/.test(names[0])){count=parseInt(names[0]);names=[];}
+    else if(names.length>0){count=names.length;}
+    else{count=b.gameType==='singles'?1:2;}
+    body.innerHTML=Array.from({length:count},(_,i)=>
+        `<div style="margin-bottom:8px;"><label style="font-size:0.78rem;color:#aaa;display:block;margin-bottom:3px;">Player ${i+1}</label><input type="text" id="ciName${i}" value="${escapeHtml(names[i]||'')}" placeholder="Player ${i+1} name" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:0.9rem;"></div>`
+    ).join('');
+    document.getElementById('confirmCheckIn').onclick=()=>{
+        const inputs=document.querySelectorAll('#checkInBody input');
+        const pNames=Array.from(inputs).map(inp=>inp.value.trim()).filter(Boolean);
+        if(pNames.length===0){showNotif('Enter at least one player name.','error');return;}
+        b.players=pNames.join(', ');
+        b.status='checkedin';
+        saveBooking(b);
+        const court=S.courts.find(c=>c.id===b.courtId);
+        if(court){
+            court.players=pNames.map((n,i)=>({name:n,color:COLORS[i%COLORS.length],skill:3}));
+            court.status='occupied';
+            court.startTime=Date.now();
+            court.gameType=b.gameType||'doubles';
+            saveState();
+        }
+        closeModal('checkInModal');
+        closeModal('bookingDetailModal');
+        showNotif(`${b.customer} checked in!`,'success');
+        renderBookings();renderAll();
+    };
+    document.getElementById('checkInModal').classList.add('active');
+}
+
+let _editCtx=null;
+function openEditPlayersModal(src){
+    const courtId=src.courtId||src.id;
+    const court=S.courts.find(c=>c.id===courtId);
+    if(!court) return;
+    const bk=S.bookings.find(b=>b.courtId===courtId&&b.status==='checkedin');
+    _editCtx={courtId,bookingId:bk?.id};
+    document.getElementById('editPlayersCourtName').textContent=court.name;
+    const names=court.players.map(p=>p.name);
+    const body=document.getElementById('editPlayersBody');
+    body.innerHTML=names.map((n,i)=>
+        `<div style="margin-bottom:8px;"><label style="font-size:0.78rem;color:#aaa;display:block;margin-bottom:3px;">Player ${i+1}</label><input type="text" id="epName${i}" value="${escapeHtml(n)}" placeholder="Player ${i+1} name" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:0.9rem;"></div>`
+    ).join('');
+    openModal('editPlayersModal');
+}
+function confirmEditPlayers(){
+    const inputs=document.querySelectorAll('#editPlayersBody input');
+    const names=Array.from(inputs).map(inp=>inp.value.trim()).filter(Boolean);
+    if(names.length===0){showNotif('Enter at least one player name.','error');return;}
+    const court=S.courts.find(c=>c.id===_editCtx.courtId);
+    if(court) court.players=names.map((n,i)=>({name:n,color:COLORS[i%COLORS.length],skill:3}));
+    if(_editCtx.bookingId){
+        const bk=S.bookings.find(b=>b.id===_editCtx.bookingId);
+        if(bk){bk.players=names.join(', ');saveBooking(bk);}
+    }
+    saveState();
+    closeModal('editPlayersModal');
+    showNotif('Players updated!','success');
+    renderAll();
 }
 
 // ===================== SETTINGS =====================
@@ -4159,6 +4239,7 @@ function renderCourtsManage(){
                     ${court.players.map(p=>`<div class="cpm-slot"><div class="mini-av" style="background:${p.color};">${p.name[0]}</div><span style="font-size:0.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.name)}</span><span style="font-size:0.55rem;opacity:0.5;margin-left:2px;">${p.skill||'?'}.0</span></div>`).join('')}
                 </div>
                 <div style="font-size:0.72rem;color:#f39c12;margin-bottom:8px;background:rgba(243,156,18,0.08);padding:6px 10px;border-radius:8px;border:1px solid rgba(243,156,18,0.12);">⚠️ Game in progress — cannot remove</div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"><button class="btn btn-sm" style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:6px;color:#4ecdc4;padding:4px 10px;font-size:0.7rem;font-weight:600;cursor:pointer;" onclick="event.stopPropagation();openEditPlayersModal(S.courts.find(c=>c.id===${court.id}))">✏️ Players</button></div>
             `:''}
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 <button class="btn btn-primary btn-sm" onclick="openEditCourt(${court.id})" style="background:linear-gradient(135deg,${court.color},rgba(0,0,0,0.3));border:none;">✏️ Edit</button>
