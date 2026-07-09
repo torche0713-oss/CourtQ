@@ -1510,6 +1510,7 @@ function loadBookings(){
     _unsubBookings=bkCol().onSnapshot(snap=>{
         S.bookings=[];
         snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));
+        renderBookingTimeline();
     },()=>{});
 }
 let _saveTimer=null;
@@ -2933,7 +2934,7 @@ function createBooking(){
     document.getElementById('bPricePreview').style.display='none';
     showNotif(`📅 Booking confirmed for ${customer}!`,'success');
     announce(`New booking: ${customer} → ${c.name} on ${date} at ${start}.`);
-    renderBookings();
+    renderBookingTimeline();renderConflicts();renderBookings();
     saveState();
 }
 
@@ -3193,7 +3194,7 @@ function confirmBookingPayment(bId){
     b.status='confirmed';
     saveBooking(b);
     S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
-    saveState();renderConfirmations();renderBookings();
+    saveState();renderBookingTimeline();renderConflicts();renderConfirmations();renderBookings();
     showNotif(`✅ ${b.customer}'s payment confirmed!`,'success');
 }
 
