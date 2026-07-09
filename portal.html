@@ -252,7 +252,10 @@
         <img src="/Logo.jpg" style="height:64px;width:auto;margin-bottom:12px;" alt="CourtQ Pro">
         <h1 id="heroVenueName">Book a Court</h1>
         <p>Reserve your court in seconds. Pick a date, choose your time, and you're set.</p>
-        <button class="btn btn-primary btn-lg" onclick="openPortal()">📅 Book Now</button>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-lg" onclick="openPortal('booking')">📅 Book Now</button>
+            <button class="btn btn-success btn-lg" onclick="openOpPortal()">🏓 Join Open Play</button>
+        </div>
     </div>
 </div>
 
@@ -368,6 +371,22 @@
     </div>
 </div>
 
+<!-- OPEN PLAY PORTAL -->
+<div class="portal-overlay" id="opPortalOverlay">
+    <div class="portal-container" style="max-width:600px;">
+        <div class="portal-header">
+            <div>
+                <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;">🏓 Join Open Play</div>
+                <div id="opPortalVenueName" style="font-size:0.85rem;color:#aaa;margin-top:2px;"></div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="closeOpPortal()">✕ Close</button>
+        </div>
+        <div class="portal-body">
+            <div id="opPortalContent"></div>
+        </div>
+    </div>
+</div>
+
 <div class="footer-links">
     <a onclick="showLegal('about')">About</a><span class="dot"> · </span>
     <a onclick="showLegal('privacy')">Privacy</a><span class="dot"> · </span>
@@ -399,7 +418,7 @@ function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;')
 
 // ===================== STATE =====================
 let S = {
-    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[], paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
 };
 let VENUE_ID = null;
@@ -407,7 +426,8 @@ let unsub = null;
 function bkCol(){return db.collection('venues').doc(VENUE_ID).collection('bookings');}
 
 // ===================== HELPERS =====================
-function getTodayISO(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000).toISOString().split('T')[0]; }
+function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000); }
+function getTodayISO(){ const d=phtNow(); return d.toISOString().split('T')[0]; }
 function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
 function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
@@ -450,7 +470,8 @@ function renderPortalPlayerNames(){
         `<input type="text" class="portal-input" id="pName${i}" placeholder="Player ${i+1} name (optional)" style="margin-top:6px;">`
     ).join('');
 }
-function openPortal(){
+function openPortal(mode){
+    if(mode==='openplay') return openOpPortal();
     S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
     document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
     document.getElementById('pDate').value=getTodayISO();
@@ -743,6 +764,137 @@ async function showPendingBooking(bId){
     }
 }
 
+// ===================== OPEN PLAY PORTAL =====================
+let _opJoinCtx = null;
+
+function openOpPortal(){
+    document.getElementById('opPortalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+    document.getElementById('opPortalOverlay').classList.add('active');
+    document.getElementById('landingPage').style.display='none';
+    renderOpSessionList();
+}
+
+function closeOpPortal(){
+    _opJoinCtx=null;
+    document.getElementById('opPortalOverlay').classList.remove('active');
+    document.getElementById('landingPage').style.display='block';
+}
+
+function renderOpSessionList(){
+    const content=document.getElementById('opPortalContent');
+    // Listen for live data if scheduledSessions is available
+    const now=phtNow();
+    const today=getTodayISO();
+    const upcoming=(S.scheduledSessions||[]).filter(s=>(s.status==='scheduled'||s.status==='active')&&(s.date>today||(s.date===today&&s.endTime>now.getHours()*60+now.getMinutes()))).sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
+    if(upcoming.length===0){
+        content.innerHTML=`<div class="empty-state"><div class="ei">🏓</div><p>No upcoming Open Play sessions scheduled right now.<br>Check back later or contact the venue.</p><button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:12px;">← Back</button></div>`;
+        return;
+    }
+    content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:12px;">📅 Upcoming Sessions</div>
+        <div style="font-size:0.78rem;color:#aaa;margin-bottom:16px;">Select a session to join. No need to book a specific court — just show up and play!</div>
+        ${upcoming.map(s=>{
+            const courtNames=(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
+            const pCount=(s.players||[]).length;
+            const max=s.maxPlayers||'∞';
+            const full=pCount>=max;
+            return `<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;margin-bottom:10px;${!full?'cursor:pointer;transition:all 0.2s;':''}" ${!full?`onclick="selectOpSession('${s.id}')" onmouseover="this.style.borderColor='rgba(78,205,196,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'"`:''}>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem;">${escapeHtml(s.date)}</div>
+                        <div style="font-size:0.82rem;color:#4ecdc4;">${s.startTime} – ${s.endTime}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.78rem;color:#aaa;">${pCount}/${max} players</div>
+                        <div style="font-size:0.72rem;color:#f39c12;">${s.fee>0?'₱'+s.fee:'Free'}</div>
+                    </div>
+                </div>
+                <div style="font-size:0.72rem;color:#888;margin-top:6px;">🏟️ ${escapeHtml(courtNames)} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}</div>
+                ${full?`<div style="color:#e74c3c;font-size:0.72rem;margin-top:6px;">⚠️ Session Full</div>`:`<div style="color:#4ecdc4;font-size:0.72rem;margin-top:6px;">✅ Spots available — click to join</div>`}
+            </div>`;
+        }).join('')}
+        <button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:4px;">← Back</button>`;
+}
+
+function selectOpSession(id){
+    const s=(S.scheduledSessions||[]).find(x=>x.id===id);
+    if(!s) return;
+    if((s.players||[]).length>=(s.maxPlayers||Infinity)){showNotif('Session is full!','error');return;}
+    _opJoinCtx=s;
+    const content=document.getElementById('opPortalContent');
+    content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:4px;">👋 Your Info</div>
+        <div style="font-size:0.78rem;color:#aaa;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
+        <div class="form-row">
+            <div class="form-group"><label>First Name *</label><input type="text" id="opFirstName" placeholder="Juan"></div>
+            <div class="form-group"><label>Last Name *</label><input type="text" id="opLastName" placeholder="dela Cruz"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Phone *</label><input type="text" id="opPhone" placeholder="+63 900 000 0000"></div>
+            <div class="form-group"><label>Email *</label><input type="text" id="opEmail" placeholder="you@email.com"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Game Type</label>
+                <select id="opGameType">
+                    <option value="doubles">Doubles</option>
+                    <option value="singles">Singles</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Skill Level</label>
+                <select id="opSkill">
+                    <option value="2">2.0 – Beginner</option>
+                    <option value="3" selected>3.0 – Intermediate</option>
+                    <option value="4">4.0 – Advanced</option>
+                    <option value="5">5.0 – Pro</option>
+                </select>
+            </div>
+        </div>
+        ${s.fee>0?`<div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;font-size:0.8rem;margin-bottom:12px;">
+            <strong>⚠️ Drop-in Fee: ₱${s.fee}</strong><br>
+            <span style="color:#aaa;">Pay this fee at the venue when you arrive.</span>
+        </div>`:''}
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" onclick="renderOpSessionList()">← Back</button>
+            <button class="btn btn-success" onclick="confirmJoinOpSession()">✅ Join Open Play</button>
+        </div>`;
+}
+
+async function confirmJoinOpSession(){
+    const s=_opJoinCtx;
+    if(!s) return;
+    const fn=document.getElementById('opFirstName').value.trim();
+    const ln=document.getElementById('opLastName').value.trim();
+    const phone=document.getElementById('opPhone').value.trim();
+    const email=document.getElementById('opEmail').value.trim();
+    if(!fn||!ln||!phone||!email){showNotif('Fill all required fields!','error');return;}
+    const skill=parseInt(document.getElementById('opSkill').value);
+    const gameType=document.getElementById('opGameType').value;
+    const player={name:fn+' '+ln,phone,email,skill,gameType,source:'online',joinedAt:Date.now()};
+    // Save to Firestore
+    if(VENUE_ID){
+        try {
+            // Fetch current sessions, update, write back
+            const snap=await db.collection('venues').doc(VENUE_ID).get();
+            const data=snap.data();
+            let sessions=data.scheduledSessions||[];
+            const idx=sessions.findIndex(x=>x.id===s.id);
+            if(idx===-1){showNotif('Session no longer available.','error');return;}
+            if((sessions[idx].players||[]).length>=(sessions[idx].maxPlayers||Infinity)){showNotif('Session is full!','error');return;}
+            sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
+            await db.collection('venues').doc(VENUE_ID).update({scheduledSessions:sessions});
+            // Update local state
+            S.scheduledSessions=sessions;
+        } catch(e){
+            console.warn('Failed to join Open Play:',e);
+            showNotif('Failed to join. Please try again.','error');
+            return;
+        }
+    } else {
+        showNotif('Venue not available.','error');
+        return;
+    }
+    closeOpPortal();
+    showNotif(`✅ You've joined Open Play on ${s.date}! See you there!`,'success');
+}
+
 // ===================== INIT =====================
 (async () => {
     const params = new URLSearchParams(window.location.search);
@@ -766,6 +918,7 @@ async function showPendingBooking(bId){
             S.logoUrl = data.logoUrl || '';
             S.courts = data.courts || [];
             S.session = data.session || null;
+            S.scheduledSessions = data.scheduledSessions || [];
             S.nextBId = data.nextBId || 1;
             S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
             const logoHtml=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:28px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">`:'';
@@ -774,6 +927,8 @@ async function showPendingBooking(bId){
             renderCourtPicker();
             // Re-render slots if on step 2
             if(S.portal?.step===2) renderSlots();
+            // Re-render Open Play list if portal is open
+            if(document.getElementById('opPortalOverlay').classList.contains('active')) renderOpSessionList();
             // Restore pending booking after refresh
             if(!_pendingBookingChecked && S.courts.length > 0){
                 _pendingBookingChecked = true;

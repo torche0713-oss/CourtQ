@@ -543,6 +543,12 @@
 <div class="page active" id="page-openplay">
     <div id="sessionDisplay"></div>
     <div class="four-col" id="opStats" style="margin-bottom:16px;"></div>
+    <div id="scheduledOpCard" style="display:none;margin-bottom:16px;">
+        <div class="card">
+            <div class="card-title">📅 Scheduled Open Play</div>
+            <div id="scheduledOpList"></div>
+        </div>
+    </div>
     <div class="announce-banner"><span style="font-size:1.1rem">📢</span><span id="announceText">Welcome to CourtQ Pro!</span></div>
     <div class="two-col">
         <div>
@@ -604,6 +610,7 @@
                     <span>🏟️ Courts</span>
                     <div style="display:flex;gap:8px;">
                         <button class="btn btn-primary btn-sm" onclick="openStartSession()">▶ Session</button>
+                        <button class="btn btn-outline btn-sm" onclick="openScheduleOpModal()">📅 Schedule</button>
                         <button class="btn btn-purple btn-sm" onclick="aiSuggest()">🔮 AI Suggest</button>
                     </div>
                 </div>
@@ -1210,6 +1217,79 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="scheduleOpModal">
+    <div class="modal" style="max-width:520px;">
+        <div class="modal-title">📅 Schedule Open Play</div>
+        <div class="form-row">
+            <div class="form-group"><label>Date *</label><input type="date" id="schedOpDate"></div>
+            <div class="form-group"><label>Max Players</label><input type="number" id="schedOpMax" value="16" min="2"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Start Time *</label><input type="time" id="schedOpStart" value="14:00"></div>
+            <div class="form-group"><label>End Time *</label><input type="time" id="schedOpEnd" value="18:00"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Mode</label>
+                <select id="schedOpMode">
+                    <option value="fourOnFour">4 on / 4 off</option>
+                    <option value="winnersSplit">Winners Stay & Split</option>
+                    <option value="roundRobin">Round Robin</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="schedOpFee" value="0"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
+            <div id="schedOpCourts" class="ses-court-grid"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="saveScheduledOp()">📅 Schedule</button>
+            <button class="btn btn-outline" onclick="closeModal('scheduleOpModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="scheduledOpDetailModal">
+    <div class="modal" style="max-width:500px;">
+        <div class="modal-title">📋 <span id="schedOpDetailTitle">Open Play</span></div>
+        <div id="schedOpDetailMeta" style="font-size:0.82rem;color:#aaa;margin-bottom:14px;"></div>
+        <div style="font-size:0.8rem;font-weight:700;color:#4ecdc4;margin-bottom:8px;">👥 Players (<span id="schedOpPlayerCount">0</span>)</div>
+        <div id="schedOpPlayerList" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;">
+            <button class="btn btn-sm" style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:6px;color:#4ecdc4;padding:6px 12px;font-size:0.78rem;font-weight:600;cursor:pointer;" onclick="addPlayerToScheduledOp()">➕ Add Player</button>
+            <button class="btn btn-primary btn-sm" onclick="startScheduledSession()">▶ Start Now</button>
+            <button class="btn btn-danger btn-sm" onclick="cancelScheduledOp()">✕ Cancel</button>
+            <button class="btn btn-outline btn-sm" onclick="closeModal('scheduledOpDetailModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="addOpPlayerModal">
+    <div class="modal" style="max-width:360px;">
+        <div class="modal-title">➕ Add Player</div>
+        <div class="form-group"><label>Player Name *</label><input type="text" id="addOpPlayerName" placeholder="Full name"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="addOpPlayerPhone" placeholder="+63..."></div>
+        <div class="form-group"><label>Email</label><input type="text" id="addOpPlayerEmail" placeholder="email@example.com"></div>
+        <div class="form-group"><label>Skill</label>
+            <select id="addOpPlayerSkill">
+                <option value="2">2.0 – Beginner</option>
+                <option value="3" selected>3.0 – Intermediate</option>
+                <option value="4">4.0 – Advanced</option>
+                <option value="5">5.0 – Pro</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Game Type</label>
+            <select id="addOpPlayerGameType">
+                <option value="singles">Singles</option>
+                <option value="doubles" selected>Doubles</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="confirmAddOpPlayer()">➕ Add</button>
+            <button class="btn btn-outline" onclick="closeModal('addOpPlayerModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="addCourtModal">
     <div class="modal">
         <div class="modal-title">🏗️ Add New Court</div>
@@ -1475,6 +1555,7 @@ let S = {
     costs:[],
     ownerEmails:[],
     tournaments:[],
+    scheduledSessions:[],
 
 };
 
@@ -1523,7 +1604,7 @@ function resetUsage(){
 }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails','tournaments'];
+const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails','tournaments','scheduledSessions'];
 function bkCol(){return db.collection('venues').doc(VENUE_ID).collection('bookings');}
 function saveBooking(b){if(!VENUE_ID)return;bkCol().doc(b.id).set(b,{merge:true}).catch(()=>{});}
 function deleteBooking(id){if(!VENUE_ID)return;bkCol().doc(id).delete().catch(()=>{});}
@@ -1968,6 +2049,173 @@ function startSession(){
     showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}`,'success');
     announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}.`);
     renderAll();
+}
+
+// ===================== SCHEDULED OPEN PLAY =====================
+let _schedOpCtx = null;
+
+function renderScheduledOpList(){
+    const card=document.getElementById('scheduledOpCard');
+    const list=document.getElementById('scheduledOpList');
+    const upcoming=S.scheduledSessions.filter(s=>s.status==='scheduled'||s.status==='active').sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
+    if(upcoming.length===0){card.style.display='none';return;}
+    card.style.display='block';
+    list.innerHTML=upcoming.map(s=>{
+        const courtNames=(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
+        const pCount=(s.players||[]).length;
+        const max=s.maxPlayers||'∞';
+        const label=s.status==='active'?'🟢 Live':`📅 ${s.date}`;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:all 0.2s;" onclick="openScheduledOpDetail('${s.id}')" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-weight:700;font-size:0.85rem;">${label}</span>
+                <span style="font-size:0.78rem;color:#aaa;">${s.startTime}–${s.endTime}</span>
+                <span style="font-size:0.72rem;color:#4ecdc4;">${courtNames}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:0.78rem;color:#aaa;">${pCount}/${max} players</span>
+                <span style="font-size:0.7rem;color:#f39c12;">${s.fee>0?'₱'+s.fee:'Free'}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function openScheduleOpModal(){
+    document.getElementById('schedOpDate').value=getTodayISO();
+    const ck=document.getElementById('schedOpCourts');
+    ck.innerHTML=S.courts.map(c=>`
+        <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected')">
+            <span class="ck">✓</span><span>${escapeHtml(c.name)}</span>
+        </div>
+    `).join('');
+    openModal('scheduleOpModal');
+}
+
+function saveScheduledOp(){
+    const date=document.getElementById('schedOpDate').value;
+    const start=document.getElementById('schedOpStart').value;
+    const end=document.getElementById('schedOpEnd').value;
+    const mode=document.getElementById('schedOpMode').value;
+    const fee=parseInt(document.getElementById('schedOpFee').value)||0;
+    const max=parseInt(document.getElementById('schedOpMax').value)||0;
+    if(!date||!start||!end){showNotif('Fill date and time!','error');return;}
+    if(end<=start){showNotif('End must be after start!','error');return;}
+    const selectedCourts=[...document.querySelectorAll('#schedOpCourts .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
+    if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
+    const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
+    S.scheduledSessions.push({id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],createdAt:Date.now()});
+    closeModal('scheduleOpModal');
+    saveState();
+    renderScheduledOpList();
+    showNotif(`📅 Open Play scheduled for ${date} ${start}–${end}`,'success');
+}
+
+function openScheduledOpDetail(id){
+    const s=S.scheduledSessions.find(x=>x.id===id);
+    if(!s) return;
+    _schedOpCtx=s;
+    document.getElementById('schedOpDetailTitle').textContent=s.date+' '+s.startTime+'–'+s.endTime;
+    const courtNames=(s.courts||[]).map(cid=>S.courts.find(c=>c.id===cid)?.name||'Court '+cid).join(', ');
+    document.getElementById('schedOpDetailMeta').innerHTML=`
+        <div>${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}</div>
+        <div style="font-size:0.75rem;margin-top:2px;">Status: ${s.status} · Max: ${s.maxPlayers||'No limit'}</div>`;
+    renderScheduledOpPlayers();
+    openModal('scheduledOpDetailModal');
+}
+
+function renderScheduledOpPlayers(){
+    if(!_schedOpCtx) return;
+    const list=document.getElementById('schedOpPlayerList');
+    const ps=_schedOpCtx.players||[];
+    document.getElementById('schedOpPlayerCount').textContent=ps.length;
+    if(ps.length===0){list.innerHTML='<div style="font-size:0.82rem;color:#555;padding:12px;text-align:center;">No players joined yet.</div>';return;}
+    list.innerHTML=ps.map((p,i)=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:4px;">
+            <div>
+                <span style="font-weight:600;font-size:0.85rem;">${escapeHtml(p.name)}</span>
+                <span style="font-size:0.7rem;color:#aaa;margin-left:6px;">${p.gameType||'doubles'} · ⭐${p.skill||3}.0</span>
+                <span style="font-size:0.65rem;color:#555;margin-left:6px;">${p.source==='online'?'🌐':''}${p.phone?' 📞'+escapeHtml(p.phone):''}</span>
+            </div>
+            <button class="btn btn-sm" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:6px;color:#e74c3c;padding:3px 8px;font-size:0.65rem;cursor:pointer;" onclick="removeScheduledOpPlayer(${i})">✕</button>
+        </div>
+    `).join('');
+}
+
+function addPlayerToScheduledOp(){
+    if(!_schedOpCtx) return;
+    document.getElementById('addOpPlayerName').value='';
+    document.getElementById('addOpPlayerPhone').value='';
+    document.getElementById('addOpPlayerEmail').value='';
+    openModal('addOpPlayerModal');
+}
+
+function confirmAddOpPlayer(){
+    const name=document.getElementById('addOpPlayerName').value.trim();
+    if(!name){showNotif('Enter player name!','error');return;}
+    const skill=parseInt(document.getElementById('addOpPlayerSkill').value);
+    const gameType=document.getElementById('addOpPlayerGameType').value;
+    const phone=document.getElementById('addOpPlayerPhone').value.trim();
+    const email=document.getElementById('addOpPlayerEmail').value.trim();
+    _schedOpCtx.players.push({name,skill,gameType,phone,email,source:'onsite',joinedAt:Date.now()});
+    closeModal('addOpPlayerModal');
+    saveState();
+    renderScheduledOpPlayers();
+    renderScheduledOpList();
+    showNotif(`➕ ${name} added to Open Play`,'success');
+}
+
+function removeScheduledOpPlayer(idx){
+    if(!_schedOpCtx||!confirm('Remove this player?')) return;
+    _schedOpCtx.players.splice(idx,1);
+    saveState();
+    renderScheduledOpPlayers();
+    renderScheduledOpList();
+    showNotif('Player removed','warning');
+}
+
+function startScheduledSession(){
+    if(!_schedOpCtx) return;
+    if(_schedOpCtx.status==='active'){showNotif('Already active!','error');return;}
+    const s=_schedOpCtx;
+    // Check for booking conflicts
+    const sesS=timeToMin(s.startTime), sesE=timeToMin(s.endTime);
+    let conflicts=[];
+    S.courts.forEach(c=>{
+        if(!(s.courts||[]).includes(c.id)) return;
+        getBookingsForCourt(c.id,s.date,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
+    });
+    if(conflicts.length>0){
+        showNotif(`⚠️ ${conflicts.length} booking overlap(s)! Cannot start.`,'error');
+        return;
+    }
+    // Create the live session
+    const rot=20;
+    const mode=s.mode;
+    const rrGameType=mode==='roundRobin'?'doubles':null;
+    const startDT=new Date(s.date+'T'+s.startTime);
+    const endDT=new Date(s.date+'T'+s.endTime);
+    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:[...s.courts],looping:mode==='fourOnFour'};
+    // Add all joined players to the queue
+    (s.players||[]).forEach(p=>{
+        if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}
+        else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}
+    });
+    s.status='active';
+    closeModal('scheduledOpDetailModal');
+    closeModal('scheduleOpModal');
+    saveState();
+    showNotif(`▶ Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime}`,'success');
+    announce(`Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime}.`);
+    updateJoinFormMode();
+    renderAll();
+}
+
+function cancelScheduledOp(){
+    if(!_schedOpCtx||!confirm('Cancel this scheduled Open Play?')) return;
+    _schedOpCtx.status='cancelled';
+    closeModal('scheduledOpDetailModal');
+    saveState();
+    renderScheduledOpList();
+    showNotif('Scheduled Open Play cancelled.','warning');
 }
 
 function openSessionCourtPicker(){
@@ -4068,6 +4316,7 @@ function renderAll(){
     renderCourtsManage();
     renderQueueList();
     renderOpStats();
+    renderScheduledOpList();
     renderBookingCourtSelect();
     updatePairAlert();
     saveState();
