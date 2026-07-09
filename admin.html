@@ -509,6 +509,8 @@
             <span style="font-size:0.6rem;opacity:0.5;">✏️</span>
         </div>
         <button class="btn btn-primary btn-sm" onclick="copyPortalLink()">🔗 Share Booking Online Link</button>
+        <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/tv-display.html?venue='+S.venueSlug).then(()=>showNotif('TV Display link copied!')).catch(()=>showNotif('Failed to copy'))">📺 Share TV Link</button>
+        <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/score.html?venue='+S.venueSlug).then(()=>showNotif('Mobile Scoring link copied!')).catch(()=>showNotif('Failed to copy'))">📱 Share Scoring Link</button>
         <button class="btn btn-outline btn-sm" onclick="openSettings()" id="settingsBtn">⚙️ Settings</button>
         <button class="btn btn-outline btn-sm" onclick="setGeminiKey()">🔮 AI</button>
         <button class="btn btn-outline btn-sm" onclick="aiDailyBriefing()">📋 AI Briefing</button>
