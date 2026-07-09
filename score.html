@@ -6,38 +6,38 @@
 <title>CourtQ Score</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#0a0a0f;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans-serif;min-height:100vh;}
-#app{padding:16px;max-width:480px;margin:0 auto;}
-header{text-align:center;padding:16px 0 24px;}
-header h1{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,#4ecdc4,#3498db);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-header .venue{font-size:0.9rem;color:#888;margin-top:4px;}
-header .hint{font-size:0.72rem;color:#444;margin-top:6px;}
-.court-card{background:linear-gradient(145deg,#13131e,#1a1a2e);border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.06);}
-.court-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.court-name{font-size:1.1rem;font-weight:700;}
-.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ecdc4;animation:pulse 1.5s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.court-players{font-size:0.8rem;color:#888;margin-bottom:16px;text-align:center;}
-.score-row{display:flex;align-items:center;justify-content:space-around;gap:12px;margin-bottom:16px;}
+body{background:#080816;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans-serif;min-height:100vh;}
+#app{padding:20px;max-width:600px;margin:0 auto;}
+header{text-align:center;padding:20px 0 28px;}
+header h1{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,#4ecdc4,#2ecc71);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+header .venue{font-size:1.1rem;color:#aaa;margin-top:6px;}
+header .hint{font-size:0.85rem;color:#555;margin-top:8px;}
+.court-card{background:linear-gradient(145deg,#141428,#1c1c38);border-radius:20px;padding:24px;margin-bottom:20px;border:2px solid rgba(255,255,255,0.08);box-shadow:0 6px 24px rgba(0,0,0,0.4);}
+.court-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.court-name{font-size:1.4rem;font-weight:800;}
+.live-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#00e676;animation:pulse 1.5s infinite;box-shadow:0 0 10px rgba(0,230,118,0.4);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.25;}}
+.court-players{font-size:1rem;color:#aaa;margin-bottom:20px;text-align:center;font-weight:600;}
+.score-row{display:flex;align-items:center;justify-content:space-around;gap:16px;margin-bottom:20px;}
 .team{text-align:center;flex:1;}
-.team-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;}
-.team-label.a{color:#4ecdc4;}
-.team-label.b{color:#e74c3c;}
-.score-num{font-size:2.8rem;font-weight:800;margin:4px 0;line-height:1;}
-.team.a .score-num{color:#4ecdc4;}
-.team.b .score-num{color:#e74c3c;}
-.vs{font-size:1rem;color:#555;font-weight:700;text-transform:uppercase;}
-.score-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
-.score-btn{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#fff;font-size:1.6rem;cursor:pointer;transition:all 0.15s;font-weight:700;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;}
-.score-btn:active{transform:scale(0.88);background:rgba(255,255,255,0.12);}
-.score-btn.a-plus{border-color:rgba(78,205,196,0.3);color:#4ecdc4;}
-.score-btn.a-minus{border-color:rgba(78,205,196,0.15);color:#4ecdc4;}
-.score-btn.b-plus{border-color:rgba(231,76,60,0.3);color:#e74c3c;}
-.score-btn.b-minus{border-color:rgba(231,76,60,0.15);color:#e74c3c;}
-.reset-btn{background:rgba(255,255,255,0.04);color:#666;border:1px solid rgba(255,255,255,0.08);width:100%;padding:10px;border-radius:10px;font-size:0.8rem;font-weight:600;cursor:pointer;margin-top:8px;transition:all 0.2s;}
-.reset-btn:active{background:rgba(231,76,60,0.1);color:#e74c3c;}
-.empty-msg{text-align:center;padding:80px 20px;color:#555;font-size:0.9rem;}
-.empty-msg .big{font-size:2.5rem;margin-bottom:12px;}
+.team-label{font-size:0.82rem;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:700;}
+.team-label.a{color:#00e676;}
+.team-label.b{color:#ff5252;}
+.score-num{font-size:4.5rem;font-weight:900;margin:6px 0;line-height:1;}
+.team.a .score-num{color:#00e676;text-shadow:0 0 30px rgba(0,230,118,0.15);}
+.team.b .score-num{color:#ff5252;text-shadow:0 0 30px rgba(255,82,82,0.15);}
+.vs{font-size:1.2rem;color:#666;font-weight:800;text-transform:uppercase;}
+.score-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.score-btn{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:2.2rem;cursor:pointer;transition:all 0.15s;font-weight:700;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;}
+.score-btn:active{transform:scale(0.85);background:rgba(255,255,255,0.15);}
+.score-btn.a-plus{border-color:rgba(0,230,118,0.4);color:#00e676;background:rgba(0,230,118,0.08);}
+.score-btn.a-minus{border-color:rgba(0,230,118,0.2);color:#00e676;}
+.score-btn.b-plus{border-color:rgba(255,82,82,0.4);color:#ff5252;background:rgba(255,82,82,0.08);}
+.score-btn.b-minus{border-color:rgba(255,82,82,0.2);color:#ff5252;}
+.reset-btn{background:rgba(255,255,255,0.05);color:#888;border:2px solid rgba(255,255,255,0.1);width:100%;padding:14px;border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:12px;transition:all 0.2s;}
+.reset-btn:active{background:rgba(255,23,68,0.12);color:#ff1744;border-color:rgba(255,23,68,0.2);}
+.empty-msg{text-align:center;padding:80px 20px;color:#666;font-size:1rem;}
+.empty-msg .big{font-size:3rem;margin-bottom:16px;}
 </style>
 </head>
 <body>
