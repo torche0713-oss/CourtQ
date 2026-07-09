@@ -779,6 +779,7 @@ async function showPendingBooking(bId){
 
 // ===================== OPEN PLAY PORTAL =====================
 let _opJoinCtx = null;
+let _opPayMethod = null;
 
 function openOpPortal(){
     document.getElementById('opPortalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
@@ -789,11 +790,13 @@ function openOpPortal(){
 
 function closeOpPortal(){
     _opJoinCtx=null;
+    _opPayMethod=null;
     document.getElementById('opPortalOverlay').classList.remove('active');
     document.getElementById('landingPage').style.display='block';
 }
 
 function renderOpSessionList(){
+    _opPayMethod=null;
     const content=document.getElementById('opPortalContent');
     // Listen for live data if scheduledSessions is available
     const now=phtNow();
@@ -835,6 +838,19 @@ function selectOpSession(id){
     if((s.players||[]).length>=(s.maxPlayers||Infinity)){showNotif('Session is full!','error');return;}
     _opJoinCtx=s;
     const content=document.getElementById('opPortalContent');
+    const feeSection=s.fee>0?`
+        <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;font-size:0.8rem;margin-bottom:12px;">
+            <strong>💰 Drop-in Fee: ₱${s.fee}</strong><br>
+            <span style="color:#aaa;">Pay via GCash or Maya to secure your slot. Show transaction on site.</span>
+        </div>
+        <div style="margin-bottom:12px;">
+            <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">Select Payment Method</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'GCash')"><span class="pay-icon">📱</span><div class="pay-name">GCash</div><div class="pay-desc">Send via GCash</div></div>
+                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'Maya')"><span class="pay-icon">💜</span><div class="pay-name">Maya</div><div class="pay-desc">Send via Maya</div></div>
+            </div>
+            <div id="opPayInputArea"></div>
+        </div>`:'';
     content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:4px;">👋 Your Info</div>
         <div style="font-size:0.78rem;color:#aaa;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
         <div class="form-row">
@@ -861,14 +877,29 @@ function selectOpSession(id){
                 </select>
             </div>
         </div>
-        ${s.fee>0?`<div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;font-size:0.8rem;margin-bottom:12px;">
-            <strong>⚠️ Drop-in Fee: ₱${s.fee}</strong><br>
-            <span style="color:#aaa;">Pay this fee at the venue when you arrive.</span>
-        </div>`:''}
+        ${feeSection}
         <div style="display:flex;gap:8px;">
             <button class="btn btn-outline" onclick="renderOpSessionList()">← Back</button>
             <button class="btn btn-success" onclick="confirmJoinOpSession()">✅ Join Open Play</button>
         </div>`;
+}
+
+function opSelPay(btn,method){
+    document.querySelectorAll('.op-pay-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _opPayMethod=method;
+    const area=document.getElementById('opPayInputArea');
+    const s=_opJoinCtx;
+    const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+    area.innerHTML=`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
+        <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${method==='GCash'?'📱 Send to GCash':'💜 Send to Maya'}</div>
+        <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Amount:</span><strong style="color:#4ecdc4;">₱${s?`<span id="opFeeAmount">${s.fee}</span>`:'0'}</strong></div>
+        </div>
+        <div class="form-group"><label>Reference Number *</label><input type="text" id="opRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
+        <div style="font-size:0.72rem;color:#aaa;">Send the exact amount shown above. Enter the reference number after payment.</div></div>`;
 }
 
 async function confirmJoinOpSession(){
@@ -881,11 +912,21 @@ async function confirmJoinOpSession(){
     if(!fn||!ln||!phone||!email){showNotif('Fill all required fields!','error');return;}
     const skill=parseInt(document.getElementById('opSkill').value);
     const gameType=document.getElementById('opGameType').value;
+    if(s.fee>0){
+        if(!_opPayMethod){showNotif('Select a payment method!','error');return;}
+        const ref=document.getElementById('opRef');
+        if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
+    }
     const player={name:fn+' '+ln,phone,email,skill,gameType,source:'online',joinedAt:Date.now()};
+    if(s.fee>0){
+        player.paymentMethod=_opPayMethod;
+        player.reference=document.getElementById('opRef').value.trim();
+        player.amount=s.fee;
+        player.paid=true;
+    }
     // Save to Firestore
     if(VENUE_ID){
         try {
-            // Fetch current sessions, update, write back
             const snap=await db.collection('venues').doc(VENUE_ID).get();
             const data=snap.data();
             let sessions=data.scheduledSessions||[];
@@ -894,7 +935,6 @@ async function confirmJoinOpSession(){
             if((sessions[idx].players||[]).length>=(sessions[idx].maxPlayers||Infinity)){showNotif('Session is full!','error');return;}
             sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
             await db.collection('venues').doc(VENUE_ID).update({scheduledSessions:sessions});
-            // Update local state
             S.scheduledSessions=sessions;
         } catch(e){
             console.warn('Failed to join Open Play:',e);
@@ -905,8 +945,19 @@ async function confirmJoinOpSession(){
         showNotif('Venue not available.','error');
         return;
     }
-    closeOpPortal();
-    showNotif(`✅ You've joined Open Play on ${s.date}! See you there!`,'success');
+    // Show confirmation
+    const content=document.getElementById('opPortalContent');
+    content.innerHTML=`<div class="payment-success">
+        <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">You're In!</div>
+        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Your spot is secured for <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
+        <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+            ${s.fee>0?`<strong>📱 Show your transaction on site</strong><br><span style="color:#aaa;">Present the GCash/Maya transaction details when you check in at the venue.</span>`:`<strong>🎯 See you there!</strong><br><span style="color:#aaa;">No payment needed — just show up and play!</span>`}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="closeOpPortal()">✅ Done</button>
+            <button class="btn btn-outline" onclick="renderOpSessionList()">📅 Join Another</button>
+        </div>`;
 }
 
 // ===================== INIT =====================
