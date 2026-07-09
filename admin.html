@@ -1514,6 +1514,14 @@ function loadBookings(){
     },()=>{});
 }
 let _saveTimer=null;
+function saveStateNow(){
+    if(!VENUE_ID) return;
+    try{
+        const state={};
+        PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
+        db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>console.warn('saveStateNow failed:',e));
+    }catch(e){console.warn('saveStateNow failed:',e);}
+}
 function saveState(){
     if(!VENUE_ID) return;
     clearTimeout(_saveTimer);
@@ -1997,6 +2005,7 @@ function endSession(){
     }
     S.session.active=false; S.session=null;
     S.courts.forEach(c=>{ if(c.status==='occupied'&&sessionCourts.includes(c.id)&&!S.bookings.some(b=>b.courtId===c.id&&b.status==='checkedin')) completeRelease(c,null); if(c.rr) delete c.rr; delete c._rrMatchId; });
+    saveStateNow();
     updateJoinFormMode();
     showNotif('⏹ Session ended.','warning');
     announce('Open Play session ended. Thank you!');
@@ -2751,7 +2760,7 @@ function confirmScore(){
             showNotif(`🏆 ${winners.map(p=>p.name).join(' & ')} won! Everyone back to pool — court freed.`,'success');
             announce(`${winners.map(p=>p.name).join(' & ')} won on ${c.name}!`);
         }
-        saveState();
+        saveStateNow();
         closeModal('scoreModal');renderAll();setTimeout(()=>tryWinnersAutoAssign(),500);
         return;
     }
@@ -2785,7 +2794,7 @@ function confirmScore(){
                 const done=schedule.matches.filter(m=>m.completed).length;
                 showNotif(`🏁 Match done! ${done}/${schedule.matches.length}`,'success');
             }
-            saveState();
+            saveStateNow();
         } else if(match&&match.completed){
             showNotif('This match was already scored.','warning');
         }
@@ -2797,7 +2806,7 @@ function confirmScore(){
     const tmUp=hasBk&&isBookingExpired(c.id);
     if(hasBk&&!tmUp){
         recordGameResult(c,sd);
-        saveState();
+        saveStateNow();
         showNotif(`✅ Game saved — booking continues.`,'info');
     } else {
         // Default 4 on/4 off — only runs for non-booking courts
@@ -2811,7 +2820,7 @@ function confirmScore(){
         }
         if(tmUp) showNotif(`⏰ Booking time has ended — court freed.`,'info');
         completeRelease(c,sd);
-        saveState();
+        saveStateNow();
     }
     if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
     else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=(wt.players||[]).filter(Boolean).map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
@@ -2832,7 +2841,7 @@ function skipScore(){
             if(match) match.courtId=null;
             c.status='available';c.players=[];c.startTime=null;c.gameType=null;c.team1=null;c.team2=null;delete c._rrMatchId;clearLiveScore(c.id);
             showNotif('⏭ Match freed — will reassign.','info');
-            saveState();closeModal('scoreModal');renderAll();
+            saveStateNow();closeModal('scoreModal');renderAll();
             setTimeout(()=>tryRoundRobinAutoAssign(),500);
             return;
         }
@@ -2847,7 +2856,7 @@ function skipScore(){
             } else if(S.session?.mode==='winnersSplit'){
                 pl3.forEach(p=>{S.soloQueue.push({id:++S.nextId,gameType:'doubles',skillLevel:p.skill||3,players:[p],joinedAt:Date.now()});});
             }
-            completeRelease(c,null);showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);
+            completeRelease(c,null);saveStateNow();showNotif(`🎉 ${c.name} is free!`);announce(`${c.name} available!`);
         }
     }
     closeModal('scoreModal');renderAll();setTimeout(()=>S.session?.mode==='winnersSplit'?tryWinnersAutoAssign():tryAutoAssign(),500);
