@@ -1582,15 +1582,28 @@ function startDemoHeartbeat(){
     window.addEventListener('beforeunload',()=>{db.collection('demo_sessions').doc(sessionId).delete().catch(()=>{});});
 }
 function inSession(date, sMin, eMin, courtId){
-    if(!S.session||!S.session.active) return false;
-    if(courtId!=null && S.session.courts && !S.session.courts.includes(courtId)) return false;
-    const sd=S.session.startDate||date, ed=S.session.endDate||sd;
-    const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
-    if(date<sd||date>ed) return false;
-    if(sd===ed) return sMin<se&&eMin>ss;
-    if(date===sd) return eMin>ss;
-    if(date===ed) return sMin<se;
-    return true;
+    // Check live session
+    if(S.session&&S.session.active){
+        if(courtId==null||!S.session.courts||S.session.courts.includes(courtId)){
+            const sd=S.session.startDate||date, ed=S.session.endDate||sd;
+            const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
+            if(date>=sd&&date<=ed){
+                if(sd===ed){if(sMin<se&&eMin>ss) return true;}
+                else if(date===sd){if(eMin>ss) return true;}
+                else if(date===ed){if(sMin<se) return true;}
+                else return true;
+            }
+        }
+    }
+    // Check scheduled sessions
+    const sched=(S.scheduledSessions||[]).filter(s=>s.status==='scheduled'||s.status==='active');
+    for(const s of sched){
+        if(courtId!=null&&s.courts&&!s.courts.includes(courtId)) continue;
+        if(date!==s.date) continue;
+        const ss=timeToMin(s.startTime), se=timeToMin(s.endTime);
+        if(sMin<se&&eMin>ss) return true;
+    }
+    return false;
 }
 
 // ===================== USAGE TRACKER =====================
@@ -3182,7 +3195,8 @@ function checkBConflict(){
     if(conflicts.length>0){
         el.innerHTML=`<div class="conflict-box">⚠️ Conflict! ${conflicts.map(b=>`${escapeHtml(b.customer)} (${b.startTime}–${b.endTime})`).join(', ')} already booked.</div>`;
     } else if(inSession(date,sM,eM,cId)){
-        el.innerHTML=`<div class="overlap-box">⚠️ Overlaps with Open Play (${escapeHtml(S.session.startDate||date)} ${escapeHtml(S.session.startTime||S.session.start)}–${escapeHtml(S.session.endDate||date)} ${escapeHtml(S.session.endTime||S.session.end)}). Court auto-excluded during booking.</div>`;
+        const ses=S.session&&S.session.active?`${escapeHtml(S.session.startDate||date)} ${escapeHtml(S.session.startTime||S.session.start)}–${escapeHtml(S.session.endDate||date)} ${escapeHtml(S.session.endTime||S.session.end)}`:'a scheduled Open Play';
+        el.innerHTML=`<div class="overlap-box">⚠️ Overlaps with Open Play (${ses}). Court auto-excluded during booking.</div>`;
     } else el.innerHTML='';
 
     // Update price
@@ -3437,20 +3451,39 @@ function renderBookingTimeline(){
         })();
         if(tournamentInfo) slots+=`<div class="tl-slot tl-tournament" style="left:0%;width:100%;">🔮 ${tournamentInfo.name}</div>`;
         // Always render bookings/sessions
-        if(S.session&&S.session.active&&inSession(date,sH*60,(eH+1)*60,court.id)){
-            const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
-            const sd=S.session.startDate, ed=S.session.endDate;
-            const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
-            const sesEnd=sd!==ed&&date===sd?24*60:Math.min(se,(eH+1)*60);
-            const bks=getBookingsForCourt(court.id,date,sesStart,sesEnd).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
-            let cur=sesStart;
-            bks.forEach(b=>{
-                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
-                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">Open Play</div>`;
-                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customer)}</div>`;
-                cur=be;
+        if(inSession(date,sH*60,(eH+1)*60,court.id)){
+            // Live session blocks
+            if(S.session&&S.session.active){
+                const ss=timeToMin(S.session.startTime||S.session.start),se=timeToMin(S.session.endTime||S.session.end);
+                const sd=S.session.startDate, ed=S.session.endDate;
+                const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
+                const sesEnd=sd!==ed&&date===sd?24*60:Math.min(se,(eH+1)*60);
+                const bks=getBookingsForCourt(court.id,date,sesStart,sesEnd).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+                let cur=sesStart;
+                bks.forEach(b=>{
+                    const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                    if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">Open Play</div>`;
+                    slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customer)}</div>`;
+                    cur=be;
+                });
+                if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
+            }
+            // Scheduled session blocks
+            (S.scheduledSessions||[]).filter(s=>(s.status==='scheduled'||s.status==='active')&&s.date===date&&(!court.id||!s.courts||s.courts.includes(court.id))).forEach(s=>{
+                const ss=Math.max(timeToMin(s.startTime),sH*60);
+                const se=Math.min(timeToMin(s.endTime),(eH+1)*60);
+                if(ss<se){
+                    const bks=getBookingsForCourt(court.id,date,ss,se).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+                    let cur=ss;
+                    bks.forEach(b=>{
+                        const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                        if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">📅 Open Play</div>`;
+                        slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customer)}</div>`;
+                        cur=be;
+                    });
+                    if(cur<se) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((se-cur)/(total*60))*100,100)}%;">📅 Open Play</div>`;
+                }
             });
-            if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
         } else {
             S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
                 const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
@@ -3484,14 +3517,12 @@ function renderConflicts(){
                     conflicts.push({court:court.name,a,b});
             }
         }
-        if(S.session&&S.session.active){
-            const sM=timeToMin(b.startTime),eM=timeToMin(b.endTime);
-            if(inSession(date,sM,eM,court.id)) conflicts.push({type:'op',court:court.name,b,ses:S.session});
-        }
+        const sM=timeToMin(b.startTime),eM=timeToMin(b.endTime);
+        if(inSession(date,sM,eM,court.id)) conflicts.push({type:'op',court:court.name,b});
     });
     if(conflicts.length===0){div.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No conflicts!</p></div>';return;}
     div.innerHTML=conflicts.map(c=>c.type==='op'?`
-        <div class="overlap-box" style="margin-bottom:8px;">⚠️ Open Play Overlap — ${escapeHtml(c.court)}: ${escapeHtml(c.b.customer)} (${c.b.startTime}–${c.b.endTime}) overlaps Open Play (${escapeHtml(c.ses.startDate||date)} ${escapeHtml(c.ses.startTime||c.ses.start)}–${escapeHtml(c.ses.endDate||date)} ${escapeHtml(c.ses.endTime||c.ses.end)})<br><span style="font-size:0.72rem;">→ Court auto-excluded during booking.</span></div>`:
+        <div class="overlap-box" style="margin-bottom:8px;">⚠️ Open Play Overlap — ${escapeHtml(c.court)}: ${escapeHtml(c.b.customer)} (${c.b.startTime}–${c.b.endTime}) overlaps a scheduled Open Play session.<br><span style="font-size:0.72rem;">→ Court auto-excluded during booking.</span></div>`:
         `<div class="conflict-box" style="margin-bottom:8px;">🔴 Double Booking — ${escapeHtml(c.court)}: ${escapeHtml(c.a.customer)} (${c.a.startTime}–${c.a.endTime}) vs ${escapeHtml(c.b.customer)} (${c.b.startTime}–${c.b.endTime})
         <div style="margin-top:6px;display:flex;gap:6px;"><button class="btn btn-danger btn-sm" onclick="cancelB('${c.b.id}')">Cancel ${escapeHtml(c.b.customer)}</button><button class="btn btn-danger btn-sm" onclick="cancelB('${c.a.id}')">Cancel ${escapeHtml(c.a.customer)}</button></div></div>`
     ).join('');

@@ -434,15 +434,28 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
 function inSession(date, sMin, eMin, courtId){
-    if(!S.session||!S.session.active) return false;
-    if(courtId!=null && S.session.courts && !S.session.courts.includes(courtId)) return false;
-    const sd=S.session.startDate||date, ed=S.session.endDate||sd;
-    const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
-    if(date<sd||date>ed) return false;
-    if(sd===ed) return sMin<se&&eMin>ss;
-    if(date===sd) return eMin>ss;
-    if(date===ed) return sMin<se;
-    return true;
+    // Check live session
+    if(S.session&&S.session.active){
+        if(courtId==null||!S.session.courts||S.session.courts.includes(courtId)){
+            const sd=S.session.startDate||date, ed=S.session.endDate||sd;
+            const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
+            if(date>=sd&&date<=ed){
+                if(sd===ed){if(sMin<se&&eMin>ss) return true;}
+                else if(date===sd){if(eMin>ss) return true;}
+                else if(date===ed){if(sMin<se) return true;}
+                else return true;
+            }
+        }
+    }
+    // Check scheduled sessions
+    const sched=(S.scheduledSessions||[]).filter(s=>s.status==='scheduled'||s.status==='active');
+    for(const s of sched){
+        if(courtId!=null&&s.courts&&!s.courts.includes(courtId)) continue;
+        if(date!==s.date) continue;
+        const ss=timeToMin(s.startTime), se=timeToMin(s.endTime);
+        if(sMin<se&&eMin>ss) return true;
+    }
+    return false;
 }
 
 // ===================== NOTIFY =====================
