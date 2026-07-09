@@ -2473,7 +2473,7 @@ function showAssign(court, group){
         <div style="font-size:0.75rem;color:#aaa;">${escapeHtml(group.gameType)} · ⭐ ${SKILL_LABELS[group.skillLevel]}</div>`;
     document.getElementById('assignBody').dataset.cId=court.id;
     document.getElementById('assignBody').dataset.gId=group.id;
-    document.getElementById('assignConfirm').onclick=()=>{
+    document.getElementById('assignConfirm').onclick=async()=>{
         const c=S.courts.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.cId));
         const g=S.queue.find(x=>x.id===parseInt(document.getElementById('assignBody').dataset.gId));
         if(c&&g){if(await doAssign(c,g)){showNotif(`✅ ${g.groupName} → ${c.name}`,'success');announce(`${g.groupName} now playing on ${c.name}!`);}saveState();renderAll();}
