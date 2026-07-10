@@ -1640,6 +1640,9 @@ async function saveStateNow(){
         console.log('[saveStateNow] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
         await db.collection('venues').doc(VENUE_ID).set(state,{merge:true});
         console.log('[saveStateNow] OK');
+        const verify=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
+        const sched=verify.data().scheduledSessions||[];
+        console.log('[saveStateNow] verify: scheduledSessions count='+sched.length, sched.map(s=>s.id));
         return true;
     }catch(e){
         console.warn('saveStateNow failed:',e);
