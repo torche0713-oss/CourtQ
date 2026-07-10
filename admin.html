@@ -1636,7 +1636,11 @@ function saveStateNow(){
     try{
         const state={};
         PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
-        db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>{
+        const size=new Blob([JSON.stringify(state)]).size;
+        console.log('[saveStateNow] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
+        db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).then(()=>{
+            console.log('[saveStateNow] OK');
+        }).catch(e=>{
             console.warn('saveStateNow failed:',e);
             showNotif('Firestore save failed: '+e.message,'error');
         });
@@ -1652,7 +1656,11 @@ function saveState(){
         try{
             const state={};
             PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
-            db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>{
+            const size=new Blob([JSON.stringify(state)]).size;
+            console.log('[saveState] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
+            db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).then(()=>{
+                console.log('[saveState] OK');
+            }).catch(e=>{
                 console.warn('saveState failed:',e);
                 showNotif('Firestore save failed: '+e.message,'error');
             });
@@ -3529,8 +3537,10 @@ function renderConflicts(){
                     conflicts.push({court:court.name,a,b});
             }
         }
-        const sM=timeToMin(b.startTime),eM=timeToMin(b.endTime);
-        if(inSession(date,sM,eM,court.id)) conflicts.push({type:'op',court:court.name,b});
+        for(const bk of bks){
+            const sM=timeToMin(bk.startTime),eM=timeToMin(bk.endTime);
+            if(inSession(date,sM,eM,court.id)) conflicts.push({type:'op',court:court.name,b:bk});
+        }
     });
     if(conflicts.length===0){div.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No conflicts!</p></div>';return;}
     div.innerHTML=conflicts.map(c=>c.type==='op'?`
