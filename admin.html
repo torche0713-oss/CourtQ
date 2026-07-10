@@ -1637,12 +1637,18 @@ async function saveStateNow(){
         const state={};
         PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
         const size=new Blob([JSON.stringify(state)]).size;
-        console.log('[saveStateNow] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
+        const schedIds=(state.scheduledSessions||[]).map(s=>s.id);
+        console.log('[saveStateNow] writing',Object.keys(state).length,'keys, ~'+size+'bytes, scheduledSessions:',schedIds);
+        const before=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
+        const beforeSched=before.data().scheduledSessions||[];
+        console.log('[saveStateNow] BEFORE write: scheduledSessions count='+beforeSched.length, beforeSched.map(s=>s.id));
         await db.collection('venues').doc(VENUE_ID).set(state,{merge:true});
         console.log('[saveStateNow] OK');
-        const verify=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
-        const sched=verify.data().scheduledSessions||[];
-        console.log('[saveStateNow] verify: scheduledSessions count='+sched.length, sched.map(s=>s.id));
+        const after=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
+        const afterSched=after.data().scheduledSessions||[];
+        console.log('[saveStateNow] AFTER write: scheduledSessions count='+afterSched.length, afterSched.map(s=>s.id));
+        const raw=JSON.stringify(after.data().scheduledSessions);
+        console.log('[saveStateNow] raw scheduledSessions:',raw.substring(0,500));
         return true;
     }catch(e){
         console.warn('saveStateNow failed:',e);
@@ -2138,6 +2144,7 @@ async function saveScheduledOp(){
     if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
     const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
     S.scheduledSessions.push({id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],createdAt:Date.now()});
+    console.log('[saveScheduledOp] pushed id='+id+', S.scheduledSessions now:',S.scheduledSessions.map(s=>({id:s.id,status:s.status})));
     closeModal('scheduleOpModal');
     if(await saveStateNow()){
         renderScheduledOpList();
