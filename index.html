@@ -856,8 +856,8 @@
                     paymentInfo:{gcash:{number:'09998830291',name:'Hector Lopez'},maya:{number:'09998830291',name:'Hector Lopez'}}
                 });
                 await db.collection('slugs').doc(slug).set({ venueId });
-                // Mark lead as used
-                await db.collection('demoLeads').doc(leadId).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                // Mark lead as used (best-effort, rules may deny update)
+                db.collection('demoLeads').doc(leadId).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
                 // Tag this session as having started a demo
                 if (_demoSessionId) {
                   db.collection('demo_sessions').doc(_demoSessionId).update({
