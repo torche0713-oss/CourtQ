@@ -1245,6 +1245,11 @@
                 </label>
             </div>
             <div style="font-size:0.72rem;color:#aaa;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(52,152,219,0.08);border-radius:8px;cursor:pointer;">
+                <input type="checkbox" id="schedOpLooping">
+                <span style="font-weight:600;font-size:0.82rem;">🔄 Looping Mode</span>
+                <span style="font-size:0.7rem;color:#aaa;">After game, all players go back to the queue</span>
+            </label>
         </div>
         <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
             <div id="schedOpCourts" class="ses-court-grid"></div>
@@ -2138,12 +2143,13 @@ async function saveScheduledOp(){
     const mode=document.querySelector('input[name="schedOpMode"]:checked')?.value||'fourOnFour';
     const fee=parseInt(document.getElementById('schedOpFee').value)||0;
     const max=parseInt(document.getElementById('schedOpMax').value)||0;
+    const looping=document.getElementById('schedOpLooping').checked;
     if(!date||!start||!end){showNotif('Fill date and time!','error');return;}
     if(end<=start){showNotif('End must be after start!','error');return;}
     const selectedCourts=[...document.querySelectorAll('#schedOpCourts .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
     if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
     const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
-    S.scheduledSessions.push({id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],createdAt:Date.now()});
+    S.scheduledSessions.push({id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],looping,createdAt:Date.now()});
     saveScheduledSessions();
     closeModal('scheduleOpModal');
     await saveStateNow();
@@ -2237,7 +2243,7 @@ function startScheduledSession(){
     const rrGameType=mode==='roundRobin'?'doubles':null;
     const startDT=new Date(s.date+'T'+s.startTime);
     const endDT=new Date(s.date+'T'+s.endTime);
-    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:[...s.courts],looping:mode==='fourOnFour'};
+    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:[...s.courts],looping:s.looping||mode==='fourOnFour'};
     // Add all joined players to the queue
     (s.players||[]).forEach(p=>{
         if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}
