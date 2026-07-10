@@ -1625,6 +1625,7 @@ let _unsubBookings=null;
 function loadBookings(){
     if(_unsubBookings)_unsubBookings();
     _unsubBookings=bkCol().onSnapshot(snap=>{
+        if(snap.metadata.fromCache) return;
         S.bookings=[];
         snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));
         renderBookingTimeline();
