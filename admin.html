@@ -2047,7 +2047,7 @@ function onOpModeChange(mode){
     document.getElementById('rrGameTypeRow').style.display=mode==='roundRobin'?'block':'none';
 }
 
-function startSession(){
+async function startSession(){
     const sd=document.getElementById('sesStartDate').value;
     const st=document.getElementById('sesStart').value;
     const ed=document.getElementById('sesEndDate').value;
@@ -2077,6 +2077,7 @@ function startSession(){
     S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked};
     updateJoinFormMode();
     closeModal('sessionModal');
+    await saveStateNow();
     showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}`,'success');
     announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}.`);
     renderAll();
@@ -2189,7 +2190,7 @@ function confirmAddOpPlayer(){
     const email=document.getElementById('addOpPlayerEmail').value.trim();
     _schedOpCtx.players.push({name,skill,gameType,phone,email,source:'onsite',joinedAt:Date.now()});
     closeModal('addOpPlayerModal');
-    saveState();
+    saveStateNow();
     renderScheduledOpPlayers();
     renderScheduledOpList();
     showNotif(`➕ ${name} added to Open Play`,'success');
@@ -2198,7 +2199,7 @@ function confirmAddOpPlayer(){
 function removeScheduledOpPlayer(idx){
     if(!_schedOpCtx||!confirm('Remove this player?')) return;
     _schedOpCtx.players.splice(idx,1);
-    saveState();
+    saveStateNow();
     renderScheduledOpPlayers();
     renderScheduledOpList();
     showNotif('Player removed','warning');
@@ -2234,7 +2235,7 @@ function startScheduledSession(){
     s.status='active';
     closeModal('scheduledOpDetailModal');
     closeModal('scheduleOpModal');
-    saveState();
+    saveStateNow();
     showNotif(`▶ Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime}`,'success');
     announce(`Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime}.`);
     updateJoinFormMode();
@@ -2245,7 +2246,7 @@ function cancelScheduledOp(){
     if(!_schedOpCtx||!confirm('Cancel this scheduled Open Play?')) return;
     _schedOpCtx.status='cancelled';
     closeModal('scheduledOpDetailModal');
-    saveState();
+    saveStateNow();
     renderScheduledOpList();
     showNotif('Scheduled Open Play cancelled.','warning');
 }
