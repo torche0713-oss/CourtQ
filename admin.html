@@ -1621,18 +1621,7 @@ function deleteBooking(id){if(!VENUE_ID)return;bkCol().doc(id).delete().catch(()
 let _unsubBookings=null;
 function loadBookings(){
     if(_unsubBookings)_unsubBookings();
-    // Force server read first to avoid stale cache flash
-    bkCol().get({source:'server'}).then(snap=>{
-        S.bookings=[];
-        snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));
-        renderBookingTimeline();
-    }).catch(()=>{
-        // Fallback: render as-is
-        renderBookingTimeline();
-    });
-    // Real-time listener for subsequent changes
     _unsubBookings=bkCol().onSnapshot(snap=>{
-        if(snap.metadata.fromCache) return;
         S.bookings=[];
         snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));
         renderBookingTimeline();
@@ -5346,22 +5335,17 @@ function deleteTournament(id){
         // Bookings: always use subcollection as source of truth
         (async()=>{
             const bkSnap=await bkCol().get({source:'server'});
-            console.log('[init] subcollection docs:',bkSnap.size,'empty:',bkSnap.empty);
-            console.log('[init] data.bookings:',data.bookings);
             if(!bkSnap.empty){
                 S.bookings=[];
                 bkSnap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));
-                console.log('[init] loaded',S.bookings.length,'from subcollection');
             } else if(data.bookings){
                 S.bookings=data.bookings;
-                console.log('[init] loaded from venue doc, count:',S.bookings.length);
                 const batch=db.batch();
                 data.bookings.forEach(b=>batch.set(bkCol().doc(b.id),b));
                 await batch.commit();
                 await db.collection('venues').doc(VENUE_ID).update({bookings:firebase.firestore.FieldValue.delete()}).catch(e=>console.warn('[migration] delete failed',e));
             } else {
                 S.bookings=[];
-                console.log('[init] no bookings');
             }
             renderBookingTimeline();
         })();
@@ -5416,7 +5400,7 @@ function deleteTournament(id){
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
         loadBookings();
-        setInterval(()=>{autoFreeExpiredBookings();saveState();renderOpCourts();renderOpStats();renderSession();const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}},30000);
+        setInterval(()=>{autoFreeExpiredBookings();saveState();renderOpCourts();renderOpStats();renderSession();db.collection('venues').doc(VENUE_ID).get().then(snap=>{if(snap.exists){S.scheduledSessions=snap.data().scheduledSessions||[];renderScheduledOpList();}}).catch(()=>{});const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}},30000);
         renderAll();
         // Fetch announcements
         try {
