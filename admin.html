@@ -1636,8 +1636,14 @@ function saveStateNow(){
     try{
         const state={};
         PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
-        db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>console.warn('saveStateNow failed:',e));
-    }catch(e){console.warn('saveStateNow failed:',e);}
+        db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>{
+            console.warn('saveStateNow failed:',e);
+            showNotif('Firestore save failed: '+e.message,'error');
+        });
+    }catch(e){
+        console.warn('saveStateNow failed:',e);
+        showNotif('Firestore save failed: '+e.message,'error');
+    }
 }
 function saveState(){
     if(!VENUE_ID) return;
@@ -1646,8 +1652,14 @@ function saveState(){
         try{
             const state={};
             PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
-            db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>console.warn('saveState failed:',e));
-        }catch(e){console.warn('saveState failed:',e);}
+            db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).catch(e=>{
+                console.warn('saveState failed:',e);
+                showNotif('Firestore save failed: '+e.message,'error');
+            });
+        }catch(e){
+            console.warn('saveState failed:',e);
+            showNotif('Firestore save failed: '+e.message,'error');
+        }
     },300);
 }
 async function loadState(){
