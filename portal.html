@@ -970,8 +970,9 @@ async function confirmJoinOpSession(){
     // Save to Firestore
     if(VENUE_ID){
         try {
-            const snap=await db.collection('venues').doc(VENUE_ID).get();
+            const snap=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
             const data=snap.data();
+            console.log('[confirmJoin] read from server:', JSON.stringify(data?.scheduledSessions?.map(x=>({id:x.id,players:x.players?.length}))));
             if(s._isLive){
                 const session={...(data.session||{}),_players:[...(data.session?._players||[]),player]};
                 await db.collection('venues').doc(VENUE_ID).update({session});
@@ -982,8 +983,14 @@ async function confirmJoinOpSession(){
                 if(idx===-1){showNotif('Session no longer available.','error');return;}
                 if((sessions[idx].players||[]).length>=(sessions[idx].maxPlayers||Infinity)){showNotif('Session is full!','error');return;}
                 sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
+                console.log('[confirmJoin] about to write, session players:', sessions[idx].players.length);
                 await db.collection('venues').doc(VENUE_ID).update({scheduledSessions:sessions});
-                S.scheduledSessions=sessions;
+                // Verify write
+                const verify=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
+                const vSessions=verify.data()?.scheduledSessions||[];
+                const vSession=vSessions.find(x=>x.id===s.id);
+                console.log('[confirmJoin] after write verification, players:', vSession?.players?.length);
+                S.scheduledSessions=vSessions;
             }
         } catch(e){
             console.warn('Failed to join Open Play:',e);
