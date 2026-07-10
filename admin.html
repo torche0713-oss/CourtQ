@@ -609,8 +609,8 @@
                 <div class="card-title">
                     <span>🏟️ Courts</span>
                     <div style="display:flex;gap:8px;">
-                        <button class="btn btn-primary btn-sm" onclick="openStartSession()">▶ Session</button>
-                        <button class="btn btn-outline btn-sm" onclick="openScheduleOpModal()">📅 Schedule Open Play</button>
+                        <button class="btn btn-primary btn-sm" onclick="openStartSession()">▶ Open Play</button>
+                        <button class="btn btn-outline btn-sm" onclick="openScheduleOpModal()">📅 Schedule</button>
                         <button class="btn btn-purple btn-sm" onclick="aiSuggest()">🔮 AI Suggest</button>
                     </div>
                 </div>
@@ -1218,7 +1218,7 @@
 </div>
 
 <div class="modal-overlay" id="scheduleOpModal">
-    <div class="modal" style="max-width:520px;">
+    <div class="modal">
         <div class="modal-title">📅 Schedule Open Play</div>
         <div class="form-row">
             <div class="form-group"><label>Date *</label><input type="date" id="schedOpDate"></div>
@@ -1228,15 +1228,23 @@
             <div class="form-group"><label>Start Time *</label><input type="time" id="schedOpStart" value="14:00"></div>
             <div class="form-group"><label>End Time *</label><input type="time" id="schedOpEnd" value="18:00"></div>
         </div>
-        <div class="form-row">
-            <div class="form-group"><label>Mode</label>
-                <select id="schedOpMode">
-                    <option value="fourOnFour">4 on / 4 off</option>
-                    <option value="winnersSplit">Winners Stay & Split</option>
-                    <option value="roundRobin">Round Robin</option>
-                </select>
+        <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="schedOpFee" value="0"></div>
+        <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
+            <div style="display:flex;gap:10px;">
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(78,205,196,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                    <input type="radio" name="schedOpMode" value="fourOnFour" checked>
+                    <span style="font-weight:600;font-size:0.82rem;">4 on / 4 off</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(243,156,18,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                    <input type="radio" name="schedOpMode" value="winnersSplit">
+                    <span style="font-weight:600;font-size:0.82rem;">Winners Stay & Split</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(155,89,182,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                    <input type="radio" name="schedOpMode" value="roundRobin">
+                    <span style="font-weight:600;font-size:0.82rem;">Round Robin</span>
+                </label>
             </div>
-            <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="schedOpFee" value="0"></div>
+            <div style="font-size:0.72rem;color:#aaa;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
         </div>
         <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
             <div id="schedOpCourts" class="ses-court-grid"></div>
@@ -2127,7 +2135,7 @@ async function saveScheduledOp(){
     const date=document.getElementById('schedOpDate').value;
     const start=document.getElementById('schedOpStart').value;
     const end=document.getElementById('schedOpEnd').value;
-    const mode=document.getElementById('schedOpMode').value;
+    const mode=document.querySelector('input[name="schedOpMode"]:checked')?.value||'fourOnFour';
     const fee=parseInt(document.getElementById('schedOpFee').value)||0;
     const max=parseInt(document.getElementById('schedOpMax').value)||0;
     if(!date||!start||!end){showNotif('Fill date and time!','error');return;}
@@ -4391,7 +4399,7 @@ function renderSession(){
             <div style="font-size:2rem;margin-bottom:8px;">🏓</div>
             <div style="font-weight:700;color:#aaa;margin-bottom:4px;">No Active Open Play Session</div>
             <div style="font-size:0.8rem;color:#555;margin-bottom:14px;">Start a session to manage open play rotations.</div>
-            <button class="btn btn-primary" onclick="openStartSession()">▶ Start Open Play Session</button>
+            <button class="btn btn-primary" onclick="openStartSession()">▶ Open Play</button>
         </div>`;
         return;
     }
