@@ -2351,7 +2351,7 @@ function updateJoinFormMode(){
     if(gtEl) gtEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
     if(gnEl) gnEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
     if(epEl) epEl.style.display=mode==='winnersSplit'||(mode==='roundRobin'&&S.session?.rrGameType==='singles')?'none':'';
-    const lbl=document.querySelector('#page-openplay .card .card-title');
+    const lbl=document.querySelector('#joinCard .card-title');
     if(lbl) lbl.textContent=mode==='winnersSplit'||mode==='roundRobin'?'🎯 Join Pool':'🎯 Join Queue';
 }
 
