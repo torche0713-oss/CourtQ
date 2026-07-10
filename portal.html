@@ -785,12 +785,16 @@ function openOpPortal(){
     document.getElementById('opPortalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
     document.getElementById('opPortalOverlay').classList.add('active');
     document.getElementById('landingPage').style.display='none';
-    // Force-fresh data from Firestore so newly scheduled sessions appear
     if(VENUE_ID){
         db.collection('venues').doc(VENUE_ID).get().then(snap=>{
-            if(snap.exists) S.scheduledSessions = snap.data().scheduledSessions || [];
+            const raw = snap.exists ? snap.data().scheduledSessions : [];
+            S.scheduledSessions = raw || [];
+            console.log('[OP] Fetched scheduledSessions:', JSON.parse(JSON.stringify(S.scheduledSessions)));
             renderOpSessionList();
-        }).catch(()=>renderOpSessionList());
+        }).catch(e=>{
+            console.warn('[OP] Firestore get failed:', e);
+            renderOpSessionList();
+        });
     } else {
         renderOpSessionList();
     }
@@ -812,7 +816,13 @@ function renderOpSessionList(){
     const nowMins=now.getHours()*60+now.getMinutes();
     const upcoming=(S.scheduledSessions||[]).filter(s=>(s.status==='scheduled'||s.status==='active')&&(s.date>today||(s.date===today&&timeToMin(s.endTime)>nowMins))).sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
     if(upcoming.length===0){
-        content.innerHTML=`<div class="empty-state"><div class="ei">🏓</div><p>No upcoming Open Play sessions scheduled right now.<br>Check back later or contact the venue.</p><button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:12px;">← Back</button></div>`;
+        const raw=JSON.stringify(S.scheduledSessions);
+        const todayInfo=`today=${today} nowMins=${nowMins}`;
+        let debug='';
+        if(S.scheduledSessions&&S.scheduledSessions.length){
+            debug=S.scheduledSessions.map(s=>`  ${s.id}: date=${s.date} end=${s.endTime} endMins=${timeToMin(s.endTime)} status=${s.status} date>today=${s.date>today} date===today=${s.date===today} timeOk=${timeToMin(s.endTime)>nowMins}`).join('\n');
+        }
+        content.innerHTML=`<div class="empty-state"><div class="ei">🏓</div><p>No upcoming Open Play sessions scheduled right now.<br>Check back later or contact the venue.</p><pre style="font-size:0.6rem;background:rgba(0,0,0,0.3);padding:8px;border-radius:6px;margin-top:8px;text-align:left;max-height:200px;overflow:auto;color:#aaa;">${todayInfo}\nsessions=${raw}\n${debug}</pre><button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:12px;">← Back</button></div>`;
         return;
     }
     content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:12px;">📅 Upcoming Sessions</div>
