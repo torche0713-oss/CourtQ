@@ -1633,7 +1633,11 @@ async function saveStateNow(){
     try{
         const state={};
         PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
+        // Merge latest scheduledSessions from Firestore to not overwrite portal joins
+        const freshSnap=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
+        if(freshSnap.exists) state.scheduledSessions=freshSnap.data().scheduledSessions||[];
         await db.collection('venues').doc(VENUE_ID).set(state,{merge:true});
+        S.scheduledSessions=state.scheduledSessions;
         return true;
     }catch(e){
         console.warn('saveStateNow failed:',e);
@@ -5400,7 +5404,7 @@ function deleteTournament(id){
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
         loadBookings();
-        setInterval(()=>{autoFreeExpiredBookings();saveState();renderOpCourts();renderOpStats();renderSession();db.collection('venues').doc(VENUE_ID).get().then(snap=>{if(snap.exists){S.scheduledSessions=snap.data().scheduledSessions||[];renderScheduledOpList();}}).catch(()=>{});const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}},30000);
+        setInterval(()=>{autoFreeExpiredBookings();db.collection('venues').doc(VENUE_ID).get().then(snap=>{if(snap.exists){S.scheduledSessions=snap.data().scheduledSessions||[];renderScheduledOpList();}}).catch(()=>{}).finally(()=>{saveState();renderOpCourts();renderOpStats();renderSession();});const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}},30000);
         renderAll();
         // Fetch announcements
         try {
