@@ -2136,10 +2136,19 @@ function saveScheduledOp(){
     if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
     const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
     S.scheduledSessions.push({id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],createdAt:Date.now()});
+    console.log('[saveScheduledOp] local count after push:', S.scheduledSessions.length);
     closeModal('scheduleOpModal');
     saveState();
     renderScheduledOpList();
     showNotif(`📅 Open Play scheduled for ${date} ${start}–${end}`,'success');
+    // Verify data reached Firestore
+    setTimeout(async ()=>{
+        try{
+            const snap=await db.collection('venues').doc(VENUE_ID).get();
+            const s=snap.data()?.scheduledSessions||[];
+            console.log('[saveScheduledOp] Firestore has', s.length, 'scheduled sessions:', JSON.stringify(s));
+        }catch(e){console.warn('[saveScheduledOp] verify failed:',e);}
+    },3000);
 }
 
 function openScheduledOpDetail(id){

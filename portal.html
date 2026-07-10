@@ -786,9 +786,10 @@ function openOpPortal(){
     document.getElementById('opPortalOverlay').classList.add('active');
     document.getElementById('landingPage').style.display='none';
     if(VENUE_ID){
-        db.collection('venues').doc(VENUE_ID).get().then(snap=>{
+        db.collection('venues').doc(VENUE_ID).get({source:'server'}).then(snap=>{
             const raw = snap.exists ? snap.data().scheduledSessions : [];
             S.scheduledSessions = raw || [];
+            console.log('[OP] server doc:', JSON.stringify(snap.data()));
             console.log('[OP] Fetched scheduledSessions:', JSON.parse(JSON.stringify(S.scheduledSessions)));
             renderOpSessionList();
         }).catch(e=>{
