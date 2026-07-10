@@ -1232,20 +1232,20 @@
         <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
             <div style="display:flex;gap:10px;">
                 <label style="display:flex;align-items:center;gap:6px;background:rgba(78,205,196,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
-                    <input type="radio" name="schedOpMode" value="fourOnFour" checked>
+                    <input type="radio" name="schedOpMode" value="fourOnFour" checked onchange="document.getElementById('schedOpLoopRow').style.display=this.checked?'':'none'">
                     <span style="font-weight:600;font-size:0.82rem;">4 on / 4 off</span>
                 </label>
                 <label style="display:flex;align-items:center;gap:6px;background:rgba(243,156,18,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
-                    <input type="radio" name="schedOpMode" value="winnersSplit">
+                    <input type="radio" name="schedOpMode" value="winnersSplit" onchange="document.getElementById('schedOpLoopRow').style.display='none'">
                     <span style="font-weight:600;font-size:0.82rem;">Winners Stay & Split</span>
                 </label>
                 <label style="display:flex;align-items:center;gap:6px;background:rgba(155,89,182,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
-                    <input type="radio" name="schedOpMode" value="roundRobin">
+                    <input type="radio" name="schedOpMode" value="roundRobin" onchange="document.getElementById('schedOpLoopRow').style.display='none'">
                     <span style="font-weight:600;font-size:0.82rem;">Round Robin</span>
                 </label>
             </div>
             <div style="font-size:0.72rem;color:#aaa;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
-            <label style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(52,152,219,0.08);border-radius:8px;cursor:pointer;">
+            <label id="schedOpLoopRow" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(52,152,219,0.08);border-radius:8px;cursor:pointer;">
                 <input type="checkbox" id="schedOpLooping">
                 <span style="font-weight:600;font-size:0.82rem;">🔄 Looping Mode</span>
                 <span style="font-size:0.7rem;color:#aaa;">After game, all players go back to the queue</span>
