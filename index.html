@@ -807,12 +807,6 @@
                 showError('Invalid demo request.');
                 return;
             }
-            // Verify the lead exists and isn't already used
-            const leadDoc = await db.collection('demoLeads').doc(leadId).get();
-            if(!leadDoc.exists || leadDoc.data().used){
-                showError('Invalid or expired demo request.');
-                return;
-            }
             document.getElementById('demoBadge').style.display = 'block';
             showLoading('Creating demo venue...');
             try {
