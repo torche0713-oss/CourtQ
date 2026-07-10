@@ -1631,22 +1631,20 @@ function loadBookings(){
     },()=>{});
 }
 let _saveTimer=null;
-function saveStateNow(){
-    if(!VENUE_ID) return;
+async function saveStateNow(){
+    if(!VENUE_ID) return false;
     try{
         const state={};
         PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
         const size=new Blob([JSON.stringify(state)]).size;
         console.log('[saveStateNow] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
-        db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).then(()=>{
-            console.log('[saveStateNow] OK');
-        }).catch(e=>{
-            console.warn('saveStateNow failed:',e);
-            showNotif('Firestore save failed: '+e.message,'error');
-        });
+        await db.collection('venues').doc(VENUE_ID).set(state,{merge:true});
+        console.log('[saveStateNow] OK');
+        return true;
     }catch(e){
         console.warn('saveStateNow failed:',e);
         showNotif('Firestore save failed: '+e.message,'error');
+        return false;
     }
 }
 function saveState(){
@@ -2123,7 +2121,7 @@ function openScheduleOpModal(){
     openModal('scheduleOpModal');
 }
 
-function saveScheduledOp(){
+async function saveScheduledOp(){
     const date=document.getElementById('schedOpDate').value;
     const start=document.getElementById('schedOpStart').value;
     const end=document.getElementById('schedOpEnd').value;
@@ -2137,9 +2135,10 @@ function saveScheduledOp(){
     const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
     S.scheduledSessions.push({id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],createdAt:Date.now()});
     closeModal('scheduleOpModal');
-    saveStateNow();
-    renderScheduledOpList();
-    showNotif(`📅 Open Play scheduled for ${date} ${start}–${end}`,'success');
+    if(await saveStateNow()){
+        renderScheduledOpList();
+        showNotif(`📅 Open Play scheduled for ${date} ${start}–${end}`,'success');
+    }
 }
 
 function openScheduledOpDetail(id){
@@ -5338,19 +5337,22 @@ function deleteTournament(id){
         PERSISTENT_KEYS.forEach(k => {
             if (data[k] !== undefined) S[k] = data[k];
         });
-        if (data.bookings) {
-            S.bookings = data.bookings;
-            // Migrate existing bookings from venue doc to subcollection (one-time)
-            (async()=>{
-                const existing=await bkCol().limit(1).get();
-                if(existing.empty){
-                    const batch=db.batch();
-                    data.bookings.forEach(b=>batch.set(bkCol().doc(b.id),b));
-                    await batch.commit();
-                    await db.collection('venues').doc(VENUE_ID).update({bookings:firebase.firestore.FieldValue.delete()}).catch(()=>{});
-                }
-            })();
-        }
+        // Bookings: always use subcollection as source of truth
+        (async()=>{
+            const bkSnap=await bkCol().get();
+            if(!bkSnap.empty){
+                S.bookings=[];
+                bkSnap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));
+            } else if(data.bookings){
+                S.bookings=data.bookings;
+                const batch=db.batch();
+                data.bookings.forEach(b=>batch.set(bkCol().doc(b.id),b));
+                await batch.commit();
+                await db.collection('venues').doc(VENUE_ID).update({bookings:firebase.firestore.FieldValue.delete()}).catch(e=>console.warn('[migration] delete failed',e));
+            } else {
+                S.bookings=[];
+            }
+        })();
         S.venueSlug = venueSlug;
 
         // Auth check for non-demo venues
