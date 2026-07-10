@@ -872,7 +872,7 @@ function selectOpSession(id){
     let isLive=false;
     if(id.startsWith('LIVE_')){
         if(!S.session?.active){showNotif('Live session is no longer active.','error');return;}
-        s={...S.session,id,S.session.id,date:S.session.startDate||getTodayISO(),startTime:S.session.startTime||S.session.start||'00:00',endTime:S.session.endTime||S.session.end||'23:59',_isLive:true,players:S.session._players||[],maxPlayers:999};
+        s={...S.session,id,date:S.session.startDate||getTodayISO(),startTime:S.session.startTime||S.session.start||'00:00',endTime:S.session.endTime||S.session.end||'23:59',_isLive:true,players:S.session._players||[],maxPlayers:999};
         isLive=true;
     } else {
         s=S.scheduledSessions.find(x=>x.id===id);
@@ -972,13 +972,19 @@ async function confirmJoinOpSession(){
         try {
             const snap=await db.collection('venues').doc(VENUE_ID).get();
             const data=snap.data();
-            let sessions=data.scheduledSessions||[];
-            const idx=sessions.findIndex(x=>x.id===s.id);
-            if(idx===-1){showNotif('Session no longer available.','error');return;}
-            if((sessions[idx].players||[]).length>=(sessions[idx].maxPlayers||Infinity)){showNotif('Session is full!','error');return;}
-            sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
-            await db.collection('venues').doc(VENUE_ID).update({scheduledSessions:sessions});
-            S.scheduledSessions=sessions;
+            if(s._isLive){
+                const session={...(data.session||{}),_players:[...(data.session?._players||[]),player]};
+                await db.collection('venues').doc(VENUE_ID).update({session});
+                S.session=session;
+            } else {
+                let sessions=data.scheduledSessions||[];
+                const idx=sessions.findIndex(x=>x.id===s.id);
+                if(idx===-1){showNotif('Session no longer available.','error');return;}
+                if((sessions[idx].players||[]).length>=(sessions[idx].maxPlayers||Infinity)){showNotif('Session is full!','error');return;}
+                sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
+                await db.collection('venues').doc(VENUE_ID).update({scheduledSessions:sessions});
+                S.scheduledSessions=sessions;
+            }
         } catch(e){
             console.warn('Failed to join Open Play:',e);
             showNotif('Failed to join. Please try again.','error');
