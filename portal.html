@@ -785,7 +785,15 @@ function openOpPortal(){
     document.getElementById('opPortalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
     document.getElementById('opPortalOverlay').classList.add('active');
     document.getElementById('landingPage').style.display='none';
-    renderOpSessionList();
+    // Force-fresh data from Firestore so newly scheduled sessions appear
+    if(VENUE_ID){
+        db.collection('venues').doc(VENUE_ID).get().then(snap=>{
+            if(snap.exists) S.scheduledSessions = snap.data().scheduledSessions || [];
+            renderOpSessionList();
+        }).catch(()=>renderOpSessionList());
+    } else {
+        renderOpSessionList();
+    }
 }
 
 function closeOpPortal(){
