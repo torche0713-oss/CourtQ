@@ -2266,6 +2266,11 @@ function cancelScheduledOp(){
     if(!_schedOpCtx||!confirm('Cancel this scheduled Open Play?')) return;
     _schedOpCtx.status='cancelled';
     saveScheduledSessions();
+    if(S.session && S.session.active){
+        endSession();
+        closeModal('scheduledOpDetailModal');
+        return;
+    }
     closeModal('scheduledOpDetailModal');
     saveStateNow();
     renderScheduledOpList();
@@ -3973,7 +3978,7 @@ async function renderDevDashboard(){
                             <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${escapeHtml(p.slug)}</div>
                             <div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(p.owner.name||d.ownerName||'N/A')} · 📱 ${escapeHtml(p.owner.mobile||d.mobile||'N/A')} · 🏟️ ${(d.courts||[]).length} courts</div>
                             <div style="font-size:0.72rem;color:#aaa;">📧 ${escapeHtml(p.owner.email||'N/A')} · Ref: ${escapeHtml(d.paymentRef||'N/A')}</div>
-                            <div style="font-size:0.72rem;color:#aaa;">📋 Plan: <strong>${escapeHtml(d.plan||'vip')}</strong> · Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
+                            <div style="font-size:0.72rem;color:#aaa;">📋 Plan: <strong>${escapeHtml(d.plan||'founding')}</strong> · Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
                         </div>
                         <div style="text-align:right;">
                             <button class="btn btn-success btn-sm" onclick="activateVenue('${p.venueId}','${p.slug}')">✅ Activate</button>
