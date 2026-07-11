@@ -3139,9 +3139,18 @@ function confirmScore(){
     const hasBk=S.bookings.some(b=>b.courtId===c.id&&b.status==='checkedin');
     const tmUp=hasBk&&isBookingExpired(c.id);
     if(hasBk&&!tmUp){
-        recordGameResult(c,sd);
-        saveStateNow();
-        showNotif(`✅ Game saved — booking continues.`,'info');
+        if(!confirm(`Booking time hasn't ended yet. Check out "${c.name}" early?`)){
+            recordGameResult(c,sd);
+            saveStateNow();
+            showNotif(`✅ Game saved — booking continues.`,'info');
+            if(sd.isTie){showNotif(`🤝 Tie! ${sd.teamA.score}-${sd.teamB.score}`,'info');}
+            else{const wt=sd.winner==='A'?sd.teamA:sd.teamB;const wn=(wt.players||[]).filter(Boolean).map(p=>p.name).join(' & ');showNotif(`🏆 ${wn} won ${sd.teamA.score}-${sd.teamB.score}!`,'success');announce(`${wn} won! Score:${sd.teamA.score}-${sd.teamB.score} on ${c.name}.`);}
+            closeModal('scoreModal');renderAll();setTimeout(()=>tryAutoAssign(),500);
+            return;
+        }
+        // Early checkout — complete the booking and release court
+        const bk=S.bookings.find(b=>b.courtId===c.id&&b.status==='checkedin');
+        if(bk){bk.status='completed';saveBooking(bk);}
     } else {
         // Default 4 on/4 off — only runs for non-booking courts
         if(!hasBk&&S.session?.looping&&S.session?.mode==='fourOnFour'){
