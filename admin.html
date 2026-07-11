@@ -3022,7 +3022,12 @@ function confirmScore(){
                         else nm.p2=winnerName;
                         // Assign a court when both players are set
                         if(nm.p1&&nm.p2&&!nm.courtId){
-                            const tCourts=getTournamentCourts(t);
+                            const tCourtsAvail=getTournamentCourts(t);
+                            const tCourtsAll=(S.courts||[]).filter(c=>{
+                                if(!t.selectedCourtIds||!t.selectedCourtIds.length) return true;
+                                return t.selectedCourtIds.includes(c.id);
+                            });
+                            const tCourts=tCourtsAvail.length>0?tCourtsAvail:tCourtsAll;
                             if(tCourts.length>0){
                                 const totalAssigned=t.elimination.rounds.reduce((sum,r)=>sum+r.matches.filter(m=>m.courtId).length,0);
                                 const pick=tCourts[totalAssigned%tCourts.length];
@@ -5047,6 +5052,7 @@ function renderTournamentDetail(t){
         });
       }
       assignTournamentCourts(t);
+      saveState();
     }
 
     // Summary
@@ -5260,14 +5266,19 @@ function startElimination(id){
     t.elimination={rounds};
     t.status='elimination';
     // Auto-assign courts to elimination matches (only unassigned)
-    const courts=getTournamentCourts(t);
-    if(courts.length>0){
+    const elimCourtsAvail=getTournamentCourts(t);
+    const elimCourtsAll=(S.courts||[]).filter(c=>{
+        if(!t.selectedCourtIds||!t.selectedCourtIds.length) return true;
+        return t.selectedCourtIds.includes(c.id);
+    });
+    const elimCourts=elimCourtsAvail.length>0?elimCourtsAvail:elimCourtsAll;
+    if(elimCourts.length>0){
       let ci=0;
       rounds.forEach(r=>{
         r.matches.forEach(m=>{
           if(m.p1&&m.p2&&!m.courtId){
-            m.courtId=courts[ci%courts.length].id;
-            m.courtName=courts[ci%courts.length].name;
+            m.courtId=elimCourts[ci%elimCourts.length].id;
+            m.courtName=elimCourts[ci%elimCourts.length].name;
             ci++;
           }
         });
