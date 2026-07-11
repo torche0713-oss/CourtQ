@@ -4955,14 +4955,28 @@ function createTournament(){
         }
         groupsArr.push({name:'Group '+glabel,players:gPlayers,matches});
     }
+    // Assign courts at creation time
+    const createCourts=(S.courts||[]).filter(c=>selectedCourtIds.length===0||selectedCourtIds.includes(c.id));
+    let courtMode;
+    if(createCourts.length>0){
+        if(createCourts.length>=groupsArr.length){
+            groupsArr.forEach((g,i)=>{g.courtId=createCourts[i].id;g.courtName=createCourts[i].name;});
+            courtMode='group';
+        }else{
+            let ci=0;
+            groupsArr.forEach(g=>{g.matches.forEach(m=>{m.courtId=createCourts[ci%createCourts.length].id;m.courtName=createCourts[ci%createCourts.length].name;ci++;});});
+            courtMode='match';
+        }
+    }
     const tournament={
         id,name,date,format:fmt,status:'groups',groupSize,startRound,advanceCount,
         players:shuffled,groups:groupsArr,
-        selectedCourtIds,
+        selectedCourtIds,courtMode,
         elimination:{rounds:[]}
     };
     if(!S.tournaments) S.tournaments=[];
     S.tournaments.push(tournament);
+    assignTournamentCourts(tournament);
     saveState();
     closeModal('createTournamentModal');
     showNotif('🏆 Tournament created!','success');
