@@ -1954,7 +1954,7 @@ function toggleMaint(id){
 // ===================== BOOKING HELPERS =====================
 function getBookingsForCourt(cId,date,sMin,eMin,excludeId=null){
     return S.bookings.filter(b=>{
-        if(b.id===excludeId||b.courtId!==cId||b.date!==date||b.status==='cancelled') return false;
+        if(b.id===excludeId||b.courtId!==cId||b.date!==date||b.status==='cancelled'||b.status==='completed') return false;
         const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
         return sMin<be&&eMin>bs;
     });
@@ -3544,7 +3544,7 @@ function renderBookingTimeline(){
                 }
             });
         } else {
-            S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled').forEach(b=>{
+            S.bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled'&&b.status!=='completed').forEach(b=>{
                 const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
                 slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customer)}</div>`;
             });
