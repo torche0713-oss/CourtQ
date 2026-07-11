@@ -4971,9 +4971,10 @@ function createTournament(){
     const tournament={
         id,name,date,format:fmt,status:'groups',groupSize,startRound,advanceCount,
         players:shuffled,groups:groupsArr,
-        selectedCourtIds,courtMode,
+        selectedCourtIds,
         elimination:{rounds:[]}
     };
+    if(courtMode) tournament.courtMode=courtMode;
     if(!S.tournaments) S.tournaments=[];
     S.tournaments.push(tournament);
     assignTournamentCourts(tournament);
