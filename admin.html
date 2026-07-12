@@ -1831,7 +1831,8 @@ function saveVenueName(){
     const inp=document.getElementById('venueInput');
     if(!inp) return;
     const n=inp.value.trim();
-    if(n) S.venueName='🏟️ '+n;
+    if(n){ S.venueName='🏟️ '+n;
+        if(VENUE_ID) db.collection('venues').doc(VENUE_ID).update({name:S.venueName}).catch(()=>{}); }
     renderVenueDisplay();
     saveState();
 }

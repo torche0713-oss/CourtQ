@@ -954,7 +954,7 @@ function opSelPay(btn,method){
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Players:</span><strong>${n}</strong></div>
-            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Per Player:</span><strong>₱${s?`${s.fee}`:'0'}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Per Player:</span><strong>₱${s?s.fee:0}</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:800;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="color:#aaa;">Total:</span><strong style="color:#4ecdc4;">₱<span id="opFeeAmount">${total}</span></strong></div>
         </div>
         <div class="form-group"><label>Reference Number *</label><input type="text" id="opRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
