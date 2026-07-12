@@ -999,7 +999,7 @@ async function confirmJoinOpSession(){
                 const idx=sessions.findIndex(x=>x.id===s.id);
                 if(idx===-1){showNotif('Session no longer available.','error');return;}
                 const curCount=(sessions[idx].players||[]).reduce((sum,p)=>sum+(p.players||1),0);
-                if(sessions[idx].maxPlayers&&curCount+playerCount>sessions[idx].maxPlayers){showNotif(`Session full — only ${sessions[idx].maxPlayers-curCount} spot(s) left.','error');return;}
+                if(sessions[idx].maxPlayers&&curCount+playerCount>sessions[idx].maxPlayers){showNotif(`Session full — only ${sessions[idx].maxPlayers-curCount} spot(s) left.`,'error');return;}
                 sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
                 await db.collection('venues').doc(VENUE_ID).update({scheduledSessions:sessions});
                 S.scheduledSessions=sessions;
