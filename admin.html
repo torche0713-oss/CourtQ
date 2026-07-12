@@ -1232,7 +1232,7 @@
         <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
             <div style="display:flex;gap:10px;">
                 <label style="display:flex;align-items:center;gap:6px;background:rgba(78,205,196,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
-                    <input type="radio" name="schedOpMode" value="fourOnFour" checked onchange="document.getElementById('schedOpLoopRow').style.display=this.checked?'':'none'">
+                    <input type="radio" name="schedOpMode" value="fourOnFour" checked onchange="const cb=document.getElementById('schedOpLooping');cb.checked=this.checked;document.getElementById('schedOpLoopRow').style.display=this.checked?'':'none'">
                     <span style="font-weight:600;font-size:0.82rem;">4 on / 4 off</span>
                 </label>
                 <label style="display:flex;align-items:center;gap:6px;background:rgba(243,156,18,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
@@ -2058,6 +2058,8 @@ function onOpModeChange(mode){
         roundRobin:'Admin sets up participants via the Setup button — type names, generate a full schedule. Every player/team plays everyone else. Matches auto-assigned across courts. Standings tracked until complete.'
     };
     document.getElementById('sesModeInfo').textContent=info[mode]||'';
+    const loopCb=document.getElementById('sesLooping');
+    loopCb.checked=mode==='fourOnFour';
     document.getElementById('loopingLabel').style.display=mode==='fourOnFour'?'flex':'none';
     document.getElementById('rrGameTypeRow').style.display=mode==='roundRobin'?'block':'none';
 }
@@ -3161,10 +3163,17 @@ function confirmScore(){
         if(!hasBk&&S.session?.looping&&S.session?.mode==='fourOnFour'){
             const pl2=(c.players||[]).filter(Boolean);
             const gt=c.gameType||(pl2.length>2?'doubles':'singles');
-            const {team1:bal1,team2:bal2}=c.team1&&c.team2?{team1:c.team1,team2:c.team2}:balanceTeams(pl2);
-            const loopGroup={id:++S.nextId,groupName:pl2.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(pl2.reduce((a,p)=>a+p.skill,0)/pl2.length),players:[...pl2],team1:bal1,team2:bal2,joinedAt:Date.now()};
+            let t1,t2;
+            if(gt==='doubles'&&sd&&sd.winner){
+                const winP=(wt.players||[]).filter(Boolean);
+                const loseP=(lt.players||[]).filter(Boolean);
+                if(winP.length>=2&&loseP.length>=2){
+                    t1=[winP[0],loseP[0]];t2=[winP[1],loseP[1]];
+                }else{const b=balanceTeams(pl2);t1=b.team1;t2=b.team2;}
+            }else{const b=balanceTeams(pl2);t1=b.team1;t2=b.team2;}
+            const loopGroup={id:++S.nextId,groupName:pl2.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(pl2.reduce((a,p)=>a+p.skill,0)/pl2.length),players:[...pl2],team1:t1,team2:t2,joinedAt:Date.now()};
             S.queue.push(loopGroup);
-            showNotif('🔄 Looping — all players back to queue!','info');
+            showNotif('🔄 Winners vs Winners, Losers vs Losers — re-queued!','info');
         }
         if(tmUp) showNotif(`⏰ Booking time has ended — court freed.`,'info');
         completeRelease(c,sd);

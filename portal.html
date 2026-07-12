@@ -882,7 +882,8 @@ function selectOpSession(id){
     const content=document.getElementById('opPortalContent');
     const feeSection=s.fee>0?`
         <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;font-size:0.8rem;margin-bottom:12px;">
-            <strong>💰 Drop-in Fee: ₱${s.fee}</strong><br>
+            <strong>💰 Drop-in Fee: ₱${s.fee} per player</strong><br>
+            <span id="opFeeTotal" style="color:#4ecdc4;">Total: <strong>₱${s.fee}</strong></span><br>
             <span style="color:#aaa;">Pay via GCash or Maya to secure your slot. Show transaction on site.</span>
         </div>
         <div style="margin-bottom:12px;">
@@ -904,11 +905,8 @@ function selectOpSession(id){
             <div class="form-group"><label>Email *</label><input type="text" id="opEmail" placeholder="you@email.com"></div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>Game Type</label>
-                <select id="opGameType">
-                    <option value="doubles">Doubles</option>
-                    <option value="singles">Singles</option>
-                </select>
+            <div class="form-group"><label>Number of Players</label>
+                <input type="number" id="opPlayerCount" value="1" min="1" max="20" onchange="updateOpFeeTotal()">
             </div>
             <div class="form-group"><label>Skill Level</label>
                 <select id="opSkill">
@@ -926,6 +924,21 @@ function selectOpSession(id){
         </div>`;
 }
 
+function updateOpFeeTotal(){
+    const s=_opJoinCtx;
+    if(!s) return;
+    const n=parseInt(document.getElementById('opPlayerCount')?.value)||1;
+    const total=n*s.fee;
+    const el=document.getElementById('opFeeTotal');
+    if(el) el.innerHTML=`Total: <strong>₱${total}</strong>`;
+    const area=document.getElementById('opPayInputArea');
+    if(area&&area.innerHTML.trim()){
+        // Re-render payment section if already shown
+        const sel=document.querySelector('.op-pay-btn.selected');
+        if(sel) opSelPay(sel,_opPayMethod);
+    }
+}
+
 function opSelPay(btn,method){
     document.querySelectorAll('.op-pay-btn').forEach(b=>b.classList.remove('selected'));
     btn.classList.add('selected');
@@ -933,12 +946,16 @@ function opSelPay(btn,method){
     const area=document.getElementById('opPayInputArea');
     const s=_opJoinCtx;
     const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+    const n=parseInt(document.getElementById('opPlayerCount')?.value)||1;
+    const total=n*(s?.fee||0);
     area.innerHTML=`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
         <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${method==='GCash'?'📱 Send to GCash':'💜 Send to Maya'}</div>
         <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
-            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Amount:</span><strong style="color:#4ecdc4;">₱${s?`<span id="opFeeAmount">${s.fee}</span>`:'0'}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Players:</span><strong>${n}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Per Player:</span><strong>₱${s?`${s.fee}`:'0'}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:800;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="color:#aaa;">Total:</span><strong style="color:#4ecdc4;">₱<span id="opFeeAmount">${total}</span></strong></div>
         </div>
         <div class="form-group"><label>Reference Number *</label><input type="text" id="opRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
         <div style="font-size:0.72rem;color:#aaa;">Send the exact amount shown above. Enter the reference number after payment.</div></div>`;
@@ -953,17 +970,19 @@ async function confirmJoinOpSession(){
     const email=document.getElementById('opEmail').value.trim();
     if(!fn||!ln||!phone||!email){showNotif('Fill all required fields!','error');return;}
     const skill=parseInt(document.getElementById('opSkill').value);
-    const gameType=document.getElementById('opGameType').value;
-    if(s.fee>0){
+    const playerCount=parseInt(document.getElementById('opPlayerCount').value)||1;
+    const gameType=playerCount<=2?'singles':'doubles';
+    const totalAmount=s.fee*playerCount;
+    if(totalAmount>0){
         if(!_opPayMethod){showNotif('Select a payment method!','error');return;}
         const ref=document.getElementById('opRef');
         if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
     }
-    const player={name:fn+' '+ln,phone,email,skill,gameType,source:'online',joinedAt:Date.now()};
-    if(s.fee>0){
+    const player={name:fn+' '+ln,phone,email,skill,gameType,players:playerCount,source:'online',joinedAt:Date.now()};
+    if(totalAmount>0){
         player.paymentMethod=_opPayMethod;
         player.reference=document.getElementById('opRef').value.trim();
-        player.amount=s.fee;
+        player.amount=totalAmount;
         player.paid=true;
     }
     // Save to Firestore
