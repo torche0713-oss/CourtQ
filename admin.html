@@ -2111,7 +2111,7 @@ function renderScheduledOpList(){
     card.style.display='block';
     list.innerHTML=upcoming.map(s=>{
         const courtNames=(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
-        const pCount=(s.players||[]).length;
+        const pCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
         const max=s.maxPlayers||'∞';
         const label=s.status==='active'?'🟢 Live':`📅 ${s.date}`;
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:all 0.2s;" onclick="openScheduledOpDetail('${s.id}')" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
