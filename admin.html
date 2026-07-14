@@ -1599,7 +1599,7 @@ function showHelp(topic){
             body:`<p><strong>What is Open Play?</strong> A drop-in session where players queue up and get assigned to courts automatically.</p>
 <p><strong>▶ Start a Session:</strong> Click "Open Play" → set date, time, rotation mode, and fee. Players join the queue (added manually or via the online portal) and get assigned to available courts.</p>
 <p><strong>🔄 4 ON / 4 OFF (Looping):</strong> This is the default mode. Groups of 4 players (2v2) play a game on court. When the game ends, the winning pair and losing pair <strong>split into separate queue entries</strong> and go to the back of the line. The winning pair waits to be paired with another winning pair (winners vs winners); the losing pair waits to be paired with another losing pair (losers vs losers). This keeps matches competitive. The court is freed immediately and the next group from the queue gets assigned. Rotations continue indefinitely.</p>
-<p><strong>🏆 Winners Stay & Split:</strong> After a game, the winning pair <strong>stays on court</strong>. Losers go to the solo queue individually. New players are pulled from the solo queue to fill back to 4. Winners are split onto opposite teams for balance (winner 1 + weaker new player vs winner 2 + stronger new player). If not enough players in the queue, everyone goes back to the pool and the court is freed.</p>
+<p><strong>🏆 Winners Stay & Split:</strong> After a game, the winning pair <strong>stays on court</strong>. Losers go to the solo queue individually. New players are pulled from the solo queue to fill back to 4. Winners are split onto opposite teams for balance (winner 1 + weaker new player vs winner 2 + stronger new player). If not enough players in the queue, everyone goes back to the pool and the court is freed. The system also <strong>auto-fills any available court</strong> by pulling 4 players from the solo queue whenever possible.</p>
 <p><strong>📅 Schedule:</strong> Use "Schedule" to set up recurring or future Open Play sessions. Scheduled sessions appear on the timeline and auto-exclude courts from online booking during that time.</p>`
         },
         tournament:{
@@ -2574,28 +2574,31 @@ function joinQueue(){
 }
 
 function tryCombineTeams(){
-    const halves=S.queue.filter(g=>g._halfTeam).sort((a,b)=>a.joinedAt-b.joinedAt);
-    while(halves.length>=2){
-        const a=halves.shift();
-        const bIdx=halves.findIndex(b => {
-            if(a._result&&b._result) return a._result===b._result;
-            if(!a._result&&!b._result) return true;
-            return false;
-        });
-        if(bIdx===-1) break;
-        const b=halves.splice(bIdx,1)[0];
-        const all=[...a.players,...b.players];
-        all.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
-        const bothFixed=a._fixedTeam&&b._fixedTeam;
-        const team1=bothFixed?a.players:b.players;
-        const team2=bothFixed?b.players:a.players;
-        const {team1:bal1,team2:bal2}=bothFixed?{team1,team2}:balanceTeams(all);
-        const full={id:++S.nextId,groupName:`${a.groupName} vs ${b.groupName}`,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:all,team1:bal1,team2:bal2,joinedAt:Math.min(a.joinedAt,b.joinedAt)};
-        // Remove halves from queue, add full group
-        S.queue=S.queue.filter(g=>g.id!==a.id&&g.id!==b.id);
-        S.queue.push(full);
-        showNotif(`✅ Teams combined: ${a.groupName} + ${b.groupName}`,'success');
-    }
+    let combined;
+    do {
+        combined=false;
+        const halves=S.queue.filter(g=>g._halfTeam);
+        for(let i=0;i<halves.length;i++){
+            for(let j=i+1;j<halves.length;j++){
+                const a=halves[i],b=halves[j];
+                const match=(a._result&&b._result&&a._result===b._result)||(!a._result&&!b._result);
+                if(!match) continue;
+                const all=[...a.players,...b.players];
+                all.forEach((p,idx)=>p.color=COLORS[idx%COLORS.length]);
+                const bothFixed=a._fixedTeam&&b._fixedTeam;
+                const team1=bothFixed?a.players:b.players;
+                const team2=bothFixed?b.players:a.players;
+                const {team1:bal1,team2:bal2}=bothFixed?{team1,team2}:balanceTeams(all);
+                const full={id:++S.nextId,groupName:`${a.groupName} vs ${b.groupName}`,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:all,team1:bal1,team2:bal2,joinedAt:Math.min(a.joinedAt,b.joinedAt)};
+                S.queue=S.queue.filter(g=>g.id!==a.id&&g.id!==b.id);
+                S.queue.push(full);
+                showNotif(`✅ ${a.groupName} + ${b.groupName} paired`,'success');
+                combined=true;
+                break;
+            }
+            if(combined) break;
+        }
+    } while(combined);
 }
 
 function clearJoinForm(){['p1','p2','p3','p4','groupName'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
