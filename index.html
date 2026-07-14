@@ -162,7 +162,8 @@
         <div class="card" id="authCard">
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('login')">Log In</button>
-                <button class="tab" onclick="switchTab('signup')">Sign Up</button>
+                <button class="tab" onclick="switchTab('register')">Register</button>
+                <button class="tab" onclick="switchTab('join')">Join</button>
             </div>
 
             <div id="errorMsg" class="error-msg"></div>
@@ -178,20 +179,33 @@
                 <button class="btn btn-outline btn-full" onclick="openDemoLeadForm()">🎮 Try Demo</button>
             </div>
 
-            <!-- SIGNUP -->
-            <div class="auth-form" id="form-signup">
-                <div class="form-group"><label>Venue Name *</label><input type="text" id="signupVenue" placeholder="e.g. Riverside Pickleball"></div>
-                <div class="form-group"><label>Your Name *</label><input type="text" id="signupName" placeholder="e.g. Juan dela Cruz"></div>
-                <div class="form-group"><label>Email *</label><input type="email" id="signupEmail" placeholder="you@email.com"></div>
-                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="signupMobile" placeholder="+63 900 000 0000"></div>
-                <div class="form-group"><label>Password *</label><input type="password" id="signupPass" placeholder="At least 6 characters"></div>
+            <!-- REGISTER VENUE -->
+            <div class="auth-form" id="form-register">
+                <div class="form-group"><label>Venue Name *</label><input type="text" id="registerVenue" placeholder="e.g. Riverside Pickleball"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="registerName" placeholder="e.g. Juan dela Cruz"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 900 000 0000"></div>
+                <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
                 <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
-                    <input type="checkbox" id="signupConsent" style="margin-top:2px;width:auto;">
+                    <input type="checkbox" id="registerConsent" style="margin-top:2px;width:auto;">
                     <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
                 </label>
-                <button class="btn btn-success btn-full" onclick="signup()">Continue →</button>
+                <button class="btn btn-success btn-full" onclick="registerVenue()">Continue →</button>
                 <div class="divider">or</div>
                 <button class="btn btn-outline btn-full" onclick="openDemoLeadForm()">🎮 Try Demo</button>
+            </div>
+
+            <!-- JOIN EXISTING VENUE -->
+            <div class="auth-form" id="form-join">
+                <div class="form-group"><label>Your Name *</label><input type="text" id="joinName" placeholder="e.g. Juan dela Cruz"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="joinEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Password *</label><input type="password" id="joinPass" placeholder="At least 6 characters"></div>
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
+                    <input type="checkbox" id="joinConsent" style="margin-top:2px;width:auto;">
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
+                </label>
+                <button class="btn btn-primary btn-full" onclick="joinVenue()">Create Account</button>
+                <div style="margin-top:12px;font-size:0.75rem;color:#888;text-align:center;">After signing up, ask your venue owner to add your email in Settings → Staff or Co-Owners.</div>
             </div>
         </div>
 
@@ -360,13 +374,9 @@
             hideMsgs();
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-            if (tab === 'login') {
-                document.querySelector('.tabs button:first-child').classList.add('active');
-                document.getElementById('form-login').classList.add('active');
-            } else {
-                document.querySelector('.tabs button:last-child').classList.add('active');
-                document.getElementById('form-signup').classList.add('active');
-            }
+            const idx = { login:0, register:1, join:2 }[tab] || 0;
+            document.querySelectorAll('.tabs button')[idx].classList.add('active');
+            document.getElementById('form-'+tab).classList.add('active');
         }
 
         function showLoading(msg) {
@@ -389,16 +399,16 @@
 
         let _pendingCred = null; // store cred between signup and submitSetup
 
-        async function signup() {
+        async function registerVenue() {
             hideMsgs();
-            const venue = document.getElementById('signupVenue').value.trim();
-            const name = document.getElementById('signupName').value.trim();
-            const email = document.getElementById('signupEmail').value.trim();
-            const mobile = document.getElementById('signupMobile').value.trim();
-            const pass = document.getElementById('signupPass').value;
+            const venue = document.getElementById('registerVenue').value.trim();
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const mobile = document.getElementById('registerMobile').value.trim();
+            const pass = document.getElementById('registerPass').value;
             if (!venue || !name || !email || !mobile || !pass) { showError('Fill in all fields.'); return; }
             if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
-            if (!document.getElementById('signupConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
+            if (!document.getElementById('registerConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
             hideError();
             showLoading('Creating your account...');
             try {
@@ -409,6 +419,29 @@
                 document.getElementById('setupScreen').style.display = 'block';
                 document.getElementById('setupCourts').value = 3;
                 updatePricing();
+            } catch (e) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('authCard').style.display = 'block';
+                showError(e.message);
+            }
+        }
+
+        async function joinVenue() {
+            hideMsgs();
+            const name = document.getElementById('joinName').value.trim();
+            const email = document.getElementById('joinEmail').value.trim();
+            const pass = document.getElementById('joinPass').value;
+            if (!name || !email || !pass) { showError('Fill in all fields.'); return; }
+            if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
+            if (!document.getElementById('joinConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
+            hideError();
+            showLoading('Creating your account...');
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                await db.collection('users').doc(cred.user.uid).set({ email, name, createdAt: Date.now() });
+                document.getElementById('loadingScreen').style.display = 'none';
+                showSuccess('Account created! Ask your venue owner to add your email in Settings → Staff or Co-Owners, then log in.');
+                switchTab('login');
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('authCard').style.display = 'block';
@@ -849,6 +882,15 @@
                                 window.location.href = 'admin.html?venue=' + venueDoc.data().slug;
                                 return;
                             }
+                        }
+                    }
+                    // Redirect staff/co-owner by email match
+                    const venuesSnap = await db.collection('venues').get();
+                    for (const d of venuesSnap.docs) {
+                        const v = d.data();
+                        if ((v.staffEmails||[]).includes(user.email) || (v.ownerEmails||[]).includes(user.email)) {
+                            window.location.href = 'admin.html?venue=' + v.slug;
+                            return;
                         }
                     }
                 } catch(e) {}
