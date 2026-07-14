@@ -481,7 +481,7 @@
                     });
                 }
                 await db.collection('venues').doc(venueId).set({
-                    ownerId: p.uid, name: '🏟️ ' + p.venue, slug: finalSlug, createdAt: Date.now(),
+                    ownerId: p.uid, name: '🏟️ ' + p.venue, venueName: '🏟️ ' + p.venue, slug: finalSlug, createdAt: Date.now(),
                     courts: defaultCourts, queue: [], soloQueue: [], session: null,
                     bookings: [], history: [], leaderboard: {}, sales: [],
                     nextId: 100, nextBId: 1,

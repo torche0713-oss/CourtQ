@@ -5420,6 +5420,7 @@ function deleteTournament(id){
         PERSISTENT_KEYS.forEach(k => {
             if (data[k] !== undefined) S[k] = data[k];
         });
+        if (!S.venueName && data.name) S.venueName = data.name;
         if(data.scheduledSessions) S.scheduledSessions=data.scheduledSessions;
         // Bookings: always use subcollection as source of truth
         (async()=>{
