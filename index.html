@@ -202,28 +202,21 @@
                 <div style="font-size:0.68rem;color:#4ecdc4;font-weight:700;margin-bottom:8px;text-align:center;background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:8px;padding:8px;">✅ <strong>All premium features included from Day 1:</strong> booking portal · GCash/Maya · dashboard · financials · AI · Open Play · staff controls · leaderboard · no setup fee · no commission</div>
                 <div class="plan-card" data-plan="founding" style="background:rgba(231,76,60,0.06);border:2px solid rgba(231,76,60,0.3);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.65rem;color:#e74c3c;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🔥 FOUNDERS PLAN</div>
-                    <div style="font-size:0.72rem;color:#e74c3c;font-weight:600;margin:2px 0;">First 50 Court Owners</div>
+                    <div style="font-size:0.72rem;color:#e74c3c;font-weight:600;margin:2px 0;">First 20 Court Owners</div>
                     <div style="font-size:1.8rem;font-weight:900;color:#fff;margin:8px 0;">FREE</div>
                     <div style="font-size:0.78rem;color:#ddd;">for the first month, no obligation</div>
-                    <div style="font-size:0.85rem;color:#aaa;margin-top:6px;">Then <strong style="color:#4ecdc4;font-size:1.1rem;">₱999</strong>/mo</div>
-                    <div style="font-size:0.6rem;color:#666;text-decoration:line-through;">Regular ₱1,199/mo</div>
+                    <div style="font-size:0.85rem;color:#aaa;margin-top:6px;">Then <strong style="color:#4ecdc4;font-size:1.1rem;">₱399</strong>/mo</div>
+                    <div style="font-size:0.6rem;color:#666;text-decoration:line-through;">Regular ₱499/mo</div>
                     <div style="font-size:0.62rem;color:#4ecdc4;font-weight:600;margin-top:6px;">✓ All premium features included from Day 1</div>
                 </div>
             </div>
             <div id="pricingBox" style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;margin:10px 0;text-align:center;">
-                <div style="font-size:0.75rem;color:#e74c3c;" id="setupPlanLabel">🔥 Founders Plan — first 50 court owners: ₱999/mo</div>
+                <div style="font-size:0.75rem;color:#e74c3c;" id="setupPlanLabel">🔥 Founders Plan — first 20 court owners: ₱399/mo</div>
                 <div style="font-size:1.6rem;font-weight:900;color:#fff;" id="setupPrice">FREE for 1 month</div>
-                <div style="font-size:0.78rem;color:#aaa;" id="setupPriceDetail">Then <strong>₱999</strong>/mo for first 50 · <span style="color:#666;text-decoration:line-through;">Regular ₱1,199/mo</span> (5 courts incl.) (3 courts)</div>
+                <div style="font-size:0.78rem;color:#aaa;" id="setupPriceDetail">Then <strong>₱399</strong>/mo for first 20 · <span style="color:#666;text-decoration:line-through;">Regular ₱499/mo</span> (5 courts incl.) (3 courts)</div>
                 <div style="font-size:0.62rem;color:#4ecdc4;font-weight:600;margin-top:6px;">✓ All premium features included from Day 1</div>
             </div>
-            <div style="background:rgba(243,156,18,0.06);border:1px solid rgba(243,156,18,0.15);border-radius:10px;padding:12px;margin:8px 0;">
-                <div style="font-weight:700;color:#f39c12;font-size:0.85rem;margin-bottom:6px;">💳 Send payment to (valid for month 2 onward):</div>
-                <div style="font-size:0.82rem;color:#ddd;line-height:1.7;"><strong>GCash:</strong> 09998830291 · <strong>Name:</strong> Hector Lopez<br><strong>Maya:</strong> 09998830291 · <strong>Name:</strong> Hector Lopez</div>
-            </div>
-            <div class="form-group"><label>Payment Reference Number</label>
-                <input type="text" id="setupRef" placeholder="Enter GCash/Maya reference number">
-            </div>
-            <div style="font-size:0.75rem;color:#888;margin-bottom:10px;">📸 Screenshot and save your payment confirmation. Your first month is free — no payment needed. Reference number is for future billing.</div>
+
             <button class="btn btn-success btn-full" onclick="submitSetup()">✅ Submit &amp; Start Free Month</button>
         </div>
 
@@ -421,7 +414,7 @@
 
         let _selectedPlan = 'founding';
         const plans = {
-            founding: { name:'Founders Plan', base:999, incl:5, extraRate:250, perBlock:3, color:'#e74c3c', label:'🔥 Founders Plan — first 50: ₱999/mo (regular ₱1,199/mo)' }
+            founding: { name:'Founders Plan', base:399, incl:5, extraRate:250, perBlock:3, color:'#e74c3c', label:'🔥 Founders Plan — first 20: ₱399/mo (regular ₱499/mo)' }
         };
 
         function selectPlan(p) {
@@ -454,8 +447,6 @@
 
         async function submitSetup() {
             hideSetupError();
-            const ref = document.getElementById('setupRef').value.trim();
-            if (!ref) { showSetupError('Enter your payment reference number.'); return; }
             const p = _pendingCred;
             if (!p) { showSetupError('Session expired. Please sign up again.'); return; }
             const c = parseInt(document.getElementById('setupCourts').value, 10) || 3;
@@ -491,7 +482,7 @@
                     bookings: [], history: [], leaderboard: {}, sales: [],
                     nextId: 100, nextBId: 1,
                     status: 'pending', mobile: p.mobile, ownerName: p.name,
-                    paymentRef: ref, monthlyRate: monthly, courtCount: c,
+                    monthlyRate: monthly, courtCount: c,
                     plan: planKey,
                     paymentInfo:{gcash:{number:'09998830291',name:'Hector Lopez'},maya:{number:'09998830291',name:'Hector Lopez'}}
                 });
@@ -509,13 +500,13 @@
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
                             subject: 'Welcome to CourtQ Pro! 🎾',
-                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
+                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
                         });
                         // Developer notification
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
                             subject: `New Venue Signup: ${p.venue}`,
-                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nPayment Ref: ${ref}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
@@ -534,7 +525,6 @@
                         <div style="color:#888;">Courts:</div><div style="font-weight:600;">${c}</div>
                         <div style="color:#888;">Plan:</div><div style="font-weight:600;">${plan.name}</div>
                         <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">₱${monthly.toLocaleString()}</div>
-                        <div style="color:#888;">Payment Ref:</div><div style="font-weight:600;">${escapeHtml(ref)}</div>
                         <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
                     </div>`;
             } catch (e) {
