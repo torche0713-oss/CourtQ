@@ -1596,10 +1596,10 @@ function showHelp(topic){
     const c={
         openplay:{
             title:'🏓 Open Play',
-            body:`<p><strong>What is Open Play?</strong> A drop-in session where players queue up and get matched onto courts automatically.</p>
-<p><strong>▶ Start a Session:</strong> Click "Open Play" → set date, time, rotation mode, and fee. During a session, players join the queue and get assigned to courts.</p>
-<p><strong>🔄 4 ON / 4 OFF:</strong> Players are queued by skill level. When 4 players are in the queue, they're sent to an available court. After <strong>4 points</strong> (or rotation time), the winning pair stays, the losing pair rotates out — new players from the queue take their place. This keeps games competitive and fast-paced.</p>
-<p><strong>🏆 Winners Stay & Split:</strong> The winning pair stays on court. The losing pair splits — one player stays, one leaves. A new player joins to form a new pair against the winners.</p>
+            body:`<p><strong>What is Open Play?</strong> A drop-in session where players queue up and get assigned to courts automatically.</p>
+<p><strong>▶ Start a Session:</strong> Click "Open Play" → set date, time, rotation mode, and fee. Players join the queue (added manually or via the online portal) and get assigned to available courts.</p>
+<p><strong>🔄 4 ON / 4 OFF (Looping):</strong> This is the default mode. Groups of 4 players (2v2) play a game on court. When the game ends, the winning pair and losing pair <strong>split into separate queue entries</strong> and go to the back of the line. The winning pair waits to be paired with another winning pair (winners vs winners); the losing pair waits to be paired with another losing pair (losers vs losers). This keeps matches competitive. The court is freed immediately and the next group from the queue gets assigned. Rotations continue indefinitely.</p>
+<p><strong>🏆 Winners Stay & Split:</strong> After a game, the winning pair <strong>stays on court</strong>. Losers go to the solo queue individually. New players are pulled from the solo queue to fill back to 4. Winners are split onto opposite teams for balance (winner 1 + weaker new player vs winner 2 + stronger new player). If not enough players in the queue, everyone goes back to the pool and the court is freed.</p>
 <p><strong>📅 Schedule:</strong> Use "Schedule" to set up recurring or future Open Play sessions. Scheduled sessions appear on the timeline and auto-exclude courts from online booking during that time.</p>`
         },
         tournament:{
@@ -2577,7 +2577,13 @@ function tryCombineTeams(){
     const halves=S.queue.filter(g=>g._halfTeam).sort((a,b)=>a.joinedAt-b.joinedAt);
     while(halves.length>=2){
         const a=halves.shift();
-        const b=halves.shift();
+        const bIdx=halves.findIndex(b => {
+            if(a._result&&b._result) return a._result===b._result;
+            if(!a._result&&!b._result) return true;
+            return false;
+        });
+        if(bIdx===-1) break;
+        const b=halves.splice(bIdx,1)[0];
         const all=[...a.players,...b.players];
         all.forEach((p,i)=>p.color=COLORS[i%COLORS.length]);
         const bothFixed=a._fixedTeam&&b._fixedTeam;
@@ -3227,18 +3233,23 @@ function confirmScore(){
         // Default 4 on/4 off — only runs for non-booking courts
         if(!hasBk&&S.session?.looping&&S.session?.mode==='fourOnFour'){
             const pl2=(c.players||[]).filter(Boolean);
-            const gt=c.gameType||(pl2.length>2?'doubles':'singles');
-            let t1,t2;
-            if(gt==='doubles'&&sd&&sd.winner){
+            if(sd&&sd.winner){
+                const wt=sd.winner==='A'?sd.teamA:sd.teamB;
+                const lt=sd.winner==='A'?sd.teamB:sd.teamA;
                 const winP=(wt.players||[]).filter(Boolean);
                 const loseP=(lt.players||[]).filter(Boolean);
-                if(winP.length>=2&&loseP.length>=2){
-                    t1=[winP[0],loseP[0]];t2=[winP[1],loseP[1]];
-                }else{const b=balanceTeams(pl2);t1=b.team1;t2=b.team2;}
-            }else{const b=balanceTeams(pl2);t1=b.team1;t2=b.team2;}
-            const loopGroup={id:++S.nextId,groupName:pl2.map(p=>p.name).join(' & '),gameType:gt,skillLevel:Math.round(pl2.reduce((a,p)=>a+p.skill,0)/pl2.length),players:[...pl2],team1:t1,team2:t2,joinedAt:Date.now()};
-            S.queue.push(loopGroup);
-            showNotif('🔄 Winners vs Winners, Losers vs Losers — re-queued!','info');
+                const skW=Math.round(winP.reduce((a,p)=>a+p.skill,0)/winP.length)||3;
+                const skL=Math.round(loseP.reduce((a,p)=>a+p.skill,0)/loseP.length)||3;
+                const winGroup={id:++S.nextId,groupName:winP.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:skW,players:winP,team1:null,team2:null,joinedAt:Date.now(),_halfTeam:true,_result:'win'};
+                const loseGroup={id:++S.nextId,groupName:loseP.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:skL,players:loseP,team1:null,team2:null,joinedAt:Date.now(),_halfTeam:true,_result:'lose'};
+                S.queue.push(winGroup,loseGroup);
+                showNotif('🔄 Winners vs Winners, Losers vs Losers — re-queued!','info');
+            } else {
+                const avg=Math.round(pl2.reduce((a,p)=>a+p.skill,0)/pl2.length)||3;
+                const fullGroup={id:++S.nextId,groupName:pl2.map(p=>p.name).join(' & '),gameType:'doubles',skillLevel:avg,players:[...pl2],team1:null,team2:null,joinedAt:Date.now()};
+                S.queue.push(fullGroup);
+                showNotif('🔄 All players re-queued','info');
+            }
         }
         if(tmUp) showNotif(`⏰ Booking time has ended — court freed.`,'info');
         completeRelease(c,sd);
