@@ -509,6 +509,7 @@
             <span style="font-size:0.6rem;opacity:0.5;">✏️</span>
         </div>
         <button class="btn btn-primary btn-sm" onclick="copyPortalLink()">🔗 Share Booking Online Link</button>
+        <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;margin-right:2px;">?</span>
         <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/tv-display.html?venue='+S.venueSlug).then(()=>showNotif('TV Display link copied!')).catch(()=>showNotif('Failed to copy'))">📺 Share TV Link</button>
         <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/score.html?venue='+S.venueSlug).then(()=>showNotif('Mobile Scoring link copied!')).catch(()=>showNotif('Failed to copy'))">📱 Share Scoring Link</button>
         <button class="btn btn-outline btn-sm" onclick="openSettings()" id="settingsBtn">⚙️ Settings</button>
@@ -607,7 +608,7 @@
         <div>
             <div class="card">
                 <div class="card-title">
-                    <span>🏟️ Courts</span>
+                    <span>🏟️ Courts <span class="help-btn" onclick="showHelp('openplay')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
                     <div style="display:flex;gap:8px;">
                         <button class="btn btn-primary btn-sm" onclick="openStartSession()">▶ Open Play</button>
                         <button class="btn btn-outline btn-sm" onclick="openScheduleOpModal()">📅 Schedule</button>
@@ -639,7 +640,7 @@
 <div class="page" id="page-booking">
     <div class="card">
         <div class="card-title">
-            <span>📅 Court Schedule</span>
+            <span>📅 Court Schedule <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
             <div style="display:flex;gap:6px;">
                 <input type="date" id="tlDate" onchange="renderBookingTimeline()" style="padding:5px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('tlDate').value=getTodayISO();renderBookingTimeline()">Today</button>
@@ -726,7 +727,7 @@
 <div class="page" id="page-confirmations">
     <div class="card">
         <div class="card-title">
-            <span>✅ Booking Confirmations</span>
+            <span>✅ Booking Confirmations <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
             <div style="display:flex;gap:6px;">
                 <select id="cFilter" onchange="renderConfirmations()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
                     <option value="all">All Methods</option>
@@ -753,7 +754,7 @@
     <div id="financialsContent" style="display:none;">
         <div class="card">
             <div class="card-title">
-                <span>💰 Financial Summary</span>
+                <span>💰 Financial Summary <span class="help-btn" onclick="showHelp('financials')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
                 <div style="display:flex;gap:6px;">
                     <select id="finPeriod" onchange="renderFinancials()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
                         <option value="today">Today</option>
@@ -1013,7 +1014,7 @@
     <div id="tournamentView">
         <div class="card">
             <div class="card-title">
-                <span>🏆 Tournaments</span>
+                <span>🏆 Tournaments <span class="help-btn" onclick="showHelp('tournament')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
                 <button class="btn btn-primary btn-sm" onclick="showCreateTournament()">➕ New Tournament</button>
             </div>
             <div id="tournamentList"></div>
@@ -1510,6 +1511,14 @@
     </div>
 </div>
 
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="helpModal" onclick="if(event.target===this)closeModal('helpModal')">
+    <div class="modal" style="max-width:520px;">
+        <button class="modal-close" onclick="closeModal('helpModal')">✕</button>
+        <div id="helpContent"></div>
+    </div>
+</div>
+
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -1583,6 +1592,55 @@ function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function clearLiveScore(courtId){ if(!VENUE_ID) return; db.collection('liveScores').doc(VENUE_ID+'_'+courtId).delete().catch(()=>{}); }
+function showHelp(topic){
+    const c={
+        openplay:{
+            title:'🏓 Open Play',
+            body:`<p><strong>What is Open Play?</strong> A drop-in session where players queue up and get matched onto courts automatically.</p>
+<p><strong>▶ Start a Session:</strong> Click "Open Play" → set date, time, rotation mode, and fee. During a session, players join the queue and get assigned to courts.</p>
+<p><strong>🔄 4 ON / 4 OFF:</strong> Players are queued by skill level. When 4 players are in the queue, they're sent to an available court. After <strong>4 points</strong> (or rotation time), the winning pair stays, the losing pair rotates out — new players from the queue take their place. This keeps games competitive and fast-paced.</p>
+<p><strong>🏆 Winners Stay & Split:</strong> The winning pair stays on court. The losing pair splits — one player stays, one leaves. A new player joins to form a new pair against the winners.</p>
+<p><strong>📅 Schedule:</strong> Use "Schedule" to set up recurring or future Open Play sessions. Scheduled sessions appear on the timeline and auto-exclude courts from online booking during that time.</p>`
+        },
+        tournament:{
+            title:'🏆 Tournament Setup',
+            body:`<p><strong>How to create a Tournament:</strong></p>
+<ol style="margin:4px 0 8px 18px;line-height:1.8;">
+<li>Click <strong>"＋ New Tournament"</strong></li>
+<li>Name your tournament (e.g. "June Open 2026")</li>
+<li>Select <strong>Format:</strong> Groups + Elimination, Groups Only, or Elimination Only</li>
+<li>Assign courts — these courts will be reserved for tournament matches</li>
+<li>Click <strong>Create Tournament</strong></li>
+</ol>
+<p><strong>Groups Stage:</strong> Players are divided into groups. Each group plays round-robin. Top players advance to elimination.</p>
+<p><strong>Elimination Stage:</strong> Single- or double-elimination bracket. Click <strong>"Activate Elimination"</strong> when groups are done to start bracket matches.</p>
+<p><strong>Scoring:</strong> Click a match → enter scores → the winner advances automatically.</p>`
+        },
+        booking:{
+            title:'📅 Online Booking',
+            body:`<p>Your public booking portal is live at:</p>
+<p style="background:rgba(78,205,196,0.08);border-radius:6px;padding:8px;text-align:center;font-weight:600;word-break:break-all;">courtqpro.online/portal.html?venue=${escapeHtml(S.venueSlug||'your-slug')}</p>
+<p>Share this link with players. They can:</p>
+<ul style="margin:4px 0 8px 18px;line-height:1.8;">
+<li>View court availability</li>
+<li>Book a court and pay via GCash or Maya</li>
+<li>Join Open Play sessions</li>
+</ul>
+<p>Bookings show up in your dashboard under <strong>📋 Confirmations</strong> tab for approval.</p>`
+        },
+        financials:{
+            title:'💰 Financials',
+            body:`<p><strong>Revenue by Court:</strong> See how much each court earns per day, week, or month.</p>
+<p><strong>Cost Tracking:</strong> Add fixed costs (rent, utilities, staff) to calculate net profit.</p>
+<p><strong>Peak Hour Analysis:</strong> Identify your busiest times to optimize pricing.</p>
+<p><strong>AI Pricing:</strong> Get AI-suggested rates based on your venue data.</p>
+<p>Data can be exported to CSV for your records.</p>`
+        }
+    }[topic];
+    if(!c) return;
+    document.getElementById('helpContent').innerHTML=`<div class="modal-title" style="margin-bottom:12px;">${c.title}</div><div style="font-size:0.88rem;color:#ccc;line-height:1.7;">${c.body}</div>`;
+    openModal('helpModal');
+}
 function startDemoHeartbeat(){
     const sessionId=db.collection('demo_sessions').doc().id;
     const touch=()=>{db.collection('demo_sessions').doc(sessionId).set({lastSeen:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp(),userAgent:(navigator.userAgent||'').substring(0,100),startedDemo:true,demoVenueId:VENUE_ID||'',demoVenueName:S.venueName||''},{merge:true}).catch(()=>{});};
@@ -4308,7 +4366,7 @@ async function activateVenue(venueId,slug){
                 await emailjs.send(ej.serviceId, ej.templateAuto, {
                     to_email: ownerEmail, to_name: vData.ownerName||'Valued Partner',
                     subject: `Your venue "${vData.name}" is now LIVE! ✅`,
-                    body: `✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Configure Settings\nClick the ⚙️ Settings tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 4: Add Staff (Optional)\nIn Settings, add staff emails so they can help manage the venue.\n\nStep 5: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\nStep 6: Set Up Online Booking\nGo to Settings → Portal to:\n  • Enable online reservations\n  • Configure booking rules (advance hours, max duration, etc.)\n  • Share your public booking link with players\n\n━━━ NEED HELP? ━━━\n📧 apexmindagency@gmail.com\n📱 +63 999 883 0291`
+                    body: `✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Configure Settings\nClick the ⚙️ Settings tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 4: Add Staff (Optional)\nIn Settings, add staff emails so they can help manage the venue.\n\nStep 5: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\n━━━ NEED HELP? ━━━\n📧 apexmindagency@gmail.com\n📱 +63 999 883 0291`
                 });
             }
         } catch(e){ console.warn('EmailJS activation send failed:', e); }
