@@ -871,6 +871,30 @@
             <div class="card-title">📈 Detailed Breakdown</div>
             <div id="finBreakdown"></div>
         </div>
+        <div class="card">
+            <div class="card-title">
+                <span>👥 Player Retention</span>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn btn-sm" style="padding:3px 8px;font-size:0.68rem;border:1px solid #4ecdc4;border-radius:6px;background:rgba(78,205,196,0.15);color:#4ecdc4;cursor:pointer;" onclick="setPlayerPeriod('all')" id="loyalPdAll">All Time</button>
+                    <button class="btn btn-sm" style="padding:3px 8px;font-size:0.68rem;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:transparent;color:#aaa;cursor:pointer;" onclick="setPlayerPeriod('month')" id="loyalPdMonth">This Month</button>
+                    <button class="btn btn-sm" style="padding:3px 8px;font-size:0.68rem;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:transparent;color:#aaa;cursor:pointer;" onclick="setPlayerPeriod('week')" id="loyalPdWeek">This Week</button>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:16px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Repeat Players</div>
+                    <div style="font-size:1.8rem;font-weight:800;color:#9b59b6;margin-top:6px;" id="finRepeatPct">0%</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finRepeatDetail">0 of 0 unique players</div>
+                </div>
+                <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.2);border-radius:12px;padding:16px;text-align:center;">
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">New Players</div>
+                    <div style="font-size:1.8rem;font-weight:800;color:#3498db;margin-top:6px;" id="finNewPct">0%</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finNewDetail">0 first-time visitors</div>
+                </div>
+            </div>
+            <div class="card-title" style="font-size:0.78rem;margin-top:14px;">🏅 Top 10 Loyal Players</div>
+            <div id="finLoyalPlayers" style="margin-bottom:4px;"></div>
+        </div>
     </div>
 </div>
 
@@ -1548,6 +1572,7 @@ let VENUE_ID = null;
 let VENUE_OWNER_ID = null;
 let GEMINI_API_KEY = '';
 let IS_OWNER = true;
+let _playerPeriod = 'all';
 
 // ===================== STATE =====================
 let S = {
@@ -3924,6 +3949,78 @@ function renderFinancials(){
         <span style="color:#aaa;">${pg} / ${totalPages}</span>
         <button class="btn btn-outline btn-sm" onclick="window._finPage=${Math.min(totalPages,pg+1)};renderFinancials()" ${pg>=totalPages?'disabled':''}>Next →</button>
     </div>`:'');
+    renderPlayerRetention();
+}
+function setPlayerPeriod(p){
+    _playerPeriod=p;
+    document.querySelectorAll('[id^=loyalPd]').forEach(el=>{el.style.background='transparent';el.style.borderColor='rgba(255,255,255,0.15)';el.style.color='#aaa';});
+    const active=document.getElementById('loyalPd'+p.charAt(0).toUpperCase()+p.slice(1));
+    if(active){active.style.background='rgba(78,205,196,0.15)';active.style.borderColor='#4ecdc4';active.style.color='#4ecdc4';}
+    renderPlayerRetention();
+}
+function renderPlayerRetention(){
+    const now=new Date();
+    let startDate;
+    if(_playerPeriod==='all'){startDate=new Date(0);}
+    else if(_playerPeriod==='month'){startDate=new Date(now.getFullYear(),now.getMonth(),1);}
+    else{const d=new Date(now);d.setDate(d.getDate()-d.getDay());startDate=new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+    const visits={};
+    const allTimeVisits={};
+    function countVisit(name,date,amount){
+        if(!name) return;
+        const d=new Date(date||0);
+        if(d>=startDate){
+            if(!visits[name]) visits[name]={name,visits:0,totalSpent:0,lastVisit:d};
+            visits[name].visits++;
+            visits[name].totalSpent+=amount||0;
+            if(d>visits[name].lastVisit) visits[name].lastVisit=d;
+        }
+        // all-time for "new player" detection
+        if(!allTimeVisits[name]) allTimeVisits[name]=0;
+        allTimeVisits[name]++;
+    }
+    // From bookings
+    (S.bookings||[]).forEach(b=>{
+        if(b.status==='cancelled') return;
+        countVisit(b.customer,b.bookedAt,b.amount);
+    });
+    // From history (Open Play walk-ins)
+    (S.history||[]).forEach(h=>{
+        const hDate=h.date?new Date(h.date):h.time?new Date(h.time):null;
+        (h.players||[]).forEach(p=>{
+            if(p&&p.name) countVisit(p.name,hDate||now,0);
+        });
+    });
+    const uniquePlayers=Object.keys(visits).length;
+    const repeatPlayers=Object.values(visits).filter(v=>v.visits>1).length;
+    const repeatPct=uniquePlayers>0?Math.round(repeatPlayers/uniquePlayers*100):0;
+    const newPlayers=Object.values(visits).filter(v=>allTimeVisits[v.name]===v.visits).length;
+    const newPct=uniquePlayers>0?Math.round(newPlayers/uniquePlayers*100):0;
+    document.getElementById('finRepeatPct').textContent=repeatPct+'%';
+    document.getElementById('finRepeatDetail').textContent=repeatPlayers+' of '+uniquePlayers+' unique players';
+    document.getElementById('finNewPct').textContent=newPct+'%';
+    document.getElementById('finNewDetail').textContent=newPlayers+' first-time visitors';
+    // Top 10 loyal players
+    const sorted=Object.values(visits).sort((a,b)=>b.visits-a.visits||b.totalSpent-a.totalSpent).slice(0,10);
+    const lpDiv=document.getElementById('finLoyalPlayers');
+    if(sorted.length===0){
+        lpDiv.innerHTML='<div style="font-size:0.78rem;color:#555;text-align:center;padding:12px;">No player data this period.</div>';
+        return;
+    }
+    const maxVisit=sorted[0]?.visits||1;
+    lpDiv.innerHTML=sorted.map((v,i)=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:4px;">
+            <div style="width:20px;font-size:0.7rem;font-weight:800;color:${i<3?'#f39c12':'#666'};text-align:center;">${i+1}</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:${['#f39c12','#e0e0e0','#cd7f32','#555'][i]||'#444'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:#fff;">${v.name[0]}</div>
+            <div style="flex:1;">
+                <div style="font-weight:600;font-size:0.82rem;">${escapeHtml(v.name)}</div>
+                <div style="font-size:0.65rem;color:#aaa;">${v.visits} visit${v.visits>1?'s':''} · ₱${v.totalSpent.toLocaleString()} · last ${v.lastVisit.toLocaleDateString()}</div>
+            </div>
+            <div style="width:60px;height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+                <div style="height:100%;width:${Math.round(v.visits/maxVisit*100)}%;background:linear-gradient(90deg,#4ecdc4,#3498db);border-radius:4px;"></div>
+            </div>
+        </div>
+    `).join('');
 }
 function addCost(){
     const amt=parseFloat(document.getElementById('costAmount').value);
