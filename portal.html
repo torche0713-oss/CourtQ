@@ -941,13 +941,12 @@ function updateOpFeeTotal(){
     const subtotal=n*s.fee;
     const total=subtotal+n*CONVENIENCE_FEE;
     const el=document.getElementById('opFeeTotal');
-    if(el) el.innerHTML=`Total: <strong>RM${total}</strong> <span style="font-size:0.68rem;color:#888;">(incl. RM${n*CONVENIENCE_FEE} convenience fee)</span>`;
+    if(el) el.innerHTML=`Total: <strong>₱${total}</strong> <span style="font-size:0.68rem;color:#888;">(incl. ₱${n*CONVENIENCE_FEE} convenience fee)</span>`;
     const area=document.getElementById('opPayInputArea');
     if(area&&area.innerHTML.trim()){
         const sel=document.querySelector('.op-pay-btn.selected');
         if(sel) opSelPay(sel,_opPayMethod);
     }
-}
 }
 
 function opSelPay(btn,method){
