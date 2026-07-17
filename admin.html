@@ -504,9 +504,8 @@
             <span id="clockDisplay">--:--:--</span>
             <span id="dateDisplay" style="font-size:0.7rem;">--</span>
         </div>
-        <div class="venue-editable" id="venueDisplay" onclick="editVenueName()">
+        <div class="venue-editable" id="venueDisplay">
             <span id="venueLogo"></span><span id="venueText">🏟️ Riverside Pickleball</span>
-            <span style="font-size:0.6rem;opacity:0.5;">✏️</span>
         </div>
         <button class="btn btn-primary btn-sm" onclick="copyPortalLink()">🔗 Share Booking Online Link</button>
         <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;margin-right:2px;">?</span>
@@ -1922,25 +1921,9 @@ function updateClock(){
 }
 setInterval(updateClock,1000); updateClock();
 
-// ===================== VENUE =====================
-function editVenueName(){
-    const c=document.getElementById('venueDisplay');
-    const cur=S.venueName.replace(/^🏟️\s*/,'');
-    c.innerHTML=`<input type="text" value="${escapeHtml(cur)}" id="venueInput" onblur="saveVenueName()" onkeydown="if(event.key==='Enter')saveVenueName()" autofocus style="width:180px;">`;
-    document.getElementById('venueInput').select();
-}
-function saveVenueName(){
-    const inp=document.getElementById('venueInput');
-    if(!inp) return;
-    const n=inp.value.trim();
-    if(n){ S.venueName='🏟️ '+n;
-        if(VENUE_ID) db.collection('venues').doc(VENUE_ID).update({name:S.venueName}).catch(()=>{}); }
-    renderVenueDisplay();
-    saveState();
-}
 function renderVenueDisplay(){
     const logo=S.logoUrl?`<img src="${S.logoUrl}" style="height:24px;width:auto;margin-right:6px;vertical-align:middle;" alt="logo">`:'';
-    document.getElementById('venueDisplay').innerHTML=`${logo}<span id="venueText">${escapeHtml(S.venueName)}</span><span style="font-size:0.6rem;opacity:0.5;">✏️</span>`;
+    document.getElementById('venueDisplay').innerHTML=`${logo}<span id="venueText">${escapeHtml(S.venueName)}</span>`;
 }
 
 // ===================== PAGE NAV =====================
