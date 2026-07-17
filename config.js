@@ -444,6 +444,11 @@ const CQ_CONFIG = {
 };
 
 // Helper functions
+function cqFixImgurUrl(url){
+    if(!url || typeof url !== 'string') return url;
+    if(!url.includes('imgur.com/') || url.includes('i.imgur.com/')) return url;
+    return url.replace(/https?:\/\/(www\.)?imgur\.com\//,'https://i.imgur.com/').split('?')[0].split('#')[0];
+}
 function cqFormatCurrency(amount) {
     return '₱' + Number(amount || 0).toLocaleString();
 }

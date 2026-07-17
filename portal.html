@@ -489,7 +489,7 @@ function renderPortalPlayerNames(){
 function openPortal(mode){
     if(mode==='openplay') return openOpPortal();
     S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
-    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo" onerror="this.style.display='none'">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
     document.getElementById('pDate').value=getTodayISO();
     goPortalStep(1);
     renderCourtPicker();
@@ -684,7 +684,7 @@ function showReceiptConfirmation(bId, booking, court, refNum, total){
         </div>
         <div class="receipt-box" style="text-align:left;">
             <div style="text-align:center;margin-bottom:10px;">
-                <div style="font-weight:700;color:#4ecdc4;">${S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">`:''}${escapeHtml(S.venueName)}</div>
+                <div style="font-weight:700;color:#4ecdc4;">${S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo" onerror="this.style.display='none'">`:''}${escapeHtml(S.venueName)}</div>
                 <div style="font-size:0.68rem;color:#aaa;">ID: ${bId}</div>
             </div>
             <div class="receipt-line"><span>Name</span><span>${escapeHtml(booking.customer)}</span></div>
@@ -1064,7 +1064,7 @@ async function confirmJoinOpSession(){
             if(!snap.exists) return;
             const data = snap.data();
             S.venueName = data.name || 'Court';
-            S.logoUrl = data.logoUrl || '';
+            S.logoUrl = cqFixImgurUrl(data.logoUrl || '');
             S.courts = data.courts || [];
             S.session = data.session || null;
             S.scheduledSessions = data.scheduledSessions || [];

@@ -1922,7 +1922,8 @@ function updateClock(){
 setInterval(updateClock,1000); updateClock();
 
 function renderVenueDisplay(){
-    const logo=S.logoUrl?`<img src="${S.logoUrl}" style="height:24px;width:auto;margin-right:6px;vertical-align:middle;" alt="logo">`:'';
+    const logoUrl=cqFixImgurUrl(S.logoUrl||'');
+    const logo=logoUrl?`<img src="${logoUrl}" style="height:24px;width:auto;margin-right:6px;vertical-align:middle;" alt="logo" onerror="this.style.display='none'">`:'';
     document.getElementById('venueDisplay').innerHTML=`${logo}<span id="venueText">${escapeHtml(S.venueName)}</span>`;
 }
 
@@ -3601,7 +3602,8 @@ function saveSettings(){
     S.paymentInfo.gcash.name=document.getElementById('sGcashName').value.trim();
     S.paymentInfo.maya.number=document.getElementById('sMayaNum').value.trim();
     S.paymentInfo.maya.name=document.getElementById('sMayaName').value.trim();
-    S.logoUrl=document.getElementById('sLogoUrl').value.trim();
+    let logoUrl=cqFixImgurUrl(document.getElementById('sLogoUrl').value.trim());
+    S.logoUrl=logoUrl;
     S.accessCode=document.getElementById('sAccessCode').value.trim();
     closeModal('settingsModal');saveState();showNotif('Settings saved!');
 }
