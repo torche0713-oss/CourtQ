@@ -1623,7 +1623,7 @@ let S = {
 };
 
 // ===================== HELPERS =====================
-function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000); }
+function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+CQ_CONFIG.utcOffset)*60000); }
 function getTodayISO(){ return phtNow().toISOString().split('T')[0]; }
 function getTomorrowISO(){ const d=phtNow();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0]; }
 function getTodayStr(){ return phtNow().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
@@ -1917,8 +1917,8 @@ async function sendEmailCampaign(){
 // ===================== CLOCK =====================
 function updateClock(){
     const n=phtNow();
-    document.getElementById('clockDisplay').textContent=n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Kuala_Lumpur'});
-    document.getElementById('dateDisplay').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'Asia/Kuala_Lumpur'});
+    document.getElementById('clockDisplay').textContent=n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Manila'});
+    document.getElementById('dateDisplay').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'Asia/Manila'});
 }
 setInterval(updateClock,1000); updateClock();
 
@@ -2865,7 +2865,7 @@ async function aiDailyBriefing(){
     const avail=S.courts.filter(c=>c.status==='available').length;
     const occupied=S.courts.filter(c=>c.status==='occupied').length;
     const qCount=S.queue.length;
-    const prompt=`You are a friendly pickleball venue assistant for "${S.venueName}" in the Philippines. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Kuala_Lumpur'})}.
+    const prompt=`You are a friendly pickleball venue assistant for "${S.venueName}" in the Philippines. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Manila'})}.
 
 Today's summary:
 - Courts: ${S.courts.length} total (${avail} available, ${occupied} occupied)
@@ -3177,7 +3177,7 @@ function confirmScore(){
         // Record game in history
         const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
         const cp=(c.players||[]).filter(Boolean);
-        const entry={court:c.name,players:[...cp],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
+        const entry={court:c.name,players:[...cp],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
         [...(wt.players||[]).filter(Boolean),...(lt.players||[]).filter(Boolean)].forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].games++;});
         (wt.players||[]).filter(Boolean).forEach(p=>{S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
         (lt.players||[]).filter(Boolean).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});
@@ -3229,7 +3229,7 @@ function confirmScore(){
         const match=schedule.matches.find(m=>m.id===c._rrMatchId);
         if(match&&!match.completed){
             const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
-            const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie,timestamp:Date.now()};
+            const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie,timestamp:Date.now()};
             S.history.unshift(entry);if(S.history.length>100)S.history.pop();
             match.completed=true;
             match.courtId=null;
@@ -3346,7 +3346,7 @@ function recordGameResult(court,sd){
     const dur=Math.floor((Date.now()-(court.startTime||Date.now()))/60000)||1;
     const now=new Date();
     const mid=Math.ceil(court.players.length/2);
-    const entry={court:court.name,players:[...court.players],teamA:court.players.slice(0,mid),teamB:court.players.slice(mid),duration:dur,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),date:getTodayStr(),gameType:court.gameType||(court.players.length>2?'doubles':'singles'),winner:null,scoreA:null,scoreB:null,isTie:false};
+    const entry={court:court.name,players:[...court.players],teamA:court.players.slice(0,mid),teamB:court.players.slice(mid),duration:dur,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:court.gameType||(court.players.length>2?'doubles':'singles'),winner:null,scoreA:null,scoreB:null,isTie:false};
     if(sd){
         entry.teamA=sd.teamA.players;entry.teamB=sd.teamB.players||[];
         entry.scoreA=sd.teamA.score;entry.scoreB=sd.teamB.score;
@@ -3420,7 +3420,7 @@ function createBooking(){
     };
     S.bookings.push(b);
     saveBooking(b);
-    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),gameType:b.gameType});
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
     ['bCustomer','bPhone','bEmail','bDate','bStart','bPlayers'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bConflict').innerHTML='';
     document.getElementById('bPricePreview').style.display='none';
@@ -3761,7 +3761,7 @@ function confirmBookingPayment(bId){
     if(inSession(b.date,timeToMin(b.startTime),timeToMin(b.endTime),b.courtId)){showNotif('Cannot confirm — Open Play session overlaps.','error');return;}
     b.status='confirmed';
     saveBooking(b);
-    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),gameType:b.gameType});
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
     saveState();renderBookingTimeline();renderConflicts();renderConfirmations();renderBookings();
     showNotif(`✅ ${b.customer}'s payment confirmed!`,'success');
 }
@@ -4108,7 +4108,7 @@ function seedJuneData(){
                 S.bookings.push(bo);
                 if(st==='confirmed'){
                     const cn=(S.courts.find(c=>c.id===ci)||{}).name||'';
-                    S.sales.push({id:bid,amount:amt,method:pm,customer:cust,court:cn,time:new Date(j(day,sh,sm)).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),gameType:gt});
+                    S.sales.push({id:bid,amount:amt,method:pm,customer:cust,court:cn,time:new Date(j(day,sh,sm)).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:gt});
                 }
                 added++;
             }

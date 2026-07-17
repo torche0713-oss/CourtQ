@@ -177,12 +177,12 @@ let unsub = null;
 
 function phtNow(){
     const d=new Date();
-    d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+480);
+    d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+CQ_CONFIG.utcOffset);
     return d;
 }
 
 function updateClock(){
-    document.getElementById('clockDisplay').textContent=phtNow().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Kuala_Lumpur'});
+    document.getElementById('clockDisplay').textContent=phtNow().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:CQ_CONFIG.timezone});
 }
 setInterval(updateClock,1000);updateClock();
 
@@ -478,7 +478,7 @@ function renderResults(){
             const wt=h.winner==='A'?h.teamA:h.winner==='B'?h.teamB:null;
             const winnerName=wt?(Array.isArray(wt)?wt.map(p=>p.name).join(' & '):''):'—';
             const scoreText=(h.scoreA!=null&&h.scoreB!=null)?`${h.scoreA}-${h.scoreB}`:'';
-            const timeStr=h.timestamp?(()=>{const d=new Date(h.timestamp);if(isNaN(d.getTime()))return'';return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'});})():'';
+            const timeStr=h.timestamp?(()=>{const d=new Date(h.timestamp);if(isNaN(d.getTime()))return'';return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:CQ_CONFIG.timezone});})():'';
             const playersStr=h.players?h.players.map(p=>typeof p==='string'?p:(p.name||'')).join(' vs '):'';
             return `<div class="result-item"><span class="r-players" style="border-left:3px solid ${h.courtColor||'#555'};padding-left:8px;">${h.courtName?h.courtName+': ':''}${playersStr||'—'}</span><span><span class="r-winner">🏆 ${winnerName}</span>${scoreText?' <span class="r-score">'+scoreText+'</span>':''}${timeStr?' <span class="r-time">'+timeStr+'</span>':''}</span></div>`;
         }).join('');

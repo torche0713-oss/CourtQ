@@ -421,7 +421,7 @@ function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;')
 
 // ===================== STATE =====================
 let S = {
-    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[],     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''},fpx:{number:'',name:''}},
+    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[],     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
 };
 let VENUE_ID = null;
@@ -429,7 +429,7 @@ let unsub = null;
 function bkCol(){return db.collection('venues').doc(VENUE_ID).collection('bookings');}
 
 // ===================== HELPERS =====================
-function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+480)*60000); }
+function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+CQ_CONFIG.utcOffset)*60000); }
 function getTodayISO(){ const d=phtNow(); return d.toISOString().split('T')[0]; }
 function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
 function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
@@ -553,7 +553,7 @@ function renderCourtPicker(){
                 <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${escapeHtml(court.surface)}</span>
                 <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${escapeHtml(court.env)}</span>
             </div>
-            <div style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">RM${court.rate}<span style="font-size:0.7rem;color:#aaa;font-weight:400;">/hr</span></div>`;
+            <div style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">₱${court.rate}<span style="font-size:0.7rem;color:#aaa;font-weight:400;">/hr</span></div>`;
         if(avail) card.onclick=()=>{S.portal.courtId=court.id;document.querySelectorAll('.court-picker-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');};
         grid.appendChild(card);
     });
@@ -606,9 +606,9 @@ function selPortalPay(btn,method){
     btn.classList.add('selected');
     S.portal.payMethod=method;
     const area=document.getElementById('payInputArea');
-    if(method==='GCash'||method==='Maya'||method==='FPX'){
-        const info=method==='GCash'?S.paymentInfo.gcash:method==='Maya'?S.paymentInfo.maya:S.paymentInfo.fpx;
-        const label=method==='GCash'?'🟢 Send to GCash':method==='Maya'?'🟢 Send to Maya':'🏦 Pay via FPX';
+    if(method==='GCash'||method==='Maya'){
+        const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+        const label=method==='GCash'?'🟢 Send to GCash':'💜 Send to Maya';
         area.innerHTML=`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
             <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${label}</div>
             <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
@@ -672,7 +672,7 @@ async function processPortalPayment(){
 }
 
 function showReceiptConfirmation(bId, booking, court, refNum, total){
-    const payInfo='RM'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
+    const payInfo='₱'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
     const conf=document.getElementById('confirmationContent');
     conf.innerHTML=`<div class="payment-success">
         <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
@@ -866,7 +866,7 @@ function renderOpSessionList(){
                     </div>
                     <div style="text-align:right;">
                         <div style="font-size:0.78rem;color:#aaa;">${s._isLive?'⏳ Ongoing':pCount+'/'+max+' players'}</div>
-                        <div style="font-size:0.72rem;color:#f39c12;">${s.fee>0?'RM'+s.fee:'Free'}</div>
+                        <div style="font-size:0.72rem;color:#f39c12;">${s.fee>0?'₱'+s.fee:'Free'}</div>
                     </div>
                 </div>
                 <div style="font-size:0.72rem;color:#888;margin-top:6px;">🏟️ ${escapeHtml(courtNames)} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}</div>
@@ -955,11 +955,11 @@ function opSelPay(btn,method){
     _opPayMethod=method;
     const area=document.getElementById('opPayInputArea');
     const s=_opJoinCtx;
-    const info=method==='GCash'?S.paymentInfo.gcash:method==='Maya'?S.paymentInfo.maya:S.paymentInfo.fpx;
+    const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
     const n=parseInt(document.getElementById('opPlayerCount')?.value)||1;
     const subtotal=n*(s?.fee||0);
     const total=subtotal+n*CONVENIENCE_FEE;
-    const label=method==='GCash'?'🟢 Send to GCash':method==='Maya'?'🟢 Send to Maya':'🏦 Pay via FPX';
+    const label=method==='GCash'?'🟢 Send to GCash':'💜 Send to Maya';
     area.innerHTML=`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
         <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${label}</div>
         <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
