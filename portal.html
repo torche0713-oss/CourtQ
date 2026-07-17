@@ -244,6 +244,7 @@
 
 <header>
     <div class="logo"><img src="/Logo.jpg" style="height:28px;width:auto;vertical-align:middle;" alt="CourtQ Pro"> <span id="venueNameDisplay" style="font-weight:400;font-size:0.85rem;color:#aaa;"></span></div>
+    <div style="position:absolute;right:20px;"><button onclick="setLang('en')" style="background:rgba(78,205,196,0.15);border:1px solid rgba(78,205,196,0.3);border-radius:6px;padding:4px 10px;color:#4ecdc4;font-size:0.72rem;cursor:pointer;margin-right:4px;">EN</button><button onclick="setLang('ms')" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:4px 10px;color:#aaa;font-size:0.72rem;cursor:pointer;">BM</button></div>
 </header>
 
 <!-- LANDING -->
@@ -317,10 +318,10 @@
                 <div style="font-size:0.8rem;color:#aaa;margin-bottom:16px;">Fill in your details to complete the booking.</div>
                 <div class="form-row">
                     <div class="form-group"><label>First Name *</label><input type="text" id="pFirst" placeholder="Juan"></div>
-                    <div class="form-group"><label>Last Name *</label><input type="text" id="pLast" placeholder="dela Cruz"></div>
+                    <div class="form-group"><label>Last Name *</label><input type="text" id="pLast" placeholder="bin Abdullah"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Phone *</label><input type="text" id="pPhone" placeholder="+63 900 000 0000"></div>
+                    <div class="form-group"><label>Phone *</label><input type="text" id="pPhone" placeholder="+60 12 345 6789"></div>
                     <div class="form-group"><label>Email *</label><input type="text" id="pEmail" placeholder="you@email.com" autocomplete="off"></div>
                 </div>
                 <div class="form-row">
@@ -354,8 +355,8 @@
                 <div id="bookingSummaryBox" style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:14px;margin-bottom:16px;"></div>
                 <div style="font-weight:700;margin-bottom:10px;font-size:0.9rem;">Select Payment Method:</div>
                 <div class="pay-methods">
-                    <div class="pay-btn" onclick="selPortalPay(this,'GCash')"><span class="pay-icon">📱</span><div class="pay-name">GCash</div><div class="pay-desc">Send via GCash</div></div>
-                    <div class="pay-btn" onclick="selPortalPay(this,'Maya')"><span class="pay-icon">💜</span><div class="pay-name">Maya</div><div class="pay-desc">Send via Maya</div></div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'Touchngo')"><span class="pay-icon">🟢</span><div class="pay-name">Touch'n Go</div><div class="pay-desc">Send via TnG</div></div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'GrabPay')"><span class="pay-icon">🟢</span><div class="pay-name">GrabPay</div><div class="pay-desc">Send via GrabPay</div></div>
                 </div>
                 <div id="payInputArea" style="margin-top:16px;"></div>
                 <div style="display:flex;justify-content:space-between;margin-top:16px;">
@@ -399,6 +400,7 @@
     <div class="modal-box" id="legalContent"></div>
 </div>
 
+<script src="config.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -413,12 +415,13 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const CONVENIENCE_FEE = 15;
 
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ===================== STATE =====================
 let S = {
-    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[], paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[], paymentInfo:{touchngo:{number:'',name:''},grabpay:{number:'',name:''},fpx:{number:'',name:''}},
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
 };
 let VENUE_ID = null;
@@ -550,7 +553,7 @@ function renderCourtPicker(){
                 <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${escapeHtml(court.surface)}</span>
                 <span style="font-size:0.65rem;background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:6px;">${escapeHtml(court.env)}</span>
             </div>
-            <div style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">₱${court.rate}<span style="font-size:0.7rem;color:#aaa;font-weight:400;">/hr</span></div>`;
+            <div style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">RM${court.rate}<span style="font-size:0.7rem;color:#aaa;font-weight:400;">/hr</span></div>`;
         if(avail) card.onclick=()=>{S.portal.courtId=court.id;document.querySelectorAll('.court-picker-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');};
         grid.appendChild(card);
     });
@@ -582,14 +585,18 @@ function renderSlots(){
 function renderBookingSummary(){
     const court=S.courts.find(c=>c.id===S.portal.courtId);
     const dur=S.portal.duration;
-    const total=Math.round(court.rate*(dur/60));
+    const subtotal=Math.round(court.rate*(dur/60));
+    const total=subtotal+CONVENIENCE_FEE;
     S.portal.total=total;
+    S.portal.subtotal=subtotal;
     document.getElementById('bookingSummaryBox').innerHTML=`<div style="font-weight:700;margin-bottom:8px;color:#4ecdc4;">📋 Booking Summary</div>
         <div style="display:grid;gap:4px;font-size:0.82rem;">
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Court:</span><strong>${escapeHtml(court.name)}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Date:</span><strong>${escapeHtml(S.portal.date)}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Time:</span><strong>${minToTime(S.portal.slot)} – ${minToTime(S.portal.slot+dur)}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Duration:</span><strong>${dur}min</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Court Rate:</span><strong>₱${subtotal}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#888">Convenience Fee:</span><strong style="color:#f39c12;">₱${CONVENIENCE_FEE}</strong></div>
             <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#4ecdc4;font-size:1rem;">Total:</span><strong style="color:#4ecdc4;font-size:1rem;">₱${total}</strong></div>
         </div>`;
 }
@@ -599,16 +606,19 @@ function selPortalPay(btn,method){
     btn.classList.add('selected');
     S.portal.payMethod=method;
     const area=document.getElementById('payInputArea');
-    if(method==='GCash'||method==='Maya'){
-        const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+    if(method==='Touchngo'||method==='GrabPay'||method==='FPX'){
+        const info=method==='Touchngo'?S.paymentInfo.touchngo:method==='GrabPay'?S.paymentInfo.grabpay:S.paymentInfo.fpx;
+        const label=method==='Touchngo'?'🟢 Send to Touch\'n Go':method==='GrabPay'?'🟢 Send to GrabPay':'🏦 Pay via FPX';
         area.innerHTML=`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
-            <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${method==='GCash'?'📱 Send to GCash':'💜 Send to Maya'}</div>
+            <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${label}</div>
             <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
                 <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
-                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Amount:</span><strong style="color:#4ecdc4;">₱${S.portal.total||0}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span style="color:#aaa;">Court Rate:</span><strong style="color:#4ecdc4;">RM${S.portal.subtotal||0}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#888;">Convenience Fee:</span><strong style="color:#f39c12;">RM${CONVENIENCE_FEE}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Amount to Pay:</span><strong style="color:#4ecdc4;">RM${S.portal.total||0}</strong></div>
             </div>
-            <div class="form-group"><label>Reference Number *</label><input type="text" id="portalRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
+            <div class="form-group"><label>Reference Number *</label><input type="text" id="portalRef" placeholder="Enter your TnG/GrabPay/FPX reference number"></div>
             <div style="font-size:0.72rem;color:#aaa;">Send the exact amount shown above. Enter the reference number after payment.</div></div>`;
     }
 }
@@ -644,10 +654,10 @@ async function processPortalPayment(){
     conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#4ecdc4;">Processing Payment...</div></div>`;
     const refCode=genRef();
     const court=S.courts.find(c=>c.id===S.portal.courtId);
-    const total=S.portal.total||Math.round(court.rate*(dur/60));
+    const total=S.portal.total||(Math.round(court.rate*(dur/60))+CONVENIENCE_FEE);
     const bId='BK'+Date.now().toString(36)+Math.random().toString(36).substr(2,8).toUpperCase();
     const refNum=document.getElementById('portalRef')?.value.trim()||'';
-    const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode};
+    const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode,convenienceFee:CONVENIENCE_FEE,subtotal:S.portal.subtotal||Math.round(court.rate*(dur/60))};
     try {
         await bkCol().doc(bId).set(b);
     } catch(e) {
@@ -662,7 +672,7 @@ async function processPortalPayment(){
 }
 
 function showReceiptConfirmation(bId, booking, court, refNum, total){
-    const payInfo='₱'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
+    const payInfo='RM'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
     const conf=document.getElementById('confirmationContent');
     conf.innerHTML=`<div class="payment-success">
         <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
@@ -856,7 +866,7 @@ function renderOpSessionList(){
                     </div>
                     <div style="text-align:right;">
                         <div style="font-size:0.78rem;color:#aaa;">${s._isLive?'⏳ Ongoing':pCount+'/'+max+' players'}</div>
-                        <div style="font-size:0.72rem;color:#f39c12;">${s.fee>0?'₱'+s.fee:'Free'}</div>
+                        <div style="font-size:0.72rem;color:#f39c12;">${s.fee>0?'RM'+s.fee:'Free'}</div>
                     </div>
                 </div>
                 <div style="font-size:0.72rem;color:#888;margin-top:6px;">🏟️ ${escapeHtml(courtNames)} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}</div>
@@ -882,15 +892,15 @@ function selectOpSession(id){
     const content=document.getElementById('opPortalContent');
     const feeSection=s.fee>0?`
         <div style="background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;font-size:0.8rem;margin-bottom:12px;">
-            <strong>💰 Drop-in Fee: ₱${s.fee} per player</strong><br>
-            <span id="opFeeTotal" style="color:#4ecdc4;">Total: <strong>₱${s.fee}</strong></span><br>
-            <span style="color:#aaa;">Pay via GCash or Maya to secure your slot. Show transaction on site.</span>
+            <strong>💰 Drop-in Fee: RM${s.fee} per player</strong><br>
+            <span id="opFeeTotal" style="color:#4ecdc4;">Total: <strong>RM${s.fee}</strong></span><br>
+            <span style="color:#aaa;">Pay via Touch'n Go or GrabPay to secure your slot. Show transaction on site.</span>
         </div>
         <div style="margin-bottom:12px;">
             <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">Select Payment Method</div>
             <div style="display:flex;gap:8px;margin-bottom:10px;">
-                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'GCash')"><span class="pay-icon">📱</span><div class="pay-name">GCash</div><div class="pay-desc">Send via GCash</div></div>
-                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'Maya')"><span class="pay-icon">💜</span><div class="pay-name">Maya</div><div class="pay-desc">Send via Maya</div></div>
+                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'Touchngo')"><span class="pay-icon">🟢</span><div class="pay-name">Touch'n Go</div><div class="pay-desc">Send via TnG</div></div>
+                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'GrabPay')"><span class="pay-icon">🟢</span><div class="pay-name">GrabPay</div><div class="pay-desc">Send via GrabPay</div></div>
             </div>
             <div id="opPayInputArea"></div>
         </div>`:'';
@@ -898,10 +908,10 @@ function selectOpSession(id){
         <div style="font-size:0.78rem;color:#aaa;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
         <div class="form-row">
             <div class="form-group"><label>First Name *</label><input type="text" id="opFirstName" placeholder="Juan"></div>
-            <div class="form-group"><label>Last Name *</label><input type="text" id="opLastName" placeholder="dela Cruz"></div>
+            <div class="form-group"><label>Last Name *</label><input type="text" id="opLastName" placeholder="bin Abdullah"></div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>Phone *</label><input type="text" id="opPhone" placeholder="+63 900 000 0000"></div>
+            <div class="form-group"><label>Phone *</label><input type="text" id="opPhone" placeholder="+60 12 345 6789"></div>
             <div class="form-group"><label>Email *</label><input type="text" id="opEmail" placeholder="you@email.com"></div>
         </div>
         <div class="form-row">
@@ -928,15 +938,16 @@ function updateOpFeeTotal(){
     const s=_opJoinCtx;
     if(!s) return;
     const n=parseInt(document.getElementById('opPlayerCount')?.value)||1;
-    const total=n*s.fee;
+    const subtotal=n*s.fee;
+    const total=subtotal+n*CONVENIENCE_FEE;
     const el=document.getElementById('opFeeTotal');
-    if(el) el.innerHTML=`Total: <strong>₱${total}</strong>`;
+    if(el) el.innerHTML=`Total: <strong>RM${total}</strong> <span style="font-size:0.68rem;color:#888;">(incl. RM${n*CONVENIENCE_FEE} convenience fee)</span>`;
     const area=document.getElementById('opPayInputArea');
     if(area&&area.innerHTML.trim()){
-        // Re-render payment section if already shown
         const sel=document.querySelector('.op-pay-btn.selected');
         if(sel) opSelPay(sel,_opPayMethod);
     }
+}
 }
 
 function opSelPay(btn,method){
@@ -945,19 +956,22 @@ function opSelPay(btn,method){
     _opPayMethod=method;
     const area=document.getElementById('opPayInputArea');
     const s=_opJoinCtx;
-    const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+    const info=method==='Touchngo'?S.paymentInfo.touchngo:method==='GrabPay'?S.paymentInfo.grabpay:S.paymentInfo.fpx;
     const n=parseInt(document.getElementById('opPlayerCount')?.value)||1;
-    const total=n*(s?.fee||0);
+    const subtotal=n*(s?.fee||0);
+    const total=subtotal+n*CONVENIENCE_FEE;
+    const label=method==='Touchngo'?'🟢 Send to Touch\'n Go':method==='GrabPay'?'🟢 Send to GrabPay':'🏦 Pay via FPX';
     area.innerHTML=`<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;">
-        <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${method==='GCash'?'📱 Send to GCash':'💜 Send to Maya'}</div>
+        <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${label}</div>
         <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
             <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Players:</span><strong>${n}</strong></div>
-            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Per Player:</span><strong>₱${s?s.fee:0}</strong></div>
-            <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:800;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="color:#aaa;">Total:</span><strong style="color:#4ecdc4;">₱<span id="opFeeAmount">${total}</span></strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Per Player:</span><strong>RM${s?s.fee:0}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#888;">Convenience Fee (${n} player${n>1?'s':''}):</span><strong style="color:#f39c12;">RM${n*CONVENIENCE_FEE}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:800;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="color:#aaa;">Total:</span><strong style="color:#4ecdc4;">RM<span id="opFeeAmount">${total}</span></strong></div>
         </div>
-        <div class="form-group"><label>Reference Number *</label><input type="text" id="opRef" placeholder="Enter your GCash/Maya reference/transaction number"></div>
+        <div class="form-group"><label>Reference Number *</label><input type="text" id="opRef" placeholder="Enter your TnG/GrabPay/FPX reference number"></div>
         <div style="font-size:0.72rem;color:#aaa;">Send the exact amount shown above. Enter the reference number after payment.</div></div>`;
 }
 
@@ -972,7 +986,8 @@ async function confirmJoinOpSession(){
     const skill=parseInt(document.getElementById('opSkill').value);
     const playerCount=parseInt(document.getElementById('opPlayerCount').value)||1;
     const gameType=playerCount<=2?'singles':'doubles';
-    const totalAmount=s.fee*playerCount;
+    const subtotal=s.fee*playerCount;
+    const totalAmount=subtotal+playerCount*CONVENIENCE_FEE;
     if(totalAmount>0){
         if(!_opPayMethod){showNotif('Select a payment method!','error');return;}
         const ref=document.getElementById('opRef');
@@ -983,6 +998,8 @@ async function confirmJoinOpSession(){
         player.paymentMethod=_opPayMethod;
         player.reference=document.getElementById('opRef').value.trim();
         player.amount=totalAmount;
+        player.subtotal=subtotal;
+        player.convenienceFee=CONVENIENCE_FEE;
         player.paid=true;
     }
     // Save to Firestore
@@ -1020,7 +1037,7 @@ async function confirmJoinOpSession(){
         <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">You're In!</div>
         <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Your spot is secured for <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
         <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
-            ${s.fee>0?`<strong>📱 Show your transaction on site</strong><br><span style="color:#aaa;">Present the GCash/Maya transaction details when you check in at the venue.</span>`:`<strong>🎯 See you there!</strong><br><span style="color:#aaa;">No payment needed — just show up and play!</span>`}
+            ${s.fee>0?`<strong>🟢 Show your transaction on site</strong><br><span style="color:#aaa;">Present the Touch'n Go/GrabPay transaction details when you check in at the venue.</span>`:`<strong>🎯 See you there!</strong><br><span style="color:#aaa;">No payment needed — just show up and play!</span>`}
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="closeOpPortal()">✅ Done</button>
@@ -1082,11 +1099,11 @@ function closeLegal(){document.getElementById('legalModal').classList.remove('ac
 function showLegal(page){
     const c=document.getElementById('legalContent');
     const pages={
-        about:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2><p>CourtQ Pro is a smart venue management platform built for the Philippine pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p><p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p><p>Built with ❤️ for the Philippine pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 +63 999 883 0291 / +62 922 854 4337</p>',
-        privacy:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2><p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p><p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by contacting us.</p><p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p><p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion.</p><p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p><p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p><p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p><p><em>Last updated: July 2026</em></p>',
-        terms:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2><p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. By checking the consent checkbox during sign-up or demo registration, you explicitly accept these terms and our Privacy Policy. If you do not agree, do not use the platform.</p><p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p><p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue\'s discretion.</p><p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p><p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p><p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p><p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p><p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p><p><em>Last updated: July 2026</em></p>',
-        disclaimer:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2><p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p><p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p><p><strong>Payment:</strong> CourtQ Pro does not process payments. GCash and Maya are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p><p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p><p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>',
-        contact:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2><p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></p><p><strong>Phone:</strong> 📱 +63 999 883 0291 / +62 922 854 4337</p><p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;">facebook.com/aiautomationexpert</a></p><p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p><p><strong>Venue Partnerships:</strong> Interested in listing your venue on CourtQ Pro? Email us for pricing and onboarding.</p><p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p><p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Cebu, Philippines</p>'
+        about:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2><p>CourtQ Pro is a smart venue management platform built for the Malaysian pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p><p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via Touch'n Go or GrabPay.</p><p>Built with ❤️ for the Malaysian pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 +60 12 345 6789</p>',
+        privacy:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2><p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p><p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via Touch'n Go/GrabPay, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by contacting us.</p><p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p><p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion.</p><p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — Touch'n Go and GrabPay handle all financial transactions.</p><p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p><p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p><p><em>Last updated: July 2026</em></p>',
+        terms:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2><p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. By checking the consent checkbox during sign-up or demo registration, you explicitly accept these terms and our Privacy Policy. If you do not agree, do not use the platform.</p><p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p><p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue\'s discretion.</p><p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p><p><strong>Payments:</strong> All payments are processed externally via Touch'n Go or GrabPay. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p><p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p><p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p><p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p><p><em>Last updated: July 2026</em></p>',
+        disclaimer:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2><p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p><p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p><p><strong>Payment:</strong> CourtQ Pro does not process payments. Touch'n Go and GrabPay are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p><p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p><p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>',
+        contact:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2><p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></p><p><strong>Phone:</strong> 📱 +60 12 345 6789</p><p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;">facebook.com/aiautomationexpert</a></p><p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p><p><strong>Venue Partnerships:</strong> Interested in listing your venue on CourtQ Pro? Email us for pricing and onboarding.</p><p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p><p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Kuala Lumpur, Malaysia</p>'
     };
     c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
     document.getElementById('legalModal').classList.add('active');

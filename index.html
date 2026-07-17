@@ -13,7 +13,7 @@
             display: flex; align-items: center; justify-content: center;
             padding: 20px;
         }
-        .landing { width: 100%; max-width: 480px; }
+        .landing { width: 100%; max-width: 560px; }
         .logo {
             text-align: center; margin-bottom: 32px;
         }
@@ -80,9 +80,13 @@
         .feature { background: rgba(78,205,196,0.06); border: 1px solid rgba(78,205,196,0.15); border-radius: 10px; padding: 12px; text-align: center; font-size: 0.72rem; color: #aaa; }
         .feature-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
 
+        .nav-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
+        .nav-bar .nav-links { display:flex; gap:8px; }
+
         @media(max-width:500px) {
             .features { grid-template-columns: 1fr 1fr; }
             .card { padding: 20px; }
+            .nav-bar { flex-direction:column; gap:12px; }
         }
 
         .spinner {
@@ -143,11 +147,40 @@
 </head>
 <body>
     <div class="landing" id="app">
-        <div class="logo">
-            <img src="/Logo.jpg" style="height:64px;width:auto;margin-bottom:6px;" alt="CourtQ Pro">
-            <div class="tagline">Smart venue management for pickleball &amp; racket sports</div>
+        <div class="nav-bar">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <img src="/Logo.jpg" style="height:36px;width:auto;" alt="CourtQ Pro">
+                <span style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">CourtQ <span style="font-size:0.55rem;background:linear-gradient(135deg,#f39c12,#d68910);color:#fff;padding:1px 6px;border-radius:4px;font-weight:800;vertical-align:super;">PRO</span></span>
+            </div>
+            <div class="nav-links">
+                <button class="btn btn-outline" onclick="showAuthModal('login')" style="padding:6px 14px;font-size:0.78rem;">Log In</button>
+                <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:6px 14px;font-size:0.78rem;">Register Free</button>
+            </div>
         </div>
 
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:0.65rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">✅ 100% FREE for Venue Owners</div>
+            <h1 style="font-size:1.6rem;font-weight:900;color:#fff;line-height:1.3;margin-bottom:10px;letter-spacing:-1px;">Run your pickleball venue<br>like a pro</h1>
+            <p style="font-size:0.85rem;color:#aaa;line-height:1.6;max-width:420px;margin:0 auto 14px;">
+                Online booking, court scheduling, Open Play rotation, live TV display, and tournament brackets — all in one dashboard.
+            </p>
+            <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:12px 16px;margin:0 auto 16px;max-width:380px;text-align:left;font-size:0.78rem;">
+                <div style="font-weight:700;color:#2ecc71;margin-bottom:2px;">💡 How we make money:</div>
+                <div style="color:#ccc;line-height:1.5;">You keep 100% of your rates. A <strong style="color:#4ecdc4;">₱15 convenience fee</strong> is added to each online booking — charged to the player, not to you.</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-size:0.7rem;color:#888;margin-bottom:16px;">
+                <span>✅ No setup fee</span>
+                <span>✅ No monthly fee</span>
+                <span>✅ No commission</span>
+                <span>✅ No hidden charges</span>
+            </div>
+            <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:10px 24px;font-size:0.9rem;">✅ Register Your Venue Free</button>
+                <button class="btn btn-outline" onclick="openDemoLeadForm()" style="padding:10px 20px;font-size:0.9rem;">🎮 Try Demo</button>
+            </div>
+        </div>
+
+        <div style="font-size:0.72rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">All-in-One Platform</div>
         <div class="features">
             <div class="feature"><span class="feature-icon">🏟️</span>Court Management</div>
             <div class="feature"><span class="feature-icon">📅</span>Online Booking</div>
@@ -159,101 +192,45 @@
             <div class="feature"><span class="feature-icon">🎯</span>Tournament Engine</div>
         </div>
 
-        <div class="card" id="authCard">
-            <div class="hero-section" style="text-align:center;padding:0 4px 18px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:18px;">
-                <div style="font-size:0.65rem;color:#f39c12;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">🔥 Founders Offer — First 20 Venues</div>
-                <h1 style="font-size:1.25rem;font-weight:800;color:#fff;line-height:1.4;margin-bottom:8px;">Run your pickleball venue like a pro</h1>
-                <p style="font-size:0.78rem;color:#aaa;line-height:1.6;margin-bottom:12px;max-width:400px;margin-left:auto;margin-right:auto;">
-                    CourtQ Pro handles online booking, GCash/Maya payments, court scheduling, Open Play rotation, leaderboards, live TV display, and tournament brackets — all in one dashboard.
-                    <strong style="color:#4ecdc4;">No commission. No setup fee. Free for one month.</strong>
-                </p>
-                <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-size:0.7rem;color:#888;margin-bottom:6px;">
-                    <span>✅ Used by venues across the Philippines</span>
-                    <span>✅ GCash &amp; Maya integrated</span>
-                    <span>✅ Staff &amp; co-owner accounts</span>
+        <div style="margin-bottom:16px;">
+            <div style="font-size:0.72rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">How It Works</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(78,205,196,0.15);color:#4ecdc4;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">1</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:#fff;margin-bottom:4px;">Register Your Venue</div>
+                    <div style="font-size:0.68rem;color:#aaa;line-height:1.4;">Sign up free. No credit card needed. No contracts.</div>
                 </div>
-                <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">
-                    <button class="btn btn-success" onclick="switchTab('register')" style="padding:8px 20px;font-size:0.82rem;">✅ Register Your Venue</button>
-                    <button class="btn btn-outline" onclick="openDemoLeadForm()" style="padding:8px 16px;font-size:0.82rem;">🎮 Try Demo</button>
+                <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(78,205,196,0.15);color:#4ecdc4;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">2</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:#fff;margin-bottom:4px;">Set Up Your Dashboard</div>
+                    <div style="font-size:0.68rem;color:#aaa;line-height:1.4;">Add courts, set rates, configure payments in minutes.</div>
                 </div>
-            </div>
-
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('login')">Log In</button>
-                <button class="tab" onclick="switchTab('register')">Register</button>
-                <button class="tab" onclick="switchTab('join')">Join</button>
-            </div>
-
-            <div id="errorMsg" class="error-msg"></div>
-            <div id="successMsg" class="success-msg"></div>
-            <div id="demoBadge" class="demo-badge">🔧 Demo mode — data resets periodically</div>
-
-            <!-- LOGIN -->
-            <div class="auth-form active" id="form-login">
-                <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
-                <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
-                <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
-                <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="openDemoLeadForm()">🎮 Try Demo</button>
-            </div>
-
-            <!-- REGISTER VENUE -->
-            <div class="auth-form" id="form-register">
-                <div class="form-group"><label>Venue Name *</label><input type="text" id="registerVenue" placeholder="e.g. Riverside Pickleball"></div>
-                <div class="form-group"><label>Your Name *</label><input type="text" id="registerName" placeholder="e.g. Juan dela Cruz"></div>
-                <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
-                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 900 000 0000"></div>
-                <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
-                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
-                    <input type="checkbox" id="registerConsent" style="margin-top:2px;width:auto;">
-                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
-                </label>
-                <button class="btn btn-success btn-full" onclick="registerVenue()">Continue →</button>
-                <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="openDemoLeadForm()">🎮 Try Demo</button>
-            </div>
-
-            <!-- JOIN EXISTING VENUE -->
-            <div class="auth-form" id="form-join">
-                <div class="form-group"><label>Your Name *</label><input type="text" id="joinName" placeholder="e.g. Juan dela Cruz"></div>
-                <div class="form-group"><label>Email *</label><input type="email" id="joinEmail" placeholder="you@email.com"></div>
-                <div class="form-group"><label>Password *</label><input type="password" id="joinPass" placeholder="At least 6 characters"></div>
-                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
-                    <input type="checkbox" id="joinConsent" style="margin-top:2px;width:auto;">
-                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
-                </label>
-                <button class="btn btn-primary btn-full" onclick="joinVenue()">Create Account</button>
-                <div style="margin-top:12px;font-size:0.75rem;color:#888;text-align:center;">After signing up, ask your venue owner to add your email in Settings → Staff or Co-Owners.</div>
+                <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(78,205,196,0.15);color:#4ecdc4;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">3</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:#fff;margin-bottom:4px;">Start Accepting Bookings</div>
+                    <div style="font-size:0.68rem;color:#aaa;line-height:1.4;">Players book online. You get paid. We add a ₱15 convenience fee.</div>
+                </div>
             </div>
         </div>
 
-        <!-- SETUP SCREEN: shown after signup, before payment -->
-        <div class="card" id="setupScreen" style="display:none;">
-            <div class="tabs" style="justify-content:center;"><span class="tab active" style="cursor:default;">🏗️ Venue Setup</span></div>
-            <div id="setupError" class="error-msg"></div>
-            <div class="form-group"><label>Number of Courts</label>
-                <input type="number" id="setupCourts" value="3" min="1" max="50" onchange="updatePricing()" style="font-size:1.1rem;font-weight:700;text-align:center;">
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="display:inline-block;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.25);border-radius:12px;padding:14px 18px;font-size:0.78rem;line-height:1.6;">
+                <div style="font-weight:700;color:#2ecc71;margin-bottom:2px;">💰 100% Free for Venue Owners</div>
+                <div style="color:#aaa;">No setup fee. No monthly fee. No commission. <strong style="color:#4ecdc4;">Ever.</strong></div>
             </div>
-            <div style="margin:8px 0;">
-                <div style="font-size:0.68rem;color:#4ecdc4;font-weight:700;margin-bottom:8px;text-align:center;background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:8px;padding:8px;">✅ <strong>All premium features included from Day 1:</strong> booking portal · GCash/Maya · dashboard · financials · AI · Open Play · staff controls · leaderboard · no setup fee · no commission</div>
-                <div class="plan-card" data-plan="founding" style="background:rgba(231,76,60,0.06);border:2px solid rgba(231,76,60,0.3);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.65rem;color:#e74c3c;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🔥 FOUNDERS PLAN</div>
-                    <div style="font-size:0.72rem;color:#e74c3c;font-weight:600;margin:2px 0;">First 20 Court Owners</div>
-                    <div style="font-size:1.8rem;font-weight:900;color:#fff;margin:8px 0;">FREE</div>
-                    <div style="font-size:0.78rem;color:#ddd;">for the first month, no obligation</div>
-                    <div style="font-size:0.85rem;color:#aaa;margin-top:6px;">Then <strong style="color:#4ecdc4;font-size:1.1rem;">₱399</strong>/mo</div>
-                    <div style="font-size:0.6rem;color:#666;text-decoration:line-through;">Regular ₱499/mo</div>
-                    <div style="font-size:0.62rem;color:#4ecdc4;font-weight:600;margin-top:6px;">✓ All premium features included from Day 1</div>
-                </div>
-            </div>
-            <div id="pricingBox" style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;margin:10px 0;text-align:center;">
-                <div style="font-size:0.75rem;color:#e74c3c;" id="setupPlanLabel">🔥 Founders Plan — first 20 court owners: ₱399/mo</div>
-                <div style="font-size:1.6rem;font-weight:900;color:#fff;" id="setupPrice">FREE for 1 month</div>
-                <div style="font-size:0.78rem;color:#aaa;" id="setupPriceDetail">Then <strong>₱399</strong>/mo for first 20 · <span style="color:#666;text-decoration:line-through;">Regular ₱499/mo</span> (5 courts incl.) (3 courts)</div>
-                <div style="font-size:0.62rem;color:#4ecdc4;font-weight:600;margin-top:6px;">✓ All premium features included from Day 1</div>
-            </div>
+        </div>
 
-            <button class="btn btn-success btn-full" onclick="submitSetup()">✅ Submit &amp; Start Free Month</button>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:10px 24px;font-size:0.9rem;">✅ Register Your Venue Free</button>
+            <button class="btn btn-outline" onclick="showAuthModal('login')" style="padding:10px 20px;font-size:0.9rem;">🔑 Log In</button>
+        </div>
+
+        <!-- SETUP SCREEN: shown after signup while provisioning -->
+        <div class="card" id="setupScreen" style="display:none;">
+            <div style="text-align:center;padding:20px 0;">
+                <div class="spinner"></div>
+                <div style="margin-top:12px;color:#aaa;font-size:0.9rem;">Setting up your venue...</div>
+            </div>
         </div>
 
         <!-- SUCCESS SCREEN -->
@@ -265,6 +242,13 @@
                 <div id="ackBox" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin:16px 0;text-align:left;font-size:0.8rem;">
                     <div style="font-weight:700;color:#f39c12;margin-bottom:8px;">📋 Acknowledgement Receipt</div>
                     <div id="ackContent"></div>
+                </div>
+                <div style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:12px;margin:12px 0;text-align:left;font-size:0.78rem;line-height:1.6;">
+                    <div style="font-weight:700;color:#4ecdc4;margin-bottom:4px;">📌 What happens next:</div>
+                    <div style="color:#ccc;">1. We'll verify your venue and activate your account<br>
+                    2. You'll receive your unique subdomain (e.g., <strong style="color:#fff;">yourvenue.courtqpro.online</strong>)<br>
+                    3. Set up your courts, rates, and payment info in the dashboard<br>
+                    4. A <strong style="color:#4ecdc4;">₱15 convenience fee</strong> is automatically added to online bookings — charged to players, not to you</div>
                 </div>
                 <div style="font-size:0.78rem;color:#888;">📧 Check your email for confirmation details.<br>We'll notify you once your venue is activated.</div>
             </div>
@@ -292,7 +276,7 @@
                 <div id="demoLeadForm">
                     <h2>🎮 Try CourtQ Pro</h2>
                     <p style="margin-bottom:16px;">Enter your name and real email to try the demo.</p>
-                    <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Juan dela Cruz"></div>
+                    <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Ahmad bin Abdullah"></div>
                     <div class="form-group"><label>Email *</label><input type="email" id="demoLeadEmail" placeholder="you@email.com"></div>
                     <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
                         <input type="checkbox" id="demoLeadConsent" style="margin-top:2px;width:auto;">
@@ -315,6 +299,60 @@
         <div class="modal-box" id="legalContent"></div>
     </div>
 
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal" onclick="if(event.target===this)closeAuthModal()">
+        <div class="modal-box" style="max-width:460px;">
+            <button class="modal-close" onclick="closeAuthModal()">✕</button>
+            <div class="tabs">
+                <button class="tab" onclick="switchTab('login')">Log In</button>
+                <button class="tab active" onclick="switchTab('register')">Register</button>
+                <button class="tab" onclick="switchTab('join')">Join</button>
+            </div>
+            <div id="errorMsg" class="error-msg"></div>
+            <div id="successMsg" class="success-msg"></div>
+            <div id="demoBadge" class="demo-badge">🔧 Demo mode — data resets periodically</div>
+
+            <div class="auth-form" id="form-login">
+                <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+                <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
+                <div class="divider">or</div>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">🎮 Try Demo</button>
+            </div>
+
+            <div class="auth-form active" id="form-register">
+                <div class="form-group"><label>Venue Name *</label><input type="text" id="registerVenue" placeholder="e.g. Riverside Pickleball"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="registerName" placeholder="e.g. Juan dela Cruz"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 912 345 6789"></div>
+                <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
+                <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#aaa;line-height:1.5;">
+                    <strong style="color:#2ecc71;">✅ Free for you.</strong> A <strong style="color:#4ecdc4;">₱15 convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
+                </div>
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
+                    <input type="checkbox" id="registerConsent" style="margin-top:2px;width:auto;">
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
+                </label>
+                <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
+                <div class="divider">or</div>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">🎮 Try Demo</button>
+            </div>
+
+            <div class="auth-form" id="form-join">
+                <div class="form-group"><label>Your Name *</label><input type="text" id="joinName" placeholder="e.g. Ahmad bin Abdullah"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="joinEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Password *</label><input type="password" id="joinPass" placeholder="At least 6 characters"></div>
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
+                    <input type="checkbox" id="joinConsent" style="margin-top:2px;width:auto;">
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
+                </label>
+                <button class="btn btn-primary btn-full" onclick="joinVenue()">Create Account</button>
+                <div style="margin-top:12px;font-size:0.75rem;color:#888;text-align:center;">After signing up, ask your venue owner to add your email in Settings → Staff or Co-Owners.</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -374,31 +412,49 @@
         startHeartbeat();
 
         function showError(msg) {
-            const el = document.getElementById('errorMsg');
-            el.textContent = msg; el.style.display = 'block';
+            const am=document.getElementById('authModal');
+            const el=(am&&am.classList.contains('active'))?document.getElementById('errorMsg'):document.getElementById('setupError');
+            if (el) { el.textContent = msg; el.style.display = 'block'; }
         }
         function showSuccess(msg) {
             const el = document.getElementById('successMsg');
             el.textContent = msg; el.style.display = 'block';
         }
         function hideMsgs() {
-            document.getElementById('errorMsg').style.display = 'none';
-            document.getElementById('successMsg').style.display = 'none';
-            document.getElementById('setupError').style.display = 'none';
+            const em = document.getElementById('errorMsg');
+            const sm = document.getElementById('successMsg');
+            if (em) em.style.display = 'none';
+            if (sm) sm.style.display = 'none';
+            const se = document.getElementById('setupError');
+            if (se) se.style.display = 'none';
         }
-        function hideError() { document.getElementById('errorMsg').style.display = 'none'; }
+        function hideError() { const el = document.getElementById('errorMsg'); if(el) el.style.display = 'none'; }
         function hideSuccess() { document.getElementById('successMsg').style.display = 'none'; }
+
+        function showAuthModal(tab){
+            document.getElementById('authModal').classList.add('active');
+            switchTab(tab||'register');
+            hideMsgs();
+        }
+        function closeAuthModal(){
+            document.getElementById('authModal').classList.remove('active');
+            hideMsgs();
+        }
+
         function switchTab(tab) {
             hideMsgs();
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-            const idx = { login:0, register:1, join:2 }[tab] || 0;
-            document.querySelectorAll('.tabs button')[idx].classList.add('active');
-            document.getElementById('form-'+tab).classList.add('active');
+            const tabs = document.querySelectorAll('#authModal .tab');
+            const forms = document.querySelectorAll('#authModal .auth-form');
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
+            const idx = { login:0, register:1, join:2 }[tab] || 1;
+            if (tabs[idx]) tabs[idx].classList.add('active');
+            const form = document.getElementById('form-'+tab);
+            if (form) form.classList.add('active');
         }
 
         function showLoading(msg) {
-            document.getElementById('authCard').style.display = 'none';
+            closeAuthModal();
             document.getElementById('loadingScreen').style.display = 'block';
             document.getElementById('loadingMsg').textContent = msg || 'Loading...';
         }
@@ -431,18 +487,84 @@
             showLoading('Creating your account...');
             try {
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                _pendingCred = { uid: cred.user.uid, email, name, venue, mobile };
+                const p = { uid: cred.user.uid, email, name, venue, mobile };
                 document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('authCard').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'block';
-                document.getElementById('setupCourts').value = 3;
-                updatePricing();
+                // Directly provision the venue
+                const slug = p.venue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'venue';
+                let finalSlug = slug;
+                let slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                let attempt = 0;
+                while (slugDoc.exists) {
+                    attempt++;
+                    finalSlug = slug + '-' + attempt;
+                    slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                }
+                const venueId = db.collection('venues').doc().id;
+                const defaultCourts = [];
+                const colors = ['#4ecdc4','#3498db','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c','#e67e22'];
+                for (let i = 1; i <= 3; i++) {
+                    defaultCourts.push({
+                        id:i, name:'Court '+i, location:'Main Area', surface:'Hard',
+                        env:'Outdoor', color:colors[(i-1)%colors.length], rate:300,
+                        status:'available', players:[], startTime:null, gameType:null, desc:''
+                    });
+                }
+                await db.collection('venues').doc(venueId).set({
+                    ownerId: p.uid, name: '🏟️ ' + p.venue, venueName: '🏟️ ' + p.venue, slug: finalSlug, createdAt: Date.now(),
+                    courts: defaultCourts, queue: [], soloQueue: [], session: null,
+                    bookings: [], history: [], leaderboard: {}, sales: [],
+                    nextId: 100, nextBId: 1,
+                    status: 'pending', mobile: p.mobile, ownerName: p.name,
+                    courtCount: 3,
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
+                });
+                await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
+                await db.collection('slugs').doc(finalSlug).set({ venueId });
+
+                // Send email notification
+                const ackNum = 'CQ-' + Date.now().toString(36).toUpperCase();
+                try {
+                    const cfg = await db.collection('config').doc('emailjs').get();
+                    if (cfg.exists) {
+                        const ej = cfg.data();
+                        emailjs.init(ej.publicKey);
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: p.email, to_name: p.name,
+                            subject: 'Welcome to CourtQ Pro! 🎾',
+                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
+                        });
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
+                            subject: `New Venue Signup: ${p.venue}`,
+                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                        });
+                    }
+                } catch(e) { console.warn('EmailJS send failed:', e); }
+
+                // Show success screen
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('successScreen').style.display = 'block';
+                document.getElementById('ackContent').innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
+                        <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#4ecdc4;">${ackNum}</div>
+                        <div style="color:#888;">Venue:</div><div style="font-weight:600;">${escapeHtml(p.venue)}</div>
+                        <div style="color:#888;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
+                        <div style="color:#888;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
+                        <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
+                        <div style="color:#888;">Courts:</div><div style="font-weight:600;">3</div>
+                        <div style="color:#888;">Plan:</div><div style="font-weight:600;color:#2ecc71;">✨ Free Forever</div>
+                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
+                    </div>`;
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('authCard').style.display = 'block';
+                showAuthModal('register');
                 showError(e.message);
             }
         }
+
+        async function joinVenue() {
 
         async function joinVenue() {
             hideMsgs();
@@ -460,16 +582,20 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 showSuccess('Account created! Ask your venue owner to add your email in Settings → Staff or Co-Owners, then log in.');
                 switchTab('login');
+                // Re-show success after switchTab hides it
+                document.getElementById('successMsg').style.display = 'block';
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('authCard').style.display = 'block';
+                showAuthModal('join');
                 showError(e.message);
             }
         }
 
         let _selectedPlan = 'founding';
+
+        let _selectedPlan = 'founding';
         const plans = {
-            founding: { name:'Founders Plan', base:399, incl:5, extraRate:250, perBlock:3, color:'#e74c3c', label:'🔥 Founders Plan — first 20: ₱399/mo (regular ₱499/mo)' }
+            founding: { name:'Founders Plan', base:49, incl:5, extraRate:30, perBlock:3, color:'#e74c3c', label:"🔥 Founders Plan — first 20: RM49/mo (regular RM59/mo)" }
         };
 
         function selectPlan(p) {
@@ -486,8 +612,8 @@
             document.getElementById('setupPlanLabel').textContent = plan.label;
             document.getElementById('setupPrice').textContent = 'FREE for 1 month';
             document.getElementById('setupPriceDetail').textContent =
-                'Then ₱' + plan.base.toLocaleString() + '/mo (' + plan.incl + ' courts incl.)' +
-                (blocks > 0 ? ' + ₱' + (blocks * plan.extraRate).toLocaleString() + ' for extra courts' : '') +
+                'Then RM' + plan.base.toLocaleString() + '/mo (' + plan.incl + ' courts incl.)' +
+                (blocks > 0 ? ' + RM' + (blocks * plan.extraRate).toLocaleString() + ' for extra courts' : '') +
                 ' (' + c + ' court' + (c>1?'s':'') + ')';
         }
 
@@ -539,7 +665,7 @@
                     status: 'pending', mobile: p.mobile, ownerName: p.name,
                     monthlyRate: monthly, courtCount: c,
                     plan: planKey,
-                    paymentInfo:{gcash:{number:'09998830291',name:'Hector Lopez'},maya:{number:'09998830291',name:'Hector Lopez'}}
+                    paymentInfo:{touchngo:{number:'0123456789',name:'CourtQ Malaysia'},grabpay:{number:'0123456789',name:'CourtQ Malaysia'}}
                 });
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ venueId });
@@ -555,13 +681,13 @@
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
                             subject: 'Welcome to CourtQ Pro! 🎾',
-                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
+                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: RM${monthly.toLocaleString()}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
                         });
                         // Developer notification
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
                             subject: `New Venue Signup: ${p.venue}`,
-                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: RM${monthly.toLocaleString()}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
@@ -579,7 +705,7 @@
                         <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
                         <div style="color:#888;">Courts:</div><div style="font-weight:600;">${c}</div>
                         <div style="color:#888;">Plan:</div><div style="font-weight:600;">${plan.name}</div>
-                        <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">₱${monthly.toLocaleString()}</div>
+                        <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">RM${monthly.toLocaleString()}</div>
                         <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
                     </div>`;
             } catch (e) {
@@ -851,7 +977,7 @@
                 });
                 try { await Promise.all(deletes); } catch(_) { /* cleanup best-effort */ }
                 if (activeDemos >= 5) {
-                    document.getElementById('authCard').style.display = 'block';
+                    showAuthModal('register');
                     document.getElementById('loadingScreen').style.display = 'none';
                     showError('Too many active demos right now. Please try again later.');
                     return;
@@ -859,16 +985,16 @@
                 const slug = 'demo-' + crypto.randomUUID();
                 const venueId = db.collection('venues').doc().id;
                 const defaultCourts = [
-                    {id:1,name:'Court 1',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#4ecdc4',rate:300,status:'available',players:[],startTime:null,gameType:null,desc:''},
-                    {id:2,name:'Court 2',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#3498db',rate:300,status:'available',players:[],startTime:null,gameType:null,desc:''},
-                    {id:3,name:'Court 3',location:'East Wing',surface:'Clay',env:'Outdoor',color:'#2ecc71',rate:350,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:1,name:'Court 1',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#4ecdc4',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:2,name:'Court 2',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#3498db',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:3,name:'Court 3',location:'East Wing',surface:'Clay',env:'Outdoor',color:'#2ecc71',rate:40,status:'available',players:[],startTime:null,gameType:null,desc:''},
                 ];
                 await db.collection('venues').doc(venueId).set({
                     ownerId: 'demo', name: '🏟️ Demo Venue', slug, createdAt: Date.now(),
                     courts: defaultCourts, queue: [], soloQueue: [], session: null,
                     bookings: [], history: [], leaderboard: {}, sales: [],
                     nextId: 100, nextBId: 1,
-                    paymentInfo:{gcash:{number:'09170000000',name:'Demo Account'},maya:{number:'09170000000',name:'Demo Account'}}
+                    paymentInfo:{touchngo:{number:'0123456789',name:'Demo Account'},grabpay:{number:'0123456789',name:'Demo Account'}}
                 });
                 await db.collection('slugs').doc(slug).set({ venueId });
                 // Mark lead as used (best-effort, rules may deny update)
@@ -881,7 +1007,7 @@
                 }
                 window.location.href = 'admin.html?venue=' + slug;
             } catch (e) {
-                document.getElementById('authCard').style.display = 'block';
+                showAuthModal('register');
                 document.getElementById('loadingScreen').style.display = 'none';
                 showError('Demo failed: ' + e.message);
             }
@@ -919,16 +1045,16 @@
             const c=document.getElementById('legalContent');
             const pages={
                 about:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2>
-                <p>CourtQ Pro is a smart venue management platform built for the Philippine pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
-                <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p>
-                <p>Built with ❤️ for the Philippine pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 +63 999 883 0291 / +62 922 854 4337</p>`,
+                <p>CourtQ Pro is a smart venue management platform built for the Malaysian pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
+                <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via Touch'n Go or GrabPay.</p>
+                <p>Built with ❤️ for the Malaysian pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 +60 12 345 6789</p>`,
 
                 privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
                 <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p>
-                <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by replying to any email or contacting us.</p>
+                <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via Touch'n Go/GrabPay, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by replying to any email or contacting us.</p>
                 <p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p>
                 <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion. We retain booking data as needed for business operations and financial records.</p>
-                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p>
+                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — Touch'n Go and GrabPay handle all financial transactions.</p>
                 <p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p>
                 <p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p>
                 <p><em>Last updated: July 2026</em></p>`,
@@ -938,7 +1064,7 @@
                 <p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p>
                 <p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue's discretion.</p>
                 <p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p>
-                <p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p>
+                <p><strong>Payments:</strong> All payments are processed externally via Touch'n Go or GrabPay. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p>
                 <p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p>
                 <p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p>
                 <p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p>
@@ -947,18 +1073,18 @@
                 disclaimer:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2>
                 <p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p>
                 <p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p>
-                <p><strong>Payment:</strong> CourtQ Pro does not process payments. GCash and Maya are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p>
+                <p><strong>Payment:</strong> CourtQ Pro does not process payments. Touch'n Go and GrabPay are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p>
                 <p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p>
                 <p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>`,
 
                 contact:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2>
                 <p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></p>
-                <p><strong>Phone:</strong> 📱 +63 999 883 0291 / +62 922 854 4337</p>
+                <p><strong>Phone:</strong> 📱 +60 12 345 6789</p>
                 <p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;">facebook.com/aiautomationexpert</a></p>
                 <p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p>
                 <p><strong>Venue Partnerships:</strong> Interested in listing your venue on CourtQ Pro? Email us for pricing and onboarding.</p>
                 <p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p>
-                <p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Cebu, Philippines</p>`
+                <p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Kuala Lumpur, Malaysia</p>`
             };
             c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
             document.getElementById('legalModal').classList.add('active');

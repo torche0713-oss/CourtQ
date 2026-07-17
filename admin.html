@@ -515,6 +515,7 @@
         <button class="btn btn-outline btn-sm" onclick="openSettings()" id="settingsBtn">⚙️ Settings</button>
         <button class="btn btn-outline btn-sm" onclick="setGeminiKey()">🔮 AI</button>
         <button class="btn btn-outline btn-sm" onclick="aiDailyBriefing()">📋 AI Briefing</button>
+        <button class="btn btn-outline btn-sm" onclick="setLang(_cqLang==='en'?'ms':'en')" id="langToggle">EN / BM</button>
         <button class="btn btn-outline btn-sm" onclick="logout()" style="color:#e74c3c;border-color:rgba(231,76,60,0.3);">🚪 Logout</button>
     </div>
 </header>
@@ -537,7 +538,7 @@
     <h2 style="color:#f39c12;font-size:1.5rem;margin-bottom:8px;">Venue Pending Approval</h2>
     <p style="color:#aaa;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
     <div id="pendingDetails" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;max-width:400px;margin:0 auto;text-align:left;font-size:0.82rem;"></div>
-    <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a> · 📱 +63 999 883 0291 / +62 922 854 4337</div>
+    <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a> · 📱 +60 12 345 6789</div>
 </div>
 
 <!-- OPEN PLAY PAGE -->
@@ -658,7 +659,7 @@
                 <div id="bConflict"></div>
                 <div class="form-group"><label>Customer *</label><input type="text" id="bCustomer" placeholder="Full name"></div>
                 <div class="form-row">
-                    <div class="form-group"><label>Phone</label><input type="text" id="bPhone" placeholder="+63 900 000 0000"></div>
+                    <div class="form-group"><label>Phone</label><input type="text" id="bPhone" placeholder="+60 12 345 6789"></div>
                     <div class="form-group"><label>Email</label><input type="text" id="bEmail" placeholder="email@example.com" autocomplete="off"></div>
                 </div>
                 <div class="form-group"><label>Court *</label><select id="bCourt" onchange="onBCourtChange()"><option value="">Select court...</option></select></div>
@@ -685,14 +686,14 @@
                 </div>
                 <div class="form-group"><label>Players</label><input type="text" id="bPlayers" placeholder="Names separated by comma"></div>
                 <div id="bPricePreview" style="display:none;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin-bottom:12px;">
-                    <div style="display:flex;justify-content:space-between;font-size:0.83rem;"><span>Rate:</span><span id="bRate">₱0/hr</span></div>
-                    <div style="display:flex;justify-content:space-between;font-weight:800;color:#4ecdc4;margin-top:4px;"><span>Total:</span><span id="bTotal">₱0</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.83rem;"><span>Rate:</span><span id="bRate">RM0/hr</span></div>
+                    <div style="display:flex;justify-content:space-between;font-weight:800;color:#4ecdc4;margin-top:4px;"><span>Total:</span><span id="bTotal">RM0</span></div>
                 </div>
                 <div class="form-group"><label>Payment Method</label>
                     <select id="bPayMethod">
                         <option value="Cash">💵 Cash</option>
-                        <option value="GCash">📱 GCash</option>
-                        <option value="Maya">💜 Maya</option>
+                        <option value="GCash">🟢 Touch'n Go</option>
+                        <option value="Maya">🟢 GrabPay</option>
                     </select>
                 </div>
                 <button class="btn btn-primary btn-full" onclick="createBooking()">📅 Create Booking</button>
@@ -733,8 +734,8 @@
             <div style="display:flex;gap:6px;">
                 <select id="cFilter" onchange="renderConfirmations()" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:7px;color:#fff;font-size:0.78rem;">
                     <option value="all">All Methods</option>
-                    <option value="GCash">📱 GCash</option>
-                    <option value="Maya">💜 Maya</option>
+                    <option value="GCash">🟢 Touch'n Go</option>
+                    <option value="Maya">🟢 GrabPay</option>
                 </select>
                 <button onclick="refreshConfirmations()" style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:7px;color:#4ecdc4;padding:4px 10px;cursor:pointer;font-size:0.78rem;">🔄</button>
             </div>
@@ -773,23 +774,23 @@
             </div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
                 <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">GCash</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;margin-top:4px;" id="finGCash">₱0</div>
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Touch'n Go</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;margin-top:4px;" id="finGCash">RM0</div>
                 </div>
                 <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Maya</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#9b59b6;margin-top:4px;" id="finMaya">₱0</div>
+                    <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">GrabPay</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#9b59b6;margin-top:4px;" id="finMaya">RM0</div>
                 </div>
                 <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Cash</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finCash">₱0</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finCash">RM0</div>
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
                 <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Revenue</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#3498db;margin-top:4px;" id="finTotalRev">₱0</div>
-                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finPrevRev">prev: ₱0</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#3498db;margin-top:4px;" id="finTotalRev">RM0</div>
+                    <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finPrevRev">prev: RM0</div>
                 </div>
                 <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Bookings</div>
@@ -815,15 +816,15 @@
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
                 <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Gross Revenue</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finGrossRev">₱0</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#2ecc71;margin-top:4px;" id="finGrossRev">RM0</div>
                 </div>
                 <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Costs</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="finTotalCosts">₱0</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="finTotalCosts">RM0</div>
                 </div>
                 <div style="background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Net Profit</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#3498db;margin-top:4px;" id="finNetProfit">₱0</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#3498db;margin-top:4px;" id="finNetProfit">RM0</div>
                     <div style="font-size:0.65rem;color:#555;margin-top:2px;" id="finNetMargin">0% margin</div>
                 </div>
             </div>
@@ -942,11 +943,11 @@
                 </div>
                 <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Monthly Retainers</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#9b59b6;margin-top:4px;" id="devMonthlyTotal">₱0</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#9b59b6;margin-top:4px;" id="devMonthlyTotal">RM0</div>
                 </div>
                 <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;text-align:center;">
                     <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Total Due</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="devTotalDue">₱0</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;" id="devTotalDue">RM0</div>
                 </div>
             </div>
             <div id="devVenuesList"></div>
@@ -1160,7 +1161,7 @@
             <div class="form-group"><label>Contract Start</label><input type="date" id="cStartDate"></div>
             <div class="form-group"><label>Contract End</label><input type="date" id="cEndDate"></div>
         </div>
-        <div class="form-group"><label>Monthly Retainer (₱)</label><input type="number" id="cMonthlyRetainer" min="0" step="100"></div>
+        <div class="form-group"><label>Monthly Retainer (RM)</label><input type="number" id="cMonthlyRetainer" min="0" step="100"></div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveContract()">💾 Save Contract</button>
             <button class="btn btn-outline" onclick="closeModal('contractModal')">Cancel</button>
@@ -1174,7 +1175,7 @@
         <div class="modal-title">💰 Add Payment</div>
         <input type="hidden" id="pVenueId">
         <div class="form-group"><label>Transaction Number</label><input type="text" id="pTxNo" placeholder="e.g. TXN-001"></div>
-        <div class="form-group"><label>Amount Due (₱)</label><input type="number" id="pAmount" min="0" step="100"></div>
+        <div class="form-group"><label>Amount Due (RM)</label><input type="number" id="pAmount" min="0" step="100"></div>
         <div class="form-group"><label>Due Date</label><input type="date" id="pDueDate"></div>
         <div class="form-group"><label>Status</label>
             <select id="pStatus" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
@@ -1210,7 +1211,7 @@
             <div class="form-group"><label>Rotation (min)</label>
                 <select id="sesRot"><option value="15">15</option><option value="20" selected>20</option><option value="25">25</option><option value="30">30</option></select>
             </div>
-            <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="sesDropIn" value="100"></div>
+            <div class="form-group"><label>Drop-in Fee (RM)</label><input type="number" id="sesDropIn" value="12"></div>
         </div>
         <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
             <div style="display:flex;gap:10px;">
@@ -1269,7 +1270,7 @@
             <div class="form-group"><label>Start Time *</label><input type="time" id="schedOpStart" value="14:00"></div>
             <div class="form-group"><label>End Time *</label><input type="time" id="schedOpEnd" value="18:00"></div>
         </div>
-        <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="schedOpFee" value="0"></div>
+        <div class="form-group"><label>Drop-in Fee (RM)</label><input type="number" id="schedOpFee" value="0"></div>
         <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
             <div style="display:flex;gap:10px;">
                 <label style="display:flex;align-items:center;gap:6px;background:rgba(78,205,196,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
@@ -1321,7 +1322,7 @@
     <div class="modal" style="max-width:360px;">
         <div class="modal-title">➕ Add Player</div>
         <div class="form-group"><label>Player Name *</label><input type="text" id="addOpPlayerName" placeholder="Full name"></div>
-        <div class="form-group"><label>Phone</label><input type="text" id="addOpPlayerPhone" placeholder="+63..."></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="addOpPlayerPhone" placeholder="+60..."></div>
         <div class="form-group"><label>Email</label><input type="text" id="addOpPlayerEmail" placeholder="email@example.com"></div>
         <div class="form-group"><label>Skill</label>
             <select id="addOpPlayerSkill">
@@ -1358,7 +1359,7 @@
             </div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="ncRate" value="300" min="0"></div>
+            <div class="form-group"><label>Rate per Hour (RM)</label><input type="number" id="ncRate" value="35" min="0"></div>
             <div class="form-group"><label>Color</label>
                 <select id="ncColor">
                     <option value="#4ecdc4">🟦 Teal</option><option value="#e74c3c">🔴 Red</option>
@@ -1391,7 +1392,7 @@
             </div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="ecRate" min="0"></div>
+            <div class="form-group"><label>Rate per Hour (RM)</label><input type="number" id="ecRate" min="0"></div>
             <div class="form-group"><label>Color</label>
                 <select id="ecColor">
                     <option value="#4ecdc4">🟦 Teal</option><option value="#e74c3c">🔴 Red</option>
@@ -1478,10 +1479,10 @@
         <div class="modal-title">⚙️ Settings</div>
         <div style="margin-bottom:14px;">
             <div style="font-weight:700;font-size:0.85rem;color:#4ecdc4;margin-bottom:10px;">📱 Payment Details (for customer reference)</div>
-            <div class="form-group"><label>GCash Number</label><input type="text" id="sGcashNum" placeholder="09171234567"></div>
-            <div class="form-group"><label>GCash Name</label><input type="text" id="sGcashName" placeholder="Juan dela Cruz"></div>
-            <div class="form-group"><label>Maya Number</label><input type="text" id="sMayaNum" placeholder="09171234567"></div>
-            <div class="form-group"><label>Maya Name</label><input type="text" id="sMayaName" placeholder="Juan dela Cruz"></div>
+            <div class="form-group"><label>Touch'n Go Number</label><input type="text" id="sGcashNum" placeholder="0123456789"></div>
+            <div class="form-group"><label>Touch'n Go Name</label><input type="text" id="sGcashName" placeholder="Ahmad bin Abdullah"></div>
+            <div class="form-group"><label>GrabPay Number</label><input type="text" id="sMayaNum" placeholder="0123456789"></div>
+            <div class="form-group"><label>GrabPay Name</label><input type="text" id="sMayaName" placeholder="Ahmad bin Abdullah"></div>
         </div>
         <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
             <div style="font-weight:700;font-size:0.85rem;color:#3498db;margin-bottom:10px;">🖼️ Venue Logo</div>
@@ -1560,6 +1561,7 @@
 </div>
 
 <!-- Firebase SDK -->
+<script src="config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -1665,7 +1667,7 @@ function showHelp(topic){
 <p>Share this link with players. They can:</p>
 <ul style="margin:4px 0 8px 18px;line-height:1.8;">
 <li>View court availability</li>
-<li>Book a court and pay via GCash or Maya</li>
+<li>Book a court and pay via Touch'n Go or GrabPay</li>
 <li>Join Open Play sessions</li>
 </ul>
 <p>Bookings show up in your dashboard under <strong>📋 Confirmations</strong> tab for approval.</p>`
@@ -1915,8 +1917,8 @@ async function sendEmailCampaign(){
 // ===================== CLOCK =====================
 function updateClock(){
     const n=phtNow();
-    document.getElementById('clockDisplay').textContent=n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Manila'});
-    document.getElementById('dateDisplay').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'Asia/Manila'});
+    document.getElementById('clockDisplay').textContent=n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Kuala_Lumpur'});
+    document.getElementById('dateDisplay').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'Asia/Kuala_Lumpur'});
 }
 setInterval(updateClock,1000); updateClock();
 
@@ -2029,7 +2031,7 @@ function promptRemoveCourt(id){
         ${c.status==='occupied'?`<div class="conflict-box">⚠️ Court is currently occupied! Game will be force-ended.</div>`:''}
         ${hasBookings?`<div class="overlap-box">⚠️ This court has ${hasBookings} upcoming booking(s). They will be cancelled.</div>`:''}
         <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:10px;font-size:0.83rem;">
-            📍 ${escapeHtml(c.location)} · ${SURF_ICONS[c.surface]} ${escapeHtml(c.surface)} · ${ENV_ICONS[c.env]} ${escapeHtml(c.env)} · ₱${c.rate}/hr
+            📍 ${escapeHtml(c.location)} · ${SURF_ICONS[c.surface]} ${escapeHtml(c.surface)} · ${ENV_ICONS[c.env]} ${escapeHtml(c.env)} · RM${c.rate}/hr
         </div>`;
     document.getElementById('removeCourtConfirm').onclick=()=>{
         if(c.status==='occupied'&&c.players.length>0) completeRelease(c,null);
@@ -2197,7 +2199,7 @@ async function startSession(){
     closeModal('sessionModal');
     await saveStateNow();
     showNotif(`▶ Open Play started! ${sd} ${st}–${ed} ${et}·${rot}min rotations·${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}`,'success');
-    announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: ₱${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}.`);
+    announce(`Open Play started! ${sd} ${st}–${ed} ${et}. Drop-in: RM${fee}. Mode: ${mode==='winnersSplit'?'Winners Stay & Split':mode==='roundRobin'?'Round Robin':'4 on/4 off'}.`);
     renderAll();
 }
 
@@ -2223,7 +2225,7 @@ function renderScheduledOpList(){
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:0.78rem;color:#aaa;">${pCount}/${max} players</span>
-                <span style="font-size:0.7rem;color:#f39c12;">${s.fee>0?'₱'+s.fee:'Free'}</span>
+                <span style="font-size:0.7rem;color:#f39c12;">${s.fee>0?'RM'+s.fee:'Free'}</span>
             </div>
         </div>`;
     }).join('');
@@ -2268,7 +2270,7 @@ function openScheduledOpDetail(id){
     document.getElementById('schedOpDetailTitle').textContent=s.date+' '+s.startTime+'–'+s.endTime;
     const courtNames=(s.courts||[]).map(cid=>S.courts.find(c=>c.id===cid)?.name||'Court '+cid).join(', ');
     document.getElementById('schedOpDetailMeta').innerHTML=`
-        <div>${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}</div>
+        <div>${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · RM'+s.fee:' · Free'}</div>
         <div style="font-size:0.75rem;margin-top:2px;">Status: ${s.status} · Max: ${s.maxPlayers||'No limit'}</div>`;
     renderScheduledOpPlayers();
     openModal('scheduledOpDetailModal');
@@ -2817,7 +2819,7 @@ async function aiSuggest(){
     showNotif('🔮 AI thinking...','info');
     const prompt=`You are a smart court assignment assistant for "${S.venueName}".
 Session: ${S.session?`${S.session.startDate||'today'} ${S.session.startTime||S.session.start}-${S.session.endDate||'today'} ${S.session.endTime||S.session.end}`+', '+S.session.rot+'min rotations':'None'}
-Available: ${avail.map(c=>c.name+' ('+c.location+', ₱'+c.rate+')').join(', ')}
+Available: ${avail.map(c=>c.name+' ('+c.location+', RM'+c.rate+')').join(', ')}
 Queue: ${S.queue.map((g,i)=>i+1+'. "'+g.groupName+'" – '+g.gameType+', skill '+SKILL_LABELS[g.skillLevel]+', waited '+Math.floor((Date.now()-g.joinedAt)/60000)+'min').join(' | ')}
 
 Recommend which group goes to which court in 1 short sentence. Consider wait time, skill, and court features.`;
@@ -2863,13 +2865,13 @@ async function aiDailyBriefing(){
     const avail=S.courts.filter(c=>c.status==='available').length;
     const occupied=S.courts.filter(c=>c.status==='occupied').length;
     const qCount=S.queue.length;
-    const prompt=`You are a friendly pickleball venue assistant for "${S.venueName}" in the Philippines. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Manila'})}.
+    const prompt=`You are a friendly pickleball venue assistant for "${S.venueName}" in the Philippines. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Kuala_Lumpur'})}.
 
 Today's summary:
 - Courts: ${S.courts.length} total (${avail} available, ${occupied} occupied)
-- Bookings today: ${todayBks.length} (₱${todayRev} expected)
+- Bookings today: ${todayBks.length} (RM${todayRev} expected)
 - Queue: ${qCount} groups waiting
-${todayBks.length>0?'Today\'s bookings:\n'+todayBks.map(b=>`  • ${b.customer} — Court ${(S.courts.find(c=>c.id===b.courtId)||{}).name||b.courtId} — ${b.startTime}-${b.endTime} — ${b.paymentMethod} ₱${b.amount}`).join('\n'):''}
+${todayBks.length>0?'Today\'s bookings:\n'+todayBks.map(b=>`  • ${b.customer} — Court ${(S.courts.find(c=>c.id===b.courtId)||{}).name||b.courtId} — ${b.startTime}-${b.endTime} — ${b.paymentMethod} RM${b.amount}`).join('\n'):''}
 ${S.session&&S.session.active?`Open Play session: ${S.session.startDate||'today'} ${S.session.startTime||S.session.start}-${S.session.endDate||'today'} ${S.session.endTime||S.session.end}, ${S.session.rot}min rotations`:''}
 
 Write a very brief 2-3 sentence morning briefing for the owner. Include key numbers.`;
@@ -2894,7 +2896,7 @@ async function aiFinancialInsights(){
     const cancelled=S.bookings.filter(b=>b.status==='cancelled'&&new Date(b.bookedAt||0)>=startDate).length;
     const courtRev=S.courts.map(c=>{
         const rev=filtered.filter(b=>b.courtId===c.id).reduce((s,b)=>s+(b.amount||0),0);
-        return `${c.name}: ₱${rev}`;
+        return `${c.name}: RM${rev}`;
     }).join(', ');
     const peakHrs={};
     filtered.forEach(b=>{const h=parseInt(b.startTime.split(':')[0]);peakHrs[h]=(peakHrs[h]||0)+1;});
@@ -2902,7 +2904,7 @@ async function aiFinancialInsights(){
     const prompt=`You are a pickleball venue financial analyst for "${S.venueName}" in the Philippines. Analyze this ${period} data:
 
 Period: ${period}
-Revenue: GCash ₱${gcash} | Maya ₱${maya} | Cash ₱${cash} | Total ₱${totalRev}
+Revenue: GCash RM${gcash} | Maya RM${maya} | Cash RM${cash} | Total RM${totalRev}
 Bookings: ${filtered.length} total (${onlineCount} online, ${inPersonCount} in-person)
 Cancelled: ${cancelled}
 Revenue by court: ${courtRev}
@@ -2954,7 +2956,7 @@ async function aiPricingSuggest(){
         const bks=billings.filter(b=>b.courtId===c.id);
         const rev=bks.reduce((s,b)=>s+(b.amount||0),0);
         const hrs=bks.reduce((s,b)=>s+(timeToMin(b.endTime)-timeToMin(b.startTime))/60,0);
-        return `${c.name}: rate=₱${c.rate}, type=${c.gameType||'all'}, surface=${c.surface||'hard'}, bookings=${bks.length}, hours=${Math.round(hrs)}, revenue=₱${rev}`;
+        return `${c.name}: rate=RM${c.rate}, type=${c.gameType||'all'}, surface=${c.surface||'hard'}, bookings=${bks.length}, hours=${Math.round(hrs)}, revenue=RM${rev}`;
     }).join('\n');
     const peakHrs={};
     billings.forEach(b=>{const h=parseInt(b.startTime.split(':')[0]);peakHrs[h]=(peakHrs[h]||0)+1;});
@@ -2965,7 +2967,7 @@ async function aiPricingSuggest(){
 Current court setup (${S.courts.length} courts):
 ${courtData}
 
-Monthly booking summary: ${billings.length} total bookings, ₱${billings.reduce((s,b)=>s+(b.amount||0),0)} total revenue.
+Monthly booking summary: ${billings.length} total bookings, RM${billings.reduce((s,b)=>s+(b.amount||0),0)} total revenue.
 Peak hours this month: ${peakStr}
 
 Suggest optimal rate adjustments for each court. For each court, propose a new rate and briefly explain why. Consider peak/off-peak, court demand, and current rate. Keep it concise.`;
@@ -3175,7 +3177,7 @@ function confirmScore(){
         // Record game in history
         const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
         const cp=(c.players||[]).filter(Boolean);
-        const entry={court:c.name,players:[...cp],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
+        const entry={court:c.name,players:[...cp],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:false};
         [...(wt.players||[]).filter(Boolean),...(lt.players||[]).filter(Boolean)].forEach(p=>{if(!S.leaderboard[p.name])S.leaderboard[p.name]={games:0,wins:0,points:0};S.leaderboard[p.name].games++;});
         (wt.players||[]).filter(Boolean).forEach(p=>{S.leaderboard[p.name].wins++;S.leaderboard[p.name].points+=50;});
         (lt.players||[]).filter(Boolean).forEach(p=>{if(S.leaderboard[p.name])S.leaderboard[p.name].points+=15;});
@@ -3227,7 +3229,7 @@ function confirmScore(){
         const match=schedule.matches.find(m=>m.id===c._rrMatchId);
         if(match&&!match.completed){
             const dur=Math.floor((Date.now()-(c.startTime||Date.now()))/60000)||1;
-            const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie,timestamp:Date.now()};
+            const entry={court:c.name,players:[...c.players],teamA:sd.teamA.players,teamB:sd.teamB.players,duration:dur,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),date:getTodayStr(),gameType:c.gameType||'doubles',winner:sd.winner,scoreA:sd.teamA.score,scoreB:sd.teamB.score,isTie:sd.isTie,timestamp:Date.now()};
             S.history.unshift(entry);if(S.history.length>100)S.history.pop();
             match.completed=true;
             match.courtId=null;
@@ -3344,7 +3346,7 @@ function recordGameResult(court,sd){
     const dur=Math.floor((Date.now()-(court.startTime||Date.now()))/60000)||1;
     const now=new Date();
     const mid=Math.ceil(court.players.length/2);
-    const entry={court:court.name,players:[...court.players],teamA:court.players.slice(0,mid),teamB:court.players.slice(mid),duration:dur,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),date:getTodayStr(),gameType:court.gameType||(court.players.length>2?'doubles':'singles'),winner:null,scoreA:null,scoreB:null,isTie:false};
+    const entry={court:court.name,players:[...court.players],teamA:court.players.slice(0,mid),teamB:court.players.slice(mid),duration:dur,time:now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),date:getTodayStr(),gameType:court.gameType||(court.players.length>2?'doubles':'singles'),winner:null,scoreA:null,scoreB:null,isTie:false};
     if(sd){
         entry.teamA=sd.teamA.players;entry.teamB=sd.teamB.players||[];
         entry.scoreA=sd.teamA.score;entry.scoreB=sd.teamB.score;
@@ -3368,8 +3370,8 @@ function onBCourtChange(){
     const c=S.courts.find(x=>x.id===cId);
     const dur=parseInt(document.getElementById('bDuration').value)||120;
     if(c){
-        document.getElementById('bRate').textContent=`₱${c.rate}/hr`;
-        document.getElementById('bTotal').textContent=`₱${Math.round(c.rate*(dur/60))}`;
+        document.getElementById('bRate').textContent=`RM${c.rate}/hr`;
+        document.getElementById('bTotal').textContent=`RM${Math.round(c.rate*(dur/60))}`;
         document.getElementById('bPricePreview').style.display='block';
     } else {
         document.getElementById('bPricePreview').style.display='none';
@@ -3395,7 +3397,7 @@ function checkBConflict(){
 
     // Update price
     const c=S.courts.find(x=>x.id===cId);
-    if(c&&dur){document.getElementById('bTotal').textContent=`₱${Math.round(c.rate*(dur/60))}`;document.getElementById('bPricePreview').style.display='block';}
+    if(c&&dur){document.getElementById('bTotal').textContent=`RM${Math.round(c.rate*(dur/60))}`;document.getElementById('bPricePreview').style.display='block';}
 }
 
 function createBooking(){
@@ -3418,7 +3420,7 @@ function createBooking(){
     };
     S.bookings.push(b);
     saveBooking(b);
-    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer,court:c.name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),gameType:b.gameType});
     ['bCustomer','bPhone','bEmail','bDate','bStart','bPlayers'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bConflict').innerHTML='';
     document.getElementById('bPricePreview').style.display='none';
@@ -3442,7 +3444,7 @@ function openBookingDetail(bId){
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Date:</span><span>${escapeHtml(b.date)}</span></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Time:</span><span>${b.startTime}–${b.endTime} (${b.duration}min)</span></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Type:</span><span>${escapeHtml(b.gameType)}</span></div>
-            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Amount:</span><strong style="color:#4ecdc4;">₱${b.amount}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Amount:</span><strong style="color:#4ecdc4;">RM${b.amount}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Payment:</span><span>${escapeHtml(b.paymentMethod)}</span></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Ref#:</span><strong style="color:#f39c12;">${escapeHtml(b.reference||'N/A')}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Source:</span><span style="color:${b.source==='online'?'#2ecc71':'#4ecdc4'};">${b.source==='online'?'🌐 Online':'🏢 Admin'}</span></div>
@@ -3738,11 +3740,11 @@ function renderConfirmations(){
             <div style="display:flex;justify-content:space-between;align-items:start;">
                 <div><div style="font-weight:700;">${escapeHtml(b.customer)}</div>
                 <div style="font-size:0.75rem;color:#aaa;margin-top:3px;">📅 ${escapeHtml(b.date)} · ${b.startTime}–${b.endTime} · ${court?escapeHtml(court.name):''}</div>
-                <div style="font-size:0.75rem;color:#aaa;">💳 ${escapeHtml(b.paymentMethod)} · ₱${b.amount}</div>
+                <div style="font-size:0.75rem;color:#aaa;">💳 ${escapeHtml(b.paymentMethod)} · RM${b.amount}</div>
                 <div style="margin-top:8px;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;font-size:0.82rem;">
                     <div><span style="color:#f39c12;">🔑 Ref:</span> <strong>${escapeHtml(b.reference||b.ref||'N/A')}</strong></div>
                     <div style="font-size:0.72rem;color:#aaa;margin-top:3px;">Send payment to ${b.paymentMethod==='GCash'?'📱 '+escapeHtml(S.paymentInfo.gcash.number)+' ('+escapeHtml(S.paymentInfo.gcash.name)+')':'💜 '+escapeHtml(S.paymentInfo.maya.number)+' ('+escapeHtml(S.paymentInfo.maya.name)+')'}</div>
-                    <div style="font-size:0.72rem;color:#aaa;">Amount: <strong>₱${b.amount}</strong></div>
+                    <div style="font-size:0.72rem;color:#aaa;">Amount: <strong>RM${b.amount}</strong></div>
                 </div></div>
                 <div style="display:flex;gap:6px;flex-shrink:0;">
                     <button class="btn btn-success btn-sm" onclick="confirmBookingPayment('${b.id}')">✅ Confirm</button>
@@ -3759,7 +3761,7 @@ function confirmBookingPayment(bId){
     if(inSession(b.date,timeToMin(b.startTime),timeToMin(b.endTime),b.courtId)){showNotif('Cannot confirm — Open Play session overlaps.','error');return;}
     b.status='confirmed';
     saveBooking(b);
-    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:b.gameType});
+    S.sales.push({id:b.id,amount:b.amount,method:b.paymentMethod,customer:b.customer,court:(S.courts.find(c=>c.id===b.courtId)||{}).name,time:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),gameType:b.gameType});
     saveState();renderBookingTimeline();renderConflicts();renderConfirmations();renderBookings();
     showNotif(`✅ ${b.customer}'s payment confirmed!`,'success');
 }
@@ -3847,11 +3849,11 @@ function renderFinancials(){
     const inPersonCount=filtered.filter(b=>b.source!=='online').length;
     const onlinePct=allTx>0?Math.round(onlineCount/allTx*100):0;
     // Update DOM
-    document.getElementById('finGCash').textContent='₱'+gcash.toLocaleString();
-    document.getElementById('finMaya').textContent='₱'+maya.toLocaleString();
-    document.getElementById('finCash').textContent='₱'+cash.toLocaleString();
-    document.getElementById('finTotalRev').textContent='₱'+totalRev.toLocaleString();
-    document.getElementById('finPrevRev').textContent='prev: ₱'+prevTotal.toLocaleString()+(totalRev>prevTotal?' ↑':' ↓');
+    document.getElementById('finGCash').textContent='RM'+gcash.toLocaleString();
+    document.getElementById('finMaya').textContent='RM'+maya.toLocaleString();
+    document.getElementById('finCash').textContent='RM'+cash.toLocaleString();
+    document.getElementById('finTotalRev').textContent='RM'+totalRev.toLocaleString();
+    document.getElementById('finPrevRev').textContent='prev: RM'+prevTotal.toLocaleString()+(totalRev>prevTotal?' ↑':' ↓');
     document.getElementById('finPrevRev').style.color=totalRev>prevTotal?'#2ecc71':'#e74c3c';
     document.getElementById('finBookCount').textContent=allTx;
     document.getElementById('finCancelRate').textContent=cancelRate+'% cancelled ('+cancelled+')';
@@ -3868,7 +3870,7 @@ function renderFinancials(){
         const util=availHours*60*daysInPeriod>0?Math.round(c.min/(availHours*60*daysInPeriod)*10000)/100:0;
         return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px;text-align:center;">
             <div style="font-size:0.75rem;font-weight:700;color:${c.color};">${escapeHtml(c.name)}</div>
-            <div style="font-size:1.1rem;font-weight:800;margin-top:4px;">₱${c.rev.toLocaleString()}</div>
+            <div style="font-size:1.1rem;font-weight:800;margin-top:4px;">RM${c.rev.toLocaleString()}</div>
             <div style="font-size:0.65rem;color:#aaa;">${pct}% of revenue</div>
             <div style="font-size:0.65rem;color:#555;">${util}% utilized</div>
         </div>`;
@@ -3903,9 +3905,9 @@ function renderFinancials(){
     const totalCosts=daysInMonth>0?Math.round(monthlyTotal/daysInMonth*daysInPeriod):0;
     const netProfit=totalRev-totalCosts;
     const netMargin=totalRev>0?Math.round(netProfit/totalRev*100):0;
-    document.getElementById('finGrossRev').textContent='₱'+totalRev.toLocaleString();
-    document.getElementById('finTotalCosts').textContent='₱'+totalCosts.toLocaleString();
-    document.getElementById('finNetProfit').textContent='₱'+netProfit.toLocaleString();
+    document.getElementById('finGrossRev').textContent='RM'+totalRev.toLocaleString();
+    document.getElementById('finTotalCosts').textContent='RM'+totalCosts.toLocaleString();
+    document.getElementById('finNetProfit').textContent='RM'+netProfit.toLocaleString();
     document.getElementById('finNetProfit').style.color=netProfit>=0?'#2ecc71':'#e74c3c';
     document.getElementById('finNetMargin').textContent=netMargin+'% margin';
     document.getElementById('finNetMargin').style.color=netMargin>=0?'#2ecc71':'#e74c3c';
@@ -3929,7 +3931,7 @@ function renderFinancials(){
         tbody.innerHTML=months.map(m=>{
             const rev=monthMap[m]||0,cst=costMap[m]||0,net=rev-cst,margin=rev>0?Math.round(net/rev*100)+'%':'-';
             const nc=net>=0?'#2ecc71':'#e74c3c';
-            return `<tr><td style="padding:6px 8px;font-weight:600;">${m}</td><td style="padding:6px 8px;text-align:right;">₱${rev.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;">₱${cst.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;color:${nc};font-weight:700;">₱${net.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;color:${nc};">${margin}</td></tr>`;
+            return `<tr><td style="padding:6px 8px;font-weight:600;">${m}</td><td style="padding:6px 8px;text-align:right;">RM${rev.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;">RM${cst.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;color:${nc};font-weight:700;">RM${net.toLocaleString()}</td><td style="padding:6px 8px;text-align:right;color:${nc};">${margin}</td></tr>`;
         }).join('');
     }
     window._finMonthlyData = months.map(m=>({month:m,revenue:monthMap[m]||0,costs:costMap[m]||0,net:(monthMap[m]||0)-(costMap[m]||0)}));
@@ -3941,7 +3943,7 @@ function renderFinancials(){
             const origIdx=S.costs.indexOf(c);
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:3px;font-size:0.75rem;">
                 <div><span style="color:#aaa;">${escapeHtml(c.category)}</span> ${c.desc?'· '+escapeHtml(c.desc):''} <span style="color:#555;font-size:0.65rem;">${escapeHtml(c.date)}</span></div>
-                <div style="display:flex;align-items:center;gap:6px;"><span style="font-weight:700;color:#e74c3c;">₱${(c.amount||0).toLocaleString()}</span><button class="btn btn-danger btn-sm" onclick="removeCost(${origIdx})" style="padding:2px 6px;font-size:0.6rem;">✕</button></div>
+                <div style="display:flex;align-items:center;gap:6px;"><span style="font-weight:700;color:#e74c3c;">RM${(c.amount||0).toLocaleString()}</span><button class="btn btn-danger btn-sm" onclick="removeCost(${origIdx})" style="padding:2px 6px;font-size:0.6rem;">✕</button></div>
             </div>`;
         }).join('');
     }
@@ -3959,7 +3961,7 @@ function renderFinancials(){
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
             <div><div style="font-weight:600;">${escapeHtml(b.customer)}</div>
             <div style="color:#aaa;font-size:0.7rem;">${escapeHtml(b.date)} · ${escapeHtml(c)} · ${escapeHtml(b.paymentMethod)} · ${escapeHtml(b.source)}</div></div>
-            <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
+            <div style="font-weight:800;color:#4ecdc4;">RM${b.amount}</div>
         </div>`;
     }).join('')+(totalPages>1?`<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px;font-size:0.75rem;">
         <button class="btn btn-outline btn-sm" onclick="window._finPage=${Math.max(1,pg-1)};renderFinancials()" ${pg<=1?'disabled':''}>← Prev</button>
@@ -4031,7 +4033,7 @@ function renderPlayerRetention(){
             <div style="width:28px;height:28px;border-radius:50%;background:${['#f39c12','#e0e0e0','#cd7f32','#555'][i]||'#444'};display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;color:#fff;">${v.name[0]}</div>
             <div style="flex:1;">
                 <div style="font-weight:600;font-size:0.82rem;">${escapeHtml(v.name)}</div>
-                <div style="font-size:0.65rem;color:#aaa;">${v.visits} visit${v.visits>1?'s':''} · ₱${v.totalSpent.toLocaleString()} · last ${v.lastVisit.toLocaleDateString()}</div>
+                <div style="font-size:0.65rem;color:#aaa;">${v.visits} visit${v.visits>1?'s':''} · RM${v.totalSpent.toLocaleString()} · last ${v.lastVisit.toLocaleDateString()}</div>
             </div>
             <div style="width:60px;height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
                 <div style="height:100%;width:${Math.round(v.visits/maxVisit*100)}%;background:linear-gradient(90deg,#4ecdc4,#3498db);border-radius:4px;"></div>
@@ -4102,11 +4104,11 @@ function seedJuneData(){
                 const pl=gt==='doubles'||gt==='private'?pick(first)+', '+pick(first):'';
                 const bid='SEED'+String(seedId).padStart(3,'0');
                 if(existingIds.has(bid))continue;
-                const bo={id:bid,customer:cust,phone:'+639'+rng(100000000,999999999),email:fn.toLowerCase()+'.'+ln.toLowerCase()+'@mail.com',courtId:ci,date:ds,startTime:slots[si].s,endTime:String(eh).padStart(2,'0')+':'+String(eM).padStart(2,'0'),duration:dur,gameType:gt,players:pl,amount:amt,paymentMethod:pm,status:st,notes:'',bookedAt:j(day,sh,sm),source:src};
+                const bo={id:bid,customer:cust,phone:'+6012'+rng(10000000,99999999),email:fn.toLowerCase()+'.'+ln.toLowerCase()+'@mail.com',courtId:ci,date:ds,startTime:slots[si].s,endTime:String(eh).padStart(2,'0')+':'+String(eM).padStart(2,'0'),duration:dur,gameType:gt,players:pl,amount:amt,paymentMethod:pm,status:st,notes:'',bookedAt:j(day,sh,sm),source:src};
                 S.bookings.push(bo);
                 if(st==='confirmed'){
                     const cn=(S.courts.find(c=>c.id===ci)||{}).name||'';
-                    S.sales.push({id:bid,amount:amt,method:pm,customer:cust,court:cn,time:new Date(j(day,sh,sm)).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:gt});
+                    S.sales.push({id:bid,amount:amt,method:pm,customer:cust,court:cn,time:new Date(j(day,sh,sm)).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'}),gameType:gt});
                 }
                 added++;
             }
@@ -4125,7 +4127,7 @@ function seedJuneData(){
     const conf=S.bookings.filter(b=>b.status==='confirmed').length;
     const totalRev=S.sales.reduce((s,x)=>s+x.amount,0);
     const totalCost=costs.reduce((s,x)=>s+x.amount,0);
-    showNotif('✅ Booming June seeded! '+conf+' confirmed bookings (~7% cancels), ₱'+(totalRev).toLocaleString()+' revenue, ₱'+(totalCost).toLocaleString()+' costs — net ₱'+(totalRev-totalCost).toLocaleString()+'. Courts packed 6AM-midnight!','success');
+    showNotif('✅ Booming June seeded! '+conf+' confirmed bookings (~7% cancels), RM'+(totalRev).toLocaleString()+' revenue, RM'+(totalCost).toLocaleString()+' costs — net RM'+(totalRev-totalCost).toLocaleString()+'. Courts packed 6AM-midnight!','success');
 }
 
 // ===================== DEV DASHBOARD =====================
@@ -4180,8 +4182,8 @@ async function renderDevDashboard(){
         document.getElementById('devVenueCount').textContent=venues.length+pending.length;
         document.getElementById('devActiveContracts').textContent=activeCount;
         document.getElementById('devFoundingCount').textContent=foundingCount+'/50';
-        document.getElementById('devMonthlyTotal').textContent='₱'+monthlyTotal.toLocaleString();
-        document.getElementById('devTotalDue').textContent='₱'+dueTotal.toLocaleString();
+        document.getElementById('devMonthlyTotal').textContent='RM'+monthlyTotal.toLocaleString();
+        document.getElementById('devTotalDue').textContent='RM'+dueTotal.toLocaleString();
 
         let html='';
         // PENDING section
@@ -4196,7 +4198,7 @@ async function renderDevDashboard(){
                             <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${escapeHtml(p.slug)}</div>
                             <div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(p.owner.name||d.ownerName||'N/A')} · 📱 ${escapeHtml(p.owner.mobile||d.mobile||'N/A')} · 🏟️ ${(d.courts||[]).length} courts</div>
                             <div style="font-size:0.72rem;color:#aaa;">📧 ${escapeHtml(p.owner.email||'N/A')} · Ref: ${escapeHtml(d.paymentRef||'N/A')}</div>
-                            <div style="font-size:0.72rem;color:#aaa;">📋 Plan: <strong>${escapeHtml(d.plan||'founding')}</strong> · Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
+                            <div style="font-size:0.72rem;color:#aaa;">📋 Plan: <strong>${escapeHtml(d.plan||'founding')}</strong> · Monthly: RM${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
                         </div>
                         <div style="text-align:right;">
                             <button class="btn btn-success btn-sm" onclick="activateVenue('${p.venueId}','${p.slug}')">✅ Activate</button>
@@ -4227,9 +4229,9 @@ async function renderDevDashboard(){
                             ${c?`<div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(c.ownerName||o.name||'N/A')} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#555;">No contract set up</div>'}
                         </div>
                         <div style="text-align:right;">
-                            ${c?`<div style="font-weight:800;color:#9b59b6;">₱${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
+                            ${c?`<div style="font-weight:800;color:#9b59b6;">RM${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
                             <div style="font-size:0.7rem;color:#aaa;">${escapeHtml(c.startDate||'?')} → ${escapeHtml(c.endDate||'?')}</div>
-                            <div style="font-size:0.7rem;color:${v.dueAmt>0?'#e74c3c':'#2ecc71'};">Due: ₱${v.dueAmt.toLocaleString()}</div>
+                            <div style="font-size:0.7rem;color:${v.dueAmt>0?'#e74c3c':'#2ecc71'};">Due: RM${v.dueAmt.toLocaleString()}</div>
                             <div style="font-size:0.65rem;color:#555;">${statusLabel}</div>`:'<div style="font-size:0.7rem;color:#555;">${statusLabel}</div>'}
                         </div>
                     </div>
@@ -4241,7 +4243,7 @@ async function renderDevDashboard(){
                         ${o.email?`<button class="btn btn-outline btn-sm" onclick="sendReminder('${v.venueId}','${v.slug}','${o.email.replace(/'/g,"\\'")}','${(o.name||'Valued Partner').replace(/'/g,"\\'")}')">📧 Remind</button>`:''}
                         <button class="btn btn-danger btn-sm" onclick="deleteVenue('${v.venueId}','${v.slug}')">🗑️</button>
                     </div>
-                    ${latestPmt?`<div style="font-size:0.65rem;color:#555;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Last: ${escapeHtml(latestPmt.txNo||'N/A')} · ₱${(latestPmt.amount||0).toLocaleString()} · ${escapeHtml(latestPmt.status)}</div>`:''}
+                    ${latestPmt?`<div style="font-size:0.65rem;color:#555;margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Last: ${escapeHtml(latestPmt.txNo||'N/A')} · RM${(latestPmt.amount||0).toLocaleString()} · ${escapeHtml(latestPmt.status)}</div>`:''}
                 </div>`;
             });
         }
@@ -4410,7 +4412,7 @@ async function sendReminder(venueId,slug,email,name){
         await emailjs.send(ej.serviceId, ej.templateAuto, {
             to_email: email, to_name: name,
             subject: '📋 Payment Reminder — CourtQ Pro',
-            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your monthly retainer for your venue "'+slug+'".\n\nPlease check your dashboard for payment details and due dates.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 +63 999 883 0291'
+            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your monthly retainer for your venue "'+slug+'".\n\nPlease check your dashboard for payment details and due dates.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 +60 12 345 6789'
         });
         showNotif('📧 Reminder sent to '+name,'success');
     } catch(e){
@@ -4496,7 +4498,7 @@ async function activateVenue(venueId,slug){
                 await emailjs.send(ej.serviceId, ej.templateAuto, {
                     to_email: ownerEmail, to_name: vData.ownerName||'Valued Partner',
                     subject: `Your venue "${vData.name}" is now LIVE! ✅`,
-                    body: `✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Configure Settings\nClick the ⚙️ Settings tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 4: Add Staff (Optional)\nIn Settings, add staff emails so they can help manage the venue.\n\nStep 5: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\n━━━ NEED HELP? ━━━\n📧 apexmindagency@gmail.com\n📱 +63 999 883 0291`
+                    body: `✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Configure Settings\nClick the ⚙️ Settings tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 4: Add Staff (Optional)\nIn Settings, add staff emails so they can help manage the venue.\n\nStep 5: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\n━━━ NEED HELP? ━━━\n📧 apexmindagency@gmail.com\n📱 +60 12 345 6789`
                 });
             }
         } catch(e){ console.warn('EmailJS activation send failed:', e); }
@@ -4591,7 +4593,7 @@ function viewPayments(venueId){
     html+='<table style="width:100%;font-size:0.78rem;border-collapse:collapse;"><thead><tr style="color:#aaa;border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:6px 8px;text-align:left;">Tx No</th><th style="padding:6px 8px;text-align:left;">Amount</th><th style="padding:6px 8px;text-align:left;">Due</th><th style="padding:6px 8px;text-align:left;">Status</th><th style="padding:6px 8px;text-align:left;">Paid</th></tr></thead><tbody>';
     c.payments.sort((a,b)=>new Date(b.dueDate||0)-new Date(a.dueDate||0)).forEach(p=>{
         const stColor=p.status==='paid'?'#2ecc71':p.status==='cancelled'?'#666':'#f39c12';
-        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${escapeHtml(p.txNo||'-')}</td><td style="padding:6px 8px;font-weight:700;">₱${(p.amount||0).toLocaleString()}</td><td style="padding:6px 8px;">${escapeHtml(p.dueDate||'-')}</td><td style="padding:6px 8px;color:${stColor};">${escapeHtml(p.status)}</td><td style="padding:6px 8px;">${escapeHtml(p.paidAt||'-')}</td></tr>`;
+        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${escapeHtml(p.txNo||'-')}</td><td style="padding:6px 8px;font-weight:700;">RM${(p.amount||0).toLocaleString()}</td><td style="padding:6px 8px;">${escapeHtml(p.dueDate||'-')}</td><td style="padding:6px 8px;color:${stColor};">${escapeHtml(p.status)}</td><td style="padding:6px 8px;">${escapeHtml(p.paidAt||'-')}</td></tr>`;
     });
     html+='</tbody></table></div><div class="modal-actions"><button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
     const overlay=document.createElement('div');overlay.className='modal-overlay active';overlay.id='paymentsViewModal';overlay.innerHTML=html;
@@ -4650,7 +4652,7 @@ function renderSession(){
                     <div class="live-dot"></div>
                     <div>
                         <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${escapeHtml(ses.startDate||'today')} ${escapeHtml(ses.startTime||ses.start)} to ${escapeHtml(ses.endDate||'today')} ${escapeHtml(ses.endTime||ses.end)}</div>
-                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':ses.mode==='roundRobin'?'🔄 Round Robin '+(ses.rrGameType||'doubles'):'🔄 4 on / 4 off'}${ses.looping?' · 🔁 Looping':''}</div>
+                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · RM${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':ses.mode==='roundRobin'?'🔄 Round Robin '+(ses.rrGameType||'doubles'):'🔄 4 on / 4 off'}${ses.looping?' · 🔁 Looping':''}</div>
                     </div>
                 </div>
                 <button class="btn btn-warning btn-sm" onclick="endSession()">⏹ End Session</button>
@@ -4702,7 +4704,7 @@ function renderOpCourts(){
         c.innerHTML=`
             <div class="court-color-bar" style="background:${court.color};"></div>
             <div class="court-manage-header">
-                <div><div class="court-manage-name">🏟️ ${escapeHtml(court.name)}</div><div class="court-manage-loc">📍 ${escapeHtml(court.location)} · ₱${court.rate}/hr</div></div>
+                <div><div class="court-manage-name">🏟️ ${escapeHtml(court.name)}</div><div class="court-manage-loc">📍 ${escapeHtml(court.location)} · RM${court.rate}/hr</div></div>
                 <span class="court-status-badge csb-${opS==='playing'?'occupied':opS}">${opS==='playing'?'🟢 Playing':opS==='tournament'?'🔮 Tournament':opS==='booked'?'🔒 Booked':opS==='pending'?'⏳ Soon':opS==='maintenance'?'🔧 Maint.':'⚪ Open'}</span>
             </div>
             <div class="court-info-row">
@@ -4780,7 +4782,7 @@ function renderCourtsManage(){
                 <span class="court-status-badge csb-${isOcc?'occupied':opS==='tournament'?'tournament':court.status==='maintenance'?'maintenance':opS==='booked'?'booked':'available'}">${isOcc?'🟢 In Use':opS==='tournament'?'🔮 Tournament':court.status==='maintenance'?'🔧 Maint.':opS==='booked'?'🔒 Booked':'⚪ Open'}</span>
             </div>
             <div class="court-info-row">
-                <span class="court-info-tag" style="color:#4ecdc4;border-color:rgba(78,205,196,0.2);">₱${court.rate}/hr</span>
+                <span class="court-info-tag" style="color:#4ecdc4;border-color:rgba(78,205,196,0.2);">RM${court.rate}/hr</span>
                 <span class="court-info-tag">${hasBk} booking(s)</span>
                 ${court.desc?`<span class="court-info-tag">${escapeHtml(court.desc.slice(0,20))}...</span>`:''}
             </div>
@@ -4950,7 +4952,7 @@ function renderBookingCourtSelect(){
     if(!sel) return;
     const cur=sel.value;
     sel.innerHTML='<option value="">Select court...</option>';
-    S.courts.forEach(c=>{const opt=document.createElement('option');opt.value=c.id;opt.textContent=`${c.name} — ₱${c.rate}/hr`;if(String(c.id)===cur)opt.selected=true;sel.appendChild(opt);});
+    S.courts.forEach(c=>{const opt=document.createElement('option');opt.value=c.id;opt.textContent=`${c.name} — RM${c.rate}/hr`;if(String(c.id)===cur)opt.selected=true;sel.appendChild(opt);});
 }
 
 function renderBookings(){
@@ -4980,7 +4982,7 @@ function renderBookings(){
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
                 <div style="font-size:0.75rem;color:#aaa;">📅 ${escapeHtml(b.date)} · 🕐 ${b.startTime}–${b.endTime}</div>
-                <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
+                <div style="font-weight:800;color:#4ecdc4;">RM${b.amount}</div>
             </div>
         </div>`;
     }).join('');
@@ -5826,14 +5828,12 @@ async function generateWeeklyInvoice(){
     const rows=[];
     for(const v of _devVenues){
         try {
-            // Bookings
             const bkSnap=await db.collection('venues').doc(v.venueId).collection('bookings').get();
             const weekBks=bkSnap.docs.map(d=>d.data()).filter(b=>{
                 if(!b.convenienceFee) return false;
                 const bDate=new Date((b.date||'')+'T'+(b.startTime||'00:00'));
                 return bDate>=startDate&&bDate<=endDate;
             });
-            // Open Play drop-in fees from scheduledSessions
             const vDoc=await db.collection('venues').doc(v.venueId).get();
             const sSessions=vDoc.exists?(vDoc.data().scheduledSessions||[]):[];
             const weekOp=[];
