@@ -1011,6 +1011,20 @@
                 <div class="empty-state"><div class="ei">📢</div><p>No announcements yet.</p></div>
             </div>
         </div>
+        <div class="card">
+            <div class="card-title"><span>🧾 Weekly Convenience Fee Invoice</span><button class="btn btn-primary btn-sm" onclick="generateWeeklyInvoice()" id="genInvoiceBtn">🔄 Generate</button></div>
+            <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <label style="font-size:0.72rem;color:#aaa;">Week:</label>
+                <input type="date" id="invWeekStart" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-size:0.75rem;">
+                <span style="font-size:0.72rem;color:#555;">to</span>
+                <input type="date" id="invWeekEnd" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-size:0.75rem;">
+                <button class="btn btn-outline btn-sm" onclick="setThisWeek()">📅 This Week</button>
+                <button class="btn btn-outline btn-sm" onclick="setLastWeek()">📅 Last Week</button>
+            </div>
+            <div id="invoiceContent">
+                <div class="empty-state"><div class="ei">🧾</div><p>Generate an invoice to see convenience fee totals per venue.</p></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1553,6 +1567,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 // ===================== CONSTANTS =====================
+const CONVENIENCE_FEE=15;
 const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
 const SKILL_LABELS={2:'2.0',3:'3.0',4:'4.0',5:'5.0'};
 const SURF_ICONS={Hard:'🟦',Clay:'🟫',Grass:'🟩'};
@@ -4115,6 +4130,7 @@ function seedJuneData(){
 
 // ===================== DEV DASHBOARD =====================
 let _devContracts = {};
+let _devVenues = [];
 async function renderDevDashboard(){
     document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading venues...</p></div>';
     try {
@@ -4160,6 +4176,7 @@ async function renderDevDashboard(){
             dueTotal+=dueAmt;
             venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId]});
         }
+        _devVenues=venues;
         document.getElementById('devVenueCount').textContent=venues.length+pending.length;
         document.getElementById('devActiveContracts').textContent=activeCount;
         document.getElementById('devFoundingCount').textContent=foundingCount+'/50';
@@ -5764,6 +5781,225 @@ function confirmArchive(){
     saveState();
     renderFinancials();
     showNotif(`✅ Archived ${oldBookings.length} bookings, ${oldSales.length} sales, ${oldCosts.length} expenses. CSV saved.`,'success');
+}
+
+// ===================== WEEKLY INVOICE =====================
+function getMonSun(weekOffset){
+    const now=new Date();
+    const day=now.getDay();
+    const diff=now.getDate()-day+(day===0?-6:1)+weekOffset*7;
+    const mon=new Date(now.getFullYear(),now.getMonth(),diff);
+    const sun=new Date(mon);
+    sun.setDate(mon.getDate()+6);
+    return {mon,sun};
+}
+
+function setThisWeek(){
+    const r=getMonSun(0);
+    document.getElementById('invWeekStart').value=r.mon.toISOString().split('T')[0];
+    document.getElementById('invWeekEnd').value=r.sun.toISOString().split('T')[0];
+}
+
+function setLastWeek(){
+    const r=getMonSun(-1);
+    document.getElementById('invWeekStart').value=r.mon.toISOString().split('T')[0];
+    document.getElementById('invWeekEnd').value=r.sun.toISOString().split('T')[0];
+}
+
+let _invData=[];
+
+async function generateWeeklyInvoice(){
+    const btn=document.getElementById('genInvoiceBtn');
+    btn.disabled=true;
+    btn.textContent='⏳ Generating...';
+    const ws=document.getElementById('invWeekStart').value;
+    const we=document.getElementById('invWeekEnd').value;
+    if(!ws||!we){showNotif('Select a week range first!','error');btn.disabled=false;btn.textContent='🔄 Generate';return;}
+    const startDate=new Date(ws+'T00:00:00');
+    const endDate=new Date(we+'T23:59:59');
+    const el=document.getElementById('invoiceContent');
+    el.innerHTML='<div style="text-align:center;padding:20px;"><div class="spinner"></div><p style="font-size:0.8rem;color:#aaa;margin-top:10px;">Fetching bookings across venues...</p></div>';
+    if(_devVenues.length===0){
+        el.innerHTML='<div class="empty-state"><div class="ei">📭</div><p>No venues loaded. Refresh the Dev Dashboard first.</p></div>';
+        btn.disabled=false;btn.textContent='🔄 Generate';return;
+    }
+    const rows=[];
+    for(const v of _devVenues){
+        try {
+            // Bookings
+            const bkSnap=await db.collection('venues').doc(v.venueId).collection('bookings').get();
+            const weekBks=bkSnap.docs.map(d=>d.data()).filter(b=>{
+                if(!b.convenienceFee) return false;
+                const bDate=new Date((b.date||'')+'T'+(b.startTime||'00:00'));
+                return bDate>=startDate&&bDate<=endDate;
+            });
+            // Open Play drop-in fees from scheduledSessions
+            const vDoc=await db.collection('venues').doc(v.venueId).get();
+            const sSessions=vDoc.exists?(vDoc.data().scheduledSessions||[]):[];
+            const weekOp=[];
+            sSessions.forEach(s=>{
+                if(!s.players) return;
+                const sDate=new Date((s.date||s.startDate||'')+'T00:00:00');
+                if(sDate<startDate||sDate>endDate) return;
+                s.players.forEach(p=>{
+                    if(p.source==='online'&&p.convenienceFee&&p.joinedAt){
+                        const jd=new Date(p.joinedAt);
+                        if(jd>=startDate&&jd<=endDate) weekOp.push(p);
+                    }
+                });
+            });
+            const totalCount=weekBks.length+weekOp.length;
+            if(totalCount===0) continue;
+            const totalFee=weekBks.reduce((s,b)=>s+(b.convenienceFee||0),0)+weekOp.reduce((s,p)=>s+(p.convenienceFee||0),0);
+            const totalSub=weekBks.reduce((s,b)=>s+(b.subtotal||b.amount||0),0)+weekOp.reduce((s,p)=>s+(p.subtotal||p.amount||0),0);
+            const details=[];
+            weekBks.forEach(b=>{
+                details.push({type:'booking',id:b.id,customer:b.customer||'?',date:b.date,time:b.startTime||'?',
+                    amount:b.amount||0,subtotal:b.subtotal||b.amount||0,
+                    fee:b.convenienceFee||0,ref:b.reference||b.ref||''});
+            });
+            weekOp.forEach(p=>{
+                details.push({type:'openplay',id:'',customer:p.name||'?',date:new Date(p.joinedAt).toISOString().split('T')[0],
+                    time:new Date(p.joinedAt).toTimeString().slice(0,5),
+                    amount:p.amount||0,subtotal:p.subtotal||p.amount||0,
+                    fee:p.convenienceFee||0,ref:''});
+            });
+            rows.push({name:v.name,slug:v.slug,venueId:v.venueId,count:totalCount,totalAmount:totalFee,subtotal:totalSub,details});
+        } catch(e){
+            console.warn('[invoice] err for',v.name,e);
+        }
+    }
+    _invData=rows;
+    const totalVenues=rows.length;
+    const totalFees=rows.reduce((s,r)=>s+r.totalAmount,0);
+    const totalBks=rows.reduce((s,r)=>s+r.count,0);
+    let html=`<div style="font-size:0.72rem;color:#aaa;margin-bottom:8px;">${ws} → ${we} · ${totalVenues} venues · ${totalBks} online bookings · Total Convenience Fees: <strong style="color:#f39c12;">₱${totalFees.toLocaleString()}</strong></div>`;
+    if(rows.length===0){
+        html+='<div class="empty-state"><div class="ei">📭</div><p>No online bookings with convenience fees in this period.</p></div>';
+    } else {
+        html+=`<div style="overflow-x:auto;margin-bottom:10px;"><table style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+            <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                <th style="text-align:left;padding:5px 6px;color:#aaa;">Venue</th>
+                <th style="text-align:center;padding:5px 6px;color:#aaa;">Bookings</th>
+                <th style="text-align:right;padding:5px 6px;color:#aaa;">Subtotal</th>
+                <th style="text-align:right;padding:5px 6px;color:#aaa;">Conv. Fee</th>
+                <th style="text-align:center;padding:5px 6px;color:#aaa;">Actions</th>
+            </tr></thead>
+            <tbody>`;
+        rows.forEach(r=>{
+            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <td style="padding:5px 6px;font-weight:600;">${escapeHtml(r.name)}</td>
+                <td style="padding:5px 6px;text-align:center;">${r.count}</td>
+                <td style="padding:5px 6px;text-align:right;">₱${r.subtotal.toLocaleString()}</td>
+                <td style="padding:5px 6px;text-align:right;color:#f39c12;font-weight:700;">₱${r.totalAmount.toLocaleString()}</td>
+                <td style="padding:5px 6px;text-align:center;">
+                    <button class="btn btn-outline btn-sm" onclick="showInvVenueDetail('${r.venueId}')">📋 Details</button>
+                </td>
+            </tr>`;
+        });
+        html+=`</tbody></table></div>`;
+        html+=`<div style="margin-top:8px;"><button class="btn btn-outline btn-sm" onclick="exportInvCSV()">📥 Export CSV</button></div>`;
+        const grandSubtotal=rows.reduce((s,r)=>s+r.subtotal,0);
+        html+=`<div style="margin-top:10px;background:rgba(78,205,196,0.08);border-radius:8px;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Total Bookings</div><div style="font-weight:800;font-size:1rem;">${totalBks}</div></div>
+            <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Gross Revenue</div><div style="font-weight:800;font-size:1rem;">₱${grandSubtotal.toLocaleString()}</div></div>
+            <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Conv. Fees (Yours)</div><div style="font-weight:800;font-size:1rem;color:#f39c12;">₱${totalFees.toLocaleString()}</div></div>
+            <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Platform Fee/Booking</div><div style="font-weight:800;font-size:1rem;">₱${CONVENIENCE_FEE}</div></div>
+        </div>`;
+    }
+    el.innerHTML=html;
+    btn.disabled=false;
+    btn.textContent='🔄 Generate';
+}
+
+function showInvVenueDetail(venueId){
+    const row=_invData.find(r=>r.venueId===venueId);
+    if(!row) return;
+    const el=document.getElementById('invoiceContent');
+    let html=`<div style="margin-bottom:8px;"><button class="btn btn-outline btn-sm" onclick="generateWeeklyInvoice()">← Back</button> <strong>${escapeHtml(row.name)}</strong> <span style="color:#aaa;font-size:0.72rem;">(${row.count} items · ₱${row.totalAmount} fees)</span></div>`;
+    html+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+        <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Type</th>
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Customer</th>
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Date</th>
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Time</th>
+            <th style="text-align:right;padding:4px 5px;color:#aaa;">Subtotal</th>
+            <th style="text-align:right;padding:4px 5px;color:#aaa;">Fee</th>
+            <th style="text-align:right;padding:4px 5px;color:#aaa;">Total</th>
+        </tr></thead>
+        <tbody>`;
+    row.details.forEach(d=>{
+        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+            <td style="padding:4px 5px;font-size:0.65rem;color:#888;">${d.type==='openplay'?'🎯 OP':'📅 BK'}</td>
+            <td style="padding:4px 5px;">${escapeHtml(d.customer)}</td>
+            <td style="padding:4px 5px;">${escapeHtml(d.date)}</td>
+            <td style="padding:4px 5px;">${escapeHtml(d.time)}</td>
+            <td style="padding:4px 5px;text-align:right;">₱${d.subtotal}</td>
+            <td style="padding:4px 5px;text-align:right;color:#f39c12;">₱${d.fee}</td>
+            <td style="padding:4px 5px;text-align:right;">₱${d.amount}</td>
+        </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+    html+=`<div style="margin-top:8px;display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="markVenueInvoiced('${row.venueId}')">✅ Mark as Invoiced</button>
+        <button class="btn btn-outline btn-sm" onclick="exportVenueInvCSV('${row.venueId}')">📥 Export CSV</button>
+    </div>`;
+    el.innerHTML=html;
+}
+
+function markVenueInvoiced(venueId){
+    const row=_invData.find(r=>r.venueId===venueId);
+    if(!row) return;
+    const ws=document.getElementById('invWeekStart').value;
+    const we=document.getElementById('invWeekEnd').value;
+    db.collection('invoices').doc(venueId+'_'+ws.replace(/-/g,'')).set({
+        venueId,venueName:row.name,weekStart:ws,weekEnd:we,
+        bookings:row.count,totalFee:row.totalAmount,subtotal:row.subtotal,
+        invoicedAt:firebase.firestore.FieldValue.serverTimestamp(),
+        status:'invoiced'
+    }).then(()=>{
+        showNotif(`✅ Invoice marked for ${escapeHtml(row.name)}`,'success');
+    }).catch(e=>{
+        showNotif('Failed to mark invoice.','error');
+        console.warn(e);
+    });
+}
+
+function exportInvCSV(){
+    if(_invData.length===0) return;
+    const ws=document.getElementById('invWeekStart').value;
+    const we=document.getElementById('invWeekEnd').value;
+    let csv='Venue,Slug,Bookings,Subtotal,ConvenienceFee\n';
+    _invData.forEach(r=>{
+        csv+=`${r.name},${r.slug},${r.count},${r.subtotal},${r.totalAmount}\n`;
+    });
+    const totalFees=_invData.reduce((s,r)=>s+r.totalAmount,0);
+    const totalBks=_invData.reduce((s,r)=>s+r.count,0);
+    csv+=`\nTOTAL,,${totalBks},${_invData.reduce((s,r)=>s+r.subtotal,0)},${totalFees}\n`;
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`CourtQ_Invoice_${ws}_${we}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function exportVenueInvCSV(venueId){
+    const row=_invData.find(r=>r.venueId===venueId);
+    if(!row) return;
+    const ws=document.getElementById('invWeekStart').value;
+    const we=document.getElementById('invWeekEnd').value;
+    let csv='BookingID,Customer,Date,Time,Subtotal,Fee,Total\n';
+    row.details.forEach(d=>{
+        csv+=`${d.id},${d.customer},${d.date},${d.time},${d.subtotal},${d.fee},${d.amount}\n`;
+    });
+    csv+=`\n,,,Total,${row.subtotal},${row.totalAmount}\n`;
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`CourtQ_${row.name}_Invoice_${ws}_${we}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
 }
 </script>
 </body>
