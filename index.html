@@ -149,8 +149,7 @@
     <div class="landing" id="app">
         <div class="nav-bar">
             <div style="display:flex;align-items:center;gap:8px;">
-                <img src="/Logo.jpg" style="height:36px;width:auto;" alt="CourtQ Pro">
-                <span style="font-weight:800;color:#4ecdc4;font-size:1.1rem;">CourtQ <span style="font-size:0.55rem;background:linear-gradient(135deg,#f39c12,#d68910);color:#fff;padding:1px 6px;border-radius:4px;font-weight:800;vertical-align:super;">PRO</span></span>
+                <img src="/Logo.jpg" style="height:52px;width:auto;" alt="CourtQ Pro">
             </div>
             <div class="nav-links">
                 <button class="btn btn-outline" onclick="showAuthModal('login')" style="padding:6px 14px;font-size:0.78rem;">Log In</button>
@@ -315,6 +314,9 @@
             <div class="auth-form" id="form-login">
                 <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
                 <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+                <div style="text-align:right;margin-bottom:12px;">
+                    <a href="#" onclick="forgotPassword();return false;" style="color:#4ecdc4;font-size:0.75rem;text-decoration:none;">Forgot Password?</a>
+                </div>
                 <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
                 <div class="divider">or</div>
                 <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">🎮 Try Demo</button>
@@ -466,6 +468,18 @@
             if (!email || !pass) { showError('Enter email and password.'); return; }
             try {
                 await auth.signInWithEmailAndPassword(email, pass);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function forgotPassword() {
+            hideMsgs();
+            const email = document.getElementById('loginEmail').value.trim();
+            if (!email) { showError('Enter your email address first.'); return; }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('Password reset email sent. Check your inbox.');
             } catch (e) {
                 showError(e.message);
             }
