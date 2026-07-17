@@ -471,8 +471,6 @@
             }
         }
 
-        let _pendingCred = null; // store cred between signup and submitSetup
-
         async function registerVenue() {
             hideMsgs();
             const venue = document.getElementById('registerVenue').value.trim();
@@ -565,8 +563,6 @@
         }
 
         async function joinVenue() {
-
-        async function joinVenue() {
             hideMsgs();
             const name = document.getElementById('joinName').value.trim();
             const email = document.getElementById('joinEmail').value.trim();
@@ -588,118 +584,6 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 showAuthModal('join');
                 showError(e.message);
-            }
-        }
-
-        let _selectedPlan = 'free';
-        const plans = {
-            free: { name:'Free Forever', base:0, incl:99, extraRate:0, perBlock:1, color:'#2ecc71', label:"✨ Free Forever — no setup fee, no monthly fee, no commission" }
-        };
-        function selectPlan(p) {
-            _selectedPlan = p;
-            updatePricing();
-        }
-        function updatePricing() {
-            document.getElementById('setupPlanLabel').textContent = '✨ Free Forever';
-            document.getElementById('setupPrice').textContent = '₱0/mo';
-            document.getElementById('setupPriceDetail').textContent = 'Free for unlimited courts. A ₱15 convenience fee is charged to players on each online booking — you keep 100% of your rates.';
-        }
-
-        function showSetupError(msg) {
-            const el = document.getElementById('setupError');
-            if (el) { el.textContent = msg; el.style.display = 'block'; }
-        }
-        function hideSetupError() {
-            const el = document.getElementById('setupError');
-            if (el) el.style.display = 'none';
-        }
-
-        async function submitSetup() {
-            hideSetupError();
-            const p = _pendingCred;
-            if (!p) { showSetupError('Session expired. Please sign up again.'); return; }
-            const c = parseInt(document.getElementById('setupCourts').value, 10) || 3;
-            const planKey = _selectedPlan;
-            const plan = plans[planKey];
-            const extra = Math.max(0, c - plan.incl);
-            const blocks = Math.ceil(extra / plan.perBlock);
-            const monthly = plan.base + blocks * plan.extraRate;
-            showLoading('Submitting your venue...');
-            try {
-                const slug = p.venue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'venue';
-                let finalSlug = slug;
-                let slugDoc = await db.collection('slugs').doc(finalSlug).get();
-                let attempt = 0;
-                while (slugDoc.exists) {
-                    attempt++;
-                    finalSlug = slug + '-' + attempt;
-                    slugDoc = await db.collection('slugs').doc(finalSlug).get();
-                }
-                const venueId = db.collection('venues').doc().id;
-                const defaultCourts = [];
-                for (let i = 1; i <= c; i++) {
-                    const colors = ['#4ecdc4','#3498db','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c','#e67e22'];
-                    defaultCourts.push({
-                        id:i, name:'Court '+i, location:'Main Area', surface:'Hard',
-                        env:'Outdoor', color:colors[(i-1)%colors.length], rate:300,
-                        status:'available', players:[], startTime:null, gameType:null, desc:''
-                    });
-                }
-                await db.collection('venues').doc(venueId).set({
-                    ownerId: p.uid, name: '🏟️ ' + p.venue, venueName: '🏟️ ' + p.venue, slug: finalSlug, createdAt: Date.now(),
-                    courts: defaultCourts, queue: [], soloQueue: [], session: null,
-                    bookings: [], history: [], leaderboard: {}, sales: [],
-                    nextId: 100, nextBId: 1,
-                    status: 'pending', mobile: p.mobile, ownerName: p.name,
-                    monthlyRate: monthly, courtCount: c,
-                    plan: planKey,
-                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
-                });
-                await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
-                await db.collection('slugs').doc(finalSlug).set({ venueId });
-
-                // Send email notifications
-                const ackNum = 'CQ-' + Date.now().toString(36).toUpperCase();
-                try {
-                    const cfg = await db.collection('config').doc('emailjs').get();
-                    if (cfg.exists) {
-                        const ej = cfg.data();
-                        emailjs.init(ej.publicKey);
-                        // Owner welcome email
-                        await emailjs.send(ej.serviceId, ej.templateAuto, {
-                            to_email: p.email, to_name: p.name,
-                            subject: 'Welcome to CourtQ Pro! 🎾',
-                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
-                        });
-                        // Developer notification
-                        await emailjs.send(ej.serviceId, ej.templateAuto, {
-                            to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
-                            subject: `New Venue Signup: ${p.venue}`,
-                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
-                        });
-                    }
-                } catch(e) { console.warn('EmailJS send failed:', e); }
-
-                // Show success screen
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('setupScreen').style.display = 'none';
-                document.getElementById('successScreen').style.display = 'block';
-                document.getElementById('ackContent').innerHTML = `
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
-                        <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#4ecdc4;">${ackNum}</div>
-                        <div style="color:#888;">Venue:</div><div style="font-weight:600;">${escapeHtml(p.venue)}</div>
-                        <div style="color:#888;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
-                        <div style="color:#888;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
-                        <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
-                        <div style="color:#888;">Courts:</div><div style="font-weight:600;">${c}</div>
-                        <div style="color:#888;">Plan:</div><div style="font-weight:600;">${plan.name}</div>
-                        <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">₱${monthly.toLocaleString()}</div>
-                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
-                    </div>`;
-            } catch (e) {
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('setupScreen').style.display = 'block';
-                showSetupError(e.message);
             }
         }
 
