@@ -276,7 +276,7 @@
                 <div id="demoLeadForm">
                     <h2>🎮 Try CourtQ Pro</h2>
                     <p style="margin-bottom:16px;">Enter your name and real email to try the demo.</p>
-                    <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Ahmad bin Abdullah"></div>
+                    <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Juan dela Cruz"></div>
                     <div class="form-group"><label>Email *</label><input type="email" id="demoLeadEmail" placeholder="you@email.com"></div>
                     <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
                         <input type="checkbox" id="demoLeadConsent" style="margin-top:2px;width:auto;">
@@ -339,7 +339,7 @@
             </div>
 
             <div class="auth-form" id="form-join">
-                <div class="form-group"><label>Your Name *</label><input type="text" id="joinName" placeholder="e.g. Ahmad bin Abdullah"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="joinName" placeholder="e.g. Juan dela Cruz"></div>
                 <div class="form-group"><label>Email *</label><input type="email" id="joinEmail" placeholder="you@email.com"></div>
                 <div class="form-group"><label>Password *</label><input type="password" id="joinPass" placeholder="At least 6 characters"></div>
                 <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
@@ -591,30 +591,18 @@
             }
         }
 
-        let _selectedPlan = 'founding';
-
-        let _selectedPlan = 'founding';
+        let _selectedPlan = 'free';
         const plans = {
-            founding: { name:'Founders Plan', base:49, incl:5, extraRate:30, perBlock:3, color:'#e74c3c', label:"🔥 Founders Plan — first 20: RM49/mo (regular RM59/mo)" }
+            free: { name:'Free Forever', base:0, incl:99, extraRate:0, perBlock:1, color:'#2ecc71', label:"✨ Free Forever — no setup fee, no monthly fee, no commission" }
         };
-
         function selectPlan(p) {
             _selectedPlan = p;
             updatePricing();
         }
-
         function updatePricing() {
-            const c = parseInt(document.getElementById('setupCourts').value, 10) || 3;
-            const plan = plans[_selectedPlan];
-            const extra = Math.max(0, c - plan.incl);
-            const blocks = Math.ceil(extra / plan.perBlock);
-            const total = plan.base + blocks * plan.extraRate;
-            document.getElementById('setupPlanLabel').textContent = plan.label;
-            document.getElementById('setupPrice').textContent = 'FREE for 1 month';
-            document.getElementById('setupPriceDetail').textContent =
-                'Then RM' + plan.base.toLocaleString() + '/mo (' + plan.incl + ' courts incl.)' +
-                (blocks > 0 ? ' + RM' + (blocks * plan.extraRate).toLocaleString() + ' for extra courts' : '') +
-                ' (' + c + ' court' + (c>1?'s':'') + ')';
+            document.getElementById('setupPlanLabel').textContent = '✨ Free Forever';
+            document.getElementById('setupPrice').textContent = '₱0/mo';
+            document.getElementById('setupPriceDetail').textContent = 'Free for unlimited courts. A ₱15 convenience fee is charged to players on each online booking — you keep 100% of your rates.';
         }
 
         function showSetupError(msg) {
@@ -665,7 +653,7 @@
                     status: 'pending', mobile: p.mobile, ownerName: p.name,
                     monthlyRate: monthly, courtCount: c,
                     plan: planKey,
-                    paymentInfo:{touchngo:{number:'0123456789',name:'CourtQ Malaysia'},grabpay:{number:'0123456789',name:'CourtQ Malaysia'}}
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
                 });
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ venueId });
@@ -681,13 +669,13 @@
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
                             subject: 'Welcome to CourtQ Pro! 🎾',
-                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: RM${monthly.toLocaleString()}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
+                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
                         });
                         // Developer notification
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
                             subject: `New Venue Signup: ${p.venue}`,
-                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: RM${monthly.toLocaleString()}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nCourts: ${c}\nPlan: ${plan.name}\nMonthly Fee: ₱${monthly.toLocaleString()}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
@@ -705,7 +693,7 @@
                         <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
                         <div style="color:#888;">Courts:</div><div style="font-weight:600;">${c}</div>
                         <div style="color:#888;">Plan:</div><div style="font-weight:600;">${plan.name}</div>
-                        <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">RM${monthly.toLocaleString()}</div>
+                        <div style="color:#888;">Monthly Fee:</div><div style="font-weight:600;color:#f39c12;">₱${monthly.toLocaleString()}</div>
                         <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
                     </div>`;
             } catch (e) {
@@ -994,7 +982,7 @@
                     courts: defaultCourts, queue: [], soloQueue: [], session: null,
                     bookings: [], history: [], leaderboard: {}, sales: [],
                     nextId: 100, nextBId: 1,
-                    paymentInfo:{touchngo:{number:'0123456789',name:'Demo Account'},grabpay:{number:'0123456789',name:'Demo Account'}}
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
                 });
                 await db.collection('slugs').doc(slug).set({ venueId });
                 // Mark lead as used (best-effort, rules may deny update)
@@ -1045,16 +1033,16 @@
             const c=document.getElementById('legalContent');
             const pages={
                 about:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2>
-                <p>CourtQ Pro is a smart venue management platform built for the Malaysian pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
-                <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via Touch'n Go or GrabPay.</p>
-                <p>Built with ❤️ for the Malaysian pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 +60 12 345 6789</p>`,
+                <p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
+                <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p>
+                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 +63 912 345 6789</p>`,
 
                 privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
                 <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p>
-                <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via Touch'n Go/GrabPay, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by replying to any email or contacting us.</p>
+                <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by replying to any email or contacting us.</p>
                 <p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p>
                 <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion. We retain booking data as needed for business operations and financial records.</p>
-                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — Touch'n Go and GrabPay handle all financial transactions.</p>
+                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p>
                 <p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p>
                 <p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p>
                 <p><em>Last updated: July 2026</em></p>`,
@@ -1064,7 +1052,7 @@
                 <p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p>
                 <p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue's discretion.</p>
                 <p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p>
-                <p><strong>Payments:</strong> All payments are processed externally via Touch'n Go or GrabPay. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p>
+                <p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p>
                 <p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p>
                 <p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p>
                 <p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p>
@@ -1073,18 +1061,18 @@
                 disclaimer:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2>
                 <p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p>
                 <p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p>
-                <p><strong>Payment:</strong> CourtQ Pro does not process payments. Touch'n Go and GrabPay are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p>
+                <p><strong>Payment:</strong> CourtQ Pro does not process payments. GCash and Maya are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p>
                 <p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p>
                 <p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>`,
 
                 contact:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2>
                 <p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></p>
-                <p><strong>Phone:</strong> 📱 +60 12 345 6789</p>
+                <p><strong>Phone:</strong> 📱 +63 912 345 6789</p>
                 <p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;">facebook.com/aiautomationexpert</a></p>
                 <p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p>
                 <p><strong>Venue Partnerships:</strong> Interested in listing your venue on CourtQ Pro? Email us for pricing and onboarding.</p>
                 <p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p>
-                <p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Kuala Lumpur, Malaysia</p>`
+                <p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Manila, Philippines</p>`
             };
             c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
             document.getElementById('legalModal').classList.add('active');
