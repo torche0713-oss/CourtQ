@@ -175,7 +175,7 @@
             </div>
             <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
                 <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:10px 24px;font-size:0.9rem;">✅ Register Your Venue Free</button>
-                <button class="btn btn-outline" onclick="openDemoLeadForm()" style="padding:10px 20px;font-size:0.9rem;">🎮 Try Demo</button>
+                <button class="btn btn-outline" onclick="openDemoLeadForm()" style="padding:10px 20px;font-size:0.9rem;">📅 Book a Demo</button>
             </div>
         </div>
 
@@ -273,21 +273,23 @@
             <button class="modal-close" onclick="closeDemoLead()">✕</button>
             <div id="demoLeadContent">
                 <div id="demoLeadForm">
-                    <h2>🎮 Try CourtQ Pro</h2>
-                    <p style="margin-bottom:16px;">Enter your name and real email to try the demo.</p>
+                    <h2>📅 Book a Demo</h2>
+                    <p style="margin-bottom:16px;">We'll walk you through the platform. Leave your details and we'll reach out to schedule a personalized demo.</p>
                     <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Juan dela Cruz"></div>
                     <div class="form-group"><label>Email *</label><input type="email" id="demoLeadEmail" placeholder="you@email.com"></div>
+                    <div class="form-group"><label>Phone Number *</label><input type="tel" id="demoLeadPhone" placeholder="+63 912 345 6789"></div>
+                    <div class="form-group"><label>Preferred Schedule</label><input type="text" id="demoLeadSchedule" placeholder="e.g. Monday 2pm, or anytime this week"></div>
                     <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
                         <input type="checkbox" id="demoLeadConsent" style="margin-top:2px;width:auto;">
                         <span>I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>. I consent to receive email communications about CourtQ Pro updates and offers.</span>
                     </label>
                     <div id="demoLeadError" class="error-msg"></div>
-                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">🎮 Start Demo</button>
+                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">📅 Book Demo</button>
                 </div>
                 <div id="demoLeadSuccess" style="display:none;text-align:center;padding:20px 0;">
-                    <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
-                    <h2>Setting up your demo...</h2>
-                    <div class="spinner"></div>
+                    <div style="font-size:3rem;margin-bottom:12px;">✅</div>
+                    <h2>Demo request sent!</h2>
+                    <p style="color:#aaa;margin-top:8px;">We'll contact you shortly to schedule your walkthrough.</p>
                 </div>
             </div>
         </div>
@@ -319,7 +321,7 @@
                 </div>
                 <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
                 <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">🎮 Try Demo</button>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">📅 Book a Demo</button>
             </div>
 
             <div class="auth-form active" id="form-register">
@@ -337,7 +339,7 @@
                 </label>
                 <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
                 <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">🎮 Try Demo</button>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">📅 Book a Demo</button>
             </div>
 
             <div class="auth-form" id="form-join">
@@ -789,6 +791,8 @@
             document.getElementById('demoLeadError').style.display = 'none';
             document.getElementById('demoLeadName').value = '';
             document.getElementById('demoLeadEmail').value = '';
+            document.getElementById('demoLeadPhone').value = '';
+            document.getElementById('demoLeadSchedule').value = '';
             document.getElementById('demoLeadConsent').checked = false;
             document.getElementById('demoLeadModal').classList.add('active');
         }
@@ -800,9 +804,11 @@
         async function submitDemoLead(){
             const name = document.getElementById('demoLeadName').value.trim();
             const email = document.getElementById('demoLeadEmail').value.trim();
+            const phone = document.getElementById('demoLeadPhone').value.trim();
+            const schedule = document.getElementById('demoLeadSchedule').value.trim();
             const errEl = document.getElementById('demoLeadError');
             errEl.style.display = 'none';
-            if(!name || !email){ errEl.textContent = 'Fill in all fields.'; errEl.style.display = 'block'; return; }
+            if(!name || !email || !phone){ errEl.textContent = 'Fill in all required fields.'; errEl.style.display = 'block'; return; }
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if(!re.test(email)){ errEl.textContent = 'Enter a valid email address.'; errEl.style.display = 'block'; return; }
             const domain = email.split('@')[1].toLowerCase();
@@ -819,15 +825,11 @@
             try {
                 const docRef = db.collection('demoLeads').doc();
                 await docRef.set({
-                    name, email, verified: true, source: 'try-demo',
+                    name, email, phone, schedule: schedule || '', verified: true, source: 'book-demo',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 document.getElementById('demoLeadForm').style.display = 'none';
                 document.getElementById('demoLeadSuccess').style.display = 'block';
-                setTimeout(() => {
-                    closeDemoLead();
-                    startDemo(docRef.id);
-                }, 800);
             } catch(e) {
                 errEl.textContent = 'Something went wrong: ' + e.message;
                 errEl.style.display = 'block';
@@ -933,10 +935,10 @@
                 about:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2>
                 <p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
                 <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p>
-                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 +63 912 345 6789</p>`,
+                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 0999 883 0291 (GCash / Maya)</p>`,
 
                 privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
-                <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p>
+                <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you book a demo, we collect your name, email address, phone number, and preferred schedule.</p>
                 <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by replying to any email or contacting us.</p>
                 <p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p>
                 <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion. We retain booking data as needed for business operations and financial records.</p>

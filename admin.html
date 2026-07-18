@@ -994,13 +994,15 @@
                     <button class="btn btn-primary btn-sm" onclick="openEmailCampaign()">📧 Email Campaign</button>
                 </div>
             </div>
-            <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">Collected from "Try Demo" on the login page. Stored independently from venue accounts.</div>
+            <div style="font-size:0.72rem;color:#aaa;margin-bottom:10px;">Collected from "Book a Demo" on the login page. Stored independently from venue accounts.</div>
             <div id="leadsTableWrap" style="overflow-x:auto;">
                 <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
                     <thead>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
                             <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Name</th>
                             <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Email</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Phone</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Schedule</th>
                             <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Date</th>
                             <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Status</th>
                             <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Action</th>
@@ -1827,9 +1829,13 @@ function renderLeads(){
             const d=doc.data();
             const date=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString():'—';
             const status=d.verified?'<span style="color:#2ecc71;">✓ Verified</span>':'<span style="color:#f39c12;">⏳ Pending</span>';
+            const phone=d.phone?escapeHtml(d.phone):'—';
+            const sched=d.schedule?escapeHtml(d.schedule):'—';
             html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                 <td style="padding:8px 10px;">${escapeHtml(d.name||'—')}</td>
                 <td style="padding:8px 10px;">${escapeHtml(d.email||'—')}</td>
+                <td style="padding:8px 10px;">${phone}</td>
+                <td style="padding:8px 10px;">${sched}</td>
                 <td style="padding:8px 10px;">${date}</td>
                 <td style="padding:8px 10px;">${status}</td>
                 <td style="padding:8px 10px;"><button class="btn btn-outline btn-sm" onclick="deleteLead('${doc.id}')" style="font-size:0.7rem;padding:3px 8px;">🗑️</button></td>
@@ -1838,7 +1844,7 @@ function renderLeads(){
         tbody.innerHTML=html;
     }).catch(e=>{
         loading.style.display='none';
-        tbody.innerHTML=`<tr><td colspan="5" style="padding:20px;text-align:center;color:#e74c3c;">Error loading leads: ${escapeHtml(e.message)}</td></tr>`;
+        tbody.innerHTML=`<tr><td colspan="7" style="padding:20px;text-align:center;color:#e74c3c;">Error loading leads: ${escapeHtml(e.message)}</td></tr>`;
     });
 }
 
@@ -1852,14 +1858,16 @@ function deleteLead(id){
 
 function exportLeadsCSV(){
     db.collection('demoLeads').orderBy('createdAt','desc').get().then(snap=>{
-        let csv='Name,Email,Date,Verified\n';
+        let csv='Name,Email,Phone,Schedule,Date,Verified\n';
         snap.forEach(doc=>{
             const d=doc.data();
             const date=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString():'';
             const v=d.verified?'Yes':'No';
             const n=(d.name||'').replace(/"/g,'""');
             const e=(d.email||'').replace(/"/g,'""');
-            csv+=`"${n}","${e}","${date}","${v}"\n`;
+            const p=(d.phone||'').replace(/"/g,'""');
+            const s=(d.schedule||'').replace(/"/g,'""');
+            csv+=`"${n}","${e}","${p}","${s}","${date}","${v}"\n`;
         });
         const blob=new Blob([csv],{type:'text/csv'});
         const a=document.createElement('a');
