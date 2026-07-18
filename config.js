@@ -1,6 +1,6 @@
 // CourtQ Pro — Philippines Configuration
 const CQ_CONFIG = {
-    convenienceFee: { amount: 15, currency: 'PHP', label: 'Convenience Fee' },
+    convenienceFee: { amount: 10, currency: 'PHP', label: 'Convenience Fee' },
     currency: { symbol: '₱', code: 'PHP', name: 'Philippine Peso' },
     timezone: 'Asia/Manila',
     utcOffset: 480,
