@@ -5914,6 +5914,18 @@ function showInvVenueDetail(venueId){
     if(!row) return;
     const el=document.getElementById('invoiceContent');
     let html=`<div style="margin-bottom:8px;"><button class="btn btn-outline btn-sm" onclick="generateWeeklyInvoice()">← Back</button> <strong>${escapeHtml(row.name)}</strong> <span style="color:#aaa;font-size:0.72rem;">(${row.count} items · ₱${row.totalAmount} fees)</span></div>`;
+    const ws=document.getElementById('invWeekStart').value;
+    const invDocId=venueId+'_'+ws.replace(/-/g,'');
+    db.collection('invoices').doc(invDocId).get().then(invSnap=>{
+        if(invSnap.exists){
+            const d=invSnap.data();
+            if(d.status==='paid'){
+                html+=`<div style="margin-bottom:8px;padding:6px 10px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:6px;font-size:0.75rem;color:#2ecc71;">✅ Paid${d.paidAt?' — '+new Date(d.paidAt.seconds*1000).toLocaleDateString():''}</div>`;
+            } else if(d.status==='invoiced'){
+                html+=`<div style="margin-bottom:8px;padding:6px 10px;background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:6px;font-size:0.75rem;color:#f39c12;">📋 Invoiced</div>`;
+            }
+        }
+    }).catch(()=>{});
     html+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
         <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
             <th style="text-align:left;padding:4px 5px;color:#aaa;">Type</th>
@@ -5998,6 +6010,19 @@ function exportVenueInvCSV(venueId){
     a.click();
     URL.revokeObjectURL(a.href);
 }
+async function markInvoicePaid(invDocId){
+    if(!confirm('Confirm you have sent the payment?')) return;
+    try {
+        await db.collection('invoices').doc(invDocId).set({
+            paidAt:firebase.firestore.FieldValue.serverTimestamp(),
+            status:'paid'
+        },{merge:true});
+        showNotif('✅ Invoice marked as paid!','success');
+        renderVenueInvoice(document.querySelector('[id^="invPd"]').id.replace('invPd','')*1||0);
+    } catch(e){
+        showNotif('Failed: '+e.message,'error');
+    }
+}
 async function renderVenueInvoice(weekOffset){
     const ws=getMonSun(weekOffset);
     const weekStart=ws.mon.toISOString().split('T')[0];
@@ -6080,6 +6105,17 @@ async function renderVenueInvoice(weekOffset){
         });
         html+=`</tbody></table>`;
         html+=`<div style="margin-top:10px;font-size:0.7rem;color:#888;">× ${totalCount} online transactions · <strong>₱${totalFee.toLocaleString()}</strong> total convenience fees due</div>`;
+        const invDocId=VENUE_ID+'_'+weekStart.replace(/-/g,'');
+        const invSnap=await db.collection('invoices').doc(invDocId).get();
+        const invData=invSnap.exists?invSnap.data():null;
+        if(invData&&invData.status==='paid'){
+            html+=`<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:8px;text-align:center;font-size:0.8rem;color:#2ecc71;">✅ Paid — ${invData.paidAt?new Date(invData.paidAt.seconds*1000).toLocaleDateString():''}</div>`;
+        } else {
+            html+=`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+                <button class="btn btn-primary btn-sm" onclick="markInvoicePaid('${invDocId}')" style="background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;">✅ Mark as Paid</button>
+                <span style="font-size:0.7rem;color:#888;">Send ₱${totalFee.toLocaleString()} to GCash/Maya: <strong>09051234567</strong> / <strong>CourtQ Pro</strong></span>
+            </div>`;
+        }
         el.innerHTML=html;
     } catch(e){
         el.innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Failed to load invoice.</p></div>';
