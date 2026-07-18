@@ -5965,37 +5965,6 @@ async function showInvVenueDetail(venueId){
     </div>`;
     el.innerHTML=html;
 }
-        }
-    }).catch(()=>{});
-    html+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
-        <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
-            <th style="text-align:left;padding:4px 5px;color:#aaa;">Type</th>
-            <th style="text-align:left;padding:4px 5px;color:#aaa;">Customer</th>
-            <th style="text-align:left;padding:4px 5px;color:#aaa;">Date</th>
-            <th style="text-align:left;padding:4px 5px;color:#aaa;">Time</th>
-            <th style="text-align:right;padding:4px 5px;color:#aaa;">Subtotal</th>
-            <th style="text-align:right;padding:4px 5px;color:#aaa;">Fee</th>
-            <th style="text-align:right;padding:4px 5px;color:#aaa;">Total</th>
-        </tr></thead>
-        <tbody>`;
-    row.details.forEach(d=>{
-        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-            <td style="padding:4px 5px;font-size:0.65rem;color:#888;">${d.type==='openplay'?'🎯 OP':'📅 BK'}</td>
-            <td style="padding:4px 5px;">${escapeHtml(d.customer)}</td>
-            <td style="padding:4px 5px;">${escapeHtml(d.date)}</td>
-            <td style="padding:4px 5px;">${escapeHtml(d.time)}</td>
-            <td style="padding:4px 5px;text-align:right;">₱${d.subtotal}</td>
-            <td style="padding:4px 5px;text-align:right;color:#f39c12;">₱${d.fee}</td>
-            <td style="padding:4px 5px;text-align:right;">₱${d.amount}</td>
-        </tr>`;
-    });
-    html+=`</tbody></table></div>`;
-    html+=`<div style="margin-top:8px;display:flex;gap:8px;">
-        <button class="btn btn-primary btn-sm" onclick="markVenueInvoiced('${row.venueId}')">✅ Mark as Invoiced</button>
-        <button class="btn btn-outline btn-sm" onclick="exportVenueInvCSV('${row.venueId}')">📥 Export CSV</button>
-    </div>`;
-    el.innerHTML=html;
-}
 
 function markVenueInvoiced(venueId){
     const row=_invData.find(r=>r.venueId===venueId);
