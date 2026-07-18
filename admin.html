@@ -897,6 +897,18 @@
             <div class="card-title" style="font-size:0.78rem;margin-top:14px;">🏅 Top 10 Loyal Players</div>
             <div id="finLoyalPlayers" style="margin-bottom:4px;"></div>
         </div>
+        <div class="card">
+            <div class="card-title">
+                <span>🧾 Weekly Convenience Fee Invoice</span>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn btn-sm" style="padding:3px 8px;font-size:0.68rem;border:1px solid #4ecdc4;border-radius:6px;background:rgba(78,205,196,0.15);color:#4ecdc4;cursor:pointer;" onclick="renderVenueInvoice(0)" id="invPd0">This Week</button>
+                    <button class="btn btn-sm" style="padding:3px 8px;font-size:0.68rem;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:transparent;color:#aaa;cursor:pointer;" onclick="renderVenueInvoice(-1)" id="invPd-1">Last Week</button>
+                </div>
+            </div>
+            <div id="venueInvoiceContent">
+                <div class="empty-state"><div class="ei">🧾</div><p>Select a week to view your convenience fee invoice.</p></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1853,10 +1865,96 @@ function exportLeadsCSV(){
         const a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
         a.download='demo-leads-'+new Date().toISOString().split('T')[0]+'.csv';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showNotif('CSV exported','success');
-    }).catch(e=>showNotif('Export failed: '+e.message,'error'));
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+async function renderVenueInvoice(weekOffset){
+    const ws=getMonSun(weekOffset);
+    const weekStart=ws.mon.toISOString().split('T')[0];
+    const weekEnd=ws.sun.toISOString().split('T')[0];
+    const startDate=new Date(weekStart+'T00:00:00');
+    const endDate=new Date(weekEnd+'T23:59:59');
+    const el=document.getElementById('venueInvoiceContent');
+    el.innerHTML='<div style="text-align:center;padding:20px;"><div class="spinner"></div><p style="font-size:0.8rem;color:#aaa;margin-top:10px;">Loading invoice...</p></div>';
+    document.querySelectorAll('[id^="invPd"]').forEach(b=>{b.style.background='transparent';b.style.color='#aaa';b.style.borderColor='rgba(255,255,255,0.15)';});
+    const btn=document.getElementById('invPd'+weekOffset);
+    if(btn){btn.style.background='rgba(78,205,196,0.15)';btn.style.color='#4ecdc4';btn.style.borderColor='#4ecdc4';}
+    try {
+        const bkSnap=await db.collection('venues').doc(VENUE_ID).collection('bookings').get();
+        const weekBks=bkSnap.docs.map(d=>d.data()).filter(b=>{
+            if(!b.convenienceFee) return false;
+            const bDate=new Date((b.date||'')+'T'+(b.startTime||'00:00'));
+            return bDate>=startDate&&bDate<=endDate;
+        });
+        const vDoc=await db.collection('venues').doc(VENUE_ID).get();
+        const sSessions=vDoc.exists?(vDoc.data().scheduledSessions||[]):[];
+        const weekOp=[];
+        sSessions.forEach(s=>{
+            if(!s.players) return;
+            const sDate=new Date((s.date||s.startDate||'')+'T00:00:00');
+            if(sDate<startDate||sDate>endDate) return;
+            s.players.forEach(p=>{
+                if(p.source==='online'&&p.convenienceFee&&p.joinedAt){
+                    const jd=new Date(p.joinedAt);
+                    if(jd>=startDate&&jd<=endDate) weekOp.push(p);
+                }
+            });
+        });
+        const totalCount=weekBks.length+weekOp.length;
+        if(totalCount===0){
+            el.innerHTML='<div class="empty-state"><div class="ei">🧾</div><p>No convenience fees for this week.</p></div>';
+            return;
+        }
+        const totalFee=weekBks.reduce((s,b)=>s+(b.convenienceFee||0),0)+weekOp.reduce((s,p)=>s+(p.convenienceFee||0),0);
+        const totalSub=weekBks.reduce((s,b)=>s+(b.subtotal||b.amount||0),0)+weekOp.reduce((s,p)=>s+(p.subtotal||p.amount||0),0);
+        let html=`<div style="font-size:0.72rem;color:#aaa;margin-bottom:8px;">${weekStart} → ${weekEnd}</div>`;
+        html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+            <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:0.65rem;color:#aaa;text-transform:uppercase;">Online Bookings</div>
+                <div style="font-size:1.2rem;font-weight:800;color:#4ecdc4;margin-top:4px;">${totalCount}</div>
+            </div>
+            <div style="background:rgba(155,89,182,0.1);border:1px solid rgba(155,89,182,0.2);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:0.65rem;color:#aaa;text-transform:uppercase;">Subtotal (Venue)</div>
+                <div style="font-size:1.2rem;font-weight:800;color:#9b59b6;margin-top:4px;">₱${totalSub.toLocaleString()}</div>
+            </div>
+            <div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:0.65rem;color:#aaa;text-transform:uppercase;">Convenience Fees Due</div>
+                <div style="font-size:1.2rem;font-weight:800;color:#f39c12;margin-top:4px;">₱${totalFee.toLocaleString()}</div>
+            </div>
+        </div>`;
+        html+=`<div style="font-size:0.75rem;margin-bottom:6px;"><strong>Breakdown</strong></div><table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+            <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                <th style="text-align:left;padding:4px 6px;color:#aaa;">Customer</th>
+                <th style="text-align:left;padding:4px 6px;color:#aaa;">Type</th>
+                <th style="text-align:center;padding:4px 6px;color:#aaa;">Date</th>
+                <th style="text-align:right;padding:4px 6px;color:#aaa;">Subtotal</th>
+                <th style="text-align:right;padding:4px 6px;color:#aaa;">Fee</th>
+            </tr></thead><tbody>`;
+        weekBks.forEach(b=>{
+            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <td style="padding:4px 6px;">${escapeHtml(b.customer||'?')}</td>
+                <td style="padding:4px 6px;">Booking</td>
+                <td style="padding:4px 6px;text-align:center;">${b.date||'-'}</td>
+                <td style="padding:4px 6px;text-align:right;">₱${(b.subtotal||b.amount||0).toLocaleString()}</td>
+                <td style="padding:4px 6px;text-align:right;color:#f39c12;">₱${(b.convenienceFee||0).toLocaleString()}</td>
+            </tr>`;
+        });
+        weekOp.forEach(p=>{
+            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <td style="padding:4px 6px;">${escapeHtml(p.name||'?')}</td>
+                <td style="padding:4px 6px;">Open Play</td>
+                <td style="padding:4px 6px;text-align:center;">${new Date(p.joinedAt).toISOString().split('T')[0]}</td>
+                <td style="padding:4px 6px;text-align:right;">₱${(p.subtotal||p.amount||0).toLocaleString()}</td>
+                <td style="padding:4px 6px;text-align:right;color:#f39c12;">₱${(p.convenienceFee||0).toLocaleString()}</td>
+            </tr>`;
+        });
+        html+=`</tbody></table>`;
+        html+=`<div style="margin-top:10px;font-size:0.7rem;color:#888;">× ${totalCount} online transactions · <strong>₱${totalFee.toLocaleString()}</strong> total convenience fees due</div>`;
+        el.innerHTML=html;
+    } catch(e){
+        el.innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Failed to load invoice.</p></div>';
+        console.warn(e);
+    }
 }
 
 function openEmailCampaign(){
@@ -3954,6 +4052,7 @@ function renderFinancials(){
         <button class="btn btn-outline btn-sm" onclick="window._finPage=${Math.min(totalPages,pg+1)};renderFinancials()" ${pg>=totalPages?'disabled':''}>Next →</button>
     </div>`:'');
     renderPlayerRetention();
+    if(VENUE_ID) renderVenueInvoice(0);
 }
 function setPlayerPeriod(p){
     _playerPeriod=p;
@@ -4396,8 +4495,8 @@ async function sendReminder(venueId,slug,email,name){
         trackUsage('email');
         await emailjs.send(ej.serviceId, ej.templateAuto, {
             to_email: email, to_name: name,
-            subject: '📋 Payment Reminder — CourtQ Pro',
-            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your monthly retainer for your venue "'+slug+'".\n\nPlease check your dashboard for payment details and due dates.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 +63 912 345 6789'
+            subject: '📋 Weekly Invoice Reminder — CourtQ Pro',
+            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your weekly convenience fee invoice for "'+slug+'".\n\nPlease log into your dashboard and go to the Financials tab to view and settle your invoice.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 +63 912 345 6789'
         });
         showNotif('📧 Reminder sent to '+name,'success');
     } catch(e){
