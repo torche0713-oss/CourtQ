@@ -5909,21 +5909,54 @@ async function generateWeeklyInvoice(){
     btn.textContent='🔄 Generate';
 }
 
-function showInvVenueDetail(venueId){
+async function showInvVenueDetail(venueId){
     const row=_invData.find(r=>r.venueId===venueId);
     if(!row) return;
     const el=document.getElementById('invoiceContent');
-    let html=`<div style="margin-bottom:8px;"><button class="btn btn-outline btn-sm" onclick="generateWeeklyInvoice()">← Back</button> <strong>${escapeHtml(row.name)}</strong> <span style="color:#aaa;font-size:0.72rem;">(${row.count} items · ₱${row.totalAmount} fees)</span></div>`;
+    let html=`<div style="margin-bottom:8px;"><button class="btn btn-outline btn-sm" onclick="generateWeeklyInvoice()">← Back</button> <strong>${escapeHtml(row.name)}</strong> <span style="color:#aaa;font-size:0.72rem;">(${row.count} items · ₱${row.totalAmount} fees)</span>`;
     const ws=document.getElementById('invWeekStart').value;
     const invDocId=venueId+'_'+ws.replace(/-/g,'');
-    db.collection('invoices').doc(invDocId).get().then(invSnap=>{
+    try {
+        const invSnap=await db.collection('invoices').doc(invDocId).get();
         if(invSnap.exists){
             const d=invSnap.data();
             if(d.status==='paid'){
-                html+=`<div style="margin-bottom:8px;padding:6px 10px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:6px;font-size:0.75rem;color:#2ecc71;">✅ Paid${d.paidAt?' — '+new Date(d.paidAt.seconds*1000).toLocaleDateString():''}</div>`;
+                html+=` <span style="color:#2ecc71;font-weight:600;">✅ Paid${d.paidAt?' — '+new Date(d.paidAt.seconds*1000).toLocaleDateString():''}</span>`;
             } else if(d.status==='invoiced'){
-                html+=`<div style="margin-bottom:8px;padding:6px 10px;background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:6px;font-size:0.75rem;color:#f39c12;">📋 Invoiced</div>`;
+                html+=` <span style="color:#f39c12;font-weight:600;">📋 Invoiced</span>`;
             }
+        }
+    } catch(e){ console.warn(e); }
+    html+=`</div>`;
+    html+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+        <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Type</th>
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Customer</th>
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Date</th>
+            <th style="text-align:left;padding:4px 5px;color:#aaa;">Time</th>
+            <th style="text-align:right;padding:4px 5px;color:#aaa;">Subtotal</th>
+            <th style="text-align:right;padding:4px 5px;color:#aaa;">Fee</th>
+            <th style="text-align:right;padding:4px 5px;color:#aaa;">Total</th>
+        </tr></thead>
+        <tbody>`;
+    row.details.forEach(d=>{
+        html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+            <td style="padding:4px 5px;font-size:0.65rem;color:#888;">${d.type==='openplay'?'🎯 OP':'📅 BK'}</td>
+            <td style="padding:4px 5px;">${escapeHtml(d.customer)}</td>
+            <td style="padding:4px 5px;">${escapeHtml(d.date)}</td>
+            <td style="padding:4px 5px;">${escapeHtml(d.time)}</td>
+            <td style="padding:4px 5px;text-align:right;">₱${d.subtotal}</td>
+            <td style="padding:4px 5px;text-align:right;color:#f39c12;">₱${d.fee}</td>
+            <td style="padding:4px 5px;text-align:right;">₱${d.amount}</td>
+        </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+    html+=`<div style="margin-top:8px;display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="markVenueInvoiced('${row.venueId}')">✅ Mark as Invoiced</button>
+        <button class="btn btn-outline btn-sm" onclick="exportVenueInvCSV('${row.venueId}')">📥 Export CSV</button>
+    </div>`;
+    el.innerHTML=html;
+}
         }
     }).catch(()=>{});
     html+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
