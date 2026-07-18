@@ -6105,21 +6105,23 @@ async function renderVenueInvoice(weekOffset){
         });
         html+=`</tbody></table>`;
         html+=`<div style="margin-top:10px;font-size:0.7rem;color:#888;">× ${totalCount} online transactions · <strong>₱${totalFee.toLocaleString()}</strong> total convenience fees due</div>`;
-        const invDocId=VENUE_ID+'_'+weekStart.replace(/-/g,'');
-        const invSnap=await db.collection('invoices').doc(invDocId).get();
-        const invData=invSnap.exists?invSnap.data():null;
-        if(invData&&invData.status==='paid'){
-            html+=`<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:8px;text-align:center;font-size:0.8rem;color:#2ecc71;">✅ Paid — ${invData.paidAt?new Date(invData.paidAt.seconds*1000).toLocaleDateString():''}</div>`;
-        } else {
-            html+=`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
-                <button class="btn btn-primary btn-sm" onclick="markInvoicePaid('${invDocId}')" style="background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;">✅ Mark as Paid</button>
-                <span style="font-size:0.7rem;color:#888;">Send ₱${totalFee.toLocaleString()} to GCash/Maya: <strong>09051234567</strong> / <strong>CourtQ Pro</strong></span>
-            </div>`;
-        }
+        let paidStatus='';
+        try {
+            const invDocId=VENUE_ID+'_'+weekStart.replace(/-/g,'');
+            const invSnap=await db.collection('invoices').doc(invDocId).get();
+            const invData=invSnap.exists?invSnap.data():null;
+            if(invData&&invData.status==='paid'){
+                paidStatus=`<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:8px;text-align:center;font-size:0.8rem;color:#2ecc71;">✅ Paid — ${invData.paidAt?new Date(invData.paidAt.seconds*1000).toLocaleDateString():''}</div>`;
+            }
+        } catch(e){ console.warn('Invoice status check failed:',e); }
+        html+=paidStatus||`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-primary btn-sm" onclick="markInvoicePaid('${VENUE_ID+'_'+weekStart.replace(/-/g,'')}')" style="background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;">✅ Mark as Paid</button>
+            <span style="font-size:0.7rem;color:#888;">Send ₱${totalFee.toLocaleString()} to GCash/Maya: <strong>09051234567</strong> / <strong>CourtQ Pro</strong></span>
+        </div>`;
         el.innerHTML=html;
     } catch(e){
-        el.innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Failed to load invoice.</p></div>';
-        console.warn(e);
+        el.innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Failed to load invoice: '+escapeHtml(e.message||e)+'</p></div>';
+        console.warn('renderVenueInvoice error:',e);
     }
 }
 </script>
