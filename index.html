@@ -363,15 +363,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBWqvEMy-q_DJWGYhOJfHsRrFQNl3ZJK9Y",
-            authDomain: "courtq-2e744.firebaseapp.com",
-            projectId: "courtq-2e744",
-            storageBucket: "courtq-2e744.firebasestorage.app",
-            messagingSenderId: "4841304416",
-            appId: "1:4841304416:web:7a26d85566af1d47d4ee05"
-        };
-        firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(CQ_CONFIG.firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -972,7 +964,7 @@
                 <p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p>
                 <p><strong>Venue Partnerships:</strong> Interested in listing your venue on CourtQ Pro? Email us for pricing and onboarding.</p>
                 <p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p>
-                <p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Manila, Philippines</p>`
+                <p style="margin-top:16px;font-size:0.72rem;color:#555;">Apex Mind Agency<br>Talisay City, Cebu, Philippines</p>`
             };
             c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
             document.getElementById('legalModal').classList.add('active');

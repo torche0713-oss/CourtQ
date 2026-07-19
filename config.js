@@ -1,5 +1,13 @@
 // CourtQ Pro — Philippines Configuration
 const CQ_CONFIG = {
+    firebaseConfig: {
+        apiKey: "AIzaSyBWqvEMy-q_DJWGYhOJfHsRrFQNl3ZJK9Y",
+        authDomain: "courtq-2e744.firebaseapp.com",
+        projectId: "courtq-2e744",
+        storageBucket: "courtq-2e744.firebasestorage.app",
+        messagingSenderId: "4841304416",
+        appId: "1:4841304416:web:7a26d85566af1d47d4ee05"
+    },
     convenienceFee: { amount: 10, currency: 'PHP', label: 'Convenience Fee' },
     currency: { symbol: '₱', code: 'PHP', name: 'Philippine Peso' },
     timezone: 'Asia/Manila',
@@ -22,7 +30,7 @@ const CQ_CONFIG = {
         jurisdiction: 'Philippine courts',
         governingLaw: 'Laws of the Republic of the Philippines',
         currencyDecl: 'Philippine Peso (₱)',
-        companyAddr: 'Manila, Philippines',
+        companyAddr: 'Talisay City, Cebu, Philippines',
         countryRef: 'Philippines'
     },
     translations: {
