@@ -537,7 +537,7 @@
     <h2 style="color:#f39c12;font-size:1.5rem;margin-bottom:8px;">Venue Pending Approval</h2>
     <p style="color:#aaa;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
     <div id="pendingDetails" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;max-width:400px;margin:0 auto;text-align:left;font-size:0.82rem;"></div>
-    <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a> · 📱 +63 912 345 6789</div>
+    <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a> · 📱 0999 883 0291</div>
 </div>
 
 <!-- OPEN PLAY PAGE -->
@@ -4417,7 +4417,7 @@ async function sendReminder(venueId,slug,email,name){
         await emailjs.send(ej.serviceId, ej.templateAuto, {
             to_email: email, to_name: name,
             subject: '📋 Weekly Invoice Reminder — CourtQ Pro',
-            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your weekly convenience fee invoice for "'+slug+'".\n\nPlease log into your dashboard and go to the Financials tab to view and settle your invoice.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 +63 912 345 6789'
+            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your weekly convenience fee invoice for "'+slug+'".\n\nPlease log into your dashboard and go to the Financials tab to view and settle your invoice.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
         });
         showNotif('📧 Reminder sent to '+name,'success');
     } catch(e){
@@ -4503,7 +4503,7 @@ async function activateVenue(venueId,slug){
                 await emailjs.send(ej.serviceId, ej.templateAuto, {
                     to_email: ownerEmail, to_name: vData.ownerName||'Valued Partner',
                     subject: `Your venue "${vData.name}" is now LIVE! ✅`,
-                    body: `✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Configure Settings\nClick the ⚙️ Settings tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 4: Add Staff (Optional)\nIn Settings, add staff emails so they can help manage the venue.\n\nStep 5: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\n━━━ NEED HELP? ━━━\n📧 apexmindagency@gmail.com\n📱 +63 912 345 6789`
+                    body: `✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Configure Settings\nClick the ⚙️ Settings tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 4: Add Staff (Optional)\nIn Settings, add staff emails so they can help manage the venue.\n\nStep 5: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\n━━━ NEED HELP? ━━━\n📧 apexmindagency@gmail.com\n📱 0999 883 0291`
                 });
             }
         } catch(e){ console.warn('EmailJS activation send failed:', e); }
