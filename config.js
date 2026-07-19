@@ -8,7 +8,7 @@ const CQ_CONFIG = {
         messagingSenderId: "4841304416",
         appId: "1:4841304416:web:7a26d85566af1d47d4ee05"
     },
-    convenienceFee: { amount: 10, currency: 'PHP', label: 'Convenience Fee' },
+    convenienceFee: { amount: 5, currency: 'PHP', label: 'Convenience Fee (₱5/hr)' },
     currency: { symbol: '₱', code: 'PHP', name: 'Philippine Peso' },
     timezone: 'Asia/Manila',
     utcOffset: 480,

@@ -407,7 +407,7 @@
 <script>
 firebase.initializeApp(CQ_CONFIG.firebaseConfig);
 const db = firebase.firestore();
-const CONVENIENCE_FEE = 10;
+const CONVENIENCE_FEE = 5;
 
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -578,7 +578,8 @@ function renderBookingSummary(){
     const court=S.courts.find(c=>c.id===S.portal.courtId);
     const dur=S.portal.duration;
     const subtotal=Math.round(court.rate*(dur/60));
-    const total=subtotal+CONVENIENCE_FEE;
+    const fee=Math.round(CONVENIENCE_FEE*dur/60);
+    const total=subtotal+fee;
     S.portal.total=total;
     S.portal.subtotal=subtotal;
     document.getElementById('bookingSummaryBox').innerHTML=`<div style="font-weight:700;margin-bottom:8px;color:#4ecdc4;">📋 Booking Summary</div>
@@ -588,7 +589,7 @@ function renderBookingSummary(){
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Time:</span><strong>${minToTime(S.portal.slot)} – ${minToTime(S.portal.slot+dur)}</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Duration:</span><strong>${dur}min</strong></div>
             <div style="display:flex;justify-content:space-between;"><span style="color:#aaa">Court Rate:</span><strong>₱${subtotal}</strong></div>
-            <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#888">Convenience Fee:</span><strong style="color:#f39c12;">₱${CONVENIENCE_FEE}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#888">Convenience Fee (${dur/60}hr):</span><strong style="color:#f39c12;">₱${fee}</strong></div>
             <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#4ecdc4;font-size:1rem;">Total:</span><strong style="color:#4ecdc4;font-size:1rem;">₱${total}</strong></div>
         </div>`;
 }
@@ -607,7 +608,7 @@ function selPortalPay(btn,method){
                 <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span style="color:#aaa;">Court Rate:</span><strong style="color:#4ecdc4;">₱${S.portal.subtotal||0}</strong></div>
-                <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#888;">Convenience Fee:</span><strong style="color:#f39c12;">₱${CONVENIENCE_FEE}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#888;">Convenience Fee (${(S.portal.duration||60)/60}hr):</span><strong style="color:#f39c12;">₱${Math.round(CONVENIENCE_FEE*(S.portal.duration||60)/60)}</strong></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#aaa;">Amount to Pay:</span><strong style="color:#4ecdc4;">₱${S.portal.total||0}</strong></div>
             </div>
             <div class="form-group"><label>Reference Number *</label><input type="text" id="portalRef" placeholder="Enter your GCash/Maya reference"></div>
@@ -646,10 +647,11 @@ async function processPortalPayment(){
     conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#4ecdc4;">Processing Payment...</div></div>`;
     const refCode=genRef();
     const court=S.courts.find(c=>c.id===S.portal.courtId);
-    const total=S.portal.total||(Math.round(court.rate*(dur/60))+CONVENIENCE_FEE);
+    const total=S.portal.total||(Math.round(court.rate*(dur/60))+Math.round(CONVENIENCE_FEE*dur/60));
     const bId='BK'+Date.now().toString(36)+Math.random().toString(36).substr(2,8).toUpperCase();
     const refNum=document.getElementById('portalRef')?.value.trim()||'';
-    const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode,convenienceFee:CONVENIENCE_FEE,subtotal:S.portal.subtotal||Math.round(court.rate*(dur/60))};
+    const convFee=Math.round(CONVENIENCE_FEE*dur/60);
+    const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode,convenienceFee:convFee,subtotal:S.portal.subtotal||Math.round(court.rate*(dur/60))};
     try {
         await bkCol().doc(bId).set(b);
     } catch(e) {

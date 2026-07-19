@@ -1582,7 +1582,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 // ===================== CONSTANTS =====================
-const CONVENIENCE_FEE=10;
+const CONVENIENCE_FEE=5;
 const COLORS=['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
 const SKILL_LABELS={2:'2.0',3:'3.0',4:'4.0',5:'5.0'};
 const SURF_ICONS={Hard:'🟦',Clay:'🟫',Grass:'🟩'};
@@ -5901,7 +5901,7 @@ async function generateWeeklyInvoice(){
             <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Total Bookings</div><div style="font-weight:800;font-size:1rem;">${totalBks}</div></div>
             <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Gross Revenue</div><div style="font-weight:800;font-size:1rem;">₱${grandSubtotal.toLocaleString()}</div></div>
             <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Conv. Fees (Yours)</div><div style="font-weight:800;font-size:1rem;color:#f39c12;">₱${totalFees.toLocaleString()}</div></div>
-            <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Platform Fee/Booking</div><div style="font-weight:800;font-size:1rem;">₱${CONVENIENCE_FEE}</div></div>
+            <div style="text-align:center;"><div style="font-size:0.65rem;color:#aaa;">Platform Fee</div><div style="font-weight:800;font-size:1rem;">₱${CONVENIENCE_FEE}<span style="font-size:0.6rem;color:#888;">/hr</span></div></div>
         </div>`;
     }
     el.innerHTML=html;
