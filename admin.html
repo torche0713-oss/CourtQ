@@ -2262,16 +2262,20 @@ function renderBookedOpList(){
                 ${s.players.reduce((acc,p,idx)=>{
                     if(p.source==='online'&&p.paid) acc.push({p,idx});
                     return acc;
-                },[]).sort((a,b)=>(a.p.joinedAt||0)-(b.p.joinedAt||0)).map(({p,idx},i)=>`
+                },[]).sort((a,b)=>(a.p.joinedAt||0)-(b.p.joinedAt||0)).flatMap(({p,idx})=>{
+                    const count=p.players||1;
+                    if(count<=1) return [{p,idx,sub:0}];
+                    if(!p._names||p._names.length!==count) p._names=Array.from({length:count},(_,i)=>p.name+(count>1?' ('+(i+1)+')':''));
+                    return Array.from({length:count},(_,i)=>({p,idx,sub:i}));
+                }).map(({p,idx,sub},i)=>`
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(78,205,196,0.06);border-radius:6px;margin-bottom:3px;font-size:0.78rem;">
                         <div>
                             <span style="font-weight:600;color:#fff;">${i+1}.</span>
-                            <input type="text" value="${escapeHtml(p.name)}" style="background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,0.15);color:#ddd;font-size:0.78rem;width:110px;outline:none;padding:0 4px;transition:border-color 0.2s;cursor:text;" onfocus="this.style.borderBottomColor='rgba(78,205,196,0.5)'" onblur="this.style.borderBottomColor='rgba(255,255,255,0.15)';saveBookedPlayerName('${s.id}',${idx},this)">
-                            ${(p.players||1)>1?'<span style="color:#4ecdc4;font-size:0.7rem;margin-left:4px;">×'+(p.players||1)+'</span>':''}
+                            <input type="text" value="${escapeHtml((p._names&&p._names[sub])?p._names[sub]:p.name)}" style="background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,0.15);color:#ddd;font-size:0.78rem;width:120px;outline:none;padding:0 4px;transition:border-color 0.2s;cursor:text;" onfocus="this.style.borderBottomColor='rgba(78,205,196,0.5)'" onblur="this.style.borderBottomColor='rgba(255,255,255,0.15)';saveBookedPlayerName('${s.id}',${idx},${sub},this)">
                             <span style="color:#aaa;font-size:0.7rem;margin-left:4px;">⭐${p.skill||3}.0 · ${p.gameType==='singles'?'1v1':'2v2'}</span>
                             ${p.phone?'<span style="color:#555;font-size:0.65rem;"> 📞'+escapeHtml(p.phone)+'</span>':''}
                         </div>
-                        <span style="color:#2ecc71;font-size:0.7rem;">✅ Paid ₱${p.amount||0}</span>
+                        <span style="color:#2ecc71;font-size:0.7rem;">✅ Paid ₱${(p.amount?Math.round(p.amount/(p.players||1)):0)}</span>
                     </div>
                 `).join('')}
             </div>
@@ -2280,12 +2284,19 @@ function renderBookedOpList(){
     }).join('');
 }
 
-function saveBookedPlayerName(sessionId, playerIdx, el){
+function saveBookedPlayerName(sessionId, playerIdx, sub, el){
     const s=S.scheduledSessions.find(x=>x.id===sessionId);
     if(!s||!s.players[playerIdx]) return;
+    const p=s.players[playerIdx];
     const trimmed=el.value.trim();
-    if(trimmed) s.players[playerIdx].name=trimmed;
-    else el.value=s.players[playerIdx].name;
+    if((p.players||1)>1){
+        if(!p._names||p._names.length!==(p.players||1)) p._names=Array.from({length:p.players||1},(_,i)=>p.name+' ('+(i+1)+')');
+        if(trimmed) p._names[sub]=trimmed;
+        else el.value=p._names[sub];
+    } else {
+        if(trimmed) p.name=trimmed;
+        else el.value=p.name;
+    }
     saveScheduledSessions();
 }
 
@@ -2404,7 +2415,8 @@ function teamUpPlayers(s){
         const skill=p.skill||3;
         const gt=p.gameType||'doubles';
         for(let i=0;i<count;i++){
-            expanded.push({name:count>1?p.name+' ('+(i+1)+'/'+count+')':p.name,skill,gameType:gt,phone:p.phone,joinedAt:p.joinedAt||Date.now()});
+            const indName=(p._names&&p._names[i])?p._names[i]:(count>1?p.name+' ('+(i+1)+')':p.name);
+            expanded.push({name:indName,skill,gameType:gt,phone:p.phone,joinedAt:p.joinedAt||Date.now()});
         }
     });
     const singles=expanded.filter(p=>p.gameType==='singles');
