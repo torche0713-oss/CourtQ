@@ -5869,6 +5869,15 @@ function deleteTournament(id){
         });
         if (!S.venueName && data.name) S.venueName = data.name;
         if(data.scheduledSessions) S.scheduledSessions=data.scheduledSessions;
+        // Real-time listener for venue document (new registrations, confirmations, etc.)
+        db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
+            if(!snap.exists) return;
+            const d=snap.data();
+            if(d.scheduledSessions) S.scheduledSessions=d.scheduledSessions;
+            renderScheduledOpList();
+            renderBookedOpList();
+            renderConfirmations();
+        }, err=>console.warn('venue snapshot error:', err));
         // Bookings: always use subcollection as source of truth
         (async()=>{
             const bkSnap=await bkCol().get({source:'server'});
