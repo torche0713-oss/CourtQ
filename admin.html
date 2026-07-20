@@ -2243,7 +2243,7 @@ function renderBookedOpList(){
     const hasBooked=upcoming.some(s=>(s.players||[]).some(p=>p.source==='online'&&p.paid));
     if(!hasBooked){card.style.display='none';return;}
     card.style.display='block';
-    const totalBooked=upcoming.reduce((sum,s)=>sum+(s.players||[]).filter(p=>p.source==='online'&&p.paid).length,0);
+    const totalBooked=upcoming.reduce((sum,s)=>sum+(s.players||[]).reduce((a,p)=>a+(p.source==='online'&&p.paid?(p.players||1):0),0),0);
     badge.textContent='👥 '+totalBooked+' booked';
     list.innerHTML=upcoming.filter(s=>(s.players||[]).some(p=>p.source==='online'&&p.paid)).map(s=>{
         const booked=s.players.filter(p=>p.source==='online'&&p.paid);
@@ -2256,14 +2256,18 @@ function renderBookedOpList(){
                     <div style="font-weight:700;font-size:0.85rem;color:#4ecdc4;">📅 ${s.date} ${s.startTime}–${s.endTime}</div>
                     <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}${onsite.length>0?' · <span style="color:#f39c12;">➕ '+onsite.length+' onsite</span>':''}</div>
                 </div>
-                <div style="font-size:0.78rem;color:#aaa;">${booked.length}/${max} booked</div>
+                <div style="font-size:0.78rem;color:#aaa;">${booked.reduce((s,p)=>s+(p.players||1),0)}/${max} players</div>
             </div>
             <div style="margin-bottom:8px;">
-                ${booked.sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).map((p,i)=>`
+                ${s.players.reduce((acc,p,idx)=>{
+                    if(p.source==='online'&&p.paid) acc.push({p,idx});
+                    return acc;
+                },[]).sort((a,b)=>(a.p.joinedAt||0)-(b.p.joinedAt||0)).map(({p,idx},i)=>`
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(78,205,196,0.06);border-radius:6px;margin-bottom:3px;font-size:0.78rem;">
                         <div>
                             <span style="font-weight:600;color:#fff;">${i+1}.</span>
-                            <span style="color:#ddd;">${escapeHtml(p.name)}</span>
+                            <input type="text" value="${escapeHtml(p.name)}" style="background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,0.15);color:#ddd;font-size:0.78rem;width:110px;outline:none;padding:0 4px;transition:border-color 0.2s;cursor:text;" onfocus="this.style.borderBottomColor='rgba(78,205,196,0.5)'" onblur="this.style.borderBottomColor='rgba(255,255,255,0.15)';saveBookedPlayerName('${s.id}',${idx},this)">
+                            ${(p.players||1)>1?'<span style="color:#4ecdc4;font-size:0.7rem;margin-left:4px;">×'+(p.players||1)+'</span>':''}
                             <span style="color:#aaa;font-size:0.7rem;margin-left:4px;">⭐${p.skill||3}.0 · ${p.gameType==='singles'?'1v1':'2v2'}</span>
                             ${p.phone?'<span style="color:#555;font-size:0.65rem;"> 📞'+escapeHtml(p.phone)+'</span>':''}
                         </div>
@@ -2271,9 +2275,18 @@ function renderBookedOpList(){
                     </div>
                 `).join('')}
             </div>
-            <button class="btn btn-primary btn-full" onclick="startScheduledSession('${s.id}')" style="font-size:0.82rem;">▶ Start Session & Team Up All (${booked.length} players)</button>
+            <button class="btn btn-primary btn-full" onclick="startScheduledSession('${s.id}')" style="font-size:0.82rem;">▶ Start Session & Team Up All (${booked.reduce((s,p)=>s+(p.players||1),0)} players)</button>
         </div>`;
     }).join('');
+}
+
+function saveBookedPlayerName(sessionId, playerIdx, el){
+    const s=S.scheduledSessions.find(x=>x.id===sessionId);
+    if(!s||!s.players[playerIdx]) return;
+    const trimmed=el.value.trim();
+    if(trimmed) s.players[playerIdx].name=trimmed;
+    else el.value=s.players[playerIdx].name;
+    saveScheduledSessions();
 }
 
 function openScheduleOpModal(){
@@ -2385,27 +2398,36 @@ function teamUpPlayers(s){
         if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}
         else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}
     });
-    const singles=online.filter(p=>p.gameType==='singles');
-    const doubles=online.filter(p=>p.gameType!=='singles');
-    singles.sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).forEach(p=>{
-        S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});
+    const expanded=[];
+    online.forEach(p=>{
+        const count=p.players||1;
+        const skill=p.skill||3;
+        const gt=p.gameType||'doubles';
+        for(let i=0;i<count;i++){
+            expanded.push({name:count>1?p.name+' ('+(i+1)+'/'+count+')':p.name,skill,gameType:gt,phone:p.phone,joinedAt:p.joinedAt||Date.now()});
+        }
     });
-    const sorted=doubles.slice().sort((a,b)=>(a.skill||3)-(b.skill||3));
+    const singles=expanded.filter(p=>p.gameType==='singles');
+    const doubles=expanded.filter(p=>p.gameType!=='singles');
+    singles.sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).forEach(p=>{
+        S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill}],skillLevel:p.skill,joinedAt:Date.now(),_scheduled:true});
+    });
+    const sorted=doubles.slice().sort((a,b)=>a.skill-b.skill);
     const teams=[];
     for(let i=0;i<sorted.length;i+=2){
         if(i+1<sorted.length) teams.push([sorted[i],sorted[i+1]]);
-        else S.soloQueue.push({id:++S.nextId,players:[{name:sorted[i].name,color:COLORS[S.nextId%COLORS.length],skill:sorted[i].skill||3}],skillLevel:sorted[i].skill||3,joinedAt:Date.now(),_scheduled:true,note:'Waiting for partner'});
+        else S.soloQueue.push({id:++S.nextId,players:[{name:sorted[i].name,color:COLORS[S.nextId%COLORS.length],skill:sorted[i].skill}],skillLevel:sorted[i].skill,joinedAt:Date.now(),_scheduled:true,note:'Waiting for partner'});
     }
     for(let i=0;i<teams.length;i+=2){
         if(i+1<teams.length){
             const t1=teams[i],t2=teams[i+1];
-            const all=[...t1,...t2].sort((a,b)=>(b.skill||3)-(a.skill||3));
+            const all=[...t1,...t2].sort((a,b)=>b.skill-a.skill);
             const teamA=[all[0],all[3]],teamB=[all[1],all[2]];
             const group=[...teamA,...teamB];
-            S.queue.push({id:++S.nextId,groupName:teamA[0].name+'/'+teamA[1].name+' vs '+teamB[0].name+'/'+teamB[1].name,gameType:'doubles',skillLevel:Math.round(group.reduce((sum,p)=>sum+(p.skill||3),0)/group.length),players:group.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3})),joinedAt:Date.now(),_teamed:true});
+            S.queue.push({id:++S.nextId,groupName:teamA[0].name+'/'+teamA[1].name+' vs '+teamB[0].name+'/'+teamB[1].name,gameType:'doubles',skillLevel:Math.round(group.reduce((sum,p)=>sum+p.skill,0)/group.length),players:group.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill})),joinedAt:Date.now(),_teamed:true});
         } else {
             const odd=teams[i];
-            S.queue.push({id:++S.nextId,groupName:odd[0].name+'/'+odd[1].name+' & opponents',gameType:'doubles',skillLevel:Math.round(((odd[0].skill||3)+(odd[1].skill||3))/2),players:odd.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3})),joinedAt:Date.now(),_halfTeam:true,_scheduled:true});
+            S.queue.push({id:++S.nextId,groupName:odd[0].name+'/'+odd[1].name+' & opponents',gameType:'doubles',skillLevel:Math.round((odd[0].skill+odd[1].skill)/2),players:odd.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill})),joinedAt:Date.now(),_halfTeam:true,_scheduled:true});
         }
     }
 }
@@ -2437,7 +2459,7 @@ function startScheduledSession(sessionId){
     closeModal('scheduledOpDetailModal');
     closeModal('scheduleOpModal');
     saveStateNow();
-    showNotif(`▶ Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime} — ${(s.players||[]).filter(p=>p.source==='online'&&p.paid).length} players teamed up`,'success');
+    showNotif(`▶ Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime} — ${(s.players||[]).reduce((a,p)=>a+(p.source==='online'&&p.paid?(p.players||1):0),0)} players teamed up`,'success');
     announce(`Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime}.`);
     updateJoinFormMode();
     renderAll();
