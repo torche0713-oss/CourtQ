@@ -2466,6 +2466,9 @@ function startScheduledSession(sessionId){
     const endDT=new Date(s.date+'T'+s.endTime);
     S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:[...s.courts],looping:s.looping||mode==='fourOnFour'};
     teamUpPlayers(s);
+    tryCombineTeams();
+    if(tryMatchRemaining()) tryCombineTeams();
+    if(S.queue.filter(g=>!g._halfTeam).length===0) tryCrossMatchHalves();
     s.status='active';
     saveScheduledSessions();
     closeModal('scheduledOpDetailModal');
@@ -2775,10 +2778,40 @@ function pairSolos(i1,i2){
 function removeSolo(id){S.soloQueue=S.soloQueue.filter(s=>s.id!==id);showNotif('Removed.');renderAll();}
 function removeFromQueue(id){const i=S.queue.findIndex(g=>g.id===id);if(i!==-1){const g=S.queue.splice(i,1)[0];showNotif(`${g.groupName} removed.`);renderAll();}}
 
+function tryMatchRemaining(){
+    const solos=[...S.soloQueue].sort((a,b)=>(a.skillLevel||3)-(b.skillLevel||3));
+    let paired=false;
+    for(let i=0;i<solos.length-1;i+=2){
+        const a=solos[i],b=solos[i+1];
+        const comb=[...a.players,...b.players];
+        const avg=Math.round(comb.reduce((s,p)=>s+(p.skill||3),0)/comb.length);
+        comb.forEach((p,idx)=>p.color=COLORS[idx%COLORS.length]);
+        S.queue.push({id:++S.nextId,groupName:a.players[0]?.name+' & '+b.players[0]?.name,gameType:'doubles',skillLevel:avg,players:comb,joinedAt:Math.min(a.joinedAt,b.joinedAt),_halfTeam:true});
+        S.soloQueue=S.soloQueue.filter(s=>s.id!==a.id&&s.id!==b.id);
+        paired=true;
+    }
+    return paired;
+}
+
+function tryCrossMatchHalves(){
+    const halves=S.queue.filter(g=>g._halfTeam);
+    if(halves.length<2) return false;
+    const a=halves[0],b=halves[1];
+    const all=[...a.players,...b.players];
+    all.forEach((p,idx)=>p.color=COLORS[idx%COLORS.length]);
+    const {team1,team2}=balanceTeams(all);
+    S.queue.push({id:++S.nextId,groupName:a.groupName+' vs '+b.groupName,gameType:'doubles',skillLevel:Math.round((a.skillLevel+b.skillLevel)/2),players:all,team1,team2,joinedAt:Math.min(a.joinedAt,b.joinedAt)});
+    S.queue=S.queue.filter(g=>g.id!==a.id&&g.id!==b.id);
+    showNotif(`⚠️ Cross-matched ${a.groupName} + ${b.groupName}`,'warning');
+    return true;
+}
+
 // ===================== ASSIGN =====================
 function tryAutoAssign(){
     tryCombineTeams();
+    if(tryMatchRemaining()) tryCombineTeams();
     const full=S.queue.filter(g=>!g._halfTeam);
+    if(full.length===0 && tryCrossMatchHalves()) return tryAutoAssign();
     if(full.length===0) return;
     const avail=getOpenPlayCourts();
     if(avail.length===0) return;
