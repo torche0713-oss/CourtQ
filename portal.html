@@ -995,7 +995,7 @@ async function confirmJoinOpSession(){
         player.reference=document.getElementById('opRef').value.trim();
         player.amount=totalAmount;
         player.subtotal=subtotal;
-        player.convenienceFee=CONVENIENCE_FEE;
+        player.convenienceFee=playerCount*CONVENIENCE_FEE;
         player.paid=true;
     }
     // Save to Firestore
