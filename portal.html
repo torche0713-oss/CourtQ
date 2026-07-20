@@ -807,12 +807,15 @@ function openOpPortal(){
 function closeOpPortal(){
     _opJoinCtx=null;
     _opPayMethod=null;
+    if(window._opWatchInterval){clearInterval(window._opWatchInterval);window._opWatchInterval=null;window._opWatching=false;}
     document.getElementById('opPortalOverlay').classList.remove('active');
     document.getElementById('landingPage').style.display='block';
 }
 
 function renderOpSessionList(){
     _opPayMethod=null;
+    if(window._opWatchInterval){clearInterval(window._opWatchInterval);window._opWatchInterval=null;window._opWatching=false;}
+    sessionStorage.removeItem('opPendingReg');
     const content=document.getElementById('opPortalContent');
     const now=phtNow();
     const today=getTodayISO();
@@ -1050,6 +1053,7 @@ async function confirmJoinOpSession(){
 
 function watchOpRegistration(email, sessionId){
     if(window._opWatchInterval) clearInterval(window._opWatchInterval);
+    window._opWatching=true;
     window._opWatchInterval=setInterval(()=>{
         const sid=sessionId;
         const s=S.scheduledSessions.find(x=>x.id===sid)||(S.session?.active?{...S.session,id:'LIVE_'+S.session.startDate,players:S.session._players||[]}:null);
@@ -1060,6 +1064,7 @@ function watchOpRegistration(email, sessionId){
         if(!match||match.status==='rejected'){
             clearInterval(window._opWatchInterval);
             window._opWatchInterval=null;
+            window._opWatching=false;
             sessionStorage.removeItem('opPendingReg');
             waitEl.innerHTML=`
                 <div style="font-size:2rem;margin-bottom:10px;">😔</div>
@@ -1071,6 +1076,7 @@ function watchOpRegistration(email, sessionId){
         if(match.status==='confirmed'){
             clearInterval(window._opWatchInterval);
             window._opWatchInterval=null;
+            window._opWatching=false;
             sessionStorage.removeItem('opPendingReg');
             waitEl.innerHTML=`
                 <div style="font-size:2rem;margin-bottom:10px;">✅</div>
@@ -1117,8 +1123,8 @@ function watchOpRegistration(email, sessionId){
             renderCourtPicker();
             // Re-render slots if on step 2
             if(S.portal?.step===2) renderSlots();
-            // Re-render Open Play list if portal is open
-            if(document.getElementById('opPortalOverlay').classList.contains('active')) renderOpSessionList();
+            // Re-render Open Play list if portal is open (but not while confirmation watcher is active)
+            if(document.getElementById('opPortalOverlay').classList.contains('active') && !window._opWatching) renderOpSessionList();
             // Restore pending booking after refresh
             if(!_pendingBookingChecked && S.courts.length > 0){
                 _pendingBookingChecked = true;
