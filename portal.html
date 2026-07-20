@@ -867,8 +867,7 @@ function renderOpSessionList(){
                 ${full?`<div style="color:#e74c3c;font-size:0.72rem;margin-top:6px;">⚠️ Session Full</div>`:`<div style="color:#4ecdc4;font-size:0.72rem;margin-top:6px;">${s._isLive?'▶ Open Play is happening now — click to join!':'✅ Spots available — click to join'}</div>`}
             </div>`;
         }).join('')}
-        <button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:4px;">← Back</button>`;
-}
+        <button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:8px;">← Back</button>`;
 
 function selectOpSession(id){
     let s;
@@ -1023,19 +1022,66 @@ async function confirmJoinOpSession(){
         showNotif('Venue not available.','error');
         return;
     }
-    // Show confirmation
+    // Store pending registration in sessionStorage for live tracking & restore on refresh
+    sessionStorage.setItem('opPendingReg', JSON.stringify({sessionId:s.id, email, name:fn+' '+ln}));
+    // Show confirmation with live status watcher
     const content=document.getElementById('opPortalContent');
     content.innerHTML=`<div class="payment-success">
-        <div style="font-size:2rem;margin-bottom:10px;">✅</div>
-        <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">⏳ Awaiting Confirmation</div>
-        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">You've registered for <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
-        <div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
-            ${s.fee>0?`<strong>🟢 Payment submitted</strong><br><span style="color:#aaa;">The venue will confirm your spot once they verify your payment reference.</span>`:`<strong>⏳ Pending confirmation</strong><br><span style="color:#aaa;">The venue will confirm your spot shortly. You'll be notified once approved.</span>`}
+        <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">Payment Submitted!</div>
+        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Don't close this page. Please wait for confirmation from Admin.</div>
+        <div id="opStatusWait" style="text-align:center;">
+            <div class="payment-spinner" style="margin:10px auto;"></div>
+            <div style="font-size:0.8rem;color:#aaa;">Checking status...</div>
+        </div>
+        <div style="background:rgba(78,205,196,0.08);border-radius:8px;padding:10px;margin:10px 0;font-size:0.82rem;text-align:left;">
+            <div><strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
+            <div style="font-size:0.75rem;color:#aaa;">${(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ')} · ${(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0)+(playerCount)} player(s)</div>
+            ${s.fee>0?`<div style="font-size:0.75rem;color:#aaa;">💳 ${_opPayMethod} · Ref: ${player.reference||'N/A'}</div>`:''}
+            <div style="font-size:0.75rem;color:#aaa;">💰 ${s.fee>0?'₱'+totalAmount:'Free'}</div>
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="closeOpPortal()">✅ Done</button>
             <button class="btn btn-outline" onclick="renderOpSessionList()">📅 Join Another</button>
         </div>`;
+    watchOpRegistration(email, s.id);
+}
+
+function watchOpRegistration(email, sessionId){
+    if(window._opWatchInterval) clearInterval(window._opWatchInterval);
+    window._opWatchInterval=setInterval(()=>{
+        const sid=sessionId;
+        const s=S.scheduledSessions.find(x=>x.id===sid)||(S.session?.active?{...S.session,id:'LIVE_'+S.session.startDate,players:S.session._players||[]}:null);
+        if(!s) return;
+        const match=(s.players||[]).find(p=>p.email&&p.email.toLowerCase()===email.toLowerCase()&&p.source==='online');
+        const waitEl=document.getElementById('opStatusWait');
+        if(!waitEl) return;
+        if(!match||match.status==='rejected'){
+            clearInterval(window._opWatchInterval);
+            window._opWatchInterval=null;
+            sessionStorage.removeItem('opPendingReg');
+            waitEl.innerHTML=`
+                <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                <div style="font-size:1rem;font-weight:800;color:#e74c3c;margin-bottom:6px;">Registration Not Available</div>
+                <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Sorry, your registration could not be confirmed. Please contact the venue for details.</div>
+                <button class="btn btn-primary" onclick="renderOpSessionList()">📅 Try Another Session</button>`;
+            return;
+        }
+        if(match.status==='confirmed'){
+            clearInterval(window._opWatchInterval);
+            window._opWatchInterval=null;
+            sessionStorage.removeItem('opPendingReg');
+            waitEl.innerHTML=`
+                <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">Registration Confirmed!</div>
+                <div style="font-size:0.85rem;color:#4ecdc4;margin-bottom:6px;">Your spot has been confirmed.</div>
+                <div style="font-size:0.9rem;font-weight:700;color:#4ecdc4;margin-bottom:10px;">See you at the venue!</div>
+                <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                    Show up at the venue during the session time.<br>
+                    <span style="color:#f39c12;">⏰ Please be there at least 15 minutes early.</span>
+                </div>`;
+        }
+    },3000);
 }
 
 // ===================== INIT =====================
@@ -1077,6 +1123,13 @@ async function confirmJoinOpSession(){
                 _pendingBookingChecked = true;
                 const pid = sessionStorage.getItem('portalPendingBooking');
                 if(pid && VENUE_ID) showPendingBooking(pid);
+                const opReg = sessionStorage.getItem('opPendingReg');
+                if(opReg && VENUE_ID){
+                    try {
+                        const {sessionId,email}=JSON.parse(opReg);
+                        if(sessionId&&email) watchOpRegistration(email, sessionId);
+                    } catch(e){}
+                }
             }
         }, err=>{
             console.warn('onSnapshot error:', err);
