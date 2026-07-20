@@ -986,7 +986,7 @@ async function confirmJoinOpSession(){
         const ref=document.getElementById('opRef');
         if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
     }
-    const player={name:fn+' '+ln,phone,email,skill,gameType,players:playerCount,source:'online',joinedAt:Date.now()};
+    const player={name:fn+' '+ln,phone,email,skill,gameType,players:playerCount,source:'online',joinedAt:Date.now(),status:'pending'};
     if(totalAmount>0){
         player.paymentMethod=_opPayMethod;
         player.reference=document.getElementById('opRef').value.trim();
@@ -1027,10 +1027,10 @@ async function confirmJoinOpSession(){
     const content=document.getElementById('opPortalContent');
     content.innerHTML=`<div class="payment-success">
         <div style="font-size:2rem;margin-bottom:10px;">✅</div>
-        <div style="font-size:1.1rem;font-weight:800;color:#2ecc71;margin-bottom:6px;">You're In!</div>
-        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">Your spot is secured for <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
-        <div style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
-            ${s.fee>0?`<strong>🟢 Show your transaction on site</strong><br><span style="color:#aaa;">Present the GCash/Maya transaction details when you check in at the venue.</span>`:`<strong>🎯 See you there!</strong><br><span style="color:#aaa;">No payment needed — just show up and play!</span>`}
+        <div style="font-size:1.1rem;font-weight:800;color:#f39c12;margin-bottom:6px;">⏳ Awaiting Confirmation</div>
+        <div style="font-size:0.85rem;color:#aaa;margin-bottom:16px;">You've registered for <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
+        <div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+            ${s.fee>0?`<strong>🟢 Payment submitted</strong><br><span style="color:#aaa;">The venue will confirm your spot once they verify your payment reference.</span>`:`<strong>⏳ Pending confirmation</strong><br><span style="color:#aaa;">The venue will confirm your spot shortly. You'll be notified once approved.</span>`}
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="closeOpPortal()">✅ Done</button>
