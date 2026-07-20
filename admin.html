@@ -4025,14 +4025,38 @@ function renderFinancials(){
     const billings=S.bookings.filter(b=>b.status==='confirmed'||b.status==='checkedin'||b.status==='completed');
     const filtered=billings.filter(b=>new Date(b.bookedAt||0)>=startDate);
     const prevFiltered=billings.filter(b=>new Date(b.bookedAt||0)>=prevStart&&new Date(b.bookedAt||0)<startDate);
-    const gcash=filtered.filter(b=>b.paymentMethod==='GCash').reduce((s,b)=>s+(b.amount||0),0);
-    const maya=filtered.filter(b=>b.paymentMethod==='Maya').reduce((s,b)=>s+(b.amount||0),0);
-    const cash=filtered.filter(b=>b.paymentMethod==='Cash').reduce((s,b)=>s+(b.amount||0),0);
+    // Include confirmed Open Play players
+    const opFiltered=[];
+    (S.scheduledSessions||[]).forEach(s=>{
+        (s.players||[]).forEach(p=>{
+            if(p.source==='online'&&p.status==='confirmed'&&p.joinedAt){
+                const jd=new Date(p.joinedAt);
+                if(jd>=startDate){
+                    opFiltered.push({...p,date:s.date,startTime:s.startTime,endTime:s.endTime,courtId:null,source:'openplay'});
+                }
+            }
+        });
+    });
+    const prevOpFiltered=[];
+    (S.scheduledSessions||[]).forEach(s=>{
+        (s.players||[]).forEach(p=>{
+            if(p.source==='online'&&p.status==='confirmed'&&p.joinedAt){
+                const jd=new Date(p.joinedAt);
+                if(jd>=prevStart&&jd<startDate){
+                    prevOpFiltered.push({...p,date:s.date,startTime:s.startTime,endTime:s.endTime,courtId:null,source:'openplay'});
+                }
+            }
+        });
+    });
+    const allItems=[...filtered,...opFiltered];
+    const gcash=allItems.filter(b=>b.paymentMethod==='GCash').reduce((s,b)=>s+(b.amount||0),0);
+    const maya=allItems.filter(b=>b.paymentMethod==='Maya').reduce((s,b)=>s+(b.amount||0),0);
+    const cash=allItems.filter(b=>b.paymentMethod==='Cash').reduce((s,b)=>s+(b.amount||0),0);
     const totalRev=gcash+maya+cash;
-    const prevTotal=prevFiltered.reduce((s,b)=>s+(b.amount||0),0);
+    const prevTotal=prevFiltered.reduce((s,b)=>s+(b.amount||0),0)+prevOpFiltered.reduce((s,p)=>s+(p.amount||0),0);
     const bookTx=filtered.filter(b=>b.source==='online'||b.source==='admin').length;
-    const dropTx=filtered.filter(b=>b.source==='pos'||b.source==='openplay').length;
-    const allTx=filtered.length;
+    const dropTx=filtered.filter(b=>b.source==='pos'||b.source==='openplay').length+opFiltered.length;
+    const allTx=allItems.length;
     const cancelled=S.bookings.filter(b=>b.status==='cancelled'&&new Date(b.bookedAt||0)>=startDate).length;
     const totalInPeriod=allTx+cancelled;
     const cancelRate=totalInPeriod>0?Math.round(cancelled/totalInPeriod*100):0;
@@ -4057,7 +4081,7 @@ function renderFinancials(){
     const utilization=totalAvailMin>0?Math.round(totalBookedMin/totalAvailMin*100):0;
     const busiest=Object.values(courtRevMap).sort((a,b)=>b.min-a.min)[0];
     // Online vs in-person
-    const onlineCount=filtered.filter(b=>b.source==='online').length;
+    const onlineCount=filtered.filter(b=>b.source==='online').length+opFiltered.length;
     const inPersonCount=filtered.filter(b=>b.source!=='online').length;
     const onlinePct=allTx>0?Math.round(onlineCount/allTx*100):0;
     // Update DOM
@@ -4130,6 +4154,15 @@ function renderFinancials(){
         const d=new Date(b.bookedAt||0);
         if(d.getTime()){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');monthMap[k]=(monthMap[k]||0)+(b.amount||0);}
     });
+    // Add Open Play revenue to monthly map
+    (S.scheduledSessions||[]).forEach(s=>{
+        (s.players||[]).forEach(p=>{
+            if(p.source==='online'&&p.status==='confirmed'&&p.joinedAt){
+                const d=new Date(p.joinedAt);
+                if(d.getTime()){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');monthMap[k]=(monthMap[k]||0)+(p.amount||0);}
+            }
+        });
+    });
     const costMap={};
     (S.costs||[]).forEach(c=>{
         const d=new Date(c.date);
@@ -4161,18 +4194,21 @@ function renderFinancials(){
     }
     // Detailed breakdown
     const div=document.getElementById('finBreakdown');
-    if(filtered.length===0){div.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No transactions this period.</p></div>';return;}
+    if(allItems.length===0){div.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No transactions this period.</p></div>';return;}
     const perPage=10;
     if(!window._finPage) window._finPage=1;
-    const totalPages=Math.ceil(filtered.length/perPage)||1;
+    const totalPages=Math.ceil(allItems.length/perPage)||1;
     if(window._finPage>totalPages) window._finPage=1;
     const pg=window._finPage;
-    const start=(pg-1)*perPage,end=Math.min(start+perPage,filtered.length);
-    div.innerHTML=filtered.slice().reverse().slice(start,end).map(b=>{
-        const c=(S.courts.find(c=>c.id===b.courtId)||{}).name||'';
+    const start=(pg-1)*perPage,end=Math.min(start+perPage,allItems.length);
+    div.innerHTML=allItems.slice().reverse().slice(start,end).map(b=>{
+        const isOp=!b.customer;
+        const cName=isOp?'Open Play':(S.courts.find(c=>c.id===b.courtId)||{}).name||'';
+        const label=isOp?escapeHtml(b.name||'Player'):escapeHtml(b.customer);
+        const tag=isOp?' <span style="color:#4ecdc4;">(Open Play)</span>':'';
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:5px;font-size:0.78rem;">
-            <div><div style="font-weight:600;">${escapeHtml(b.customer)}</div>
-            <div style="color:#aaa;font-size:0.7rem;">${escapeHtml(b.date)} · ${escapeHtml(c)} · ${escapeHtml(b.paymentMethod)} · ${escapeHtml(b.source)}</div></div>
+            <div><div style="font-weight:600;">${label}${tag}</div>
+            <div style="color:#aaa;font-size:0.7rem;">${escapeHtml(b.date||'')} · ${escapeHtml(cName)} · ${escapeHtml(b.paymentMethod||'N/A')} · ${escapeHtml(b.source)}</div></div>
             <div style="font-weight:800;color:#4ecdc4;">₱${b.amount}</div>
         </div>`;
     }).join('')+(totalPages>1?`<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:12px;font-size:0.75rem;">
@@ -4221,6 +4257,12 @@ function renderPlayerRetention(){
         const hDate=h.date?new Date(h.date):h.time?new Date(h.time):null;
         (h.players||[]).forEach(p=>{
             if(p&&p.name) countVisit(p.name,hDate||now,0);
+        });
+    });
+    // From Open Play scheduled sessions
+    (S.scheduledSessions||[]).forEach(s=>{
+        (s.players||[]).forEach(p=>{
+            if(p.source==='online'&&p.status==='confirmed'&&p.name) countVisit(p.name,p.joinedAt,p.amount||0);
         });
     });
     const uniquePlayers=Object.keys(visits).length;
