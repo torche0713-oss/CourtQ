@@ -3909,8 +3909,7 @@ async function uploadLogo(){
         const formData=new FormData();
         formData.append('file',file);
         formData.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
-        formData.append('public_id','logos/'+VENUE_ID);
-        formData.append('invalidate','true');
+        formData.append('public_id','logos/'+VENUE_ID+'_'+Date.now());
         const res=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:formData});
         const data=await res.json();
         if(!data.secure_url) throw new Error(data.error?.message||'Upload failed');
