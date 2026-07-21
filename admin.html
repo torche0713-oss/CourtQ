@@ -5103,23 +5103,25 @@ async function invoiceOrgSession(organizerId,slug,sessionId){
         showNotif('Invoice failed: '+e.message,'error');
     }
 }
-function viewOrgInvoices(organizerId,name){
-    db.collection('organizers').doc(organizerId).get().then(snap=>{
-        if(!snap.exists) return;
-        const invs=snap.data().invoices||[];
+async function viewOrgInvoices(organizerId,name){
+    try {
+        const snap=await db.collection('org_invoices').where('organizerId','==',organizerId).get();
+        const invs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>new Date(b.generatedAt||0)-new Date(a.generatedAt||0));
         if(invs.length===0){showNotif('No invoices for '+name,'error');return;}
-        let html='<div class="modal" style="max-width:500px;"><div class="modal-title">📋 Invoices — '+escapeHtml(name)+'</div><div style="max-height:400px;overflow-y:auto;">';
-        html+='<table style="width:100%;font-size:0.78rem;border-collapse:collapse;"><thead><tr style="color:#aaa;border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:6px 8px;text-align:left;">Date</th><th style="padding:6px 8px;text-align:left;">Players</th><th style="padding:6px 8px;text-align:left;">Amount</th><th style="padding:6px 8px;text-align:left;">Status</th></tr></thead><tbody>';
-        invs.sort((a,b)=>new Date(b.generatedAt||0)-new Date(a.generatedAt||0)).forEach(inv=>{
+        let html='<div class="modal" style="max-width:550px;"><div class="modal-title">📋 Invoices — '+escapeHtml(name)+'</div><div style="max-height:400px;overflow-y:auto;">';
+        html+='<table style="width:100%;font-size:0.78rem;border-collapse:collapse;"><thead><tr style="color:#aaa;border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:6px 8px;text-align:left;">Session</th><th style="padding:6px 8px;text-align:left;">Players</th><th style="padding:6px 8px;text-align:left;">Amount</th><th style="padding:6px 8px;text-align:left;">Status</th><th style="padding:6px 8px;text-align:left;">Ref</th></tr></thead><tbody>';
+        invs.forEach(inv=>{
             const stColor=inv.status==='paid'?'#2ecc71':inv.status==='cancelled'?'#666':'#f39c12';
             const stLabel=inv.status==='paid'?'✅ Paid':inv.status==='cancelled'?'❌ Cancelled':'⏳ Pending';
-            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${inv.generatedAt?new Date(inv.generatedAt).toLocaleDateString():'-'}</td><td style="padding:6px 8px;">${inv.pCount||inv.totalPlayers||0}</td><td style="padding:6px 8px;font-weight:700;">₱${(inv.feeAmount||0).toLocaleString()}</td><td style="padding:6px 8px;color:${stColor};">${stLabel}</td></tr>`;
+            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${inv.sessionDate||'-'}</td><td style="padding:6px 8px;">${inv.pCount||0}</td><td style="padding:6px 8px;font-weight:700;">₱${(inv.feeAmount||0).toLocaleString()}</td><td style="padding:6px 8px;color:${stColor};">${stLabel}</td><td style="padding:6px 8px;font-size:0.7rem;color:#888;">${inv.refNumber?escapeHtml(inv.refNumber):'-'}</td></tr>`;
         });
         html+='</tbody></table></div><div class="modal-actions"><button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
         const overlay=document.createElement('div');overlay.className='modal-overlay active';overlay.innerHTML=html;
         document.body.appendChild(overlay);
         overlay.onclick=e=>{if(e.target===overlay) overlay.remove();};
-    });
+    } catch(e){
+        showNotif('Failed to load invoices: '+e.message,'error');
+    }
 }
 function addPayment(venueId){
     document.getElementById('pVenueId').value=venueId;
