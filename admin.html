@@ -1228,6 +1228,10 @@
             <div class="form-group"><label>End Date</label><input type="date" id="sesEndDate" onchange="updateConflictPreview()"></div>
             <div class="form-group"><label>End Time</label><input type="time" id="sesEnd" value="21:00" onchange="updateConflictPreview()"></div>
         </div>
+        <div class="form-group" id="sesVenueNameRow" style="display:none;margin-bottom:8px;">
+            <label>Venue Name</label>
+            <input type="text" id="sesVenueName" placeholder="e.g. Riverside Pickleball" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#fff;font-size:0.85rem;width:100%;outline:none;">
+        </div>
         <div class="form-row">
             <div class="form-group"><label>Rotation (min)</label>
                 <select id="sesRot"><option value="15">15</option><option value="20" selected>20</option><option value="25">25</option><option value="30">30</option></select>
@@ -1303,6 +1307,10 @@
         <div class="form-row">
             <div class="form-group"><label>Start Time *</label><input type="time" id="schedOpStart" value="14:00"></div>
             <div class="form-group"><label>End Time *</label><input type="time" id="schedOpEnd" value="18:00"></div>
+        </div>
+        <div class="form-group" id="schedOpVenueNameRow" style="display:none;margin-bottom:8px;">
+            <label>Venue Name</label>
+            <input type="text" id="schedOpVenueName" placeholder="e.g. Riverside Pickleball" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#fff;font-size:0.85rem;width:100%;outline:none;">
         </div>
         <div class="form-group"><label>Drop-in Fee (RM)</label><input type="number" id="schedOpFee" value="0"></div>
         <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
@@ -2186,9 +2194,12 @@ function openStartSession(){
     if (IS_ORGANIZER) {
         document.getElementById('sesCourtCheckboxes').style.display = 'none';
         document.getElementById('sesCourtCountRow').style.display = 'block';
+        document.getElementById('sesVenueNameRow').style.display = 'block';
+        document.getElementById('sesVenueName').value = S.session?.venueName || '';
     } else {
         document.getElementById('sesCourtCheckboxes').style.display = '';
         document.getElementById('sesCourtCountRow').style.display = 'none';
+        document.getElementById('sesVenueNameRow').style.display = 'none';
         // Populate court checkboxes
         const ckContainer=document.getElementById('sesCourtCheckboxes');
         ckContainer.innerHTML=S.courts.map(c=>`
@@ -2278,7 +2289,8 @@ async function startSession(){
         }
     }
     const rrGameType=mode==='roundRobin'?(document.querySelector('input[name="rrGameType"]:checked')?.value||'doubles'):null;
-    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked};
+    const venueName=IS_ORGANIZER?document.getElementById('sesVenueName').value.trim():'';
+    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked,venueName};
     updateJoinFormMode();
     closeModal('sessionModal');
     await saveStateNow();
@@ -2342,6 +2354,7 @@ function renderScheduledOpList(){
     // Build list
     list.innerHTML=upcoming.map(s=>{
         const courtNames=IS_ORGANIZER?('🏟️ '+(s.courtCount||'?')+' courts'):(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
+        const venueTag=s.venueName?'<span style="font-size:0.72rem;color:#888;">📍 '+escapeHtml(s.venueName)+'</span>':'';
         const pCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
         const max=s.maxPlayers||'∞';
         const label=s.status==='active'?'🟢 Live':`📅 ${s.date}`;
@@ -2350,6 +2363,7 @@ function renderScheduledOpList(){
                 <span style="font-weight:700;font-size:0.85rem;">${label}</span>
                 <span style="font-size:0.78rem;color:#aaa;">${s.startTime}–${s.endTime}</span>
                 <span style="font-size:0.72rem;color:#4ecdc4;">${courtNames}</span>
+                ${venueTag}
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:0.78rem;color:#aaa;">${pCount}/${max} players</span>
@@ -2379,7 +2393,7 @@ function renderBookedOpList(){
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
                 <div>
                     <div style="font-weight:700;font-size:0.85rem;color:#4ecdc4;">📅 ${s.date} ${s.startTime}–${s.endTime}</div>
-                    <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}${onsite.length>0?' · <span style="color:#f39c12;">➕ '+onsite.length+' onsite</span>':''}</div>
+                    <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}${s.venueName?' · 📍 '+escapeHtml(s.venueName):''}${onsite.length>0?' · <span style="color:#f39c12;">➕ '+onsite.length+' onsite</span>':''}</div>
                 </div>
                 <div style="font-size:0.78rem;color:#aaa;">${confirmed.reduce((s,p)=>s+(p.players||1),0)}/${max} players</div>
             </div>
@@ -2455,9 +2469,11 @@ function openScheduleOpModal(){
     if (IS_ORGANIZER) {
         document.getElementById('schedOpCourts').style.display = 'none';
         document.getElementById('schedOpCourtCountRow').style.display = 'block';
+        document.getElementById('schedOpVenueNameRow').style.display = 'block';
     } else {
         document.getElementById('schedOpCourts').style.display = '';
         document.getElementById('schedOpCourtCountRow').style.display = 'none';
+        document.getElementById('schedOpVenueNameRow').style.display = 'none';
         const ck=document.getElementById('schedOpCourts');
         ck.innerHTML=S.courts.map(c=>`
             <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected')">
@@ -2487,7 +2503,8 @@ async function saveScheduledOp(){
         if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
     }
     const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
-    const sessionData = {id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],looping,createdAt:Date.now()};
+    const venueName=IS_ORGANIZER?document.getElementById('schedOpVenueName').value.trim():'';
+    const sessionData = {id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],looping,createdAt:Date.now(),venueName};
     if (IS_ORGANIZER) sessionData.courtCount = courtCount;
     S.scheduledSessions.push(sessionData);
     saveScheduledSessions();
@@ -2504,7 +2521,7 @@ function openScheduledOpDetail(id){
     document.getElementById('schedOpDetailTitle').textContent=s.date+' '+s.startTime+'–'+s.endTime;
     const courtNames=IS_ORGANIZER?('🏟️ '+(s.courtCount||'?')+' courts'):(s.courts||[]).map(cid=>S.courts.find(c=>c.id===cid)?.name||'Court '+cid).join(', ');
     document.getElementById('schedOpDetailMeta').innerHTML=`
-        <div>${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}</div>
+        <div>${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}${s.venueName?' · 📍 '+escapeHtml(s.venueName):''}</div>
         <div style="font-size:0.75rem;margin-top:2px;">Status: ${s.status} · Max: ${s.maxPlayers||'No limit'}</div>`;
     renderScheduledOpPlayers();
     openModal('scheduledOpDetailModal');
@@ -2642,7 +2659,7 @@ function startScheduledSession(sessionId){
     const rrGameType=mode==='roundRobin'?'doubles':null;
     const startDT=new Date(s.date+'T'+s.startTime);
     const endDT=new Date(s.date+'T'+s.endTime);
-    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour'};
+    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour',venueName:s.venueName||''};
     teamUpPlayers(s);
     tryCombineTeams();
     if(tryMatchRemaining()) tryCombineTeams();
@@ -3893,6 +3910,7 @@ async function uploadLogo(){
         formData.append('file',file);
         formData.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
         formData.append('public_id','logos/'+VENUE_ID);
+        formData.append('invalidate','true');
         const res=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:formData});
         const data=await res.json();
         if(!data.secure_url) throw new Error(data.error?.message||'Upload failed');
@@ -5217,7 +5235,7 @@ function renderSession(){
                     <div class="live-dot"></div>
                     <div>
                         <div style="font-size:1rem;font-weight:800;color:#4ecdc4;">Open Play — ${escapeHtml(ses.startDate||'today')} ${escapeHtml(ses.startTime||ses.start)} to ${escapeHtml(ses.endDate||'today')} ${escapeHtml(ses.endTime||ses.end)}</div>
-                        <div style="font-size:0.75rem;color:#aaa;">⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':ses.mode==='roundRobin'?'🔄 Round Robin '+(ses.rrGameType||'doubles'):'🔄 4 on / 4 off'}${ses.looping?' · 🔁 Looping':''}</div>
+                        <div style="font-size:0.75rem;color:#aaa;">${ses.venueName?'📍 '+escapeHtml(ses.venueName)+' · ':''}⏱ ${elapsed}min elapsed · ${ses.rot}min rotation · ₱${ses.fee} drop-in · ${ses.mode==='winnersSplit'?'🔄 Winners Stay & Split':ses.mode==='roundRobin'?'🔄 Round Robin '+(ses.rrGameType||'doubles'):'🔄 4 on / 4 off'}${ses.looping?' · 🔁 Looping':''}</div>
                     </div>
                 </div>
                 <button class="btn btn-warning btn-sm" onclick="endSession()">⏹ End Session</button>
