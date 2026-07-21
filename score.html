@@ -53,16 +53,8 @@ header .hint{font-size:0.85rem;color:#555;margin-top:8px;}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBWqvEMy-q_DJWGYhOJfHsRrFQNl3ZJK9Y",
-  authDomain: "courtq-2e744.firebaseapp.com",
-  projectId: "courtq-2e744",
-  storageBucket: "courtq-2e744.firebasestorage.app",
-  messagingSenderId: "4841304416",
-  appId: "1:4841304416:web:7a26d85566af1d47d4ee05"
-};
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(CQ_CONFIG.firebaseConfig);
 const db = firebase.firestore();
 let VENUE_ID = null;
 let _unsubVenue = null;
@@ -70,7 +62,8 @@ let _unsubScores = null;
 
 async function init(){
     const params = new URLSearchParams(window.location.search);
-    let slug = params.get('venue') || params.get('v');
+    let slug = params.get('venue') || params.get('v') || params.get('org');
+    let IS_ORG_SCORE = !!params.get('org');
     if(!slug) return;
     try {
         const slugDoc = await db.collection('slugs').doc(slug).get();
@@ -78,10 +71,15 @@ async function init(){
             document.getElementById('courtList').innerHTML = '<div class="empty-msg"><div class="big">❌</div>Venue not found</div>';
             return;
         }
-        VENUE_ID = slugDoc.data().venueId;
+        if (slugDoc.data().type === 'organizer' || IS_ORG_SCORE) {
+            IS_ORG_SCORE = true;
+            VENUE_ID = slugDoc.data().organizerId;
+        } else {
+            VENUE_ID = slugDoc.data().venueId;
+        }
         document.getElementById('courtList').innerHTML = '<div class="empty-msg"><div class="big">⏳</div>Loading...</div>';
         // Listen to venue for court names/players/status
-        _unsubVenue = db.collection('venues').doc(VENUE_ID).onSnapshot(snap => {
+        _unsubVenue = db.collection(IS_ORG_SCORE?'organizers':'venues').doc(VENUE_ID).onSnapshot(snap => {
             if(snap.exists){
                 const d = snap.data();
                 document.getElementById('venueName').textContent = d.venueName || '';

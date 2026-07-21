@@ -308,6 +308,7 @@
                 <button class="tab" onclick="switchTab('login')">Log In</button>
                 <button class="tab active" onclick="switchTab('register')">Register</button>
                 <button class="tab" onclick="switchTab('join')">Join</button>
+                <button class="tab" onclick="switchTab('organizer')">Organizer</button>
             </div>
             <div id="errorMsg" class="error-msg"></div>
             <div id="successMsg" class="success-msg"></div>
@@ -340,6 +341,26 @@
                 <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
                 <div class="divider">or</div>
                 <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">📅 Book a Demo</button>
+            </div>
+
+            <div class="auth-form" id="form-organizer">
+                <div class="form-group"><label>Business Name *</label><input type="text" id="orgBusinessName" placeholder="e.g. Manila Pickleball Club"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="orgName" placeholder="e.g. Juan dela Cruz"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="orgEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="orgMobile" placeholder="+63 912 345 6789"></div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Govt ID Type *</label><select id="orgGovtIdType"><option value="">Select ID type</option><option>Driver's License</option><option>Passport</option><option>UMID</option><option>SSS ID</option><option>GSIS ID</option><option>PRC ID</option><option>Postal ID</option><option>Voter's ID</option><option>National ID</option></select></div>
+                    <div class="form-group"><label>Govt ID Number *</label><input type="text" id="orgGovtId" placeholder="ID number"></div>
+                </div>
+                <div class="form-group"><label>Password *</label><input type="password" id="orgPass" placeholder="At least 6 characters"></div>
+                <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#aaa;line-height:1.5;">
+                    <strong style="color:#2ecc71;">✅ Free for organizers.</strong> A <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
+                </div>
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
+                    <input type="checkbox" id="orgConsent" style="margin-top:2px;width:auto;">
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
+                </label>
+                <button class="btn btn-success btn-full" onclick="registerOrganizer()">Register as Organizer →</button>
             </div>
 
             <div class="auth-form" id="form-join">
@@ -566,6 +587,86 @@
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
                 showAuthModal('register');
+                showError(e.message);
+            }
+        }
+
+        async function registerOrganizer() {
+            hideMsgs();
+            const businessName = document.getElementById('orgBusinessName').value.trim();
+            const name = document.getElementById('orgName').value.trim();
+            const email = document.getElementById('orgEmail').value.trim();
+            const mobile = document.getElementById('orgMobile').value.trim();
+            const govtIdType = document.getElementById('orgGovtIdType').value;
+            const govtId = document.getElementById('orgGovtId').value.trim();
+            const pass = document.getElementById('orgPass').value;
+            if (!businessName || !name || !email || !mobile || !govtIdType || !govtId || !pass) { showError('Fill in all fields.'); return; }
+            if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
+            if (!document.getElementById('orgConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
+            hideError();
+            showLoading('Creating your account...');
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                const p = { uid: cred.user.uid, email, name, businessName, mobile, govtIdType, govtId };
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'block';
+                const slug = p.businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organizer';
+                let finalSlug = slug;
+                let slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                let attempt = 0;
+                while (slugDoc.exists) {
+                    attempt++;
+                    finalSlug = slug + '-' + attempt;
+                    slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                }
+                const organizerId = db.collection('organizers').doc().id;
+                await db.collection('organizers').doc(organizerId).set({
+                    ownerId: p.uid, name: '🏟️ ' + p.businessName, venueName: '🏟️ ' + p.businessName,
+                    slug: finalSlug, createdAt: Date.now(),
+                    ownerName: p.name, mobile: p.mobile, email: p.email,
+                    govtId: p.govtId, govtIdType: p.govtIdType,
+                    activated: false, courtCount: 4,
+                    session: null, queue: [], soloQueue: [], scheduledSessions: [],
+                    history: [], leaderboard: {}, sales: [],
+                    nextId: 100,
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
+                });
+                await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, organizerId, createdAt: Date.now(), mobile: p.mobile });
+                await db.collection('slugs').doc(finalSlug).set({ organizerId, type: 'organizer' });
+                const ackNum = 'CQO-' + Date.now().toString(36).toUpperCase();
+                try {
+                    const cfg = await db.collection('config').doc('emailjs').get();
+                    if (cfg.exists) {
+                        const ej = cfg.data();
+                        emailjs.init(ej.publicKey);
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: p.email, to_name: p.name,
+                            subject: 'Welcome to CourtQ Pro Organizer! 🎾',
+                            body: `Thank you for registering as an organizer!\n\nACK Number: ${ackNum}\nBusiness: ${p.businessName}\nMobile: ${p.mobile}\nSlug: ${finalSlug}\n\nYour account is pending verification. We'll notify you once activated.\n\nFor questions, email apexmindagency@gmail.com`
+                        });
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
+                            subject: `New Organizer Signup: ${p.businessName}`,
+                            body: `A new organizer has signed up:\n\nBusiness: ${p.businessName}\nName: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nGovt ID: ${p.govtIdType} - ${p.govtId}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                        });
+                    }
+                } catch(e) { console.warn('EmailJS send failed:', e); }
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('successScreen').style.display = 'block';
+                document.getElementById('ackContent').innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
+                        <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#4ecdc4;">${ackNum}</div>
+                        <div style="color:#888;">Business:</div><div style="font-weight:600;">${escapeHtml(p.businessName)}</div>
+                        <div style="color:#888;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
+                        <div style="color:#888;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
+                        <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
+                        <div style="color:#888;">Plan:</div><div style="font-weight:600;color:#2ecc71;">✨ Free Forever</div>
+                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
+                    </div>`;
+            } catch (e) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                showAuthModal('organizer');
                 showError(e.message);
             }
         }

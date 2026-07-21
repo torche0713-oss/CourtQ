@@ -503,7 +503,8 @@ function renderAll(){
 
 async function init(){
     const params=new URLSearchParams(window.location.search);
-    let venueSlug=params.get('venue');
+    let venueSlug=params.get('venue')||params.get('org');
+    let IS_ORG_TV = !!params.get('org');
     if(!venueSlug){
         const pathParts=window.location.pathname.split('/').filter(Boolean);
         if(pathParts.length>=2&&pathParts[1]==='tv') venueSlug=pathParts[0];
@@ -515,21 +516,28 @@ async function init(){
     try {
         const slugDoc=await db.collection('slugs').doc(venueSlug).get();
         if(!slugDoc.exists){document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;color:#e74c3c;">❌ Venue not found</div>';return;}
-        VENUE_ID=slugDoc.data().venueId;
+        if (slugDoc.data().type === 'organizer' || IS_ORG_TV) {
+            IS_ORG_TV = true;
+            VENUE_ID = slugDoc.data().organizerId;
+        } else {
+            VENUE_ID = slugDoc.data().venueId;
+        }
         document.title='CourtQ Live · '+venueSlug;
+        if (!IS_ORG_TV) {
         _unsubBookings=db.collection('venues').doc(VENUE_ID).collection('bookings').onSnapshot(snap=>{
             _bookings=[];
             snap.forEach(d=>_bookings.push({id:d.id,...d.data()}));
             if(lastData){renderCourts();if(showTimeline)renderTVTimeline(lastData);}
         },()=>{});
-        unsub=db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
+        }
+        unsub=db.collection(IS_ORG_TV?'organizers':'venues').doc(VENUE_ID).onSnapshot(snap=>{
             if(snap.exists){lastData=snap.data();renderAll();}
         },err=>{
             console.warn('onSnapshot error:',err);
             // Fallback: poll every 3s
             if(unsub){unsub();unsub=null;}
             if(!_pollTimer) _pollTimer=setInterval(async()=>{
-                try{const doc=await db.collection('venues').doc(VENUE_ID).get();if(doc.exists){lastData=doc.data();renderAll();}}catch(e){}
+                try{const doc=await db.collection(IS_ORG_TV?'organizers':'venues').doc(VENUE_ID).get();if(doc.exists){lastData=doc.data();renderAll();}}catch(e){}
             },3000);
         });
         // Listen to live scores

@@ -521,21 +521,21 @@
 
 <nav class="main-nav">
     <button class="nav-tab active" onclick="showPage('openplay',this)">🏓 Open Play</button>
-    <button class="nav-tab" onclick="showPage('courts',this)">🏟️ Courts</button>
-    <button class="nav-tab" onclick="showPage('booking',this)">📅 Bookings</button>
+    <button class="nav-tab" id="courtsBtn" onclick="showPage('courts',this)">🏟️ Courts</button>
+    <button class="nav-tab" id="bookingBtn" onclick="showPage('booking',this)">📅 Bookings</button>
     <button class="nav-tab" onclick="showPage('confirmations',this)">✅ Confirmations</button>
     <button class="nav-tab" onclick="showPage('financials',this)" id="financialsTab" title="Set an access code in Settings → Financials Access Code first">💰 Financials</button>
-    <button class="nav-tab" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
+    <button class="nav-tab" id="leaderboardBtn" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
     <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
     <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
-    <button class="nav-tab" onclick="showPage('tournaments',this)">🏆 Tournaments</button>
+    <button class="nav-tab" id="tournamentsBtn" onclick="showPage('tournaments',this)">🏆 Tournaments</button>
 </nav>
 
-<!-- PENDING APPROVAL SCREEN (shown when venue.status === 'pending') -->
+<!-- PENDING APPROVAL SCREEN (shown when venue/organizer is not activated) -->
 <div id="pendingScreen" style="display:none;padding:60px 20px;text-align:center;">
     <div style="font-size:4rem;margin-bottom:16px;">⏳</div>
-    <h2 style="color:#f39c12;font-size:1.5rem;margin-bottom:8px;">Venue Pending Approval</h2>
-    <p style="color:#aaa;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
+    <h2 id="pendingTitle" style="color:#f39c12;font-size:1.5rem;margin-bottom:8px;">Venue Pending Approval</h2>
+    <p id="pendingDesc" style="color:#aaa;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
     <div id="pendingDetails" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;max-width:400px;margin:0 auto;text-align:left;font-size:0.82rem;"></div>
     <div style="margin-top:20px;font-size:0.78rem;color:#666;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a> · 📱 0999 883 0291</div>
 </div>
@@ -1272,6 +1272,19 @@
         </div>
         <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
             <div id="sesCourtCheckboxes" class="ses-court-grid"></div>
+            <div id="sesCourtCountRow" style="display:none;margin-top:4px;">
+                <label style="font-size:0.78rem;font-weight:600;color:#aaa;">Number of Courts</label>
+                <select id="sesCourtCount" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#fff;font-size:0.85rem;width:100%;margin-top:4px;outline:none;">
+                    <option value="1">1 Court</option>
+                    <option value="2" selected>2 Courts</option>
+                    <option value="3">3 Courts</option>
+                    <option value="4">4 Courts</option>
+                    <option value="5">5 Courts</option>
+                    <option value="6">6 Courts</option>
+                    <option value="8">8 Courts</option>
+                    <option value="10">10 Courts</option>
+                </select>
+            </div>
         </div>
         <div id="sesConflictPreview" style="margin-top:8px;"></div>
         <div class="modal-actions">
@@ -1317,6 +1330,19 @@
         </div>
         <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
             <div id="schedOpCourts" class="ses-court-grid"></div>
+            <div id="schedOpCourtCountRow" style="display:none;margin-top:4px;">
+                <label style="font-size:0.78rem;font-weight:600;color:#aaa;">Number of Courts</label>
+                <select id="schedOpCourtCount" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#fff;font-size:0.85rem;width:100%;margin-top:4px;outline:none;">
+                    <option value="1">1 Court</option>
+                    <option value="2" selected>2 Courts</option>
+                    <option value="3">3 Courts</option>
+                    <option value="4">4 Courts</option>
+                    <option value="5">5 Courts</option>
+                    <option value="6">6 Courts</option>
+                    <option value="8">8 Courts</option>
+                    <option value="10">10 Courts</option>
+                </select>
+            </div>
         </div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveScheduledOp()">📅 Schedule</button>
@@ -1754,7 +1780,9 @@ function resetUsage(){
 
 // ===================== PERSISTENCE =====================
 const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails','tournaments'];
-function bkCol(){return db.collection('venues').doc(VENUE_ID).collection('bookings');}
+let IS_ORGANIZER = false;
+function getVenueDocRef(){return IS_ORGANIZER?db.collection('organizers').doc(VENUE_ID):db.collection('venues').doc(VENUE_ID);}
+function bkCol(){return IS_ORGANIZER?{onSnapshot:(a,b)=>{},get:()=>({then:(f)=>f({empty:true,forEach:()=>{}})}),doc:()=>({set:(()=>{}),delete:(()=>{}),get:()=>Promise.resolve({exists:false})})}:db.collection('venues').doc(VENUE_ID).collection('bookings');}
 function saveBooking(b){if(!VENUE_ID)return;bkCol().doc(b.id).set(b,{merge:true}).catch(()=>{});}
 function deleteBooking(id){if(!VENUE_ID)return;bkCol().doc(id).delete().catch(()=>{});}
 let _unsubBookings=null;
@@ -1769,7 +1797,7 @@ function loadBookings(){
 let _saveTimer=null;
 function saveScheduledSessions(){
     if(!VENUE_ID) return;
-    db.collection('venues').doc(VENUE_ID).update({scheduledSessions:S.scheduledSessions}).catch(e=>{
+    getVenueDocRef().update({scheduledSessions:S.scheduledSessions}).catch(e=>{
         console.warn('saveScheduledSessions failed:',e);
         showNotif('Failed to save scheduled sessions: '+e.message,'error');
     });
@@ -1779,7 +1807,7 @@ async function saveStateNow(){
     try{
         const state={};
         PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
-        await db.collection('venues').doc(VENUE_ID).set(state,{merge:true});
+        await getVenueDocRef().set(state,{merge:true});
         return true;
     }catch(e){
         console.warn('saveStateNow failed:',e);
@@ -1796,7 +1824,7 @@ function saveState(){
             PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
             const size=new Blob([JSON.stringify(state)]).size;
             console.log('[saveState] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
-            db.collection('venues').doc(VENUE_ID).set(state,{merge:true}).then(()=>{
+            getVenueDocRef().set(state,{merge:true}).then(()=>{
                 console.log('[saveState] OK');
             }).catch(e=>{
                 console.warn('saveState failed:',e);
@@ -1811,7 +1839,7 @@ function saveState(){
 async function loadState(){
     if (!VENUE_ID) return;
     try {
-        const doc = await db.collection('venues').doc(VENUE_ID).get();
+        const doc = await getVenueDocRef().get();
         if (doc.exists) {
             const state = doc.data();
             PERSISTENT_KEYS.forEach(k => {
@@ -2134,18 +2162,29 @@ function openStartSession(){
     const today=getTodayISO();
     document.getElementById('sesStartDate').value=today;
     document.getElementById('sesEndDate').value=today;
-    // Populate court checkboxes
-    const ckContainer=document.getElementById('sesCourtCheckboxes');
-    ckContainer.innerHTML=S.courts.map(c=>`
-        <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected');updateConflictPreview()">
-            <span class="ck">✓</span><span>${escapeHtml(c.name)}</span>
-        </div>
-    `).join('');
-    updateConflictPreview();
+    if (IS_ORGANIZER) {
+        document.getElementById('sesCourtCheckboxes').style.display = 'none';
+        document.getElementById('sesCourtCountRow').style.display = 'block';
+    } else {
+        document.getElementById('sesCourtCheckboxes').style.display = '';
+        document.getElementById('sesCourtCountRow').style.display = 'none';
+        // Populate court checkboxes
+        const ckContainer=document.getElementById('sesCourtCheckboxes');
+        ckContainer.innerHTML=S.courts.map(c=>`
+            <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected');updateConflictPreview()">
+                <span class="ck">✓</span><span>${escapeHtml(c.name)}</span>
+            </div>
+        `).join('');
+        updateConflictPreview();
+    }
     document.getElementById('sessionModal').classList.add('active');
 }
 
 function updateConflictPreview(){
+    if (IS_ORGANIZER) {
+        document.getElementById('sesConflictPreview').innerHTML = '<div style="color:#2ecc71;font-size:0.8rem;padding:6px;">✅ No booking conflicts (organizer session).</div>';
+        return;
+    }
     const today=getTodayISO();
     const sesStartDate=document.getElementById('sesStartDate').value||today;
     const sesEndDate=document.getElementById('sesEndDate').value||today;
@@ -2193,19 +2232,29 @@ async function startSession(){
     const startDT=new Date(sd+'T'+st);
     const endDT=new Date(ed+'T'+et);
     if(endDT<=startDT){showNotif('End must be after start!','error');return;}
-    const selectedCourts=[...document.querySelectorAll('#sesCourtCheckboxes .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
-    if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
-    // Check for booking conflicts before starting
-    const sesS=timeToMin(st), sesE=timeToMin(et);
-    let conflicts=[];
-    S.courts.forEach(c=>{
-        if(!selectedCourts.includes(c.id)) return;
-        getBookingsForCourt(c.id,sd,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
-        if(sd!==ed) getBookingsForCourt(c.id,ed,0,sesE).forEach(b=>conflicts.push({court:c.name,b}));
-    });
-    if(conflicts.length>0){
-        showNotif(`⚠️ Cannot start — ${conflicts.length} booking overlap(s) detected! (e.g. ${conflicts[0].court}: ${conflicts[0].b.customer} ${conflicts[0].b.startTime}–${conflicts[0].b.endTime})`,'error');
-        return;
+    let selectedCourts;
+    if (IS_ORGANIZER) {
+        const courtCount = parseInt(document.getElementById('sesCourtCount').value) || 2;
+        S.courts = S.courts.filter(c => !c.id.toString().startsWith('_virt_'));
+        for (let i = 1; i <= courtCount; i++) {
+            S.courts.push({id:'_virt_'+i,name:'Virtual Court '+i,status:'available',color:'#8e44ad'});
+        }
+        selectedCourts = S.courts.filter(c => c.id.toString().startsWith('_virt_')).map(c => c.id);
+    } else {
+        selectedCourts=[...document.querySelectorAll('#sesCourtCheckboxes .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
+        if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
+        // Check for booking conflicts before starting
+        const sesS=timeToMin(st), sesE=timeToMin(et);
+        let conflicts=[];
+        S.courts.forEach(c=>{
+            if(!selectedCourts.includes(c.id)) return;
+            getBookingsForCourt(c.id,sd,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
+            if(sd!==ed) getBookingsForCourt(c.id,ed,0,sesE).forEach(b=>conflicts.push({court:c.name,b}));
+        });
+        if(conflicts.length>0){
+            showNotif(`⚠️ Cannot start — ${conflicts.length} booking overlap(s) detected! (e.g. ${conflicts[0].court}: ${conflicts[0].b.customer} ${conflicts[0].b.startTime}–${conflicts[0].b.endTime})`,'error');
+            return;
+        }
     }
     const rrGameType=mode==='roundRobin'?(document.querySelector('input[name="rrGameType"]:checked')?.value||'doubles'):null;
     S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked};
@@ -2227,7 +2276,7 @@ function renderScheduledOpList(){
     if(upcoming.length===0){card.style.display='none';return;}
     card.style.display='block';
     list.innerHTML=upcoming.map(s=>{
-        const courtNames=(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
+        const courtNames=IS_ORGANIZER?('🏟️ '+(s.courtCount||'?')+' courts'):(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
         const pCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
         const max=s.maxPlayers||'∞';
         const label=s.status==='active'?'🟢 Live':`📅 ${s.date}`;
@@ -2258,7 +2307,7 @@ function renderBookedOpList(){
     list.innerHTML=upcoming.filter(s=>(s.players||[]).some(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed'))).map(s=>{
         const confirmed=s.players.filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed'));
         const onsite=(s.players||[]).filter(p=>p.source!=='online');
-        const courtNames=(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
+        const courtNames=IS_ORGANIZER?('🏟️ '+(s.courtCount||'?')+' courts'):(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
         const max=s.maxPlayers||'∞';
         return `<div style="border:1px solid rgba(78,205,196,0.15);border-radius:10px;padding:12px;margin-bottom:10px;background:rgba(78,205,196,0.04);">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
@@ -2337,12 +2386,19 @@ function rejectOpenPlayPlayer(sessionId, playerIdx){
 
 function openScheduleOpModal(){
     document.getElementById('schedOpDate').value=getTodayISO();
-    const ck=document.getElementById('schedOpCourts');
-    ck.innerHTML=S.courts.map(c=>`
-        <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected')">
-            <span class="ck">✓</span><span>${escapeHtml(c.name)}</span>
-        </div>
-    `).join('');
+    if (IS_ORGANIZER) {
+        document.getElementById('schedOpCourts').style.display = 'none';
+        document.getElementById('schedOpCourtCountRow').style.display = 'block';
+    } else {
+        document.getElementById('schedOpCourts').style.display = '';
+        document.getElementById('schedOpCourtCountRow').style.display = 'none';
+        const ck=document.getElementById('schedOpCourts');
+        ck.innerHTML=S.courts.map(c=>`
+            <div class="ses-court-chip selected" data-cid="${c.id}" onclick="this.classList.toggle('selected')">
+                <span class="ck">✓</span><span>${escapeHtml(c.name)}</span>
+            </div>
+        `).join('');
+    }
     openModal('scheduleOpModal');
 }
 
@@ -2356,10 +2412,18 @@ async function saveScheduledOp(){
     const looping=document.getElementById('schedOpLooping').checked;
     if(!date||!start||!end){showNotif('Fill date and time!','error');return;}
     if(end<=start){showNotif('End must be after start!','error');return;}
-    const selectedCourts=[...document.querySelectorAll('#schedOpCourts .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
-    if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
+    let selectedCourts, courtCount;
+    if (IS_ORGANIZER) {
+        courtCount = parseInt(document.getElementById('schedOpCourtCount').value) || 2;
+        selectedCourts = [];
+    } else {
+        selectedCourts=[...document.querySelectorAll('#schedOpCourts .ses-court-chip.selected')].map(el=>parseInt(el.dataset.cid));
+        if(selectedCourts.length===0){showNotif('Select at least one court!','error');return;}
+    }
     const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
-    S.scheduledSessions.push({id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],looping,createdAt:Date.now()});
+    const sessionData = {id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],looping,createdAt:Date.now()};
+    if (IS_ORGANIZER) sessionData.courtCount = courtCount;
+    S.scheduledSessions.push(sessionData);
     saveScheduledSessions();
     closeModal('scheduleOpModal');
     await saveStateNow();
@@ -2372,7 +2436,7 @@ function openScheduledOpDetail(id){
     if(!s) return;
     _schedOpCtx=s;
     document.getElementById('schedOpDetailTitle').textContent=s.date+' '+s.startTime+'–'+s.endTime;
-    const courtNames=(s.courts||[]).map(cid=>S.courts.find(c=>c.id===cid)?.name||'Court '+cid).join(', ');
+    const courtNames=IS_ORGANIZER?('🏟️ '+(s.courtCount||'?')+' courts'):(s.courts||[]).map(cid=>S.courts.find(c=>c.id===cid)?.name||'Court '+cid).join(', ');
     document.getElementById('schedOpDetailMeta').innerHTML=`
         <div>${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}</div>
         <div style="font-size:0.75rem;margin-top:2px;">Status: ${s.status} · Max: ${s.maxPlayers||'No limit'}</div>`;
@@ -2486,22 +2550,33 @@ function startScheduledSession(sessionId){
     if(sessionId){s=S.scheduledSessions.find(x=>x.id===sessionId);if(!s){showNotif('Session not found!','error');return;}}
     else{s=_schedOpCtx;if(!s)return;}
     if(s.status==='active'){showNotif('Already active!','error');return;}
-    const sesS=timeToMin(s.startTime), sesE=timeToMin(s.endTime);
-    let conflicts=[];
-    S.courts.forEach(c=>{
-        if(!(s.courts||[]).includes(c.id)) return;
-        getBookingsForCourt(c.id,s.date,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
-    });
-    if(conflicts.length>0){
-        showNotif(`⚠️ ${conflicts.length} booking overlap(s)! Cannot start.`,'error');
-        return;
+    let sessionCourts;
+    if (IS_ORGANIZER) {
+        const courtCount = s.courtCount || 2;
+        S.courts = S.courts.filter(c => !c.id.toString().startsWith('_virt_'));
+        for (let i = 1; i <= courtCount; i++) {
+            S.courts.push({id:'_virt_'+i,name:'Virtual Court '+i,status:'available',color:'#8e44ad'});
+        }
+        sessionCourts = S.courts.filter(c => c.id.toString().startsWith('_virt_')).map(c => c.id);
+    } else {
+        const sesS=timeToMin(s.startTime), sesE=timeToMin(s.endTime);
+        let conflicts=[];
+        S.courts.forEach(c=>{
+            if(!(s.courts||[]).includes(c.id)) return;
+            getBookingsForCourt(c.id,s.date,sesS,sesS>sesE?24*60:sesE).forEach(b=>conflicts.push({court:c.name,b}));
+        });
+        if(conflicts.length>0){
+            showNotif(`⚠️ ${conflicts.length} booking overlap(s)! Cannot start.`,'error');
+            return;
+        }
+        sessionCourts = [...s.courts];
     }
     const rot=20;
     const mode=s.mode;
     const rrGameType=mode==='roundRobin'?'doubles':null;
     const startDT=new Date(s.date+'T'+s.startTime);
     const endDT=new Date(s.date+'T'+s.endTime);
-    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:[...s.courts],looping:s.looping||mode==='fourOnFour'};
+    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour'};
     teamUpPlayers(s);
     tryCombineTeams();
     if(tryMatchRemaining()) tryCombineTeams();
@@ -2591,6 +2666,8 @@ function endSession(){
     }
     S.session.active=false; S.session=null;
     S.courts.forEach(c=>{ if(c.status==='occupied'&&sessionCourts.includes(c.id)&&!S.bookings.some(b=>b.courtId===c.id&&b.status==='checkedin')) completeRelease(c,null); if(c.rr) delete c.rr; delete c._rrMatchId; });
+    // Clean up virtual courts for organizers
+    if (IS_ORGANIZER) S.courts = S.courts.filter(c => !c.id.toString().startsWith('_virt_'));
     // Mark the active scheduled session as completed
     const activeSched=(S.scheduledSessions||[]).find(s=>s.status==='active');
     if(activeSched) activeSched.status='completed';
@@ -5850,9 +5927,11 @@ function deleteTournament(id){
     try {
         const slugDoc = await db.collection('slugs').doc(venueSlug).get();
         if (!slugDoc.exists) { window.location.href = 'index.html'; return; }
+        const slugData = slugDoc.data();
         VENUE_ID = slugDoc.data().venueId;
+        IS_ORGANIZER = slugData.type === 'organizer';
 
-        const venueDoc = await db.collection('venues').doc(VENUE_ID).get();
+        const venueDoc = await (IS_ORGANIZER ? db.collection('organizers').doc(VENUE_ID) : db.collection('venues').doc(VENUE_ID)).get();
         if (!venueDoc.exists) { window.location.href = 'index.html'; return; }
 
         const data = venueDoc.data();
@@ -5869,8 +5948,8 @@ function deleteTournament(id){
         });
         if (!S.venueName && data.name) S.venueName = data.name;
         if(data.scheduledSessions) S.scheduledSessions=data.scheduledSessions;
-        // Real-time listener for venue document (new registrations, confirmations, etc.)
-        db.collection('venues').doc(VENUE_ID).onSnapshot(snap=>{
+        // Real-time listener for venue/organizer document
+        getVenueDocRef().onSnapshot(snap=>{
             if(!snap.exists) return;
             const d=snap.data();
             if(d.scheduledSessions) S.scheduledSessions=d.scheduledSessions;
@@ -5878,8 +5957,8 @@ function deleteTournament(id){
             renderBookedOpList();
             renderConfirmations();
         }, err=>console.warn('venue snapshot error:', err));
-        // Bookings: always use subcollection as source of truth
-        (async()=>{
+        // Bookings: always use subcollection as source of truth (skip for organizers)
+        if (!IS_ORGANIZER) (async()=>{
             const bkSnap=await bkCol().get({source:'server'});
             if(!bkSnap.empty){
                 S.bookings=[];
@@ -5895,6 +5974,7 @@ function deleteTournament(id){
             }
             renderBookingTimeline();
         })();
+        }
         S.venueSlug = venueSlug;
 
         // Auth check for non-demo venues
@@ -5940,13 +6020,37 @@ function deleteTournament(id){
                 document.getElementById('settingsBtn').style.display = 'none';
                 document.getElementById('financialsTab').style.display = 'none';
             }
+            // Hide organizer-irrelevant tabs
+            if (IS_ORGANIZER) {
+                document.getElementById('courtsBtn').style.display = 'none';
+                document.getElementById('bookingBtn').style.display = 'none';
+                document.getElementById('leaderboardBtn').style.display = 'none';
+                document.getElementById('tournamentsBtn').style.display = 'none';
+            }
+            // Check if venue/organizer is pending activation
+            const isPending = IS_ORGANIZER ? (data.activated === false) : (data.status === 'pending');
+            if (isPending && user.email !== 'pinoymemesforever@gmail.com') {
+                if (IS_ORGANIZER) {
+                    document.getElementById('pendingTitle').textContent = 'Organizer Pending Approval';
+                    document.getElementById('pendingDesc').textContent = 'Your organizer account has been submitted and is awaiting verification. We\'ll notify you via email once it\'s activated.';
+                }
+                document.getElementById('pendingScreen').style.display = 'block';
+                document.getElementById('pendingDetails').innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        <div style="color:#888;">Name:</div><div style="font-weight:600;">${escapeHtml(data.businessName||data.name||'Unnamed')}</div>
+                        <div style="color:#888;">Submitted:</div><div style="font-weight:600;">${new Date(data.createdAt).toLocaleDateString()}</div>
+                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending</div>
+                    </div>`;
+                document.querySelector('.main-nav').style.display = 'none';
+                return;
+            }
         }
 
         if(VENUE_OWNER_ID==='demo') startDemoHeartbeat();
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
-        loadBookings();
-        setInterval(()=>{autoFreeExpiredBookings();db.collection('venues').doc(VENUE_ID).get().then(snap=>{if(snap.exists){            S.scheduledSessions=snap.data().scheduledSessions||[];const ft=(snap.data().tournaments||[]),ftIds=new Set(ft.map(x=>x.id));if(!S.tournaments)S.tournaments=[];ft.forEach(x=>{if(!S.tournaments.find(t=>t.id===x.id))S.tournaments.push(x);});S.tournaments=S.tournaments.filter(t=>ftIds.has(t.id));const activeTids=new Set((S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').map(t=>t.id));(S.courts||[]).forEach(c=>{if(c._tournamentId&&!activeTids.has(c._tournamentId))delete c._tournamentId;});(S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').forEach(t=>assignTournamentCourts(t));let changed=false;S.scheduledSessions.filter(s=>s.status==='active').forEach(s=>{let _sc=(s.players||[]).reduce((a,p)=>a+(p.players||1),0);(s.players||[]).filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')&&!p._queued).forEach(p=>{if(s.maxPlayers&&_sc+(p.players||1)>s.maxPlayers)return;_sc+=p.players||1;p._queued=true;changed=true;if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}});});if(changed)saveScheduledSessions();renderScheduledOpList();renderBookedOpList();}}).catch(()=>{}).finally(()=>{saveState();renderTournamentList();renderOpCourts();renderOpStats();renderSession();renderConfirmations();});const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}},30000);
+        if (!IS_ORGANIZER) loadBookings();
+        setInterval(()=>{if(IS_ORGANIZER){getVenueDocRef().get().then(snap=>{if(snap.exists){S.scheduledSessions=snap.data().scheduledSessions||[];renderScheduledOpList();renderBookedOpList();saveState();renderOpCourts();renderOpStats();renderSession();renderConfirmations();}}).catch(()=>{});}else{autoFreeExpiredBookings();getVenueDocRef().get().then(snap=>{if(snap.exists){            S.scheduledSessions=snap.data().scheduledSessions||[];const ft=(snap.data().tournaments||[]),ftIds=new Set(ft.map(x=>x.id));if(!S.tournaments)S.tournaments=[];ft.forEach(x=>{if(!S.tournaments.find(t=>t.id===x.id))S.tournaments.push(x);});S.tournaments=S.tournaments.filter(t=>ftIds.has(t.id));const activeTids=new Set((S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').map(t=>t.id));(S.courts||[]).forEach(c=>{if(c._tournamentId&&!activeTids.has(c._tournamentId))delete c._tournamentId;});(S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').forEach(t=>assignTournamentCourts(t));let changed=false;S.scheduledSessions.filter(s=>s.status==='active').forEach(s=>{let _sc=(s.players||[]).reduce((a,p)=>a+(p.players||1),0);(s.players||[]).filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')&&!p._queued).forEach(p=>{if(s.maxPlayers&&_sc+(p.players||1)>s.maxPlayers)return;_sc+=p.players||1;p._queued=true;changed=true;if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}});});if(changed)saveScheduledSessions();renderScheduledOpList();renderBookedOpList();}}).catch(()=>{}).finally(()=>{saveState();renderTournamentList();renderOpCourts();renderOpStats();renderSession();renderConfirmations();});const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}},30000);
         // Immediate queue migration for online players (active sessions only — scheduled players stay in Booked section)
         (S.scheduledSessions||[]).filter(s=>s.status==='active').forEach(s=>{let _sc=(s.players||[]).reduce((a,p)=>a+(p.players||1),0);(s.players||[]).filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')&&!p._queued).forEach(p=>{if(s.maxPlayers&&_sc+(p.players||1)>s.maxPlayers)return;_sc+=p.players||1;p._queued=true;if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}});});
         renderAll();
