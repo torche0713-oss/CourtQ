@@ -1097,7 +1097,7 @@ function watchOpRegistration(email, sessionId){
 (async () => {
     const params = new URLSearchParams(window.location.search);
     let venueSlug = params.get('venue') || params.get('org');
-    let IS_ORGANIZER_PORTAL = !!params.get('org');
+    IS_ORGANIZER_PORTAL = !!params.get('org');
     if (!venueSlug) {
         const pathParts = window.location.pathname.split('/').filter(Boolean);
         venueSlug = pathParts[0] || null;

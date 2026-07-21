@@ -545,6 +545,7 @@
     <div id="scheduledOpCard" style="display:none;margin-bottom:16px;">
         <div class="card">
             <div class="card-title">📅 Upcoming Open Play</div>
+            <div id="scheduledOpTimeline"></div>
             <div id="scheduledOpList"></div>
         </div>
     </div>
@@ -2270,9 +2271,53 @@ let _schedOpCtx = null;
 function renderScheduledOpList(){
     const card=document.getElementById('scheduledOpCard');
     const list=document.getElementById('scheduledOpList');
+    const timeline=document.getElementById('scheduledOpTimeline');
     const upcoming=S.scheduledSessions.filter(s=>s.status==='scheduled'||s.status==='active').sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
     if(upcoming.length===0){card.style.display='none';return;}
     card.style.display='block';
+    // Build timeline
+    const days=[...new Set(upcoming.map(s=>s.date))].slice(0,7);
+    const startHour=6,endHour=23;
+    let tlHtml='<div style="overflow-x:auto;margin-bottom:12px;border-radius:10px;border:1px solid rgba(155,89,182,0.12);background:rgba(155,89,182,0.04);padding:8px;">';
+    tlHtml+='<div style="display:grid;grid-template-columns:60px repeat('+days.length+',1fr);min-width:'+(60+days.length*120)+'px;">';
+    tlHtml+='<div style="font-size:0.6rem;color:#888;padding:6px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);"></div>';
+    const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const getToday=()=>{const d=new Date();return d.toISOString().split('T')[0];};
+    days.forEach(d=>{
+        const dt=new Date(d+'T12:00:00');
+        const dow=dayNames[dt.getDay()]||'';
+        const isToday=d===getToday();
+        tlHtml+=`<div style="font-size:0.65rem;font-weight:700;color:${isToday?'#4ecdc4':'#aaa'};padding:6px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">${dow}<br>${d.slice(5)}</div>`;
+    });
+    const toMin=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;};
+    for(let h=startHour;h<endHour;h++){
+        const label=('0'+h).slice(-2)+':00';
+        tlHtml+=`<div style="font-size:0.55rem;color:#666;padding:4px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.03);">${label}</div>`;
+        days.forEach(d=>{
+            const s=upcoming.filter(x=>x.date===d);
+            let cellHtml='<div style="position:relative;border-bottom:1px solid rgba(255,255,255,0.03);min-height:24px;">';
+            const inHour=s.filter(x=>{
+                const st=toMin(x.startTime),et=toMin(x.endTime);
+                return st<(h+1)*60&&et>h*60;
+            });
+            const colors=['#4ecdc4','#f39c12','#e74c3c','#9b59b6','#2ecc71','#3498db','#1abc9c'];
+            inHour.forEach(se=>{
+                const st=toMin(se.startTime),et=toMin(se.endTime);
+                const left=Math.max(0,(st-h*60)/60*100);
+                const right=Math.min(100,(et-h*60)/60*100);
+                const width=right-left;
+                const ci=upcoming.indexOf(se)%colors.length;
+                const pc=se.players?se.players.reduce((a,p)=>a+(p.players||1),0):0;
+                const mx=se.maxPlayers||'∞';
+                cellHtml+=`<div style="position:absolute;top:2px;left:${left}%;width:${width}%;height:20px;background:${colors[ci]};border-radius:3px;font-size:0.5rem;color:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;cursor:pointer;opacity:0.85;" onclick="openScheduledOpDetail('${se.id}')" title="${se.startTime}-${se.endTime} ${pc}/${mx}">${pc}/${mx}</div>`;
+            });
+            cellHtml+='</div>';
+            tlHtml+=cellHtml;
+        });
+    }
+    tlHtml+='</div></div>';
+    timeline.innerHTML=tlHtml;
+    // Build list
     list.innerHTML=upcoming.map(s=>{
         const courtNames=IS_ORGANIZER?('🏟️ '+(s.courtCount||'?')+' courts'):(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
         const pCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
@@ -2290,6 +2335,7 @@ function renderScheduledOpList(){
             </div>
         </div>`;
     }).join('');
+    renderBookedOpList();
 }
 
 function renderBookedOpList(){
