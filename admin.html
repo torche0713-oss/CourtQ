@@ -1533,8 +1533,18 @@
         </div>
         <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
             <div style="font-weight:700;font-size:0.85rem;color:#3498db;margin-bottom:10px;">🖼️ Venue Logo</div>
-            <div class="form-group"><label>Logo Image URL</label><input type="url" id="sLogoUrl" placeholder="https://i.imgur.com/your-logo.png"></div>
-            <div style="font-size:0.72rem;color:#aaa;">Paste a public URL to your logo image. Recommended size: 200x200px or smaller.</div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="flex:1;min-width:200px;">
+                    <div class="form-group"><label>Upload Image</label><input type="file" id="sLogoFile" accept="image/png,image/jpeg,image/webp,image/gif" style="font-size:0.78rem;padding:4px 0;"></div>
+                    <button class="btn btn-primary btn-sm" onclick="uploadLogo()" id="uploadLogoBtn" style="margin-top:4px;">☁️ Upload</button>
+                    <span id="uploadLogoStatus" style="font-size:0.72rem;color:#aaa;margin-left:8px;"></span>
+                </div>
+                <div style="text-align:center;">
+                    <img id="sLogoPreview" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);display:none;">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label>Or paste image URL</label><input type="url" id="sLogoUrl" placeholder="https://example.com/logo.png" oninput="previewLogoUrl()"></div>
+            <div style="font-size:0.72rem;color:#aaa;">Upload a PNG, JPG, or WebP file. Max 2MB. Recommended: 200x200px or smaller.</div>
         </div>
         <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
             <div style="font-weight:700;font-size:0.85rem;color:#f39c12;margin-bottom:10px;">🔒 Financials Access Code</div>
@@ -3862,7 +3872,45 @@ function confirmEditPlayers(){
 }
 
 // ===================== SETTINGS =====================
+function previewLogoUrl(){
+    const url=document.getElementById('sLogoUrl').value.trim();
+    const preview=document.getElementById('sLogoPreview');
+    if(url){preview.src=url;preview.style.display='block';}
+    else preview.style.display='none';
+}
+async function uploadLogo(){
+    const fileInput=document.getElementById('sLogoFile');
+    const file=fileInput.files[0];
+    if(!file){showNotif('Select an image file first!','error');return;}
+    if(file.size>2*1024*1024){showNotif('Image must be under 2MB!','error');return;}
+    const ext=file.name.split('.').pop().toLowerCase();
+    if(!['png','jpg','jpeg','webp','gif'].includes(ext)){showNotif('Only PNG, JPG, WebP, or GIF allowed!','error');return;}
+    const btn=document.getElementById('uploadLogoBtn');
+    const status=document.getElementById('uploadLogoStatus');
+    btn.disabled=true;status.textContent='⏳ Uploading...';
+    try {
+        const formData=new FormData();
+        formData.append('file',file);
+        formData.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
+        formData.append('public_id','logos/'+VENUE_ID);
+        const res=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:formData});
+        const data=await res.json();
+        if(!data.secure_url) throw new Error(data.error?.message||'Upload failed');
+        document.getElementById('sLogoUrl').value=data.secure_url;
+        document.getElementById('sLogoPreview').src=data.secure_url;
+        document.getElementById('sLogoPreview').style.display='block';
+        status.textContent='✅ Uploaded!';
+        showNotif('✅ Logo uploaded! Save settings to apply.','success');
+    } catch(e){
+        status.textContent='❌ Failed: '+e.message;
+        showNotif('Upload failed: '+e.message,'error');
+    }
+    btn.disabled=false;
+}
 function openSettings(){
+    const preview=document.getElementById('sLogoPreview');
+    if(S.logoUrl){preview.src=S.logoUrl;preview.style.display='block';}
+    else preview.style.display='none';
     document.getElementById('sGcashNum').value=S.paymentInfo.gcash.number||'';
     document.getElementById('sGcashName').value=S.paymentInfo.gcash.name||'';
     document.getElementById('sMayaNum').value=S.paymentInfo.maya.number||'';
@@ -3871,6 +3919,8 @@ function openSettings(){
     document.getElementById('sAccessCode').value=S.accessCode||'';
     document.getElementById('staffSection').style.display=IS_OWNER?'':'none';
     document.getElementById('ownerSection').style.display=IS_OWNER?'':'none';
+    document.getElementById('uploadLogoStatus').textContent='';
+    document.getElementById('sLogoFile').value='';
     renderStaffList();
     renderOwnerList();
     document.getElementById('settingsModal').classList.add('active');

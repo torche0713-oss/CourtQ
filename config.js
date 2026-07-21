@@ -12,6 +12,8 @@ const CQ_CONFIG = {
     currency: { symbol: '₱', code: 'PHP', name: 'Philippine Peso' },
     timezone: 'Asia/Manila',
     utcOffset: 480,
+    cloudinaryCloud: 'dfjswmnx9',
+    cloudinaryPreset: 'courtq_logos',
     phone: { code: '+63', placeholder: '+63 9XX XXX XXXX', pattern: /^\+63\d{10}$/ },
     locale: 'en-PH',
     country: 'Philippines',
