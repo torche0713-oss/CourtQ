@@ -6412,7 +6412,7 @@ async function renderVenueInvoice(weekOffset){
             if(!b.convenienceFee) return false;
             const bDate=new Date((b.date||'')+'T'+(b.startTime||'00:00'));
             return bDate>=startDate&&bDate<=endDate;
-        });
+        }):[];
         const vDoc=await getVenueDocRef().get();
         const sSessions=vDoc.exists?(vDoc.data().scheduledSessions||[]):[];
         const weekOp=[];
