@@ -4473,7 +4473,8 @@ async function renderDevDashboard(){
         for(const slugDoc of slugsSnap.docs){
             const venueId=slugDoc.data().venueId;
             if(!venueId) continue;
-            const vDoc=await db.collection('venues').doc(venueId).get();
+            const isOrg=slugDoc.data().type==='organizer';
+            const vDoc=await (isOrg?db.collection('organizers').doc(venueId):db.collection('venues').doc(venueId)).get();
             if(!vDoc.exists) continue;
             const vData=vDoc.data();
             // Look up owner email from users collection
@@ -4489,10 +4490,11 @@ async function renderDevDashboard(){
                 } catch(e){ ownerMap[venueId]={ email:'', name:vData.ownerName||'', mobile:vData.mobile||'' }; }
             }
             if(vData.ownerId==='demo') continue; // skip demo venues
-            if(vData.status==='pending'){
-                pending.push({slug:slugDoc.id,venueId,data:vData,owner:ownerMap[venueId]});
+            if(isOrg? vData.activated!==true : vData.status==='pending'){
+                pending.push({slug:slugDoc.id,venueId,data:vData,owner:ownerMap[venueId],isOrg});
                 continue;
             }
+            if(isOrg) continue; // skip organizers from active venues section
             if(vData.plan==='founding') foundingCount++;
             const contractSnap=await db.collection('contracts').doc(venueId).get();
             const contract=contractSnap.exists?contractSnap.data():null;
@@ -4521,12 +4523,16 @@ async function renderDevDashboard(){
             html+=`<div style="font-size:0.75rem;font-weight:700;color:#f39c12;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px;">⏳ Pending Approval (${pending.length})</div>`;
             pending.forEach(p=>{
                 const d=p.data;
+                const name=p.isOrg?(d.businessName||d.name||'Unnamed'):(d.name||'Unnamed');
+                const ownerName=d.ownerName||(p.owner?p.owner.name:'')||'N/A';
+                const mobile=d.mobile||(p.owner?p.owner.mobile:'')||'N/A';
+                const courtsInfo=p.isOrg?'🏟️ Organizer':`🏟️ ${(d.courts||[]).length} courts`;
                 html+=`<div style="background:rgba(243,156,18,0.06);border:1px solid rgba(243,156,18,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
-                            <div style="font-weight:700;">⏳ ${escapeHtml(d.name||'Unnamed')}</div>
+                            <div style="font-weight:700;">⏳ ${escapeHtml(name)}</div>
                             <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${escapeHtml(p.slug)}</div>
-                            <div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(p.owner.name||d.ownerName||'N/A')} · 📱 ${escapeHtml(p.owner.mobile||d.mobile||'N/A')} · 🏟️ ${(d.courts||[]).length} courts</div>
+                            <div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(ownerName)} · 📱 ${escapeHtml(mobile)} · ${courtsInfo}</div>
                             <div style="font-size:0.72rem;color:#aaa;">📧 ${escapeHtml(p.owner.email||'N/A')} · Ref: ${escapeHtml(d.paymentRef||'N/A')}</div>
                             <div style="font-size:0.72rem;color:#aaa;">📋 Plan: <strong>${escapeHtml(d.plan||'founding')}</strong> · Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
                         </div>
@@ -4809,8 +4815,11 @@ async function deleteAnnouncement(id){
 async function activateVenue(venueId,slug){
     if(!confirm('Activate this venue? Owner will be notified via email.')) return;
     try {
-        await db.collection('venues').doc(venueId).update({ status:'active' });
-        const vDoc=await db.collection('venues').doc(venueId).get();
+        const slugDoc=await db.collection('slugs').doc(slug).get();
+        const isOrg=slugDoc.exists&&slugDoc.data().type==='organizer';
+        const col=isOrg?'organizers':'venues';
+        await db.collection(col).doc(venueId).update(isOrg?{activated:true}:{status:'active'});
+        const vDoc=await db.collection(col).doc(venueId).get();
         const vData=vDoc.data();
         // Find owner email from users collection
         let ownerEmail='';
@@ -4827,21 +4836,23 @@ async function activateVenue(venueId,slug){
                 trackUsage('email');
                 await emailjs.send(ej.serviceId, ej.templateAuto, {
                     to_email: ownerEmail, to_name: vData.ownerName||'Valued Partner',
-                    subject: `Your venue "${vData.name}" is now LIVE! ✅`,
-                    body: `✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Confirm Bookings\nGo to the Confirmations tab to review pending bookings. When a player pays via GCash or Maya, you'll receive a notification here — verify their payment reference number, then click Confirm to finalize the booking.\n\nStep 4: Set Up Your Courts\nGo to the Courts tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 5: Add Staff (Optional)\nIn Settings → Staff or Co-Owners, add staff emails so they can help manage the venue.\n\nStep 6: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\n━━━ SHARE YOUR LINKS ━━━\n\nStep 7: Find Your Venue Links\nAt the top of your dashboard, you'll find:\n  • 🔗 Share Booking Online Link — share this with players so they can book courts\n  • 📺 Share TV Link — open this on a TV/tablet to show live scores & queue\n  • 📱 Share Scoring Link — open this on a phone to record scores during games\n\n💡 Pro Tip: Convert your booking link into a QR code (free at https://qrcodemonkey.com or any QR generator). Print and display it at your venue so players can scan and book instantly!\n\n━━━ VIDEO GUIDES ━━━\n\nCheck out video tutorials on my Facebook profile:\nhttps://www.facebook.com/ihectorlopez\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips and instructions to guide you.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291`
+                    subject: `Your ${isOrg?'Organizer':'Venue'} "${isOrg?(vData.businessName||vData.name):vData.name}" is now LIVE! ✅`,
+                    body: isOrg?`✅ Great news! Your organizer account "${vData.businessName||vData.name||'Your Organization'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\n\nStep 3: Manage Open Play\nUse the Open Play tab to start sessions, manage the queue, and rotate players through courts.\n\nStep 4: Confirm Players\nGo to the Confirmations tab to approve online player registrations for Open Play sessions.\n\n━━━ SHARE YOUR LINKS ━━━\n\nStep 5: Share Your Portal\nShare your portal link with players so they can register for Open Play sessions online.\n\n━━━ VIDEO GUIDES ━━━\n\nCheck out video tutorials on my Facebook profile:\nhttps://www.facebook.com/ihectorlopez\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips and instructions to guide you.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291`:`✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!\n\n━━━ GETTING STARTED ━━━\n\nStep 1: Log In\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\n\nStep 2: Access Your Dashboard\nYou'll be automatically redirected to your admin dashboard.\nBookmark this page for quick access.\n\nStep 3: Confirm Bookings\nGo to the Confirmations tab to review pending bookings. When a player pays via GCash or Maya, you'll receive a notification here — verify their payment reference number, then click Confirm to finalize the booking.\n\nStep 4: Set Up Your Courts\nGo to the Courts tab to:\n  • Set your venue name, logo, and contact info\n  • Configure court names, surfaces, and rates\n  • Set your operating hours\n\nStep 5: Add Staff (Optional)\nIn Settings → Staff or Co-Owners, add staff emails so they can help manage the venue.\n\nStep 6: Set Up Gemini AI Key\nIn Settings, enter your Gemini API key to unlock AI features:\n  • Get a free API key at https://aistudio.google.com/apikey\n  • Paste it in the Gemini API Key field\n  • AI auto-scheduling, smart pairings, and insights will activate\n\n━━━ SHARE YOUR LINKS ━━━\n\nStep 7: Find Your Venue Links\nAt the top of your dashboard, you'll find:\n  • 🔗 Share Booking Online Link — share this with players so they can book courts\n  • 📺 Share TV Link — open this on a TV/tablet to show live scores & queue\n  • 📱 Share Scoring Link — open this on a phone to record scores during games\n\n💡 Pro Tip: Convert your booking link into a QR code (free at https://qrcodemonkey.com or any QR generator). Print and display it at your venue so players can scan and book instantly!\n\n━━━ VIDEO GUIDES ━━━\n\nCheck out video tutorials on my Facebook profile:\nhttps://www.facebook.com/ihectorlopez\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips and instructions to guide you.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291`
                 });
             }
         } catch(e){ console.warn('EmailJS activation send failed:', e); }
-        showNotif(`✅ ${vData.name||'Venue'} activated!`,'success');
+        showNotif(`✅ ${isOrg?(vData.businessName||vData.name||'Organizer'):(vData.name||'Venue')} activated!`,'success');
         renderDevDashboard();
     } catch(e){
         showNotif('Activation failed: '+e.message,'error');
     }
 }
 async function deleteVenue(venueId,slug){
-    if(!confirm('⚠️ Permanently delete this venue and all its data? This cannot be undone.')) return;
+    if(!confirm('🗑 Permanently delete this venue and all its data? This cannot be undone.')) return;
     try {
-        await db.collection('venues').doc(venueId).delete();
+        const slugDoc=await db.collection('slugs').doc(slug).get();
+        const isOrg=slugDoc.exists&&slugDoc.data().type==='organizer';
+        await db.collection(isOrg?'organizers':'venues').doc(venueId).delete();
         await db.collection('slugs').doc(slug).delete();
         try { await db.collection('contracts').doc(venueId).delete(); } catch(e){}
         try {
