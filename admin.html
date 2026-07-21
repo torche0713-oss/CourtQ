@@ -6665,19 +6665,21 @@ async function renderOrganizerInvoice(){
         invs.forEach(inv=>{
             const stColor=inv.status==='paid'?'#2ecc71':'#f39c12';
             const stLabel=inv.status==='paid'?'✅ Paid':'⏳ Pending';
+            const refDisplay=inv.refNumber?`<span style="color:#888;">Ref: ${escapeHtml(inv.refNumber)}</span>`:'';
             html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                 <td style="padding:4px 6px;">${inv.sessionDate||'-'} ${inv.sessionId?'<span style="color:#555;">'+inv.sessionId.slice(-6)+'</span>':''}</td>
                 <td style="padding:4px 6px;text-align:center;">${inv.pCount||0}</td>
                 <td style="padding:4px 6px;text-align:right;font-weight:700;">₱${(inv.feeAmount||0).toLocaleString()}</td>
-                <td style="padding:4px 6px;text-align:center;color:${stColor};">${stLabel}</td>
+                <td style="padding:4px 6px;text-align:center;color:${stColor};">${stLabel} ${refDisplay?'<br>'+refDisplay:''}</td>
                 <td style="padding:4px 6px;text-align:center;">
-                    ${inv.status!=='paid'&&isDevUser?`<button class="btn btn-success btn-sm" onclick="markOrgInvoicePaid('${inv.id}')" style="font-size:0.65rem;padding:2px 8px;">✅ Mark Paid</button>`:''}
+                    ${inv.status!=='paid'?`<button class="btn btn-success btn-sm" onclick="payOrgInvoice('${inv.id}')" style="font-size:0.65rem;padding:2px 8px;">💳 Pay</button>`:''}
+                    ${inv.status!=='paid'&&isDevUser?`<button class="btn btn-outline btn-sm" onclick="markOrgInvoicePaid('${inv.id}')" style="font-size:0.65rem;padding:2px 8px;">✅ Dev Override</button>`:''}
                 </td>
             </tr>`;
         });
         html+=`</tbody></table>`;
-        if(pending.length>0&&isDevUser){
-            html+=`<div style="margin-top:10px;font-size:0.7rem;color:#888;">Send payment to GCash/Maya: <strong>09998830291</strong> / <strong>CourtQ Pro</strong></div>`;
+        if(pending.length>0){
+            html+=`<div style="margin-top:10px;font-size:0.7rem;color:#888;">Send payment to GCash: <strong>09998830291</strong> / <strong>CourtQ Pro</strong></div>`;
         }
         el.innerHTML=html;
     } catch(e){
@@ -6685,8 +6687,23 @@ async function renderOrganizerInvoice(){
         console.warn('renderOrganizerInvoice error:',e);
     }
 }
+async function payOrgInvoice(invId){
+    const ref=prompt('Enter your GCash/Maya reference number:');
+    if(!ref||!ref.trim()) return;
+    try {
+        await db.collection('org_invoices').doc(invId).set({
+            status:'paid',
+            refNumber:ref.trim(),
+            paidAt:firebase.firestore.FieldValue.serverTimestamp()
+        },{merge:true});
+        showNotif('✅ Payment recorded! Thank you.','success');
+        renderOrganizerInvoice();
+    } catch(e){
+        showNotif('Failed: '+e.message,'error');
+    }
+}
 async function markOrgInvoicePaid(invId){
-    if(!confirm('Mark this invoice as paid?')) return;
+    if(!confirm('Mark this invoice as paid (dev override)?')) return;
     try {
         await db.collection('org_invoices').doc(invId).set({
             status:'paid',
