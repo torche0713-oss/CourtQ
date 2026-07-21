@@ -4496,19 +4496,28 @@ async function renderDevDashboard(){
                 continue;
             }
             if(isOrg){
-                // Collect active organizers
+                // Collect active organizers with their sessions
                 const sSessions=vData.scheduledSessions||[];
                 const history=vData.history||[];
+                const invoiced=vData.invoicedSessions||[];
+                const invoicedIds=new Set(invoiced.map(x=>x.id));
+                const sessions=[];
                 let totalPlayers=0;
-                sSessions.forEach(s=>{
-                    if(s.players) totalPlayers+=s.players.reduce((sum,p)=>sum+(p.players||1),0);
-                });
-                history.forEach(h=>{
-                    if(h.players) totalPlayers+=h.players.reduce((sum,p)=>sum+(p.players||1),0);
-                });
+                const collectSessions=(arr)=>{
+                    arr.forEach(s=>{
+                        const pCount=s.players?s.players.reduce((sum,p)=>sum+(p.players||1),0):0;
+                        totalPlayers+=pCount;
+                        const max=s.maxPlayers;
+                        if(max&&pCount>=max&&!invoicedIds.has(s.id)){
+                            sessions.push({id:s.id,date:s.date||s.startDate||'',startTime:s.startTime||'',pCount,max,fee:pCount*5,status:s.status});
+                        }
+                    });
+                };
+                collectSessions(sSessions);
+                collectSessions(history);
                 const feeAccrued=totalPlayers*5;
                 const o=ownerMap[venueId];
-                organizers.push({slug:slugDoc.id,venueId,data:vData,name:vData.businessName||vData.name||'Unnamed',owner:o,totalPlayers,feeAccrued});
+                organizers.push({slug:slugDoc.id,venueId,data:vData,name:vData.businessName||vData.name||'Unnamed',owner:o,totalPlayers,feeAccrued,sessions});
                 continue;
             }
             if(vData.plan==='founding') foundingCount++;
@@ -4605,9 +4614,6 @@ async function renderDevDashboard(){
             html+=`<div style="font-size:0.75rem;font-weight:700;color:#9b59b6;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">🎯 Active Organizers / Clubs (${organizers.length})</div>`;
             organizers.forEach(o=>{
                 const d=o.data;
-                const target=d.playerTarget||100;
-                const progress=Math.min(100,Math.round((o.totalPlayers/target)*100));
-                const billable=o.totalPlayers>=target;
                 const ownerEmail=o.owner?o.owner.email:'';
                 const ownerMobile=o.owner?o.owner.mobile:'';
                 const invCount=(d.invoices||[]).length;
@@ -4616,21 +4622,21 @@ async function renderDevDashboard(){
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:700;">🎯 ${escapeHtml(o.name)}</div>
                             <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${escapeHtml(o.slug)} · 📧 ${escapeHtml(ownerEmail||'?')} · 📱 ${escapeHtml(ownerMobile||'?')}</div>
-                            <div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(d.ownerName||o.owner?.name||'N/A')}</div>
-                            <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;">
-                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Players:</span> <strong>${o.totalPlayers}</strong></div>
-                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Fees Accrued:</span> <strong style="color:#2ecc71;">₱${o.feeAccrued.toLocaleString()}</strong></div>
-                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Target:</span> <strong>${target}</strong></div>
-                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Progress:</span> <strong style="color:${progress>=100?'#2ecc71':progress>=50?'#f39c12':'#aaa'};">${progress}%</strong></div>
-                            </div>
-                            <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;max-width:300px;">
-                                <div style="height:100%;width:${progress}%;background:${progress>=100?'#2ecc71':progress>=50?'#f39c12':'#9b59b6'};border-radius:2px;transition:width 0.3s;"></div>
-                            </div>
+                            <div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(d.ownerName||o.owner?.name||'N/A')} · Total Players: ${o.totalPlayers} · Total Fees: ₱${o.feeAccrued.toLocaleString()}</div>
+                            ${o.sessions.length>0?`<div style="margin-top:8px;border-top:1px solid rgba(155,89,182,0.15);padding-top:8px;">
+                                <div style="font-size:0.7rem;font-weight:700;color:#4ecdc4;margin-bottom:6px;">📋 Sessions Ready to Invoice</div>
+                                ${o.sessions.map(s=>`
+                                    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 10px;margin-bottom:4px;font-size:0.75rem;">
+                                        <div style="flex:1;">
+                                            <div style="font-weight:600;">${escapeHtml(s.date)} ${escapeHtml(s.startTime)}</div>
+                                            <div style="font-size:0.68rem;color:#aaa;">${s.pCount}/${s.max} players · Fee: ₱${s.fee.toLocaleString()}</div>
+                                        </div>
+                                        <button class="btn btn-success btn-sm" onclick="invoiceOrgSession('${o.venueId}','${o.slug}','${s.id}')">💰 Invoice</button>
+                                    </div>
+                                `).join('')}
+                            </div>`:''}
                         </div>
                         <div style="text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
-                            ${billable?`<div style="font-size:0.68rem;color:#2ecc71;font-weight:700;">✅ Ready to Invoice (₱${o.feeAccrued.toLocaleString()})</div>
-                            <button class="btn btn-success btn-sm" onclick="invoiceOrganizer('${o.venueId}','${o.slug}')">💰 Invoice Convenience Fees</button>`:`<div style="font-size:0.68rem;color:#f39c12;">⏳ ${target-o.totalPlayers} more players to reach target</div>`}
-                            <button class="btn btn-outline btn-sm" onclick="setOrgTarget('${o.venueId}')">🎯 Set Target</button>
                             <button class="btn btn-outline btn-sm" onclick="viewOrgInvoices('${o.venueId}','${escapeHtml(o.name)}')">📋 Invoices (${invCount})</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteVenue('${o.venueId}','${o.slug}')">🗑️</button>
                         </div>
@@ -4959,39 +4965,27 @@ async function saveContract(){
     renderDevDashboard();
     showNotif('✅ Contract saved!');
 }
-async function setOrgTarget(organizerId){
-    const d=await db.collection('organizers').doc(organizerId).get();
-    if(!d.exists){showNotif('Organizer not found','error');return;}
-    const current=d.data().playerTarget||100;
-    const input=prompt('Set player target for invoicing:',current);
-    if(input===null) return;
-    const target=parseInt(input);
-    if(!target||target<1){showNotif('Invalid target','error');return;}
-    await db.collection('organizers').doc(organizerId).update({playerTarget:target});
-    showNotif('✅ Player target set to '+target,'success');
-    renderDevDashboard();
-}
-async function invoiceOrganizer(organizerId,slug){
-    if(!confirm("Generate invoice for this organizer's convenience fees?")) return;
+async function invoiceOrgSession(organizerId,slug,sessionId){
+    if(!confirm("Invoice this session's convenience fees?")) return;
     try {
         const d=await db.collection('organizers').doc(organizerId).get();
         if(!d.exists){showNotif('Organizer not found','error');return;}
         const data=d.data();
-        const sSessions=data.scheduledSessions||[];
-        const history=data.history||[];
-        let totalPlayers=0;
-        sSessions.forEach(s=>{if(s.players) totalPlayers+=s.players.reduce((sum,p)=>sum+(p.players||1),0);});
-        history.forEach(h=>{if(h.players) totalPlayers+=h.players.reduce((sum,p)=>sum+(p.players||1),0);});
-        const feeAmount=totalPlayers*5;
-        if(feeAmount<=0){showNotif('No convenience fees to invoice','error');return;}
-        const inv={organizerId,slug,businessName:data.businessName||data.name||'Unnamed',ownerName:data.ownerName||'',email:data.email||'',totalPlayers,feeAmount,generatedAt:Date.now(),status:'pending',paidAt:null};
+        const findSession=(arr)=>arr.find(s=>s.id===sessionId);
+        const session=findSession(data.scheduledSessions||[])||findSession(data.history||[]);
+        if(!session){showNotif('Session not found','error');return;}
+        const pCount=session.players?session.players.reduce((sum,p)=>sum+(p.players||1),0):0;
+        const max=session.maxPlayers;
+        if(!max||pCount<max){showNotif('Session hasn\\'t reached max players yet','error');return;}
+        const feeAmount=pCount*5;
+        const inv={organizerId,slug,sessionId,sessionDate:session.date||session.startDate||'',pCount,feeAmount,generatedAt:Date.now(),status:'pending',paidAt:null};
         const invRef=await db.collection('org_invoices').add(inv);
-        // Track invoice in organizer doc
+        // Track in organizer doc
         const invs=data.invoices||[];
-        invs.push({id:invRef.id,totalPlayers,feeAmount,generatedAt:Date.now(),status:'pending'});
-        await db.collection('organizers').doc(organizerId).update({invoices:invs});
-        // Clear tracked players (reset after invoicing)
-        await db.collection('organizers').doc(organizerId).update({scheduledSessions:[],history:[]});
+        invs.push({id:invRef.id,sessionId,pCount,feeAmount,generatedAt:Date.now(),status:'pending'});
+        const invoicedSessions=data.invoicedSessions||[];
+        invoicedSessions.push({id:sessionId,pCount,feeAmount,date:session.date||session.startDate||'',invoicedAt:Date.now()});
+        await db.collection('organizers').doc(organizerId).update({invoices:invs,invoicedSessions});
         showNotif('✅ Invoice generated! Amount: ₱'+feeAmount.toLocaleString(),'success');
         renderDevDashboard();
     } catch(e){
