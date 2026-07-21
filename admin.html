@@ -4470,6 +4470,7 @@ async function renderDevDashboard(){
         const venues=[], pending=[];
         let activeCount=0, monthlyTotal=0, dueTotal=0, foundingCount=0;
         const ownerMap={}; // venueId -> { email, name, mobile }
+        const organizers=[];
         for(const slugDoc of slugsSnap.docs){
             const isOrg=slugDoc.data().type==='organizer';
             const venueId=isOrg?slugDoc.data().organizerId:slugDoc.data().venueId;
@@ -4477,6 +4478,7 @@ async function renderDevDashboard(){
             const vDoc=await (isOrg?db.collection('organizers').doc(venueId):db.collection('venues').doc(venueId)).get();
             if(!vDoc.exists) continue;
             const vData=vDoc.data();
+            if(vData.ownerId==='demo') continue;
             // Look up owner email from users collection
             if(!ownerMap[venueId]){
                 try {
@@ -4489,12 +4491,26 @@ async function renderDevDashboard(){
                     }
                 } catch(e){ ownerMap[venueId]={ email:'', name:vData.ownerName||'', mobile:vData.mobile||'' }; }
             }
-            if(vData.ownerId==='demo') continue; // skip demo venues
             if(isOrg? vData.activated!==true : vData.status==='pending'){
                 pending.push({slug:slugDoc.id,venueId,data:vData,owner:ownerMap[venueId],isOrg});
                 continue;
             }
-            if(isOrg) continue; // skip organizers from active venues section
+            if(isOrg){
+                // Collect active organizers
+                const sSessions=vData.scheduledSessions||[];
+                const history=vData.history||[];
+                let totalPlayers=0;
+                sSessions.forEach(s=>{
+                    if(s.players) totalPlayers+=s.players.reduce((sum,p)=>sum+(p.players||1),0);
+                });
+                history.forEach(h=>{
+                    if(h.players) totalPlayers+=h.players.reduce((sum,p)=>sum+(p.players||1),0);
+                });
+                const feeAccrued=totalPlayers*5;
+                const o=ownerMap[venueId];
+                organizers.push({slug:slugDoc.id,venueId,data:vData,name:vData.businessName||vData.name||'Unnamed',owner:o,totalPlayers,feeAccrued});
+                continue;
+            }
             if(vData.plan==='founding') foundingCount++;
             const contractSnap=await db.collection('contracts').doc(venueId).get();
             const contract=contractSnap.exists?contractSnap.data():null;
@@ -4511,7 +4527,7 @@ async function renderDevDashboard(){
             venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId]});
         }
         _devVenues=venues;
-        document.getElementById('devVenueCount').textContent=venues.length+pending.length;
+        document.getElementById('devVenueCount').textContent=venues.length+organizers.length+pending.length;
         document.getElementById('devActiveContracts').textContent=activeCount;
         document.getElementById('devFoundingCount').textContent=foundingCount+'/50';
         document.getElementById('devMonthlyTotal').textContent='₱'+monthlyTotal.toLocaleString();
@@ -4545,9 +4561,10 @@ async function renderDevDashboard(){
             });
         }
         // ACTIVE venues
-        if(venues.length===0 && pending.length===0){
+        if(venues.length===0 && pending.length===0 && organizers.length===0){
             html='<div class="empty-state"><div class="ei">📊</div><p>No venues found.</p></div>';
-        } else if(venues.length>0){
+        }
+        if(venues.length>0){
             html+=`<div style="font-size:0.75rem;font-weight:700;color:#4ecdc4;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">✅ Active Venues (${venues.length})</div>`;
             const now=new Date();
             venues.forEach(v=>{
@@ -4583,6 +4600,44 @@ async function renderDevDashboard(){
                 </div>`;
             });
         }
+        // ACTIVE ORGANIZERS section
+        if(organizers.length>0){
+            html+=`<div style="font-size:0.75rem;font-weight:700;color:#9b59b6;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">🎯 Active Organizers / Clubs (${organizers.length})</div>`;
+            organizers.forEach(o=>{
+                const d=o.data;
+                const target=d.playerTarget||100;
+                const progress=Math.min(100,Math.round((o.totalPlayers/target)*100));
+                const billable=o.totalPlayers>=target;
+                const ownerEmail=o.owner?o.owner.email:'';
+                const ownerMobile=o.owner?o.owner.mobile:'';
+                const invCount=(d.invoices||[]).length;
+                html+=`<div style="background:rgba(155,89,182,0.06);border:1px solid rgba(155,89,182,0.15);border-radius:12px;padding:14px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-weight:700;">🎯 ${escapeHtml(o.name)}</div>
+                            <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">/${escapeHtml(o.slug)} · 📧 ${escapeHtml(ownerEmail||'?')} · 📱 ${escapeHtml(ownerMobile||'?')}</div>
+                            <div style="font-size:0.72rem;color:#aaa;">👤 ${escapeHtml(d.ownerName||o.owner?.name||'N/A')}</div>
+                            <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;">
+                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Players:</span> <strong>${o.totalPlayers}</strong></div>
+                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Fees Accrued:</span> <strong style="color:#2ecc71;">₱${o.feeAccrued.toLocaleString()}</strong></div>
+                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Target:</span> <strong>${target}</strong></div>
+                                <div style="font-size:0.78rem;"><span style="color:#aaa;">Progress:</span> <strong style="color:${progress>=100?'#2ecc71':progress>=50?'#f39c12':'#aaa'};">${progress}%</strong></div>
+                            </div>
+                            <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;max-width:300px;">
+                                <div style="height:100%;width:${progress}%;background:${progress>=100?'#2ecc71':progress>=50?'#f39c12':'#9b59b6'};border-radius:2px;transition:width 0.3s;"></div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+                            ${billable?`<div style="font-size:0.68rem;color:#2ecc71;font-weight:700;">✅ Ready to Invoice (₱${o.feeAccrued.toLocaleString()})</div>
+                            <button class="btn btn-success btn-sm" onclick="invoiceOrganizer('${o.venueId}','${o.slug}')">💰 Invoice Convenience Fees</button>`:`<div style="font-size:0.68rem;color:#f39c12;">⏳ ${target-o.totalPlayers} more players to reach target</div>`}
+                            <button class="btn btn-outline btn-sm" onclick="setOrgTarget('${o.venueId}')">🎯 Set Target</button>
+                            <button class="btn btn-outline btn-sm" onclick="viewOrgInvoices('${o.venueId}','${escapeHtml(o.name)}')">📋 Invoices (${invCount})</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteVenue('${o.venueId}','${o.slug}')">🗑️</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
         document.getElementById('devVenuesList').innerHTML=html;
         // Build owner emails list
         _devOwnerList=[];
@@ -4592,6 +4647,9 @@ async function renderDevDashboard(){
         });
         venues.forEach(v=>{
             _devOwnerList.push({name:v.name,slug:v.slug,ownerName:v.owner.name||(v.contract?v.contract.ownerName:'')||'',email:v.owner.email||'',mobile:v.owner.mobile||'',status:((v.contract&&(!v.contract.endDate||new Date(v.contract.endDate)>=new Date()))?'Active':'Inactive'),rate:v.contract?v.contract.monthlyRetainer||0:0});
+        });
+        organizers.forEach(o=>{
+            _devOwnerList.push({name:o.name,slug:o.slug,ownerName:o.data.ownerName||o.owner?.name||'',email:o.owner?.email||o.data.email||'',mobile:o.owner?.mobile||o.data.mobile||'',status:'Active - Organizer',rate:0});
         });
         const ownerListEl=document.getElementById('devOwnerEmails');
         if(ownerListEl){
@@ -4900,6 +4958,63 @@ async function saveContract(){
     closeModal('contractModal');
     renderDevDashboard();
     showNotif('✅ Contract saved!');
+}
+async function setOrgTarget(organizerId){
+    const d=await db.collection('organizers').doc(organizerId).get();
+    if(!d.exists){showNotif('Organizer not found','error');return;}
+    const current=d.data().playerTarget||100;
+    const input=prompt('Set player target for invoicing:',current);
+    if(input===null) return;
+    const target=parseInt(input);
+    if(!target||target<1){showNotif('Invalid target','error');return;}
+    await db.collection('organizers').doc(organizerId).update({playerTarget:target});
+    showNotif('✅ Player target set to '+target,'success');
+    renderDevDashboard();
+}
+async function invoiceOrganizer(organizerId,slug){
+    if(!confirm('Generate invoice for this organizer\\'s convenience fees?')) return;
+    try {
+        const d=await db.collection('organizers').doc(organizerId).get();
+        if(!d.exists){showNotif('Organizer not found','error');return;}
+        const data=d.data();
+        const sSessions=data.scheduledSessions||[];
+        const history=data.history||[];
+        let totalPlayers=0;
+        sSessions.forEach(s=>{if(s.players) totalPlayers+=s.players.reduce((sum,p)=>sum+(p.players||1),0);});
+        history.forEach(h=>{if(h.players) totalPlayers+=h.players.reduce((sum,p)=>sum+(p.players||1),0);});
+        const feeAmount=totalPlayers*5;
+        if(feeAmount<=0){showNotif('No convenience fees to invoice','error');return;}
+        const inv={organizerId,slug,businessName:data.businessName||data.name||'Unnamed',ownerName:data.ownerName||'',email:data.email||'',totalPlayers,feeAmount,generatedAt:Date.now(),status:'pending',paidAt:null};
+        const invRef=await db.collection('org_invoices').add(inv);
+        // Track invoice in organizer doc
+        const invs=data.invoices||[];
+        invs.push({id:invRef.id,totalPlayers,feeAmount,generatedAt:Date.now(),status:'pending'});
+        await db.collection('organizers').doc(organizerId).update({invoices:invs});
+        // Clear tracked players (reset after invoicing)
+        await db.collection('organizers').doc(organizerId).update({scheduledSessions:[],history:[]});
+        showNotif('✅ Invoice generated! Amount: ₱'+feeAmount.toLocaleString(),'success');
+        renderDevDashboard();
+    } catch(e){
+        showNotif('Invoice failed: '+e.message,'error');
+    }
+}
+function viewOrgInvoices(organizerId,name){
+    db.collection('organizers').doc(organizerId).get().then(snap=>{
+        if(!snap.exists) return;
+        const invs=snap.data().invoices||[];
+        if(invs.length===0){showNotif('No invoices for '+name,'error');return;}
+        let html='<div class="modal" style="max-width:500px;"><div class="modal-title">📋 Invoices — '+escapeHtml(name)+'</div><div style="max-height:400px;overflow-y:auto;">';
+        html+='<table style="width:100%;font-size:0.78rem;border-collapse:collapse;"><thead><tr style="color:#aaa;border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:6px 8px;text-align:left;">Date</th><th style="padding:6px 8px;text-align:left;">Players</th><th style="padding:6px 8px;text-align:left;">Amount</th><th style="padding:6px 8px;text-align:left;">Status</th></tr></thead><tbody>';
+        invs.sort((a,b)=>new Date(b.generatedAt||0)-new Date(a.generatedAt||0)).forEach(inv=>{
+            const stColor=inv.status==='paid'?'#2ecc71':inv.status==='cancelled'?'#666':'#f39c12';
+            const stLabel=inv.status==='paid'?'✅ Paid':inv.status==='cancelled'?'❌ Cancelled':'⏳ Pending';
+            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${inv.generatedAt?new Date(inv.generatedAt).toLocaleDateString():'-'}</td><td style="padding:6px 8px;">${inv.totalPlayers||0}</td><td style="padding:6px 8px;font-weight:700;">₱${(inv.feeAmount||0).toLocaleString()}</td><td style="padding:6px 8px;color:${stColor};">${stLabel}</td></tr>`;
+        });
+        html+='</tbody></table></div><div class="modal-actions"><button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
+        const overlay=document.createElement('div');overlay.className='modal-overlay active';overlay.innerHTML=html;
+        document.body.appendChild(overlay);
+        overlay.onclick=e=>{if(e.target===overlay) overlay.remove();};
+    });
 }
 function addPayment(venueId){
     document.getElementById('pVenueId').value=venueId;
