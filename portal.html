@@ -483,7 +483,8 @@ function renderPortalPlayerNames(){
 function openPortal(mode){
     if(mode==='openplay') return openOpPortal();
     S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
-    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo" onerror="this.style.display='none'">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+    const cb='?t='+Date.now();
+    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo" onerror="this.style.display='none'">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
     document.getElementById('pDate').value=getTodayISO();
     goPortalStep(1);
     renderCourtPicker();
@@ -772,7 +773,7 @@ async function showPendingBooking(bId){
         if(!court){ sessionStorage.removeItem('portalPendingBooking'); return; }
         S.portal = {step:5,courtId:booking.courtId,date:booking.date,slot:timeToMin(booking.startTime),duration:booking.duration,payMethod:booking.paymentMethod,data:{first:booking.customer,last:'',phone:booking.phone,email:booking.email,gameType:booking.gameType,players:booking.players,notes:booking.notes}};
         document.getElementById('pDate').value=booking.date;
-        document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+        document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}?t=${Date.now()}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
         document.getElementById('portalOverlay').classList.add('active');
         document.getElementById('landingPage').style.display='none';
         goPortalStep(5);
@@ -789,8 +790,10 @@ let _opPayMethod = null;
 
 function openOpPortal(){
     const orgTag=IS_ORGANIZER_PORTAL?`<div style="font-size:0.65rem;color:#888;font-weight:400;text-transform:uppercase;letter-spacing:1px;">ORGANIZED BY</div>`:'';
-    const nameDisplay=S.logoUrl
-        ? `<img src="${escapeHtml(S.logoUrl)}" style="height:32px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">${escapeHtml(S.venueName)}`
+    const cb='?t='+Date.now();
+    const logoUrl=S.logoUrl?S.logoUrl+cb:'';
+    const nameDisplay=logoUrl
+        ? `<img src="${escapeHtml(logoUrl)}" style="height:32px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">${escapeHtml(S.venueName)}`
         : escapeHtml(S.venueName);
     const venueExtra=S.session?.venueName
         ? `<div style="font-size:0.85rem;color:#aaa;font-weight:400;margin-top:2px;">📍 ${escapeHtml(S.session.venueName)}</div>`
@@ -1141,9 +1144,10 @@ function watchOpRegistration(email, sessionId){
             S.scheduledSessions = data.scheduledSessions || [];
             S.nextBId = data.nextBId || 1;
             S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
-            const logoHtml=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" class="hero-logo-img" alt="logo">`:'';
+            const cb='?t='+Date.now();
+            const logoHtml=S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" class="hero-logo-img" alt="logo">`:'';
             document.getElementById('heroVenueName').innerHTML = logoHtml + escapeHtml(S.venueName);
-            document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+            document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
             if (!IS_ORGANIZER_PORTAL) renderCourtPicker();
             // Re-render slots if on step 2
             if(S.portal?.step===2) renderSlots();
