@@ -4972,7 +4972,7 @@ async function setOrgTarget(organizerId){
     renderDevDashboard();
 }
 async function invoiceOrganizer(organizerId,slug){
-    if(!confirm('Generate invoice for this organizer\\'s convenience fees?')) return;
+    if(!confirm("Generate invoice for this organizer's convenience fees?")) return;
     try {
         const d=await db.collection('organizers').doc(organizerId).get();
         if(!d.exists){showNotif('Organizer not found','error');return;}
@@ -6052,8 +6052,8 @@ function deleteTournament(id){
         const slugDoc = await db.collection('slugs').doc(venueSlug).get();
         if (!slugDoc.exists) { window.location.href = 'index.html'; return; }
         const slugData = slugDoc.data();
-        VENUE_ID = slugDoc.data().venueId;
         IS_ORGANIZER = slugData.type === 'organizer';
+        VENUE_ID = IS_ORGANIZER ? slugData.organizerId : slugData.venueId;
 
         const venueDoc = await (IS_ORGANIZER ? db.collection('organizers').doc(VENUE_ID) : db.collection('venues').doc(VENUE_ID)).get();
         if (!venueDoc.exists) { window.location.href = 'index.html'; return; }
