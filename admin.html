@@ -4976,7 +4976,7 @@ async function invoiceOrgSession(organizerId,slug,sessionId){
         if(!session){showNotif('Session not found','error');return;}
         const pCount=session.players?session.players.reduce((sum,p)=>sum+(p.players||1),0):0;
         const max=session.maxPlayers;
-        if(!max||pCount<max){showNotif('Session hasn\\'t reached max players yet','error');return;}
+        if(!max||pCount<max){showNotif("Session hasn't reached max players yet",'error');return;}
         const feeAmount=pCount*5;
         const inv={organizerId,slug,sessionId,sessionDate:session.date||session.startDate||'',pCount,feeAmount,generatedAt:Date.now(),status:'pending',paidAt:null};
         const invRef=await db.collection('org_invoices').add(inv);
@@ -5002,7 +5002,7 @@ function viewOrgInvoices(organizerId,name){
         invs.sort((a,b)=>new Date(b.generatedAt||0)-new Date(a.generatedAt||0)).forEach(inv=>{
             const stColor=inv.status==='paid'?'#2ecc71':inv.status==='cancelled'?'#666':'#f39c12';
             const stLabel=inv.status==='paid'?'✅ Paid':inv.status==='cancelled'?'❌ Cancelled':'⏳ Pending';
-            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${inv.generatedAt?new Date(inv.generatedAt).toLocaleDateString():'-'}</td><td style="padding:6px 8px;">${inv.totalPlayers||0}</td><td style="padding:6px 8px;font-weight:700;">₱${(inv.feeAmount||0).toLocaleString()}</td><td style="padding:6px 8px;color:${stColor};">${stLabel}</td></tr>`;
+            html+=`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:6px 8px;">${inv.generatedAt?new Date(inv.generatedAt).toLocaleDateString():'-'}</td><td style="padding:6px 8px;">${inv.pCount||inv.totalPlayers||0}</td><td style="padding:6px 8px;font-weight:700;">₱${(inv.feeAmount||0).toLocaleString()}</td><td style="padding:6px 8px;color:${stColor};">${stLabel}</td></tr>`;
         });
         html+='</tbody></table></div><div class="modal-actions"><button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
         const overlay=document.createElement('div');overlay.className='modal-overlay active';overlay.innerHTML=html;
