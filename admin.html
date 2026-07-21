@@ -281,8 +281,6 @@
             transform: scale(1.15) rotate(90deg);
             filter: drop-shadow(0 4px 12px rgba(78,205,196,0.5));
         }
-            transform: translateY(-2px);
-        }
 
         .add-court-icon {
             width: 56px; height: 56px; border-radius: 50%;
@@ -3284,7 +3282,7 @@ async function doAssign(court,group,extraProps){
     if(!VENUE_ID) return false;
     try {
         await db.runTransaction(async transaction => {
-            const doc = await transaction.get(db.collection('venues').doc(VENUE_ID));
+            const doc = await transaction.get(getVenueDocRef());
             if(!doc.exists) throw new Error('Venue not found');
             const data = doc.data();
             const courts = data.courts || [];
@@ -3298,7 +3296,7 @@ async function doAssign(court,group,extraProps){
             };
             const qIdx = queue.findIndex(g => g.id === group.id);
             if(qIdx !== -1) queue.splice(qIdx, 1);
-            transaction.update(db.collection('venues').doc(VENUE_ID), {courts, queue});
+            transaction.update(getVenueDocRef(), {courts, queue});
         });
         court.status='occupied';court.players=group.players;court.startTime=Date.now();court.gameType=group.gameType;
         if(group.team1&&group.team2){court.team1=group.team1;court.team2=group.team2;}else{court.team1=null;court.team2=null;}
@@ -5974,7 +5972,6 @@ function deleteTournament(id){
             }
             renderBookingTimeline();
         })();
-        }
         S.venueSlug = venueSlug;
 
         // Auth check for non-demo venues
@@ -6410,13 +6407,13 @@ async function renderVenueInvoice(weekOffset){
     const btn=document.getElementById('invPd'+weekOffset);
     if(btn){btn.style.background='rgba(78,205,196,0.15)';btn.style.color='#4ecdc4';btn.style.borderColor='#4ecdc4';}
     try {
-        const bkSnap=await db.collection('venues').doc(VENUE_ID).collection('bookings').get();
-        const weekBks=bkSnap.docs.map(d=>d.data()).filter(b=>{
+        const bkSnap=await bkCol().get();
+        const weekBks=bkSnap.docs?bkSnap.docs.map(d=>d.data()).filter(b=>{
             if(!b.convenienceFee) return false;
             const bDate=new Date((b.date||'')+'T'+(b.startTime||'00:00'));
             return bDate>=startDate&&bDate<=endDate;
         });
-        const vDoc=await db.collection('venues').doc(VENUE_ID).get();
+        const vDoc=await getVenueDocRef().get();
         const sSessions=vDoc.exists?(vDoc.data().scheduledSessions||[]):[];
         const weekOp=[];
         sSessions.forEach(s=>{

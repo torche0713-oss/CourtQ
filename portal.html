@@ -1002,11 +1002,12 @@ async function confirmJoinOpSession(){
     // Save to Firestore
     if(VENUE_ID){
         try {
-            const snap=await db.collection('venues').doc(VENUE_ID).get({source:'server'});
+            const venueRef = db.collection(IS_ORGANIZER_PORTAL?'organizers':'venues').doc(VENUE_ID);
+            const snap=await venueRef.get({source:'server'});
             const data=snap.data();
             if(s._isLive){
                 const session={...(data.session||{}),_players:[...(data.session?._players||[]),player]};
-                await db.collection('venues').doc(VENUE_ID).update({session});
+                await venueRef.update({session});
                 S.session=session;
             } else {
                 let sessions=data.scheduledSessions||[];
@@ -1015,7 +1016,7 @@ async function confirmJoinOpSession(){
                 const curCount=(sessions[idx].players||[]).reduce((sum,p)=>sum+(p.players||1),0);
                 if(sessions[idx].maxPlayers&&curCount+playerCount>sessions[idx].maxPlayers){showNotif(`Session full — only ${sessions[idx].maxPlayers-curCount} spot(s) left.`,'error');return;}
                 sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
-                await db.collection('venues').doc(VENUE_ID).update({scheduledSessions:sessions});
+                await venueRef.update({scheduledSessions:sessions});
                 S.scheduledSessions=sessions;
             }
         } catch(e){

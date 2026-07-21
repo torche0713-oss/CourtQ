@@ -1010,6 +1010,13 @@
                                 return;
                             }
                         }
+                        if (data.organizerId) {
+                            const orgDoc = await db.collection('organizers').doc(data.organizerId).get();
+                            if (orgDoc.exists) {
+                                window.location.href = 'admin.html?venue=' + orgDoc.data().slug;
+                                return;
+                            }
+                        }
                     }
                     // Redirect staff/co-owner by email match
                     const venuesSnap = await db.collection('venues').get();
