@@ -378,7 +378,7 @@
         <div class="portal-header">
             <div>
                 <div style="font-size:1.3rem;font-weight:800;color:#4ecdc4;">🏓 Join Open Play</div>
-                <div id="opPortalVenueName" style="font-size:0.85rem;color:#aaa;margin-top:2px;"></div>
+                <div id="opPortalVenueName" style="font-size:1.1rem;font-weight:600;color:#fff;margin-top:4px;"></div>
             </div>
             <button class="btn btn-outline btn-sm" onclick="closeOpPortal()">✕ Close</button>
         </div>
@@ -787,7 +787,14 @@ let _opJoinCtx = null;
 let _opPayMethod = null;
 
 function openOpPortal(){
-    document.getElementById('opPortalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+    const orgTag=IS_ORGANIZER_PORTAL?`<div style="font-size:0.65rem;color:#888;font-weight:400;text-transform:uppercase;letter-spacing:1px;">ORGANIZED BY</div>`:'';
+    const nameDisplay=S.logoUrl
+        ? `<img src="${escapeHtml(S.logoUrl)}" style="height:32px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">${escapeHtml(S.venueName)}`
+        : escapeHtml(S.venueName);
+    const venueExtra=S.session?.venueName
+        ? `<div style="font-size:0.85rem;color:#aaa;font-weight:400;margin-top:2px;">📍 ${escapeHtml(S.session.venueName)}</div>`
+        : '';
+    document.getElementById('opPortalVenueName').innerHTML=orgTag+nameDisplay+venueExtra;
     document.getElementById('opPortalOverlay').classList.add('active');
     document.getElementById('landingPage').style.display='none';
     if(VENUE_ID){
@@ -852,6 +859,7 @@ function renderOpSessionList(){
         <div style="font-size:0.78rem;color:#aaa;margin-bottom:16px;">Select a session to join. No need to book a specific court — just show up and play!</div>
         ${allSessions.map(s=>{
             const courtNames=IS_ORGANIZER_PORTAL?(s.courtCount?s.courtCount+' courts':'Virtual courts'):(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
+            const vName=s._isLive&&S.session?.venueName?S.session.venueName:(s.venueName||'');
             const pCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
             const max=s.maxPlayers||'∞';
             const full=!s._isLive&&pCount>=max;
@@ -861,6 +869,7 @@ function renderOpSessionList(){
                     <div>
                         <div style="font-weight:700;font-size:0.9rem;">${escapeHtml(s.date)}${badge}</div>
                         <div style="font-size:0.82rem;color:#4ecdc4;">${s.startTime} – ${s.endTime}</div>
+                        ${vName?`<div style="font-size:0.78rem;color:#888;margin-top:3px;">📍 ${escapeHtml(vName)}</div>`:''}
                     </div>
                     <div style="text-align:right;">
                         <div style="font-size:0.78rem;color:#aaa;">${s._isLive?'⏳ Ongoing':pCount+'/'+max+' players'}</div>
@@ -903,7 +912,7 @@ function selectOpSession(id){
             <div id="opPayInputArea"></div>
         </div>`:'';
     content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:4px;">👋 Your Info</div>
-        <div style="font-size:0.78rem;color:#aaa;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
+        <div style="font-size:0.78rem;color:#aaa;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong>${s.venueName?` · 📍 <strong>${escapeHtml(s.venueName)}</strong>`:''}</div>
         <div class="form-row">
             <div class="form-group"><label>First Name *</label><input type="text" id="opFirstName" placeholder="Juan"></div>
             <div class="form-group"><label>Last Name *</label><input type="text" id="opLastName" placeholder="dela Cruz"></div>
