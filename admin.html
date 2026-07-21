@@ -4471,16 +4471,16 @@ async function renderDevDashboard(){
         let activeCount=0, monthlyTotal=0, dueTotal=0, foundingCount=0;
         const ownerMap={}; // venueId -> { email, name, mobile }
         for(const slugDoc of slugsSnap.docs){
-            const venueId=slugDoc.data().venueId;
-            if(!venueId) continue;
             const isOrg=slugDoc.data().type==='organizer';
+            const venueId=isOrg?slugDoc.data().organizerId:slugDoc.data().venueId;
+            if(!venueId) continue;
             const vDoc=await (isOrg?db.collection('organizers').doc(venueId):db.collection('venues').doc(venueId)).get();
             if(!vDoc.exists) continue;
             const vData=vDoc.data();
             // Look up owner email from users collection
             if(!ownerMap[venueId]){
                 try {
-                    const uSnap=await db.collection('users').where('venueId','==',venueId).get();
+                    const uSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',venueId).get();
                     if(!uSnap.empty){
                         const u=uSnap.docs[0].data();
                         ownerMap[venueId]={ email:u.email||'', name:u.name||vData.ownerName||'', mobile:u.mobile||vData.mobile||'' };
@@ -4824,7 +4824,7 @@ async function activateVenue(venueId,slug){
         // Find owner email from users collection
         let ownerEmail='';
         try {
-            const userSnap=await db.collection('users').where('venueId','==',venueId).get();
+            const userSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',venueId).get();
             if(!userSnap.empty) ownerEmail=userSnap.docs[0].data().email||'';
         } catch(e){}
         // Send activation email via EmailJS
@@ -4856,7 +4856,7 @@ async function deleteVenue(venueId,slug){
         await db.collection('slugs').doc(slug).delete();
         try { await db.collection('contracts').doc(venueId).delete(); } catch(e){}
         try {
-            const userSnap = await db.collection('users').where('venueId', '==', venueId).get();
+            const userSnap = await db.collection('users').where(isOrg?'organizerId':'venueId', '==', venueId).get();
             userSnap.forEach(doc => doc.ref.delete());
         } catch(e){}
         showNotif('🗑️ Venue deleted','warning');

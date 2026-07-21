@@ -230,7 +230,7 @@
         <div class="card" id="setupScreen" style="display:none;">
             <div style="text-align:center;padding:20px 0;">
                 <div class="spinner"></div>
-                <div style="margin-top:12px;color:#aaa;font-size:0.9rem;">Setting up your venue...</div>
+                <div style="margin-top:12px;color:#aaa;font-size:0.9rem;" id="setupMsg">Setting up your venue...</div>
             </div>
         </div>
 
@@ -239,14 +239,14 @@
             <div style="text-align:center;padding:16px 0;">
                 <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
                 <div style="font-size:1.2rem;font-weight:800;color:#4ecdc4;margin-bottom:6px;">Thank You!</div>
-                <div style="font-size:0.85rem;color:#aaa;line-height:1.6;">Your venue has been submitted for verification.<br>You'll receive an email confirmation shortly.</div>
+                <div style="font-size:0.85rem;color:#aaa;line-height:1.6;" id="successSubtitle">Your venue has been submitted for verification.<br>You'll receive an email confirmation shortly.</div>
                 <div id="ackBox" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin:16px 0;text-align:left;font-size:0.8rem;">
                     <div style="font-weight:700;color:#f39c12;margin-bottom:8px;">📋 Acknowledgement Receipt</div>
                     <div id="ackContent"></div>
                 </div>
                 <div style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:12px;margin:12px 0;text-align:left;font-size:0.78rem;line-height:1.6;">
                     <div style="font-weight:700;color:#4ecdc4;margin-bottom:4px;">📌 What happens next:</div>
-                    <div style="color:#ccc;">1. We'll verify your venue and activate your account<br>
+                    <div style="color:#ccc;" id="successSteps">1. We'll verify your venue and activate your account<br>
                     2. You'll receive your unique subdomain (e.g., <strong style="color:#fff;">yourvenue.courtqpro.online</strong>)<br>
                     3. Set up your courts, rates, and payment info in the dashboard<br>
                     4. A <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you</div>
@@ -518,6 +518,7 @@
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
                 const p = { uid: cred.user.uid, email, name, venue, mobile };
                 document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupMsg').textContent = 'Setting up your venue...';
                 document.getElementById('setupScreen').style.display = 'block';
                 // Directly provision the venue
                 const slug = p.venue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'venue';
@@ -574,6 +575,8 @@
                 // Show success screen
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('successSubtitle').innerHTML = 'Your venue has been submitted for verification.<br>You\'ll receive an email confirmation shortly.';
+                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your venue and activate your account<br>2. You\'ll receive your unique subdomain (e.g., <strong style="color:#fff;">yourvenue.courtqpro.online</strong>)<br>3. Set up your courts, rates, and payment info in the dashboard<br>4. A <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you';
                 document.getElementById('successScreen').style.display = 'block';
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
@@ -611,6 +614,7 @@
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
                 const p = { uid: cred.user.uid, email, name, businessName, mobile, govtIdType, govtId };
                 document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupMsg').textContent = 'Setting up your organizer account...';
                 document.getElementById('setupScreen').style.display = 'block';
                 const slug = p.businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organizer';
                 let finalSlug = slug;
@@ -655,6 +659,8 @@
                 } catch(e) { console.warn('EmailJS send failed:', e); }
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('successSubtitle').innerHTML = 'Your organizer account has been submitted for verification.<br>You\'ll receive an email confirmation shortly.';
+                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your information and activate your organizer account<br>2. You\'ll receive your unique link (e.g., <strong style="color:#fff;">yourorg.courtqpro.online</strong>)<br>3. Log in to manage Open Play sessions and queue rotation<br>4. Share your portal with players so they can register for Open Play online';
                 document.getElementById('successScreen').style.display = 'block';
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
