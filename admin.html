@@ -5248,16 +5248,16 @@ function renderOpCourts(){
             ${opS==='available'?`<div style="text-align:center;padding:14px 0;color:#444;font-size:0.8rem;">🏓 Court Ready</div>`:''}
             ${opS==='maintenance'?`<div style="background:rgba(243,156,18,0.08);border-radius:8px;padding:10px;text-align:center;color:#f39c12;font-size:0.8rem;margin-bottom:8px;">🔧 Under Maintenance</div>`:''}
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt(${court.id})">${S.session?.mode==='winnersSplit'||S.session?.mode==='roundRobin'?'🔄 Rotate':'🏁 End Game'}</button>`:''}
-                ${opS==='available'&&assigned.includes(court.id)?`<button class="btn btn-success btn-sm" onclick="manualAssignToCourt(${court.id})">📋 Assign</button>`:''}
-                ${opS==='available'?`<button class="btn btn-warning btn-sm" onclick="toggleMaint(${court.id})">🔧</button>`:''}
-                ${opS==='maintenance'?`<button class="btn btn-success btn-sm" onclick="toggleMaint(${court.id})">✅ Open</button>`:''}
+                ${opS==='playing'?`<button class="btn btn-danger btn-sm" onclick="freeCourt('${court.id}')">${S.session?.mode==='winnersSplit'||S.session?.mode==='roundRobin'?'🔄 Rotate':'🏁 End Game'}</button>`:''}
+                ${opS==='available'&&assigned.includes(court.id)?`<button class="btn btn-success btn-sm" onclick="manualAssignToCourt('${court.id}')">📋 Assign</button>`:''}
+                ${opS==='available'?`<button class="btn btn-warning btn-sm" onclick="toggleMaint('${court.id}')">🔧</button>`:''}
+                ${opS==='maintenance'?`<button class="btn btn-success btn-sm" onclick="toggleMaint('${court.id}')">✅ Open</button>`:''}
             </div>
             <div style="display:flex;gap:4px;margin-top:6px;font-size:0.68rem;">
                 ${S.session&&S.session.active?`
                     ${assigned.includes(court.id)
-                        ?`<span style="color:#4ecdc4;">🎯 In Session</span><button class="btn btn-sm" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:5px;color:#e74c3c;padding:1px 6px;font-size:0.63rem;cursor:pointer;" onclick="removeSessionCourt(${court.id})">✕ Remove</button>`
-                        :`<span style="color:#666;">❌ Not in Session</span><button class="btn btn-sm" style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:5px;color:#4ecdc4;padding:1px 6px;font-size:0.63rem;cursor:pointer;" onclick="addSessionCourt(${court.id})">➕ Add</button>`
+                        ?`<span style="color:#4ecdc4;">🎯 In Session</span><button class="btn btn-sm" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.2);border-radius:5px;color:#e74c3c;padding:1px 6px;font-size:0.63rem;cursor:pointer;" onclick="removeSessionCourt('${court.id}')">✕ Remove</button>`
+                        :`<span style="color:#666;">❌ Not in Session</span><button class="btn btn-sm" style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:5px;color:#4ecdc4;padding:1px 6px;font-size:0.63rem;cursor:pointer;" onclick="addSessionCourt('${court.id}')">➕ Add</button>`
                     }
                 `:''}
             </div>`;
