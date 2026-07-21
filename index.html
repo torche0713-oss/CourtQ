@@ -354,6 +354,8 @@
                     <div class="form-group"><label>Govt ID Type *</label><select id="orgGovtIdType"><option value="">Select ID type</option><option>Driver's License</option><option>Passport</option><option>UMID</option><option>SSS ID</option><option>GSIS ID</option><option>PRC ID</option><option>Postal ID</option><option>Voter's ID</option><option>National ID</option></select></div>
                     <div class="form-group"><label>Govt ID Number *</label><input type="text" id="orgGovtId" placeholder="ID number"></div>
                 </div>
+                <div class="form-group"><label>Upload Govt ID * (photo of your ID)</label><input type="file" id="orgGovtIdFile" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewOrgId(event)"></div>
+                <div id="orgGovtIdPreview" style="display:none;margin-bottom:12px;"><img style="max-width:200px;max-height:120px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);"></div>
                 <div class="form-group"><label>Password *</label><input type="password" id="orgPass" placeholder="At least 6 characters"></div>
                 <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#aaa;line-height:1.5;">
                     <strong style="color:#2ecc71;">✅ Free for organizers.</strong> A <strong style="color:#4ecdc4;">₱5/player fee</strong> is added to each Open Play booking — paid by the player. You keep 100% of your rates.
@@ -596,6 +598,13 @@
             }
         }
 
+        function previewOrgId(e){
+            const file=e.target.files[0];
+            if(!file) return;
+            const div=document.getElementById('orgGovtIdPreview');
+            div.style.display='block';
+            div.querySelector('img').src=URL.createObjectURL(file);
+        }
         async function registerOrganizer() {
             hideMsgs();
             const businessName = document.getElementById('orgBusinessName').value.trim();
@@ -604,18 +613,30 @@
             const mobile = document.getElementById('orgMobile').value.trim();
             const govtIdType = document.getElementById('orgGovtIdType').value;
             const govtId = document.getElementById('orgGovtId').value.trim();
+            const govtIdFile = document.getElementById('orgGovtIdFile').files[0];
             const pass = document.getElementById('orgPass').value;
-            if (!businessName || !name || !email || !mobile || !govtIdType || !govtId || !pass) { showError('Fill in all fields.'); return; }
+            if (!businessName || !name || !email || !mobile || !govtIdType || !govtId || !pass || !govtIdFile) { showError('Fill in all fields.'); return; }
             if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
             if (!document.getElementById('orgConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
             hideError();
             showLoading('Creating your account...');
             try {
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                const p = { uid: cred.user.uid, email, name, businessName, mobile, govtIdType, govtId };
                 document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('setupMsg').textContent = 'Setting up your organizer account...';
+                document.getElementById('setupMsg').textContent = 'Uploading ID and setting up your account...';
                 document.getElementById('setupScreen').style.display = 'block';
+                // Upload govt ID to Cloudinary
+                let govtIdUrl = '';
+                try {
+                    const fd=new FormData();
+                    fd.append('file',govtIdFile);
+                    fd.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
+                    fd.append('public_id','org_ids/'+cred.user.uid);
+                    const r=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:fd});
+                    const d=await r.json();
+                    if(d.secure_url) govtIdUrl=d.secure_url;
+                } catch(e){ console.warn('ID upload failed:',e); }
+                const p = { uid: cred.user.uid, email, name, businessName, mobile, govtIdType, govtId, govtIdUrl };
                 const slug = p.businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organizer';
                 let finalSlug = slug;
                 let slugDoc = await db.collection('slugs').doc(finalSlug).get();
@@ -630,7 +651,7 @@
                     ownerId: p.uid, name: '🏟️ ' + p.businessName, venueName: '🏟️ ' + p.businessName,
                     slug: finalSlug, createdAt: Date.now(),
                     ownerName: p.name, mobile: p.mobile, email: p.email,
-                    govtId: p.govtId, govtIdType: p.govtIdType,
+                    govtId: p.govtId, govtIdType: p.govtIdType, govtIdUrl: p.govtIdUrl,
                     activated: false, courtCount: 4,
                     session: null, queue: [], soloQueue: [], scheduledSessions: [],
                     history: [], leaderboard: {}, sales: [],
@@ -653,7 +674,7 @@
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
                             subject: `New Organizer Signup: ${p.businessName}`,
-                            body: `A new organizer has signed up:\n\nBusiness: ${p.businessName}\nName: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nGovt ID: ${p.govtIdType} - ${p.govtId}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                            body: `A new organizer has signed up:\n\nBusiness: ${p.businessName}\nName: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nGovt ID: ${p.govtIdType} - ${p.govtId}\nID Image: ${p.govtIdUrl||'Upload failed'}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
