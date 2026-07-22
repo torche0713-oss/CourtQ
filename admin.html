@@ -620,8 +620,7 @@
                 <div class="card-title">
                     <span>🏟️ Courts <span class="help-btn" onclick="showHelp('openplay')" style="cursor:pointer;font-size:0.7rem;color:#666;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
                     <div style="display:flex;gap:8px;">
-                        <button class="btn btn-primary btn-sm" onclick="openStartSession()">▶ Open Play</button>
-                        <button class="btn btn-outline btn-sm" onclick="openScheduleOpModal()">📅 Schedule</button>
+                        <button class="btn btn-outline btn-sm" onclick="openScheduleOpModal()">📅 Schedule an Open Play Session Here</button>
                         <button class="btn btn-purple btn-sm" onclick="aiSuggest()">🔮 AI Suggest</button>
                     </div>
                 </div>
@@ -1708,10 +1707,11 @@ function showHelp(topic){
         openplay:{
             title:'🏓 Open Play',
             body:`<p><strong>What is Open Play?</strong> A drop-in session where players queue up and get assigned to courts automatically.</p>
-<p><strong>▶ Start a Session:</strong> Click "Open Play" → set date, time, rotation mode, and fee. Players join the queue (added manually or via the online portal) and get assigned to available courts.</p>
-<p><strong>🔄 4 ON / 4 OFF (Looping):</strong> This is the default mode. Groups of 4 players (2v2) play a game on court. When the game ends, the winning pair and losing pair <strong>split into separate queue entries</strong> and go to the back of the line. The winning pair waits to be paired with another winning pair (winners vs winners); the losing pair waits to be paired with another losing pair (losers vs losers). This keeps matches competitive. The court is freed immediately and the next group from the queue gets assigned. Rotations continue indefinitely.</p>
-<p><strong>🏆 Winners Stay & Split:</strong> After a game, the winning pair <strong>stays on court</strong>. Losers go to the solo queue individually. New players are pulled from the solo queue to fill back to 4. Winners are split onto opposite teams for balance (winner 1 + weaker new player vs winner 2 + stronger new player). If not enough players in the queue, everyone goes back to the pool and the court is freed. The system also <strong>auto-fills any available court</strong> by pulling 4 players from the solo queue whenever possible.</p>
-<p><strong>📅 Schedule:</strong> Use "Schedule" to set up recurring or future Open Play sessions. Scheduled sessions appear on the timeline and auto-exclude courts from online booking during that time.</p>`
+<p><strong>📅 Schedule an Open Play Session:</strong> Click "📅 Schedule an Open Play Session Here" to set up a future Open Play session — choose date, time, rotation mode, fee, court count, and max players. Scheduled sessions appear on the timeline and auto-exclude courts from online booking during that time.</p>
+<p><strong>🔄 4 ON / 4 OFF (Looping):</strong> This is the default mode. Groups of 4 players (2v2) play a game on court. When the game ends, the winning pair and losing pair <strong>split into separate queue entries</strong> and go to the back of the line. The winning pair waits to be paired with another winning pair (winners vs winners); the losing pair waits to be paired with another losing pair (losers vs losers). This keeps matches competitive. The court is freed immediately and the next group from the queue gets assigned.</p>
+<p><strong>🏆 Winners Stay & Split:</strong> After a game, the winning pair <strong>stays on court</strong>. Losers go to the solo queue individually. New players are pulled from the solo queue to fill back to 4. Winners are split onto opposite teams for balance.</p>
+<p><strong>🔄 Round Robin:</strong> Every player/team plays everyone else. Matches are auto-assigned across courts. Standings are tracked until all matches are complete.</p>
+<p><strong>▶ Start a Session:</strong> To start a session immediately, schedule one for today and click "Start Now" from the scheduled session details.</p>`
         },
         tournament:{
             title:'🏆 Tournament Setup',
