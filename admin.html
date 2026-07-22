@@ -1181,7 +1181,7 @@
             <div class="form-group"><label>Contract Start</label><input type="date" id="cStartDate"></div>
             <div class="form-group"><label>Contract End</label><input type="date" id="cEndDate"></div>
         </div>
-        <div class="form-group"><label>Monthly Retainer (RM)</label><input type="number" id="cMonthlyRetainer" min="0" step="100"></div>
+        <div class="form-group"><label>Monthly Retainer (₱)</label><input type="number" id="cMonthlyRetainer" min="0" step="100"></div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveContract()">💾 Save Contract</button>
             <button class="btn btn-outline" onclick="closeModal('contractModal')">Cancel</button>
@@ -1195,7 +1195,7 @@
         <div class="modal-title">💰 Add Payment</div>
         <input type="hidden" id="pVenueId">
         <div class="form-group"><label>Transaction Number</label><input type="text" id="pTxNo" placeholder="e.g. TXN-001"></div>
-        <div class="form-group"><label>Amount Due (RM)</label><input type="number" id="pAmount" min="0" step="100"></div>
+        <div class="form-group"><label>Amount Due (₱)</label><input type="number" id="pAmount" min="0" step="100"></div>
         <div class="form-group"><label>Due Date</label><input type="date" id="pDueDate"></div>
         <div class="form-group"><label>Status</label>
             <select id="pStatus" style="padding:8px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:0.85rem;width:100%;">
@@ -1413,7 +1413,7 @@
             </div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>Rate per Hour (RM)</label><input type="number" id="ncRate" value="35" min="0"></div>
+            <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="ncRate" value="35" min="0"></div>
             <div class="form-group"><label>Color</label>
                 <select id="ncColor">
                     <option value="#4ecdc4">🟦 Teal</option><option value="#e74c3c">🔴 Red</option>
@@ -1446,7 +1446,7 @@
             </div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>Rate per Hour (RM)</label><input type="number" id="ecRate" min="0"></div>
+            <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="ecRate" min="0"></div>
             <div class="form-group"><label>Color</label>
                 <select id="ecColor">
                     <option value="#4ecdc4">🟦 Teal</option><option value="#e74c3c">🔴 Red</option>
