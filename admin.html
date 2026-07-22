@@ -2620,7 +2620,7 @@ function teamUpPlayers(s){
             const all=[...t1,...t2].sort((a,b)=>b.skill-a.skill);
             const teamA=[all[0],all[3]],teamB=[all[1],all[2]];
             const group=[...teamA,...teamB];
-            S.queue.push({id:++S.nextId,groupName:teamA[0].name+'/'+teamA[1].name+' vs '+teamB[0].name+'/'+teamB[1].name,gameType:'doubles',skillLevel:Math.round(group.reduce((sum,p)=>sum+p.skill,0)/group.length),players:group.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill})),joinedAt:Date.now(),_teamed:true});
+            S.queue.push({id:++S.nextId,groupName:teamA[0].name+'/'+teamA[1].name+' vs '+teamB[0].name+'/'+teamB[1].name,gameType:'doubles',skillLevel:Math.round(group.reduce((sum,p)=>sum+p.skill,0)/group.length),players:group.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill})),team1:teamA.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill})),team2:teamB.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill})),joinedAt:Date.now(),_teamed:true});
         } else {
             const odd=teams[i];
             S.queue.push({id:++S.nextId,groupName:odd[0].name+'/'+odd[1].name+' & opponents',gameType:'doubles',skillLevel:Math.round((odd[0].skill+odd[1].skill)/2),players:odd.map(p=>({name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill})),joinedAt:Date.now(),_halfTeam:true,_scheduled:true});
