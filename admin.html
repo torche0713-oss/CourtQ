@@ -2771,7 +2771,7 @@ function updateJoinFormMode(){
     const epEl=document.getElementById('extraPlayers');
     if(gtEl) gtEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
     if(gnEl) gnEl.parentElement.style.display=mode==='winnersSplit'||mode==='roundRobin'?'none':'';
-    if(epEl) epEl.style.display=mode==='winnersSplit'||(mode==='roundRobin'&&S.session?.rrGameType==='singles')?'none':'';
+    if(epEl){const isDbl=document.getElementById('gameType')?.value==='doubles';epEl.style.display=mode==='winnersSplit'||(mode==='roundRobin'&&S.session?.rrGameType==='singles')||!isDbl?'none':'block';}
     const lbl=document.querySelector('#joinCard .card-title');
     if(lbl) lbl.textContent=mode==='winnersSplit'||mode==='roundRobin'?'🎯 Join Pool':'🎯 Join Queue';
 }
