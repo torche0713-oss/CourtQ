@@ -74,6 +74,19 @@
         .signature-section { grid-template-columns:1fr; }
         body { padding:20px 12px; }
     }
+    .pdf-mode { background:#fff !important; }
+    .pdf-mode .container { background:#fff !important; border:1px solid #ddd !important; }
+    .pdf-mode p, .pdf-mode ul li, .pdf-mode .terms p { color:#1a1a1a !important; }
+    .pdf-mode .terms h3 { color:#0d7d6e !important; }
+    .pdf-mode .meta div, .pdf-mode .subtitle { color:#555 !important; }
+    .pdf-mode .logo { color:#0d7d6e !important; }
+    .pdf-mode .logo span { color:#d4880f !important; }
+    .pdf-mode .highlight { background:#e8f8f5 !important; border-left-color:#0d7d6e !important; color:#1a1a1a !important; }
+    .pdf-mode .sign-box { background:#fff !important; border:1px solid #ddd !important; }
+    .pdf-mode .sign-field label { color:#555 !important; }
+    .pdf-mode .sign-field .val { color:#1a1a1a !important; }
+    .pdf-mode .footer-note { color:#666 !important; border-top-color:#ddd !important; }
+    .pdf-mode .signature-section { border-top-color:#ddd !important; }
 </style>
 </head>
 <body>
@@ -197,7 +210,7 @@
         <div class="sign-box">
             <h3>Provider</h3>
             <p style="font-size:0.82rem;color:#aaa;margin-bottom:10px;">Apex Mind Agency</p>
-            <div class="sign-field"><label>Representative</label><div class="val">___________________________</div></div>
+            <div class="sign-field"><label>Representative</label><div class="val">Hector R. Lopez</div></div>
             <div class="sign-field"><label>Signature</label><div class="sign-line"></div></div>
             <div class="sign-field"><label>Date</label><div class="val">___________________________</div></div>
         </div>
@@ -226,8 +239,9 @@
     function downloadPDF(){
         const btn=document.getElementById('dlBtn');
         btn.textContent='⏳ Generating...'; btn.disabled=true;
+        document.body.classList.add('pdf-mode');
         const el=document.querySelector('.container');
-        html2pdf().set({margin:[10,10],filename:'CourtQ-Service-Agreement-Organizer.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(el).save().then(()=>{btn.textContent='📄 Download PDF';btn.disabled=false;});
+        html2pdf().set({margin:[10,10],filename:'CourtQ-Service-Agreement-Organizer.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(el).save().then(()=>{document.body.classList.remove('pdf-mode');btn.textContent='📄 Download PDF';btn.disabled=false;});
     }
 </script>
 </body>

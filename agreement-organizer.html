@@ -43,6 +43,18 @@
         .container { padding:20px; }
         .sign-row { grid-template-columns:1fr; }
     }
+    .pdf-mode { background:#fff !important; }
+    .pdf-mode .container { background:#fff !important; border:1px solid #ddd !important; }
+    .pdf-mode .greeting, .pdf-mode p, .pdf-mode ul li { color:#1a1a1a !important; }
+    .pdf-mode .terms h3 { color:#0d7d6e !important; }
+    .pdf-mode .date, .pdf-mode .subtitle { color:#555 !important; }
+    .pdf-mode .logo { color:#0d7d6e !important; }
+    .pdf-mode .logo span { color:#d4880f !important; }
+    .pdf-mode .highlight { background:#e8f8f5 !important; border-left-color:#0d7d6e !important; color:#1a1a1a !important; }
+    .pdf-mode .sign-col .label { color:#333 !important; }
+    .pdf-mode .sign-col .line { border-color:#333 !important; }
+    .pdf-mode .footer { color:#666 !important; }
+    .pdf-mode .signature-area { border-top-color:#ddd !important; }
 </style>
 </head>
 <body>
@@ -64,7 +76,8 @@
     <div class="terms">
 
     <h3>1. The Service</h3>
-    <p>We will provide you access to CourtQ Pro, a web-based platform that includes an <strong>Open Play engine</strong> with multiple rotation modes (4 on/4 off, Winners Stay &amp; Split, Round Robin), scheduled session management, player queue, public registration portal, convenience fee invoicing, and a personal organizer dashboard. You may host sessions at any venue — whether registered on CourtQ Pro or not — by specifying the venue name during session setup. As long as courts are booked through CourtQ Pro Open Play, the platform fully supports it.</p>
+    <p>We will provide you access to CourtQ Pro, a web-based platform that includes an <strong>Open Play engine</strong> with multiple rotation modes (4 on/4 off, Winners Stay &amp; Split, Round Robin), scheduled session management, player queue, public registration portal, convenience fee invoicing, and a personal organizer dashboard. You may host sessions at any venue — whether registered on CourtQ Pro or not — by specifying the venue name during session setup.</p>
+    <div class="highlight">As long as courts are booked through CourtQ Pro Open Play, the platform fully supports it.</div>
 
     <h3>2. Pricing — Free Forever</h3>
     <p>CourtQ Pro is <strong>100% free for organizers and clubs</strong>. No setup fee. No monthly fee. No subscription.</p>
@@ -101,6 +114,7 @@
         <div class="sign-row">
             <div class="sign-col">
                 <div class="label">Provider: Apex Mind Agency</div>
+                <div class="label">Hector R. Lopez</div>
                 <div class="label" style="margin-top:12px;">Signature</div>
                 <div class="line"></div>
                 <div class="label">Date</div>
@@ -134,8 +148,9 @@
     function downloadPDF(){
         const btn=document.getElementById('dlBtn');
         btn.textContent='⏳ Generating...'; btn.disabled=true;
+        document.body.classList.add('pdf-mode');
         const el=document.querySelector('.container');
-        html2pdf().set({margin:[10,10],filename:'CourtQ-Letter-of-Agreement-Organizer.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(el).save().then(()=>{btn.textContent='📄 Download PDF';btn.disabled=false;});
+        html2pdf().set({margin:[10,10],filename:'CourtQ-Letter-of-Agreement-Organizer.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(el).save().then(()=>{document.body.classList.remove('pdf-mode');btn.textContent='📄 Download PDF';btn.disabled=false;});
     }
 </script>
 </body>
