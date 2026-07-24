@@ -1235,7 +1235,7 @@
             <div class="form-group"><label>Rotation (min)</label>
                 <select id="sesRot"><option value="15">15</option><option value="20" selected>20</option><option value="25">25</option><option value="30">30</option></select>
             </div>
-            <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="sesDropIn" value="12"></div>
+            <div class="form-group"><label>Drop-in Fee (₱)</label><input type="number" id="sesDropIn" value="0"></div>
         </div>
         <div class="form-group" style="margin-bottom:8px;"><label>Mode</label>
             <div style="display:flex;gap:10px;">
@@ -2659,7 +2659,7 @@ function startScheduledSession(sessionId){
     const rrGameType=mode==='roundRobin'?'doubles':null;
     const startDT=new Date(s.date+'T'+s.startTime);
     const endDT=new Date(s.date+'T'+s.endTime);
-    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour',venueName:s.venueName||''};
+    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour',venueName:s.venueName||'',maxPlayers:s.maxPlayers||0,_players:(s.players||[]).filter(p=>p.source==='online')};
     teamUpPlayers(s);
     tryCombineTeams();
     if(tryMatchRemaining()) tryCombineTeams();
