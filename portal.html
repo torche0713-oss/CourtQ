@@ -804,9 +804,11 @@ function openOpPortal(){
     document.getElementById('landingPage').style.display='none';
     if(VENUE_ID){
         db.collection(IS_ORGANIZER_PORTAL?'organizers':'venues').doc(VENUE_ID).get({source:'server'}).then(snap=>{
-            const raw = snap.exists ? snap.data().scheduledSessions : [];
-            S.scheduledSessions = raw || [];
-
+            if(snap.exists){
+                const data=snap.data();
+                S.scheduledSessions = data.scheduledSessions || [];
+                if(data.session) S.session = data.session;
+            }
             renderOpSessionList();
         }).catch(e=>{
             console.warn('[OP] Firestore get failed:', e);
