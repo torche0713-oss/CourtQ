@@ -8,7 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, #1a0a0a 0%, #2d1018 50%, #3d1a20 100%);
             min-height: 100vh; color: #fff;
             display: flex; align-items: center; justify-content: center;
             padding: 20px;
@@ -18,9 +18,9 @@
             text-align: center; margin-bottom: 32px;
         }
         .logo-icon { font-size: 3.5rem; margin-bottom: 10px; }
-        .logo-text { font-size: 2rem; font-weight: 800; color: #4ecdc4; letter-spacing: -1px; }
+        .logo-text { font-size: 2rem; font-weight: 800; color: #ff4757; letter-spacing: -1px; }
         .pro-badge {
-            display: inline-block; background: linear-gradient(135deg,#f39c12,#d68910);
+            display: inline-block; background: linear-gradient(135deg,#ffa502,#d68910);
             color:#fff; font-size:0.65rem; padding:2px 8px; border-radius:6px;
             font-weight:800; letter-spacing:1px; vertical-align: super; margin-left: 2px;
         }
@@ -34,7 +34,7 @@
 
         .tabs { display: flex; margin-bottom: 20px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         .tab { flex: 1; padding: 10px; text-align: center; background: rgba(255,255,255,0.03); color: #555; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; border: none; }
-        .tab.active { background: rgba(78,205,196,0.15); color: #4ecdc4; }
+        .tab.active { background: rgba(255,71,87,0.15); color: #ff4757; }
         .tab:hover:not(.active) { color: #888; }
 
         .auth-form { display: none; }
@@ -52,7 +52,7 @@
             border-radius: 10px; color: #fff; font-size: 0.9rem; transition: all 0.3s;
         }
         .form-group input:focus, .form-group select:focus {
-            outline: none; border-color: #4ecdc4; background: rgba(78,205,196,0.08);
+            outline: none; border-color: #ff4757; background: rgba(255,71,87,0.08);
         }
         .form-group input::placeholder { color: #555; }
 
@@ -63,21 +63,21 @@
             align-items: center; justify-content: center; gap: 6px;
         }
         .btn-full { width: 100%; justify-content: center; }
-        .btn-primary { background: linear-gradient(135deg,#4ecdc4,#44a08d); color:#fff; }
-        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(78,205,196,0.4); }
+        .btn-primary { background: linear-gradient(135deg,#ff4757,#44a08d); color:#fff; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(255,71,87,0.4); }
         .btn-outline { background:transparent; border:1px solid rgba(255,255,255,0.2); color:#ccc; }
         .btn-outline:hover { background:rgba(255,255,255,0.08); color:#fff; }
-        .btn-success { background: linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; }
-        .btn-success:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(46,204,113,0.4); }
+        .btn-success { background: linear-gradient(135deg,#2ed573,#27ae60); color:#fff; }
+        .btn-success:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(46,213,115,0.4); }
 
         .divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: #555; font-size: 0.78rem; }
         .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid rgba(255,255,255,0.08); }
 
-        .error-msg { background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #e74c3c; margin-bottom: 12px; display: none; }
-        .success-msg { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #2ecc71; margin-bottom: 12px; display: none; }
+        .error-msg { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #ef4444; margin-bottom: 12px; display: none; }
+        .success-msg { background: rgba(46,213,115,0.12); border: 1px solid rgba(46,213,115,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #2ed573; margin-bottom: 12px; display: none; }
 
         .features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-        .feature { background: rgba(78,205,196,0.06); border: 1px solid rgba(78,205,196,0.15); border-radius: 10px; padding: 12px; text-align: center; font-size: 0.72rem; color: #aaa; }
+        .feature { background: rgba(255,71,87,0.06); border: 1px solid rgba(255,71,87,0.15); border-radius: 10px; padding: 12px; text-align: center; font-size: 0.72rem; color: #aaa; }
         .feature-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
 
         .nav-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
@@ -91,16 +91,16 @@
 
         .spinner {
             width: 40px; height: 40px; border-radius: 50%;
-            border: 3px solid rgba(78,205,196,0.2);
-            border-top-color: #4ecdc4;
+            border: 3px solid rgba(255,71,87,0.2);
+            border-top-color: #ff4757;
             animation: spin 1s linear infinite;
             margin: 10px auto;
         }
         @keyframes spin { to{transform:rotate(360deg);} }
 
         .demo-badge {
-            background: rgba(243,156,18,0.1); border: 1px solid rgba(243,156,18,0.25);
-            border-radius: 8px; padding: 8px; font-size: 0.72rem; color: #f39c12;
+            background: rgba(255,165,2,0.1); border: 1px solid rgba(255,165,2,0.25);
+            border-radius: 8px; padding: 8px; font-size: 0.72rem; color: #ffa502;
             text-align: center; margin-bottom: 12px; display: none;
         }
         .footer-links {
@@ -112,7 +112,7 @@
             color: #777; text-decoration: none; margin: 0 8px;
             transition: color 0.3s; cursor: pointer;
         }
-        .footer-links a:hover { color: #4ecdc4; }
+        .footer-links a:hover { color: #ff4757; }
         .footer-links .dot { color: #444; }
         .modal-overlay {
             display: none; position: fixed; inset: 0;
@@ -121,13 +121,13 @@
         }
         .modal-overlay.active { display: flex; }
         .modal-box {
-            background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1);
+            background: #1a0a0a; border: 1px solid rgba(255,255,255,0.1);
             border-radius: 16px; max-width: 640px; width: 100%;
             max-height: 80vh; overflow-y: auto; padding: 28px;
             position: relative;
         }
         .modal-box h2 {
-            font-size: 1.1rem; color: #4ecdc4; margin-bottom: 16px;
+            font-size: 1.1rem; color: #ff4757; margin-bottom: 16px;
             padding-right: 40px;
         }
         .modal-box p, .modal-box li {
@@ -142,7 +142,7 @@
         .modal-close:hover { color: #fff; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(78,205,196,0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,71,87,0.3); border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -158,14 +158,14 @@
         </div>
 
         <div style="text-align:center;margin-bottom:16px;">
-            <div style="font-size:0.95rem;color:#2ecc71;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">✅ 100% FREE for Venue Owners</div>
+            <div style="font-size:0.95rem;color:#2ed573;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">✅ 100% FREE for Venue Owners</div>
             <h1 style="font-size:1.6rem;font-weight:900;color:#fff;line-height:1.3;margin-bottom:10px;letter-spacing:-1px;">Run your pickleball venue<br>like a pro</h1>
             <p style="font-size:0.85rem;color:#aaa;line-height:1.6;max-width:420px;margin:0 auto 14px;">
                 Online booking, court scheduling, Open Play rotation, live TV display, and tournament brackets — all in one dashboard.
             </p>
-            <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:12px;padding:12px 16px;margin:0 auto 16px;max-width:380px;text-align:left;font-size:0.78rem;">
-                <div style="font-weight:700;color:#2ecc71;margin-bottom:2px;">💡 How we make money:</div>
-                <div style="color:#ccc;line-height:1.5;">You keep 100% of your rates. A <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is added to each online booking or ₱5/player for Open Play booking — charged to the player, not to you.</div>
+            <div style="background:rgba(46,213,115,0.08);border:1px solid rgba(46,213,115,0.2);border-radius:12px;padding:12px 16px;margin:0 auto 16px;max-width:380px;text-align:left;font-size:0.78rem;">
+                <div style="font-weight:700;color:#2ed573;margin-bottom:2px;">💡 How we make money:</div>
+                <div style="color:#ccc;line-height:1.5;">You keep 100% of your rates. A <strong style="color:#ff4757;">₱5/hr convenience fee</strong> is added to each online booking or ₱5/player for Open Play booking — charged to the player, not to you.</div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-size:0.7rem;color:#888;margin-bottom:16px;">
                 <span>✅ No setup fee</span>
@@ -181,14 +181,14 @@
         </div>
 
         <div style="margin:0 0 20px;">
-            <a href="partners.html" style="display:block;background:linear-gradient(135deg,rgba(78,205,196,0.1) 0%,rgba(155,89,182,0.1) 100%);border:1px solid rgba(78,205,196,0.25);border-radius:14px;padding:18px 20px;text-decoration:none;text-align:center;transition:border-color 0.2s,background 0.2s;" onmouseover="this.style.borderColor='rgba(78,205,196,0.5)';this.style.background='rgba(78,205,196,0.12)'" onmouseout="this.style.borderColor='rgba(78,205,196,0.25)';this.style.background='linear-gradient(135deg,rgba(78,205,196,0.1) 0%,rgba(155,89,182,0.1) 100%)'">
+            <a href="partners.html" style="display:block;background:linear-gradient(135deg,rgba(255,71,87,0.1) 0%,rgba(168,85,247,0.1) 100%);border:1px solid rgba(255,71,87,0.25);border-radius:14px;padding:18px 20px;text-decoration:none;text-align:center;transition:border-color 0.2s,background 0.2s;" onmouseover="this.style.borderColor='rgba(255,71,87,0.5)';this.style.background='rgba(255,71,87,0.12)'" onmouseout="this.style.borderColor='rgba(255,71,87,0.25)';this.style.background='linear-gradient(135deg,rgba(255,71,87,0.1) 0%,rgba(168,85,247,0.1) 100%)'">
                 <div style="font-size:0.68rem;color:#aaa;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Trusted Across the Philippines</div>
                 <div style="font-size:1.1rem;font-weight:800;color:#fff;">🏓 See Our Growing Community of Partners</div>
-                <div style="font-size:0.78rem;color:#4ecdc4;margin-top:6px;font-weight:600;">View All Venues &amp; Organizers →</div>
+                <div style="font-size:0.78rem;color:#ff4757;margin-top:6px;font-weight:600;">View All Venues &amp; Organizers →</div>
             </a>
         </div>
 
-        <div style="font-size:0.72rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">All-in-One Platform</div>
+        <div style="font-size:0.72rem;color:#2ed573;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">All-in-One Platform</div>
         <div class="features">
             <div class="feature"><span class="feature-icon">🏟️</span>Court Management</div>
             <div class="feature"><span class="feature-icon">📅</span>Online Booking</div>
@@ -201,20 +201,20 @@
         </div>
 
         <div style="margin-bottom:16px;">
-            <div style="font-size:0.72rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">How It Works</div>
+            <div style="font-size:0.72rem;color:#2ed573;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">How It Works</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(78,205,196,0.15);color:#4ecdc4;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">1</div>
+                <div style="background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,71,87,0.15);color:#ff4757;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">1</div>
                     <div style="font-size:0.78rem;font-weight:700;color:#fff;margin-bottom:4px;">Register Your Venue</div>
                     <div style="font-size:0.68rem;color:#aaa;line-height:1.4;">Sign up free. No credit card needed. No contracts.</div>
                 </div>
-                <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(78,205,196,0.15);color:#4ecdc4;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">2</div>
+                <div style="background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,71,87,0.15);color:#ff4757;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">2</div>
                     <div style="font-size:0.78rem;font-weight:700;color:#fff;margin-bottom:4px;">Set Up Your Dashboard</div>
                     <div style="font-size:0.68rem;color:#aaa;line-height:1.4;">Add courts, set rates, configure payments in minutes.</div>
                 </div>
-                <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.15);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(78,205,196,0.15);color:#4ecdc4;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">3</div>
+                <div style="background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,71,87,0.15);color:#ff4757;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">3</div>
                     <div style="font-size:0.78rem;font-weight:700;color:#fff;margin-bottom:4px;">Start Accepting Bookings</div>
                     <div style="font-size:0.68rem;color:#aaa;line-height:1.4;">Players book online. You get paid. We add a ₱5/hr convenience fee.</div>
                 </div>
@@ -222,9 +222,9 @@
         </div>
 
         <div style="text-align:center;margin-bottom:16px;">
-            <div style="display:inline-block;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.25);border-radius:12px;padding:14px 18px;font-size:0.78rem;line-height:1.6;">
-                <div style="font-weight:700;color:#2ecc71;margin-bottom:2px;">💰 100% Free for Venue Owners, Organizers & Clubs</div>
-                <div style="color:#aaa;">No setup fee. No monthly fee. No commission. <strong style="color:#4ecdc4;">Ever.</strong></div>
+            <div style="display:inline-block;background:rgba(46,213,115,0.1);border:1px solid rgba(46,213,115,0.25);border-radius:12px;padding:14px 18px;font-size:0.78rem;line-height:1.6;">
+                <div style="font-weight:700;color:#2ed573;margin-bottom:2px;">💰 100% Free for Venue Owners, Organizers & Clubs</div>
+                <div style="color:#aaa;">No setup fee. No monthly fee. No commission. <strong style="color:#ff4757;">Ever.</strong></div>
             </div>
         </div>
 
@@ -246,18 +246,18 @@
         <div class="card" id="successScreen" style="display:none;">
             <div style="text-align:center;padding:16px 0;">
                 <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
-                <div style="font-size:1.2rem;font-weight:800;color:#4ecdc4;margin-bottom:6px;">Thank You!</div>
+                <div style="font-size:1.2rem;font-weight:800;color:#ff4757;margin-bottom:6px;">Thank You!</div>
                 <div style="font-size:0.85rem;color:#aaa;line-height:1.6;" id="successSubtitle">Your venue has been submitted for verification.<br>You'll receive an email confirmation shortly.</div>
                 <div id="ackBox" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin:16px 0;text-align:left;font-size:0.8rem;">
-                    <div style="font-weight:700;color:#f39c12;margin-bottom:8px;">📋 Acknowledgement Receipt</div>
+                    <div style="font-weight:700;color:#ffa502;margin-bottom:8px;">📋 Acknowledgement Receipt</div>
                     <div id="ackContent"></div>
                 </div>
-                <div style="background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:12px;margin:12px 0;text-align:left;font-size:0.78rem;line-height:1.6;">
-                    <div style="font-weight:700;color:#4ecdc4;margin-bottom:4px;">📌 What happens next:</div>
+                <div style="background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.2);border-radius:10px;padding:12px;margin:12px 0;text-align:left;font-size:0.78rem;line-height:1.6;">
+                    <div style="font-weight:700;color:#ff4757;margin-bottom:4px;">📌 What happens next:</div>
                     <div style="color:#ccc;" id="successSteps">1. We'll verify your venue and activate your account<br>
                     2. You'll receive your unique subdomain (e.g., <strong style="color:#fff;">yourvenue.courtqpro.online</strong>)<br>
                     3. Set up your courts, rates, and payment info in the dashboard<br>
-                    4. A <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you</div>
+                    4. A <strong style="color:#ff4757;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you</div>
                 </div>
                 <div style="font-size:0.78rem;color:#888;">📧 Check your email for confirmation details.<br>We'll notify you once your venue is activated.</div>
             </div>
@@ -292,7 +292,7 @@
                     <div class="form-group"><label>Preferred Schedule</label><input type="text" id="demoLeadSchedule" placeholder="e.g. Monday 2pm, or anytime this week"></div>
                     <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
                         <input type="checkbox" id="demoLeadConsent" style="margin-top:2px;width:auto;">
-                        <span>I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>. I consent to receive email communications about CourtQ Pro updates and offers.</span>
+                        <span>I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#ff4757;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#ff4757;">Terms of Service</a>. I consent to receive email communications about CourtQ Pro updates and offers.</span>
                     </label>
                     <div id="demoLeadError" class="error-msg"></div>
                     <button class="btn btn-primary btn-full" onclick="submitDemoLead()">📅 Book Demo</button>
@@ -329,7 +329,7 @@
                 <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
                 <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
                 <div style="text-align:right;margin-bottom:12px;">
-                    <a href="#" onclick="forgotPassword();return false;" style="color:#4ecdc4;font-size:0.75rem;text-decoration:none;">Forgot Password?</a>
+                    <a href="#" onclick="forgotPassword();return false;" style="color:#ff4757;font-size:0.75rem;text-decoration:none;">Forgot Password?</a>
                 </div>
                 <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
                 <div class="divider">or</div>
@@ -342,12 +342,12 @@
                 <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
                 <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 912 345 6789"></div>
                 <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
-                <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#aaa;line-height:1.5;">
-                    <strong style="color:#2ecc71;">✅ Free for you.</strong> A <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
+                <div style="background:rgba(46,213,115,0.06);border:1px solid rgba(46,213,115,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#aaa;line-height:1.5;">
+                    <strong style="color:#2ed573;">✅ Free for you.</strong> A <strong style="color:#ff4757;">₱5/hr convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
                 </div>
                 <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
                     <input type="checkbox" id="registerConsent" style="margin-top:2px;width:auto;">
-                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#ff4757;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#ff4757;">Terms of Service</a>.</span>
                 </label>
                 <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
                 <div class="divider">or</div>
@@ -366,12 +366,12 @@
                 <div class="form-group"><label>Upload Govt ID * (photo of your ID)</label><input type="file" id="orgGovtIdFile" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewOrgId(event)"></div>
                 <div id="orgGovtIdPreview" style="display:none;margin-bottom:12px;"><img style="max-width:200px;max-height:120px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);"></div>
                 <div class="form-group"><label>Password *</label><input type="password" id="orgPass" placeholder="At least 6 characters"></div>
-                <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#aaa;line-height:1.5;">
-                    <strong style="color:#2ecc71;">✅ Free for organizers.</strong> A <strong style="color:#4ecdc4;">₱5/player fee</strong> is added to each Open Play booking — paid by the player. You keep 100% of your rates.
+                <div style="background:rgba(46,213,115,0.06);border:1px solid rgba(46,213,115,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#aaa;line-height:1.5;">
+                    <strong style="color:#2ed573;">✅ Free for organizers.</strong> A <strong style="color:#ff4757;">₱5/player fee</strong> is added to each Open Play booking — paid by the player. You keep 100% of your rates.
                 </div>
                 <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
                     <input type="checkbox" id="orgConsent" style="margin-top:2px;width:auto;">
-                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#ff4757;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#ff4757;">Terms of Service</a>.</span>
                 </label>
                 <button class="btn btn-success btn-full" onclick="registerOrganizer()">Register as Organizer →</button>
             </div>
@@ -382,7 +382,7 @@
                 <div class="form-group"><label>Password *</label><input type="password" id="joinPass" placeholder="At least 6 characters"></div>
                 <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#aaa;margin-bottom:12px;cursor:pointer;">
                     <input type="checkbox" id="joinConsent" style="margin-top:2px;width:auto;">
-                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#4ecdc4;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#4ecdc4;">Terms of Service</a>.</span>
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#ff4757;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#ff4757;">Terms of Service</a>.</span>
                 </label>
                 <button class="btn btn-primary btn-full" onclick="joinVenue()">Create Account</button>
                 <div style="margin-top:12px;font-size:0.75rem;color:#888;text-align:center;">After signing up, ask your venue owner to add your email in Settings → Staff or Co-Owners.</div>
@@ -543,7 +543,7 @@
                 }
                 const venueId = db.collection('venues').doc().id;
                 const defaultCourts = [];
-                const colors = ['#4ecdc4','#3498db','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c','#e67e22'];
+                const colors = ['#ff4757','#e056a0','#2ed573','#ffa502','#ef4444','#a855f7','#1abc9c','#e67e22'];
                 for (let i = 1; i <= 3; i++) {
                     defaultCourts.push({
                         id:i, name:'Court '+i, location:'Main Area', surface:'Hard',
@@ -587,18 +587,18 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'none';
                 document.getElementById('successSubtitle').innerHTML = 'Your venue has been submitted for verification.<br>You\'ll receive an email confirmation shortly.';
-                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your venue and activate your account<br>2. You\'ll receive your unique subdomain (e.g., <strong style="color:#fff;">yourvenue.courtqpro.online</strong>)<br>3. Set up your courts, rates, and payment info in the dashboard<br>4. A <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you';
+                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your venue and activate your account<br>2. You\'ll receive your unique subdomain (e.g., <strong style="color:#fff;">yourvenue.courtqpro.online</strong>)<br>3. Set up your courts, rates, and payment info in the dashboard<br>4. A <strong style="color:#ff4757;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you';
                 document.getElementById('successScreen').style.display = 'block';
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
-                        <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#4ecdc4;">${ackNum}</div>
+                        <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#ff4757;">${ackNum}</div>
                         <div style="color:#888;">Venue:</div><div style="font-weight:600;">${escapeHtml(p.venue)}</div>
                         <div style="color:#888;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
                         <div style="color:#888;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
                         <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
                         <div style="color:#888;">Courts:</div><div style="font-weight:600;">3</div>
-                        <div style="color:#888;">Plan:</div><div style="font-weight:600;color:#2ecc71;">✨ Free Forever</div>
-                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
+                        <div style="color:#888;">Plan:</div><div style="font-weight:600;color:#2ed573;">✨ Free Forever</div>
+                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#ffa502;">⏳ Pending Verification</div>
                     </div>`;
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
@@ -690,17 +690,17 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'none';
                 document.getElementById('successSubtitle').innerHTML = 'Your organizer account has been submitted for verification.<br>You\'ll receive an email confirmation shortly.';
-                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your information and activate your organizer account<br>2. You\'ll receive your unique link (e.g., <strong style="color:#fff;">yourorg.courtqpro.online</strong>)<br>3. Log in to manage Open Play sessions and queue rotation<br>4. A <strong style="color:#4ecdc4;">₱5/player fee</strong> is added to each Open Play booking — paid by the player, not by you';
+                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your information and activate your organizer account<br>2. You\'ll receive your unique link (e.g., <strong style="color:#fff;">yourorg.courtqpro.online</strong>)<br>3. Log in to manage Open Play sessions and queue rotation<br>4. A <strong style="color:#ff4757;">₱5/player fee</strong> is added to each Open Play booking — paid by the player, not by you';
                 document.getElementById('successScreen').style.display = 'block';
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
-                        <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#4ecdc4;">${ackNum}</div>
+                        <div style="color:#888;">Receipt #:</div><div style="font-weight:600;color:#ff4757;">${ackNum}</div>
                         <div style="color:#888;">Business:</div><div style="font-weight:600;">${escapeHtml(p.businessName)}</div>
                         <div style="color:#888;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
                         <div style="color:#888;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
                         <div style="color:#888;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
-                        <div style="color:#888;">Plan:</div><div style="font-weight:600;color:#2ecc71;">✨ Free Forever</div>
-                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#f39c12;">⏳ Pending Verification</div>
+                        <div style="color:#888;">Plan:</div><div style="font-weight:600;color:#2ed573;">✨ Free Forever</div>
+                        <div style="color:#888;">Status:</div><div style="font-weight:600;color:#ffa502;">⏳ Pending Verification</div>
                     </div>`;
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
@@ -1004,9 +1004,9 @@
                 const slug = 'demo-' + crypto.randomUUID();
                 const venueId = db.collection('venues').doc().id;
                 const defaultCourts = [
-                    {id:1,name:'Court 1',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#4ecdc4',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
-                    {id:2,name:'Court 2',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#3498db',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
-                    {id:3,name:'Court 3',location:'East Wing',surface:'Clay',env:'Outdoor',color:'#2ecc71',rate:40,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:1,name:'Court 1',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#ff4757',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:2,name:'Court 2',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#e056a0',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:3,name:'Court 3',location:'East Wing',surface:'Clay',env:'Outdoor',color:'#2ed573',rate:40,status:'available',players:[],startTime:null,gameType:null,desc:''},
                 ];
                 await db.collection('venues').doc(venueId).set({
                     ownerId: 'demo', name: '🏟️ Demo Venue', slug, createdAt: Date.now(),
@@ -1073,7 +1073,7 @@
                 about:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2>
                 <p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
                 <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p>
-                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a><br>📱 0999 883 0291 (GCash / Maya)</p>`,
+                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#ff4757;">apexmindagency@gmail.com</a><br>📱 0999 883 0291 (GCash / Maya)</p>`,
 
                 privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
                 <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you book a demo, we collect your name, email address, phone number, and preferred schedule.</p>
@@ -1081,7 +1081,7 @@
                 <p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p>
                 <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion. We retain booking data as needed for business operations and financial records.</p>
                 <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p>
-                <p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p>
+                <p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#ff4757;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p>
                 <p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p>
                 <p><em>Last updated: July 2026</em></p>`,
 
@@ -1104,9 +1104,9 @@
                 <p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>`,
 
                 contact:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2>
-                <p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#4ecdc4;">apexmindagency@gmail.com</a></p>
+                <p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#ff4757;">apexmindagency@gmail.com</a></p>
                 <p><strong>Phone:</strong> 📱 0999 883 0291</p>
-                <p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;">facebook.com/aiautomationexpert</a></p>
+                <p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#ff4757;">facebook.com/aiautomationexpert</a></p>
                 <p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p>
                 <p><strong>Venue Partnerships:</strong> Interested in listing your venue on CourtQ Pro? Email us for pricing and onboarding.</p>
                 <p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p>

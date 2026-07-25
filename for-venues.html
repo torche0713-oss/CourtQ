@@ -13,7 +13,7 @@ body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;overflow:hidde
 .slide{position:absolute;top:0;left:0;width:100%;height:100%;padding:60px 80px;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;will-change:transform,opacity;transition:transform 0.7s cubic-bezier(0.4,0,0.2,1),opacity 0.6s ease;background:#0a0a1a}
 .slide.dim{pointer-events:none}
 .slide.active{z-index:10;pointer-events:auto}
-.slide.active{transform:translateZ(0) scale(1);opacity:1;filter:drop-shadow(0 0 60px rgba(78,205,196,0.08))}
+.slide.active{transform:translateZ(0) scale(1);opacity:1;filter:drop-shadow(0 0 60px rgba(255,71,87,0.08))}
 .slide.dim{transform:translateZ(-600px) scale(0.85);opacity:0.15}
 .slide.prev{transform:translateZ(-300px) translateX(-80px) scale(0.9);opacity:0.35;filter:blur(1px)}
 .slide.next{transform:translateZ(-300px) translateX(80px) scale(0.9);opacity:0.35;filter:blur(1px)}
@@ -21,10 +21,10 @@ body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;overflow:hidde
 .slide-inner{max-width:1100px;margin:0 auto;width:100%}
 
 /* hero */
-.hero{background:linear-gradient(135deg,#0a0a1a 0%,#16213e 50%,#0f3460 100%);text-align:center}
+.hero{background:linear-gradient(135deg,#0a0a1a 0%,#2d1018 50%,#3d1a20 100%);text-align:center}
 .hero .logo-icon{font-size:5rem;margin-bottom:16px}
-.hero h1{font-size:4rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#4ecdc4,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero .pro-badge{display:inline-block;background:linear-gradient(135deg,#f39c12,#d68910);color:#fff;font-size:0.7rem;padding:3px 10px;border-radius:6px;font-weight:800;letter-spacing:1px;vertical-align:super;margin-left:4px;-webkit-text-fill-color:#fff}
+.hero h1{font-size:4rem;font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#ff4757,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .pro-badge{display:inline-block;background:linear-gradient(135deg,#ffa502,#d68910);color:#fff;font-size:0.7rem;padding:3px 10px;border-radius:6px;font-weight:800;letter-spacing:1px;vertical-align:super;margin-left:4px;-webkit-text-fill-color:#fff}
 .hero .tagline{font-size:1.2rem;color:#ccc;margin-top:12px;font-weight:400}
 .hero .sub{font-size:0.9rem;color:#ccc;margin-top:30px;text-transform:uppercase;letter-spacing:3px}
 .hero .scroll-hint{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);color:#ccc;font-size:0.8rem;animation:bounce 2s infinite}
@@ -32,28 +32,28 @@ body{font-family:'Inter',sans-serif;background:#0a0a1a;color:#fff;overflow:hidde
 /* nav */
 .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,26,0.95);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.06);padding:12px 20px;display:flex;justify-content:center;gap:8px;z-index:100;flex-wrap:wrap}
 .nav button{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#bbb;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.75rem;font-weight:600;transition:all 0.2s;font-family:'Inter',sans-serif}
-.nav button:hover{background:rgba(78,205,196,0.1);color:#4ecdc4}
-.nav button.active{background:rgba(78,205,196,0.15);color:#4ecdc4;border-color:rgba(78,205,196,0.3)}
+.nav button:hover{background:rgba(255,71,87,0.1);color:#ff4757}
+.nav button.active{background:rgba(255,71,87,0.15);color:#ff4757;border-color:rgba(255,71,87,0.3)}
 
 /* slide content */
 h2{font-size:2.2rem;font-weight:800;margin-bottom:8px;letter-spacing:-1px}
-h2 .highlight{background:linear-gradient(135deg,#4ecdc4,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-h2 .orange{background:linear-gradient(135deg,#f39c12,#d68910);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2 .highlight{background:linear-gradient(135deg,#ff4757,#44b3ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2 .orange{background:linear-gradient(135deg,#ffa502,#d68910);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .lead{font-size:1.05rem;color:#ccc;margin-bottom:32px;font-weight:400;line-height:1.6}
 
 /* grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
 .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;transition:all 0.3s}
-.card:hover{background:rgba(78,205,196,0.06);border-color:rgba(78,205,196,0.2);transform:translateY(-2px)}
+.card:hover{background:rgba(255,71,87,0.06);border-color:rgba(255,71,87,0.2);transform:translateY(-2px)}
 .card-icon{font-size:2rem;margin-bottom:12px}
 .card h3{font-size:1rem;font-weight:700;margin-bottom:6px;color:#eee}
 .card p{font-size:0.82rem;color:#bbb;line-height:1.5}
-.card .big{font-size:1.8rem;font-weight:900;color:#4ecdc4}
+.card .big{font-size:1.8rem;font-weight:900;color:#ff4757}
 
 /* stats */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:32px}
 .stat{text-align:center;padding:20px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
-.stat-num{font-size:2rem;font-weight:900;color:#4ecdc4;letter-spacing:-1px}
+.stat-num{font-size:2rem;font-weight:900;color:#ff4757;letter-spacing:-1px}
 .stat-label{font-size:0.75rem;color:#aaa;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
 
 /* comparison table */
@@ -62,19 +62,19 @@ th,td{padding:12px 16px;text-align:left;border-bottom:1px solid rgba(255,255,255
 th{color:#ddd;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px}
 td{color:#eee}
 td:last-child,th:last-child{text-align:center}
-td:last-child{color:#4ecdc4;font-weight:700}
+td:last-child{color:#ff4757;font-weight:700}
 tr:hover{background:rgba(255,255,255,0.02)}
 
 /* pricing */
-.pricing-box{background:rgba(78,205,196,0.06);border:2px solid rgba(78,205,196,0.25);border-radius:20px;padding:36px;max-width:600px;margin:0 auto;text-align:center}
-.pricing-box .big-price{font-size:3.5rem;font-weight:900;color:#4ecdc4;letter-spacing:-2px}
+.pricing-box{background:rgba(255,71,87,0.06);border:2px solid rgba(255,71,87,0.25);border-radius:20px;padding:36px;max-width:600px;margin:0 auto;text-align:center}
+.pricing-box .big-price{font-size:3.5rem;font-weight:900;color:#ff4757;letter-spacing:-2px}
 .pricing-box .big-price span{font-size:1.1rem;color:#ccc;font-weight:400}
 .pricing-box .per-month{font-size:0.9rem;color:#ddd;margin-top:4px}
 .pricing-box .sub-text{font-size:0.85rem;color:#ccc;margin-top:16px;line-height:1.6}
 .example{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;max-width:500px;margin-left:auto;margin-right:auto}
 .example-item{background:rgba(255,255,255,0.04);border-radius:10px;padding:16px;text-align:center}
-.example-item .courts{font-size:1.5rem;font-weight:800;color:#f39c12}
-.example-item .cost{font-size:1.2rem;font-weight:700;color:#4ecdc4;margin-top:4px}
+.example-item .courts{font-size:1.5rem;font-weight:800;color:#ffa502}
+.example-item .cost{font-size:1.2rem;font-weight:700;color:#ff4757;margin-top:4px}
 .example-item .label{font-size:0.7rem;color:#aaa;margin-top:2px}
 
 /* roi */
@@ -82,15 +82,15 @@ tr:hover{background:rgba(255,255,255,0.02)}
 .roi-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:28px;text-align:center}
 .roi-card .roi-icon{font-size:2.2rem;margin-bottom:8px}
 .roi-card h3{font-size:1rem;margin-bottom:4px}
-.roi-card .roi-num{font-size:2.8rem;font-weight:900;color:#4ecdc4}
-.roi-card .roi-num.orange{color:#f39c12}
+.roi-card .roi-num{font-size:2.8rem;font-weight:900;color:#ff4757}
+.roi-card .roi-num.orange{color:#ffa502}
 .roi-card p{font-size:0.82rem;color:#bbb;margin-top:6px}
 
 /* CTA */
-.cta-slide{text-align:center;background:linear-gradient(135deg,#0a0a1a 0%,#0f3460 100%)}
+.cta-slide{text-align:center;background:linear-gradient(135deg,#0a0a1a 0%,#3d1a20 100%)}
 .cta-slide h2{font-size:2.8rem}
-.cta-slide .big-btn{display:inline-block;margin-top:24px;padding:16px 40px;background:linear-gradient(135deg,#4ecdc4,#44b3ab);color:#0a0a1a;font-size:1.1rem;font-weight:800;border-radius:12px;text-decoration:none;transition:all 0.3s}
-.cta-slide .big-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(78,205,196,0.3)}
+.cta-slide .big-btn{display:inline-block;margin-top:24px;padding:16px 40px;background:linear-gradient(135deg,#ff4757,#44b3ab);color:#0a0a1a;font-size:1.1rem;font-weight:800;border-radius:12px;text-decoration:none;transition:all 0.3s}
+.cta-slide .big-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,71,87,0.3)}
 .cta-slide .contact{color:#aaa;font-size:0.85rem;margin-top:20px;line-height:1.8}
 
 @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-6px)}}
@@ -199,10 +199,10 @@ h2{font-size:1.1rem}
 <div class="lead">No setup fee. No monthly fee. No commission. You keep 100% of your rates.</div>
 <div class="pricing-box" style="max-width:500px;">
 <div class="big-price">₱0<span>/mo</span></div>
-<div class="per-month" style="font-size:1rem;color:#4ecdc4;font-weight:700;">Free Forever — No Contract</div>
+<div class="per-month" style="font-size:1rem;color:#ff4757;font-weight:700;">Free Forever — No Contract</div>
 <div class="sub-text" style="font-size:0.9rem;">
 <p style="margin-bottom:8px;"><strong>How we make money:</strong></p>
-<p style="margin-bottom:4px;">A small <strong style="color:#4ecdc4;">₱5/hr convenience fee</strong> is added to each online booking — <strong>charged to the player</strong>, not to you.</p>
+<p style="margin-bottom:4px;">A small <strong style="color:#ff4757;">₱5/hr convenience fee</strong> is added to each online booking — <strong>charged to the player</strong>, not to you.</p>
 <p>You keep every peso of your court rates.</p>
 </div>
 <div style="margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:0.78rem;color:#aaa;">
@@ -214,8 +214,8 @@ h2{font-size:1.1rem}
 <span>✅ Cancel anytime</span>
 </div>
 </div>
-<div style="text-align:center;margin-top:16px;padding:14px;background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.2);border-radius:12px;max-width:500px;margin-left:auto;margin-right:auto">
-<p style="font-size:0.85rem;color:#ccc;line-height:1.5"><strong style="color:#4ecdc4">The convenience fee model:</strong> <strong style="color:#fff">₱5/player</strong> is added to each Open Play booking — charged to the player, not to you. When a session reaches its max player target, an invoice is auto-generated. You pay the invoice from your dashboard using your GCash/Maya reference number. You keep 100% of your rates.</p>
+<div style="text-align:center;margin-top:16px;padding:14px;background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:12px;max-width:500px;margin-left:auto;margin-right:auto">
+<p style="font-size:0.85rem;color:#ccc;line-height:1.5"><strong style="color:#ff4757">The convenience fee model:</strong> <strong style="color:#fff">₱5/player</strong> is added to each Open Play booking — charged to the player, not to you. When a session reaches its max player target, an invoice is auto-generated. You pay the invoice from your dashboard using your GCash/Maya reference number. You keep 100% of your rates.</p>
 </div>
 <div style="text-align:center;margin-top:12px;font-size:0.8rem;color:#ccc">💡 View all invoices, mark as paid with your reference number, and track payment history right from your dashboard.</div>
 </div>
@@ -227,13 +227,13 @@ h2{font-size:1.1rem}
 <h2>What's this <span class="highlight">worth to you?</span></h2>
 <div class="lead">CourtQ Pro pays for itself many times over. Here's the math.</div>
 <div class="roi-grid">
-<div class="roi-card"><div class="roi-icon">📅</div><h3>Extra Booking / Day</h3><div class="roi-num">+1</div><p>One extra booking per day at ₱1,000/hr = <strong style="color:#4ecdc4">₱30,000/mo</strong> — that already covers any plan 2x over</p></div>
+<div class="roi-card"><div class="roi-icon">📅</div><h3>Extra Booking / Day</h3><div class="roi-num">+1</div><p>One extra booking per day at ₱1,000/hr = <strong style="color:#ff4757">₱30,000/mo</strong> — that already covers any plan 2x over</p></div>
 <div class="roi-card"><div class="roi-icon">🚫</div><h3>Fewer No-Shows</h3><div class="roi-num orange">-80%</div><p>Online bookings with payment confirmation drastically reduce no-shows vs verbal agreements</p></div>
 <div class="roi-card"><div class="roi-icon">⏱️</div><h3>Staff Time Saved</h3><div class="roi-num">10+</div><p>Hours per week your staff save not answering calls, writing down bookings, and chasing payments</p></div>
 <div class="roi-card"><div class="roi-icon">📈</div><h3>Revenue Uplift</h3><div class="roi-num orange">15-25%</div><p>Venues typically see 15-25% more revenue within 2 months from better utilization and fewer leaks</p></div>
 </div>
-<div style="text-align:center;margin-top:24px;padding:16px;background:rgba(78,205,196,0.06);border-radius:12px;border:1px solid rgba(78,205,196,0.15)">
-<p style="font-size:0.9rem;color:#ccc">For a typical 4-court venue: <strong style="color:#4ecdc4">zero platform cost</strong>. With online booking, even <strong style="color:#fff">1 extra booking per day</strong> at your normal rate is pure profit you'd otherwise miss. The convenience fee is paid by the player — your revenue is untouched.</p>
+<div style="text-align:center;margin-top:24px;padding:16px;background:rgba(255,71,87,0.06);border-radius:12px;border:1px solid rgba(255,71,87,0.15)">
+<p style="font-size:0.9rem;color:#ccc">For a typical 4-court venue: <strong style="color:#ff4757">zero platform cost</strong>. With online booking, even <strong style="color:#fff">1 extra booking per day</strong> at your normal rate is pure profit you'd otherwise miss. The convenience fee is paid by the player — your revenue is untouched.</p>
 </div>
 </div>
 </div>
@@ -308,11 +308,11 @@ h2{font-size:1.1rem}
 apexmindagency@gmail.com<br>
 <strong style="color:#fff;">CourtQ Philippines</strong><br>
 📱 0999 883 0291 (GCash / Maya)<br>
-<a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#4ecdc4;text-decoration:none;font-size:0.9rem;">facebook.com/aiautomationexpert</a><br>
+<a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#ff4757;text-decoration:none;font-size:0.9rem;">facebook.com/aiautomationexpert</a><br>
 <span style="font-size:0.75rem">DM me on Facebook — I'll reply within an hour</span>
 </div>
 <div style="margin-top:30px;font-size:0.8rem;color:#999">
-Live demo: <a href="https://www.courtqpro.online" style="color:#4ecdc4;text-decoration:none" target="_blank">www.courtqpro.online</a>
+Live demo: <a href="https://www.courtqpro.online" style="color:#ff4757;text-decoration:none" target="_blank">www.courtqpro.online</a>
 </div>
 </div>
 </div>
