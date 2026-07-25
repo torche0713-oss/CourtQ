@@ -1615,19 +1615,19 @@
             <div style="font-weight:700;font-size:0.85rem;color:#10b981;margin-bottom:10px;">👥 Staff Management</div>
             <div style="display:flex;gap:6px;margin-bottom:8px;">
                 <input type="email" id="sStaffEmail" autocomplete="off" placeholder="staff@email.com" style="flex:1;padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;">
-                <button class="btn btn-primary btn-sm" onclick="addStaff()">+ Add</button>
+                <button class="btn btn-primary btn-sm" onclick="addStaff()">📧 Invite</button>
             </div>
             <div id="staffList" style="font-size:0.85rem;"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Staff can access the dashboard but not Financials or Settings.</div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Enter an email and click Invite — they'll receive an email with a link to create their account. Staff can access the dashboard but not Financials or Settings.</div>
         </div>
         <div id="ownerSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);display:none;">
             <div style="font-weight:700;font-size:0.85rem;color:#ef4444;margin-bottom:10px;">👑 Co-Owners</div>
             <div style="display:flex;gap:6px;margin-bottom:8px;">
                 <input type="email" id="sOwnerEmail" autocomplete="off" placeholder="coowner@email.com" style="flex:1;padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;">
-                <button class="btn btn-primary btn-sm" onclick="addOwner()">+ Add</button>
+                <button class="btn btn-primary btn-sm" onclick="addOwner()">📧 Invite</button>
             </div>
             <div id="ownerList" style="font-size:0.85rem;"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Co-owners have full access — Financials, Settings, Confirmations, and all dashboard features.</div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Enter an email and click Invite — they'll receive an email with a link to create their account. Co-owners have full access — Financials, Settings, Confirmations, and all dashboard features.</div>
         </div>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
@@ -2007,26 +2007,45 @@ function checkOnboardingFollowup(){
         if(!activatedAt) return;
         const daysSinceActivation=Math.floor((Date.now()-activatedAt)/(1000*60*60*24));
         const daysSinceFollowup=Math.floor((Date.now()-lastFollowup)/(1000*60*60*24));
+        const thresholds=[
+            {day:28, cooldown:28},
+            {day:21, cooldown:21},
+            {day:14, cooldown:14},
+            {day:7, cooldown:7},
+            {day:3, cooldown:3},
+            {day:1, cooldown:1},
+        ];
         let followupDay=0;
         let subject='',body='';
-        if(daysSinceActivation>=7 && daysSinceFollowup>=7){
-            followupDay=7;
-            if(IS_ORGANIZER){
-                subject='Need help getting started? 🤝';
-                body=`Hi there!\n\nIt's been a week since your organizer account was activated, and we noticed you haven't scheduled your first Open Play session yet.\n\nNo worries — we're here to help!\n\n━━━ QUICK START ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏓 Open Play tab\n3. Click "📅 Schedule an Open Play Session Here"\n4. Set your date, time, drop-in fee, and max players\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYou've got this! 💪`;
-            } else {
-                subject='Your venue is ready — let\'s get players booking! 🎾';
-                body=`Hi there!\n\nIt's been a week since your venue was activated, and we noticed you haven't finished setting up yet.\n\nLet's get you live in just a few minutes!\n\n━━━ REMAINING STEPS ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏟️ Courts tab to add your courts\n3. Click ⚙️ Settings to upload your logo and add payment details\n4. Click 📅 Schedule an Open Play Session to create your first event\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYour courts are waiting! 🏟️`;
+        for(const t of thresholds){
+            if(daysSinceActivation>=t.day && daysSinceFollowup>=t.cooldown){
+                followupDay=t.day;
+                break;
             }
-        } else if(daysSinceActivation>=3 && daysSinceFollowup>=3){
-            followupDay=3;
-            if(IS_ORGANIZER){
-                subject='Your organizer account is live — schedule your first session! 🏓';
-                body=`Great news — your organizer account is active!\n\nBut we noticed you haven't scheduled your first Open Play session yet. It only takes a minute:\n\n1. Log in at https://www.courtqpro.online/\n2. Go to 🏓 Open Play\n3. Click "📅 Schedule an Open Play Session Here"\n4. Pick a date, time, set your fee, and choose max players\n5. Share your portal link with your community!\n\nPlayers are ready to join — just create the session! 🎯\n\nQuestions? Reply to this email or visit https://www.youtube.com/@CourtQPro`;
-            } else {
-                subject='Your venue is activated — finish setup in 5 minutes! ⏱️';
-                body=`Your venue is live on CourtQ Pro! But you haven't finished setting up yet.\n\nHere's what's left:\n\n1. 🏟️ Add your courts (Courts tab)\n2. 🖼️ Upload your logo (Settings)\n3. 💳 Add GCash/Maya details (Settings)\n4. 🏓 Schedule your first Open Play session\n5. 🔗 Share your portal link with players\n\nEach step takes less than a minute. Start with the Courts tab!\n\nLog in now → https://www.courtqpro.online/\n\nNeed help? Reply to this email or check https://www.youtube.com/@CourtQPro`;
-            }
+        }
+        if(followupDay===0) return;
+        if(IS_ORGANIZER){
+            const orgEmails={
+                1:{subject:'Welcome! Ready to schedule your first session? 🏓',body:`Hi there!\n\nYour organizer account is active — congratulations!\n\nYou're just one step away from hosting your first Open Play session:\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏓 Open Play tab\n3. Click "📅 Schedule an Open Play Session Here"\n4. Set your date, time, drop-in fee, and max players\n5. Share your portal link with your community!\n\nIt takes less than 2 minutes. Players are ready to join! 🎯\n\nNeed help? Reply to this email or visit https://www.youtube.com/@CourtQPro\n\nLet's get started! 💪`},
+                3:{subject:'Your first session is waiting to be created! 🏓',body:`Hi there!\n\nYour organizer account has been active for a few days, but you haven't scheduled your first Open Play session yet.\n\nIt's quick and easy:\n\n1. Log in → https://www.courtqpro.online/\n2. 🏓 Open Play → "📅 Schedule an Open Play Session Here"\n3. Pick a date, time, and set your drop-in fee\n4. Share your portal link — players can register online!\n\nThe sooner you create a session, the sooner players can join. 🎯\n\nQuestions? Reply to this email or call 📱 0999 883 0291`},
+                7:{subject:'Need help getting started? 🤝',body:`Hi there!\n\nIt's been a week since your organizer account was activated, and we noticed you haven't scheduled your first Open Play session yet.\n\nNo worries — we're here to help!\n\n━━━ QUICK START ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏓 Open Play tab\n3. Click "📅 Schedule an Open Play Session Here"\n4. Set your date, time, drop-in fee, and max players\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYou've got this! 💪`},
+                14:{subject:'Your community is waiting — let\'s host a session! 🏟️',body:`Hi there!\n\nIt's been two weeks since your organizer account was activated. We'd love to see you hosting Open Play sessions!\n\nHere's what makes CourtQ Pro great for organizers:\n\n✅ Online player registration — no more manual headcounts\n✅ Automated queue rotation — fair play for everyone\n✅ Convenient fee handling — players pay ₱5 online, you focus on the game\n✅ Portal link — share once, players book anytime\n\nTo get started, just log in and schedule your first session:\nhttps://www.courtqpro.online/\n\nNeed a walkthrough? Reply to this email — we'll guide you step by step.\n\n🎬 Video guides: https://www.youtube.com/@CourtQPro\n📱 0999 883 0291`},
+                21:{subject:'Quick question — anything holding you back? 💬',body:`Hi there!\n\nWe noticed you haven't created an Open Play session yet on CourtQ Pro. We wanted to check in — is there anything we can help with?\n\nCommon questions from new organizers:\n\n❓ "How do I set up a session?" → Log in, go to Open Play, click Schedule\n❓ "Do I need a court?" → You can host at any partner venue\n❓ "How do players pay?" → They pay the ₱5 convenience fee online when they register\n❓ "How do I share my link?" → Copy your portal link from the dashboard and send it to your group chat\n\nWe're happy to help with anything else!\n\n📧 Reply to this email\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nLooking forward to seeing your first session live! 🎾`},
+                28:{subject:'Last reminder — your organizer account is ready! ✨',body:`Hi there!\n\nIt's been a month since your organizer account was activated on CourtQ Pro. This is our last follow-up reminder.\n\nIf you haven't had a chance to set things up, no pressure — your account will remain active and ready whenever you are.\n\nWhen you're ready, here's all you need to do:\n\n1. Log in → https://www.courtqpro.online/\n2. Schedule an Open Play session\n3. Share your portal link with your community\n4. Players register and pay online — you just run the session!\n\nIf you have any questions or need assistance, we're always here:\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWishing you great games ahead! 🏓✨`},
+            };
+            const e=orgEmails[followupDay];
+            if(e){subject=e.subject;body=e.body;}
+        } else {
+            const venueEmails={
+                1:{subject:'Welcome to CourtQ Pro — let\'s set up your venue! 🏟️',body:`Hi there!\n\nYour venue is live on CourtQ Pro — congratulations!\n\nLet's get you set up in just a few minutes:\n\n1. Log in → https://www.courtqpro.online/\n2. 🏟️ Courts tab → Add your courts and set rates\n3. ⚙️ Settings → Upload your logo and add GCash/Maya details\n4. 🏓 Schedule your first Open Play session\n5. 🔗 Share your portal link with players!\n\nEach step takes less than a minute. Start with the Courts tab!\n\nNeed help? Reply to this email or visit https://www.youtube.com/@CourtQPro\n\nLet's get those courts booked! 🎾`},
+                3:{subject:'Your venue is activated — finish setup in 5 minutes! ⏱️',body:`Your venue is live on CourtQ Pro! But you haven't finished setting up yet.\n\nHere's what's left:\n\n1. 🏟️ Add your courts (Courts tab)\n2. 🖼️ Upload your logo (Settings)\n3. 💳 Add GCash/Maya details (Settings)\n4. 🏓 Schedule your first Open Play session\n5. 🔗 Share your portal link with players\n\nEach step takes less than a minute. Start with the Courts tab!\n\nLog in now → https://www.courtqpro.online/\n\nNeed help? Reply to this email or check https://www.youtube.com/@CourtQPro`},
+                7:{subject:'Your venue is ready — let\'s get players booking! 🎾',body:`Hi there!\n\nIt's been a week since your venue was activated, and we noticed you haven't finished setting up yet.\n\nLet's get you live in just a few minutes!\n\n━━━ REMAINING STEPS ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏟️ Courts tab to add your courts\n3. Click ⚙️ Settings to upload your logo and add payment details\n4. Click 📅 Schedule an Open Play Session to create your first event\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYour courts are waiting! 🏟️`},
+                14:{subject:'Your courts are empty — players want to book! 🏟️',body:`Hi there!\n\nIt's been two weeks since your venue was activated on CourtQ Pro. Here's what you're missing:\n\n✅ Online bookings — players book and pay via GCash/Maya automatically\n✅ Open Play sessions — host group games with automated queue rotation\n✅ TV Display — show live court status on a screen at your venue\n✅ Real-time dashboard — see bookings, revenue, and player activity\n\nTo start receiving bookings, you just need to:\n\n1. Add your courts → Courts tab\n2. Set your rates → Courts tab (click edit on each court)\n3. Add payment info → Settings (GCash/Maya numbers)\n4. Share your portal link → let players book online!\n\nLog in now → https://www.courtqpro.online/\n\nNeed help? Reply to this email or call 📱 0999 883 0291`},
+                21:{subject:'Quick question — is everything set up okay? 💬',body:`Hi there!\n\nWe noticed your venue hasn't finished setting up on CourtQ Pro yet. We wanted to check in — is there anything we can help with?\n\nCommon questions from new venues:\n\n❓ "How do I add courts?" → Log in, go to Courts tab, click + Add Court\n❓ "How do players pay?" → Add your GCash/Maya in Settings, players pay online\n❓ "What's the convenience fee?" → ₱5/player for Open Play — paid by players, not you\n❓ "How do I share my link?" → Click "Share Booking Online Link" in the header\n❓ "Can I try it first?" → Yes! Use the demo mode to explore all features\n\nWe're happy to walk you through anything.\n\n📧 Reply to this email\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nLooking forward to seeing your venue live! 🏟️`},
+                28:{subject:'Last reminder — your venue is ready when you are! ✨',body:`Hi there!\n\nIt's been a month since your venue was activated on CourtQ Pro. This is our last follow-up reminder.\n\nNo pressure at all — your account will remain active and ready whenever you decide to start.\n\nWhen you're ready, here's the quick setup:\n\n1. Log in → https://www.courtqpro.online/\n2. Add courts in the 🏟️ Courts tab\n3. Set rates and payment in ⚙️ Settings\n4. Share your portal link — players book and pay online!\n\nThat's it. Your venue goes live the moment you share the link.\n\nIf you need anything:\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWishing you packed courts ahead! 🏟️✨`},
+            };
+            const e=venueEmails[followupDay];
+            if(e){subject=e.subject;body=e.body;}
         }
         if(followupDay>0 && subject){
             sendFollowupEmail(subject,body);
@@ -4126,14 +4145,31 @@ function openSettings(){
     renderStaffList();
     renderOwnerList();
     document.getElementById('settingsModal').classList.add('active');
+    checkInviteBadges();
 }
 function renderStaffList(){
     const list=document.getElementById('staffList');
     const emails=S.staffEmails||[];
     if(emails.length===0){list.innerHTML='<div style="color:#64748b;font-style:italic;">No staff added yet.</div>';return;}
-    list.innerHTML=emails.map((e,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04);"><span>${escapeHtml(e)}</span><button class="btn btn-danger btn-sm" onclick="removeStaff(${i})">✕</button></div>`).join('');
+    const invUrl=`${window.location.origin}/invite.html?venue=${encodeURIComponent(S.venueSlug)}&role=staff&email=`;
+    const badges=S._staffBadges||{};
+    list.innerHTML=emails.map((e,i)=>{
+        const active=badges[e]===true;
+        const badge=active
+            ?'<span style="background:rgba(16,185,129,0.15);color:#10b981;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:700;">✅ Active</span>'
+            :'<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:700;">⏳ Invited</span>';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:0.82rem;">${escapeHtml(e)}</div>
+                <div style="display:flex;gap:4px;margin-top:3px;align-items:center;">${badge}
+                    ${!active?`<button class="btn btn-outline btn-sm" onclick="copyInviteLink('${encodeURIComponent(e)}','staff')" style="font-size:0.65rem;padding:2px 6px;border:1px solid rgba(37,99,235,0.3);color:#2563eb;">📋 Copy Link</button>`:''}
+                </div>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="removeStaff(${i})">✕</button>
+        </div>`;
+    }).join('');
 }
-function addStaff(){
+async function addStaff(){
     const inp=document.getElementById('sStaffEmail');
     const email=inp.value.trim().toLowerCase();
     if(!email||!email.includes('@')){showNotif('Enter a valid email!','error');return;}
@@ -4144,6 +4180,7 @@ function addStaff(){
     renderStaffList();
     saveState();
     showNotif('Staff added!');
+    sendInviteEmail(email,'staff');
 }
 function removeStaff(idx){
     S.staffEmails=(S.staffEmails||[]).filter((_,i)=>i!==idx);
@@ -4151,13 +4188,34 @@ function removeStaff(idx){
     saveState();
     showNotif('Staff removed!');
 }
+function copyInviteLink(encodedEmail,role){
+    const url=`${window.location.origin}/invite.html?venue=${encodeURIComponent(S.venueSlug)}&role=${role}&email=${encodedEmail}`;
+    navigator.clipboard.writeText(url).then(()=>showNotif('📋 Invite link copied!')).catch(()=>{
+        const t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);showNotif('📋 Invite link copied!');
+    });
+}
 function renderOwnerList(){
     const list=document.getElementById('ownerList');
     const emails=S.ownerEmails||[];
     if(emails.length===0){list.innerHTML='<div style="color:#64748b;font-style:italic;">No co-owners added yet.</div>';return;}
-    list.innerHTML=emails.map((e,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04);"><span>${escapeHtml(e)}</span><button class="btn btn-danger btn-sm" onclick="removeOwner(${i})">✕</button></div>`).join('');
+    const badges=S._ownerBadges||{};
+    list.innerHTML=emails.map((e,i)=>{
+        const active=badges[e]===true;
+        const badge=active
+            ?'<span style="background:rgba(16,185,129,0.15);color:#10b981;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:700;">✅ Active</span>'
+            :'<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 7px;border-radius:6px;font-size:0.7rem;font-weight:700;">⏳ Invited</span>';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:0.82rem;">${escapeHtml(e)}</div>
+                <div style="display:flex;gap:4px;margin-top:3px;align-items:center;">${badge}
+                    ${!active?`<button class="btn btn-outline btn-sm" onclick="copyInviteLink('${encodeURIComponent(e)}','owner')" style="font-size:0.65rem;padding:2px 6px;border:1px solid rgba(139,92,246,0.3);color:#8b5cf6;">📋 Copy Link</button>`:''}
+                </div>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="removeOwner(${i})">✕</button>
+        </div>`;
+    }).join('');
 }
-function addOwner(){
+async function addOwner(){
     const inp=document.getElementById('sOwnerEmail');
     const email=inp.value.trim().toLowerCase();
     if(!email||!email.includes('@')){showNotif('Enter a valid email!','error');return;}
@@ -4168,12 +4226,58 @@ function addOwner(){
     renderOwnerList();
     saveState();
     showNotif('Co-owner added!');
+    sendInviteEmail(email,'owner');
 }
 function removeOwner(idx){
     S.ownerEmails=(S.ownerEmails||[]).filter((_,i)=>i!==idx);
     renderOwnerList();
     saveState();
     showNotif('Co-owner removed!');
+}
+async function sendInviteEmail(email,role){
+    try {
+        const cfg=await db.collection('config').doc('emailjs').get();
+        if(!cfg.exists){console.log('[invite] EmailJS not configured — skipping email');return;}
+        const ej=cfg.data();
+        const inviteUrl=`${window.location.origin}/invite.html?venue=${encodeURIComponent(S.venueSlug)}&role=${role}&email=${encodeURIComponent(email)}`;
+        const isOwner=role==='owner';
+        const roleLabel=isOwner?'Co-Owner':'Staff';
+        const emoji=isOwner?'👑':'👥';
+        emailjs.init(ej.publicKey);
+        await emailjs.send(ej.serviceId, ej.templateAuto, {
+            to_email:email, to_name:email.split('@')[0],
+            subject:`${emoji} You've been invited as ${roleLabel} on CourtQ Pro!`,
+            body:`You've been invited to join "${S.venueName||'a venue'}" as ${roleLabel} on CourtQ Pro.\n\n━━━ ACCEPT YOUR INVITATION ━━━\n\nClick the link below to create your account:\n${inviteUrl}\n\n━━━ WHAT YOU'LL GET ━━━\n\n${isOwner?'✅ Full access — Financials, Settings, Confirmations, and all dashboard features':'✅ Dashboard access — view courts, bookings, and Open Play sessions (no Financials or Settings access)'}\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nSee you on the dashboard! 🏓`
+        });
+        showNotif('📧 Invitation email sent to '+email,'success');
+    } catch(e){
+        console.warn('[invite] Email send failed:',e);
+        showNotif('Email failed to send — copied link instead. Share it manually.','info');
+        copyInviteLink(encodeURIComponent(email),role);
+    }
+}
+async function checkInviteBadges(){
+    const allEmails=[...(S.staffEmails||[]),...(S.ownerEmails||[])];
+    if(allEmails.length===0) return;
+    try {
+        const col=IS_ORGANIZER?'organizers':'venues';
+        const venueSnap=await db.collection(col).doc(VENUE_ID).get();
+        const vData=venueSnap.exists?venueSnap.data():{};
+        const uids=IS_ORGANIZER?(vData.ownerUids||[]):[];
+        S._staffBadges=S._staffBadges||{};
+        S._ownerBadges=S._ownerBadges||{};
+        for(const email of allEmails){
+            const isOwnerEmail=(S.ownerEmails||[]).map(e=>e.toLowerCase()).includes(email.toLowerCase());
+            let active=false;
+            try {
+                const userSnap=await db.collection('users').where('email','==',email.toLowerCase()).get();
+                active=!userSnap.empty;
+            }catch(e){}
+            if(isOwnerEmail){S._ownerBadges[email]=active;}else{S._staffBadges[email]=active;}
+        }
+        renderStaffList();
+        renderOwnerList();
+    }catch(e){console.warn('[invite] Badge check failed:',e);}
 }
 function saveSettings(){
     S.paymentInfo.gcash.number=document.getElementById('sGcashNum').value.trim();

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CourtQ Pro - Accept Invitation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 50%, #cbd5e1 100%);
+            min-height: 100vh; color: #1e293b;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 16px; padding: 32px; width: 100%; max-width: 440px;
+            backdrop-filter: blur(10px);
+        }
+        .logo { text-align: center; margin-bottom: 24px; }
+        .logo-icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .logo-text { font-size: 1.4rem; font-weight: 800; color: #2563eb; }
+        .pro-badge {
+            background: linear-gradient(135deg,#f59e0b,#d68910);
+            color: #1e293b; font-size: 0.55rem; padding: 2px 6px;
+            border-radius: 6px; font-weight: 800; letter-spacing: 1px;
+            vertical-align: middle; margin-left: 4px;
+        }
+        .role-badge {
+            text-align: center; margin-bottom: 20px; padding: 12px;
+            border-radius: 10px; font-size: 0.85rem; font-weight: 700;
+        }
+        .role-badge.staff { background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+        .role-badge.coowner { background: rgba(139,92,246,0.1); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+        .venue-name { color: #64748b; font-size: 0.78rem; margin-top: 4px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block; font-size: 0.75rem; color: #64748b;
+            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+        }
+        .form-group input {
+            width: 100%; padding: 10px 14px;
+            background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 9px; color: #1e293b; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .form-group input:focus {
+            outline: none; border-color: #2563eb; background: rgba(37,99,235,0.06);
+        }
+        .btn {
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            font-size: 0.95rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg,#2563eb,#44a08d); color: #fff; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.35); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .error { color: #ef4444; font-size: 0.8rem; margin-bottom: 10px; display: none; text-align: center; }
+        .spinner {
+            width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .success { text-align: center; display: none; }
+        .success-icon { font-size: 3rem; margin-bottom: 12px; }
+        .success-title { font-size: 1.2rem; font-weight: 800; color: #10b981; margin-bottom: 6px; }
+        .success-msg { font-size: 0.85rem; color: #64748b; line-height: 1.6; }
+        .invalid { text-align: center; padding: 20px 0; }
+        .invalid-icon { font-size: 3rem; margin-bottom: 12px; }
+        .invalid-title { font-size: 1.1rem; font-weight: 700; color: #ef4444; margin-bottom: 6px; }
+        .invalid-msg { font-size: 0.82rem; color: #64748b; }
+        .footer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #94a3b8; }
+        .footer a { color: #2563eb; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- LOADING STATE -->
+        <div id="loadingState">
+            <div class="logo">
+                <div class="logo-icon">🏓</div>
+                <div class="logo-text">CourtQ Pro <span class="pro-badge">PRO</span></div>
+            </div>
+            <div class="spinner" style="border-color:rgba(37,99,235,0.2);border-top-color:#2563eb;"></div>
+            <div style="text-align:center;margin-top:12px;color:#64748b;font-size:0.85rem;">Verifying your invitation...</div>
+        </div>
+
+        <!-- INVITE FORM -->
+        <div id="inviteForm" style="display:none;">
+            <div class="logo">
+                <div class="logo-icon">🏓</div>
+                <div class="logo-text">CourtQ Pro <span class="pro-badge">PRO</span></div>
+            </div>
+            <div class="role-badge" id="roleBadge">
+                <div id="roleText">👥 Staff Invitation</div>
+                <div class="venue-name" id="venueNameDisplay"></div>
+            </div>
+            <div style="font-size:0.85rem;color:#64748b;text-align:center;margin-bottom:16px;line-height:1.5;">
+                You've been invited to join as <strong id="roleLabel">staff</strong>.<br>
+                Create a password to access the dashboard.
+            </div>
+            <div id="errorMsg" class="error"></div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="inviteEmail" readonly style="background:rgba(0,0,0,0.02);cursor:not-allowed;">
+            </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="inviteName" placeholder="Your full name">
+            </div>
+            <div class="form-group">
+                <label>Create Password</label>
+                <input type="password" id="invitePass" placeholder="At least 6 characters" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="invitePassConfirm" placeholder="Re-enter password" autocomplete="new-password">
+            </div>
+            <button class="btn btn-primary" id="acceptBtn" onclick="acceptInvite()">🚀 Accept & Create Account</button>
+            <div class="footer">
+                <a href="index.html">courtqpro.online</a> · Need help? Contact your venue owner
+            </div>
+        </div>
+
+        <!-- SUCCESS STATE -->
+        <div id="successState" class="success">
+            <div class="logo">
+                <div class="logo-icon">🏓</div>
+                <div class="logo-text">CourtQ Pro <span class="pro-badge">PRO</span></div>
+            </div>
+            <div class="success-icon">🎉</div>
+            <div class="success-title">You're In!</div>
+            <div class="success-msg">
+                Your account has been created.<br>
+                You can now access the dashboard.
+            </div>
+            <button class="btn btn-primary" style="margin-top:20px;" onclick="goToDashboard()">🚀 Go to Dashboard</button>
+        </div>
+
+        <!-- INVALID STATE -->
+        <div id="invalidState" class="invalid" style="display:none;">
+            <div class="logo">
+                <div class="logo-icon">🏓</div>
+                <div class="logo-text">CourtQ Pro <span class="pro-badge">PRO</span></div>
+            </div>
+            <div class="invalid-icon">❌</div>
+            <div class="invalid-title" id="invalidTitle">Invalid Invitation</div>
+            <div class="invalid-msg" id="invalidMsg">This invitation link is invalid or has expired.<br>Please ask your venue owner to send a new invitation.</div>
+            <button class="btn btn-primary" style="margin-top:20px;" onclick="window.location.href='index.html'">← Back to CourtQ Pro</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+    <script>
+        firebase.initializeApp(CQ_CONFIG.firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get('venue');
+        const role = params.get('role');
+        const email = params.get('email');
+
+        if (!slug || !role || !email) {
+            showInvalid('Invalid Invitation', 'This link is missing required parameters. Please ask your venue owner to send a new invitation.');
+        } else {
+            verifyInvite();
+        }
+
+        async function verifyInvite() {
+            try {
+                const slugDoc = await db.collection('slugs').doc(slug).get();
+                if (!slugDoc.exists) {
+                    showInvalid('Venue Not Found', 'This venue no longer exists. Please contact your venue owner.');
+                    return;
+                }
+                const slugData = slugDoc.data();
+                const isOrg = slugData.type === 'organizer';
+                const venueId = isOrg ? slugData.organizerId : slugData.venueId;
+                const col = isOrg ? 'organizers' : 'venues';
+                const venueDoc = await db.collection(col).doc(venueId).get();
+                if (!venueDoc.exists) {
+                    showInvalid('Venue Not Found', 'This venue no longer exists. Please contact your venue owner.');
+                    return;
+                }
+                const vData = venueDoc.data();
+                const list = role === 'owner' ? (vData.ownerEmails || []) : (vData.staffEmails || []);
+                const emailLower = email.toLowerCase();
+                if (!list.map(e => e.toLowerCase()).includes(emailLower)) {
+                    showInvalid('Email Not Found', `The email <strong>${email}</strong> is not on the ${role === 'owner' ? 'co-owner' : 'staff'} list. Please ask your venue owner to add your email first.`);
+                    return;
+                }
+                const existingUsers = await db.collection('users').where('email', '==', emailLower).get();
+                if (!existingUsers.empty) {
+                    showInvalid('Account Already Exists', `An account with <strong>${email}</strong> already exists. Please log in at the main page instead.`);
+                    return;
+                }
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('inviteForm').style.display = 'block';
+                document.getElementById('inviteEmail').value = email;
+                const badge = document.getElementById('roleBadge');
+                const roleText = document.getElementById('roleText');
+                const roleLabel = document.getElementById('roleLabel');
+                const venueDisplay = document.getElementById('venueNameDisplay');
+                if (role === 'owner') {
+                    badge.className = 'role-badge coowner';
+                    roleText.textContent = '👑 Co-Owner Invitation';
+                    roleLabel.textContent = 'co-owner';
+                } else {
+                    badge.className = 'role-badge staff';
+                    roleText.textContent = '👥 Staff Invitation';
+                    roleLabel.textContent = 'staff';
+                }
+                venueDisplay.textContent = vData.name || vData.businessName || slug;
+            } catch (e) {
+                console.error('Verify invite error:', e);
+                showInvalid('Error', 'Something went wrong. Please try again or contact your venue owner.');
+            }
+        }
+
+        function showInvalid(title, msg) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('inviteForm').style.display = 'none';
+            document.getElementById('invalidTitle').textContent = title;
+            document.getElementById('invalidMsg').innerHTML = msg;
+            document.getElementById('invalidState').style.display = 'block';
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function goToDashboard() {
+            window.location.href = 'admin.html?venue=' + encodeURIComponent(slug);
+        }
+        async function acceptInvite() {
+            const name = document.getElementById('inviteName').value.trim();
+            const pass = document.getElementById('invitePass').value;
+            const passConfirm = document.getElementById('invitePassConfirm').value;
+            if (!name) { showError('Enter your full name.'); return; }
+            if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
+            if (pass !== passConfirm) { showError('Passwords do not match.'); return; }
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('acceptBtn').disabled = true;
+            document.getElementById('acceptBtn').innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div> Creating account...';
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                const slugDoc = await db.collection('slugs').doc(slug).get();
+                const slugData = slugDoc.data();
+                const isOrg = slugData.type === 'organizer';
+                const venueId = isOrg ? slugData.organizerId : slugData.venueId;
+                const col = isOrg ? 'organizers' : 'venues';
+                await db.collection('users').doc(cred.user.uid).set({
+                    email: email, name: name,
+                    [isOrg ? 'organizerId' : 'venueId']: venueId,
+                    role: role, slug: slug,
+                    createdAt: Date.now()
+                });
+                if (role === 'owner') {
+                    await db.collection(col).doc(venueId).update({
+                        [`ownerUids`]: firebase.firestore.FieldValue.arrayUnion(cred.user.uid)
+                    }).catch(() => {});
+                }
+                document.getElementById('inviteForm').style.display = 'none';
+                document.getElementById('successState').style.display = 'block';
+            } catch (e) {
+                console.error('Accept invite error:', e);
+                document.getElementById('acceptBtn').disabled = false;
+                document.getElementById('acceptBtn').innerHTML = '🚀 Accept & Create Account';
+                if (e.code === 'auth/email-already-in-use') {
+                    showError('An account with this email already exists. Please log in instead.');
+                } else {
+                    showError('Failed to create account: ' + e.message);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
