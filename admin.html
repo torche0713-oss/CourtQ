@@ -491,6 +491,47 @@
             header{flex-direction:column;text-align:center;}
 
         }
+        .onboard-bar {
+            background: linear-gradient(135deg, #2563eb 0%, #6366f1 100%);
+            border-radius: 14px; padding: 18px 20px; margin-bottom: 20px;
+            color: #fff; position: relative; overflow: hidden;
+        }
+        .onboard-bar::after {
+            content: ''; position: absolute; top: -30px; right: -30px;
+            width: 100px; height: 100px; border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+        }
+        .onboard-title { font-size: 0.95rem; font-weight: 800; margin-bottom: 4px; }
+        .onboard-subtitle { font-size: 0.75rem; opacity: 0.8; margin-bottom: 14px; }
+        .onboard-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .onboard-track { flex: 1; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+        .onboard-fill { height: 100%; background: #fff; border-radius: 3px; transition: width 0.5s ease; }
+        .onboard-pct { font-size: 0.75rem; font-weight: 700; min-width: 35px; text-align: right; }
+        .onboard-steps { display: flex; gap: 8px; flex-wrap: wrap; }
+        .onboard-step {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px; padding: 8px 14px; cursor: pointer;
+            font-size: 0.78rem; font-weight: 600; transition: all 0.3s;
+            color: #fff; white-space: nowrap;
+        }
+        .onboard-step:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
+        .onboard-step.done {
+            background: rgba(16,185,129,0.3); border-color: rgba(16,185,129,0.5);
+            cursor: default;
+        }
+        .onboard-step .step-icon { font-size: 1rem; }
+        .onboard-step.done .step-icon::after { content: '✓'; }
+        .onboard-dismiss {
+            position: absolute; top: 10px; right: 14px; background: none; border: none;
+            color: rgba(255,255,255,0.6); cursor: pointer; font-size: 1.1rem; padding: 4px;
+            transition: color 0.2s;
+        }
+        .onboard-dismiss:hover { color: #fff; }
+        @media(max-width:600px) {
+            .onboard-step { padding: 6px 10px; font-size: 0.72rem; }
+            .onboard-steps { gap: 6px; }
+        }
     </style>
 </head>
 <body>
@@ -536,6 +577,18 @@
     <p id="pendingDesc" style="color:#94a3b8;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
     <div id="pendingDetails" style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:20px;max-width:400px;margin:0 auto;text-align:left;font-size:0.82rem;"></div>
     <div style="margin-top:20px;font-size:0.78rem;color:#64748b;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a> · 📱 0999 883 0291</div>
+</div>
+
+<!-- ONBOARDING CHECKLIST -->
+<div id="onboardBar" class="onboard-bar" style="display:none;max-width:1400px;margin:20px auto 0;padding-left:20px;padding-right:20px;">
+    <button class="onboard-dismiss" onclick="dismissOnboarding()" title="Hide checklist">✕</button>
+    <div class="onboard-title" id="onboardTitle">🚀 Get Started with CourtQ Pro</div>
+    <div class="onboard-subtitle" id="onboardSubtitle">Complete these steps to start accepting bookings</div>
+    <div class="onboard-progress">
+        <div class="onboard-track"><div class="onboard-fill" id="onboardFill" style="width:0%"></div></div>
+        <div class="onboard-pct" id="onboardPct">0%</div>
+    </div>
+    <div class="onboard-steps" id="onboardSteps"></div>
 </div>
 
 <!-- OPEN PLAY PAGE -->
@@ -1843,6 +1896,7 @@ function saveState(){
             console.log('[saveState] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
             getVenueDocRef().set(state,{merge:true}).then(()=>{
                 console.log('[saveState] OK');
+                if(!S._onboardingComplete && !S._onboardingDismissed) renderOnboardingChecklist();
             }).catch(e=>{
                 console.warn('saveState failed:',e);
                 showNotif('Firestore save failed: '+e.message,'error');
@@ -1867,6 +1921,74 @@ async function loadState(){
     } catch(e){
         console.warn('Firestore load failed, using defaults:', e);
     }
+}
+
+// ===================== ONBOARDING CHECKLIST =====================
+function getOnboardingSteps(){
+    if(IS_ORGANIZER){
+        return [
+            {id:'logo', icon:'🖼️', label:'Add Your Logo', tip:'Upload a logo in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
+            {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
+            {id:'portal', icon:'🔗', label:'Share Your Portal Link', tip:'Send to players so they can join', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));navigator.clipboard.writeText(window.location.origin+'/portal.html?venue='+S.venueSlug).then(()=>showNotif('Portal link copied! Share it with players.')).catch(()=>showNotif('Copy this from your browser address bar: portal.html?venue='+S.venueSlug));}, done:()=>false},
+        ];
+    }
+    return [
+        {id:'courts', icon:'🏟️', label:'Add Your Courts', tip:'Set up your courts in the Courts tab', action:()=>showPage('courts',document.getElementById('courtsBtn')), done:()=>(S.courts||[]).length>0},
+        {id:'rates', icon:'💰', label:'Set Your Rates', tip:'Configure pricing per court', action:()=>showPage('courts',document.getElementById('courtsBtn')), done:()=>(S.courts||[]).some(c=>c.rate&&c.rate>0)},
+        {id:'logo', icon:'🖼️', label:'Add Your Logo', tip:'Upload a logo in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
+        {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info', action:()=>openSettings(), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
+        {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
+        {id:'portal', icon:'🔗', label:'Share Your Portal Link', tip:'Send to players so they can book', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));navigator.clipboard.writeText(window.location.origin+'/portal.html?venue='+S.venueSlug).then(()=>showNotif('Portal link copied! Share it with players.')).catch(()=>showNotif('Copy this from your browser address bar: portal.html?venue='+S.venueSlug));}, done:()=>false},
+    ];
+}
+function renderOnboardingChecklist(){
+    const bar=document.getElementById('onboardBar');
+    if(!VENUE_ID||!S.venueSlug){bar.style.display='none';return;}
+    if(S._onboardingDismissed){bar.style.display='none';return;}
+    const steps=getOnboardingSteps();
+    const detectableSteps=steps.filter(s=>!(s.id==='portal'));
+    const detectableDone=detectableSteps.filter(s=>s.done()).length;
+    if(detectableDone===detectableSteps.length){markOnboardingComplete();return;}
+    const doneCount=steps.filter(s=>s.done()).length;
+    const total=steps.length;
+    const pct=Math.round((doneCount/total)*100);
+    document.getElementById('onboardFill').style.width=pct+'%';
+    document.getElementById('onboardPct').textContent=pct+'%';
+    if(IS_ORGANIZER){
+        document.getElementById('onboardTitle').textContent='🚀 Get Started as an Organizer';
+        document.getElementById('onboardSubtitle').textContent='Set up your organization and start hosting Open Play sessions';
+    } else {
+        document.getElementById('onboardTitle').textContent='🚀 Get Started with CourtQ Pro';
+        document.getElementById('onboardSubtitle').textContent='Complete these steps to start accepting bookings';
+    }
+    if(pct===100){
+        document.getElementById('onboardSubtitle').textContent='All done! Your dashboard is fully set up.';
+    }
+    const container=document.getElementById('onboardSteps');
+    container.innerHTML=steps.map(s=>{
+        const isDone=s.done();
+        return `<div class="onboard-step${isDone?' done':''}" onclick="onboardStepClick('${s.id}')" title="${s.tip}">
+            <span class="step-icon">${isDone?'✅':s.icon}</span>
+            <span>${s.label}</span>
+        </div>`;
+    }).join('');
+    bar.style.display='block';
+    if(doneCount===total) markOnboardingComplete();
+}
+async function markOnboardingComplete(){
+    S._onboardingComplete=true;
+    document.getElementById('onboardBar').style.display='none';
+    if(VENUE_ID) try{await getVenueDocRef().update({onboardingComplete:true});}catch(e){}
+}
+function onboardStepClick(stepId){
+    const steps=getOnboardingSteps();
+    const step=steps.find(s=>s.id===stepId);
+    if(step&&!step.done()) step.action();
+}
+function dismissOnboarding(){
+    S._onboardingDismissed=true;
+    document.getElementById('onboardBar').style.display='none';
+    if(VENUE_ID) getVenueDocRef().update({onboardingDismissed:true}).catch(()=>{});
 }
 
 // ===================== LEADS =====================
@@ -6194,6 +6316,8 @@ function deleteTournament(id){
         PERSISTENT_KEYS.forEach(k => {
             if (data[k] !== undefined) S[k] = data[k];
         });
+        if(data.onboardingComplete) S._onboardingComplete = true;
+        if(data.onboardingDismissed) S._onboardingDismissed = true;
         if (!S.venueName && data.name) S.venueName = data.name;
         if(data.scheduledSessions) S.scheduledSessions=data.scheduledSessions;
         // Real-time listener for venue/organizer document
@@ -6300,6 +6424,8 @@ function deleteTournament(id){
         // Immediate queue migration for online players (active sessions only — scheduled players stay in Booked section)
         (S.scheduledSessions||[]).filter(s=>s.status==='active').forEach(s=>{let _sc=(s.players||[]).reduce((a,p)=>a+(p.players||1),0);(s.players||[]).filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')&&!p._queued).forEach(p=>{if(s.maxPlayers&&_sc+(p.players||1)>s.maxPlayers)return;_sc+=p.players||1;p._queued=true;if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}});});
         renderAll();
+        // Render onboarding checklist (skipped if completed/dismissed)
+        if(!S._onboardingComplete && !S._onboardingDismissed) renderOnboardingChecklist();
         // Fetch announcements
         try {
             const aSnap=await db.collection('config').doc('announcements').get();
