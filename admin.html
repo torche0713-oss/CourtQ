@@ -1979,6 +1979,29 @@ async function markOnboardingComplete(){
     S._onboardingComplete=true;
     document.getElementById('onboardBar').style.display='none';
     if(VENUE_ID) try{await getVenueDocRef().update({onboardingComplete:true});}catch(e){}
+    sendCompletionAgreementEmail();
+}
+async function sendCompletionAgreementEmail(){
+    try {
+        const cfg=await db.collection('config').doc('emailjs').get();
+        if(!cfg.exists) return;
+        const ej=cfg.data();
+        let ownerEmail='';
+        try {
+            const userSnap=await db.collection('users').where(IS_ORGANIZER?'organizerId':'venueId','==',VENUE_ID).get();
+            if(!userSnap.empty) ownerEmail=userSnap.docs[0].data().email||'';
+        }catch(e){}
+        if(!ownerEmail) return;
+        const isOrg=IS_ORGANIZER;
+        const venueName=S.venueName||S.businessName||'your venue';
+        emailjs.init(ej.publicKey);
+        await emailjs.send(ej.serviceId, ej.templateAuto, {
+            to_email:ownerEmail, to_name:venueName,
+            subject:isOrg?'🎉 Setup complete! Sign your organizer agreement':'🎉 Setup complete! Sign your venue agreement',
+            body:isOrg?`Great news — you've completed the setup for "${venueName}"!\n\nYour organizer account is fully configured and ready to go.\n\n━━━ SIGN YOUR AGREEMENT ━━━\n\nTo finalize your partnership with CourtQ Pro, please review and sign the following document:\n\n📄 Letter of Agreement:\nhttps://www.courtqpro.online/agreement-organizer.html\n\nPlease download, review, sign, and return the signed copy to us via email at apexmindagency@gmail.com.\n\n━━━ WHAT'S NEXT? ━━━\n\n✅ Share your portal link with players!\n✅ Start your first Open Play session!\n✅ Your dashboard is live — monitor sessions and player activity in real time.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`:`Great news — you've completed the setup for "${venueName}"!\n\nYour venue is fully configured and ready to accept bookings.\n\n━━━ SIGN YOUR AGREEMENT ━━━\n\nTo finalize your partnership with CourtQ Pro, please review and sign the following document:\n\n📄 Letter of Agreement:\nhttps://www.courtqpro.online/agreement.html\n\nPlease download, review, sign, and return the signed copy to us via email at apexmindagency@gmail.com.\n\n━━━ WHAT'S NEXT? ━━━\n\n✅ Share your portal link with players!\n✅ Your courts are live — players can book and pay online!\n✅ Monitor bookings and revenue from your dashboard.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`
+        });
+        console.log('[onboarding] agreement email sent to', ownerEmail);
+    }catch(e){ console.warn('[onboarding] agreement email failed:', e); }
 }
 function onboardStepClick(stepId){
     const steps=getOnboardingSteps();
