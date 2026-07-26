@@ -2721,6 +2721,7 @@ async function startSession(){
     const rrGameType=mode==='roundRobin'?(document.querySelector('input[name="rrGameType"]:checked')?.value||'doubles'):null;
     const venueName=IS_ORGANIZER?document.getElementById('sesVenueName').value.trim():'';
     S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked,venueName};
+    _sessionReminderShown=false;
     updateJoinFormMode();
     closeModal('sessionModal');
     await saveStateNow();
@@ -3090,6 +3091,7 @@ function startScheduledSession(sessionId){
     const startDT=new Date(s.date+'T'+s.startTime);
     const endDT=new Date(s.date+'T'+s.endTime);
     S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour',venueName:s.venueName||'',maxPlayers:s.maxPlayers||0,_players:(s.players||[]).filter(p=>p.source==='online')};
+    _sessionReminderShown=false;
     teamUpPlayers(s);
     tryCombineTeams();
     if(tryMatchRemaining()) tryCombineTeams();
@@ -3190,6 +3192,24 @@ function endSession(){
     showNotif('⏹ Session ended.','warning');
     announce('Open Play session ended. Thank you!');
     renderAll();
+}
+
+let _sessionReminderShown=false;
+function checkSessionTimeout(){
+    if(!S.session||!S.session.active) return;
+    const now=Date.now();
+    const startedAt=S.session.startedAt||0;
+    const endDT=S.session.endDT||0;
+    // 2-hour reminder
+    if(!_sessionReminderShown && startedAt && (now-startedAt)>=2*60*60*1000){
+        _sessionReminderShown=true;
+        showNotif('⏰ Your Open Play session has been running for 2+ hours. Consider ending it when ready.','warning');
+    }
+    // Force-end if scheduled end was 24+ hours ago
+    if(endDT && (now-endDT)>=24*60*60*1000){
+        showNotif('⏹ Session auto-ended — it was left open past its scheduled end time.','warning');
+        endSession();
+    }
 }
 
 function updateJoinFormMode(){
@@ -6895,6 +6915,7 @@ function deleteTournament(id){
             renderOnboardingChecklist();
             checkOnboardingFollowup();
         }
+        checkSessionTimeout();
         // Fetch announcements
         try {
             const aSnap=await db.collection('config').doc('announcements').get();
