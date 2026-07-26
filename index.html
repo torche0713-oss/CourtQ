@@ -406,6 +406,9 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // Capture referral code from URL
+        const _referralCode = new URLSearchParams(window.location.search).get('ref') || '';
+
         function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
         // ── Demo session heartbeat ──
@@ -580,7 +583,8 @@
                     nextId: 100, nextBId: 1,
                     status: 'pending', mobile: p.mobile, ownerName: p.name,
                     courtCount: 3,
-                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+                    referralCode: _referralCode || ''
                 });
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ venueId });
@@ -688,7 +692,8 @@
                     session: null, queue: [], soloQueue: [], scheduledSessions: [],
                     history: [], leaderboard: {}, sales: [],
                     nextId: 100,
-                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+                    referralCode: _referralCode || ''
                 });
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, organizerId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ organizerId, type: 'organizer' });

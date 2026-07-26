@@ -1086,6 +1086,36 @@
             </div>
         </div>
         <div class="card">
+            <div class="card-title"><span>🤝 Affiliates</span><button class="btn btn-primary btn-sm" onclick="loadAffiliates()">🔄 Refresh</button></div>
+            <div style="margin-bottom:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+                <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Active Affiliates</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#10b981;" id="affActiveCount">0</div>
+                </div>
+                <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Total Referrals</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#2563eb;" id="affTotalReferrals">0</div>
+                </div>
+                <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Total Commissions</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#f59e0b;" id="affTotalCommissions">₱0</div>
+                </div>
+                <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Paid Out</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#8b5cf6;" id="affTotalPaid">₱0</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <input type="text" id="affName" placeholder="Name" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
+                <input type="email" id="affEmail" placeholder="Email" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
+                <input type="text" id="affCode" placeholder="Referral Code" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;text-transform:uppercase;">
+                <button class="btn btn-primary btn-sm" onclick="createAffiliate()">➕ Add</button>
+            </div>
+            <div id="affiliatesList">
+                <div class="empty-state"><div class="ei">🤝</div><p>No affiliates yet. Add one above.</p></div>
+            </div>
+        </div>
+        <div class="card">
             <div class="card-title"><span>🧾 Weekly Convenience Fee Invoice</span><button class="btn btn-primary btn-sm" onclick="generateWeeklyInvoice()" id="genInvoiceBtn">🔄 Generate</button></div>
             <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <label style="font-size:0.72rem;color:#94a3b8;">Week:</label>
@@ -2096,6 +2126,175 @@ async function sendFollowupEmail(subject,body){
     }catch(e){ console.warn('[followup] email failed:', e); }
 }
 
+// ===================== AFFILIATES =====================
+let _affiliates=[];
+async function loadAffiliates(){
+    _affiliates=[];
+    try {
+        const snap=await db.collection('affiliates').orderBy('createdAt','desc').get();
+        snap.forEach(doc=>_affiliates.push({id:doc.id,...doc.data()}));
+    }catch(e){console.warn('[aff] load failed:',e);}
+    renderAffiliatesList();
+    calcAffiliateStats();
+}
+async function createAffiliate(){
+    const name=document.getElementById('affName').value.trim();
+    const email=document.getElementById('affEmail').value.trim();
+    let code=document.getElementById('affCode').value.trim().toUpperCase();
+    if(!name||!email){showNotif('Enter name and email.','error');return;}
+    if(!code) code=name.toLowerCase().replace(/[^a-z0-9]+/g,'').substring(0,8)+Math.random().toString(36).substring(2,5);
+    const dup=_affiliates.find(a=>a.code===code);
+    if(dup){showNotif('Code already exists!','error');return;}
+    try {
+        await db.collection('affiliates').add({
+            name,email,code,status:'active',commissionRate:0.10,
+            totalPaid:0,createdAt:Date.now()
+        });
+        document.getElementById('affName').value='';
+        document.getElementById('affEmail').value='';
+        document.getElementById('affCode').value='';
+        showNotif('Affiliate added!','success');
+        loadAffiliates();
+    }catch(e){showNotif('Failed: '+e.message,'error');}
+}
+function renderAffiliatesList(){
+    const el=document.getElementById('affiliatesList');
+    if(_affiliates.length===0){el.innerHTML='<div class="empty-state"><div class="ei">🤝</div><p>No affiliates yet. Add one above.</p></div>';return;}
+    el.innerHTML=_affiliates.map(a=>{
+        const isActive=a.status==='active';
+        const statusBadge=isActive
+            ?'<span style="background:rgba(16,185,129,0.15);color:#10b981;padding:2px 7px;border-radius:6px;font-size:0.65rem;font-weight:700;">Active</span>'
+            :'<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:2px 7px;border-radius:6px;font-size:0.65rem;font-weight:700;">Paused</span>';
+        return `<div style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                <div style="flex:1;min-width:180px;">
+                    <div style="font-weight:700;font-size:0.85rem;">${escapeHtml(a.name)} ${statusBadge}</div>
+                    <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">📧 ${escapeHtml(a.email)} · 🔑 <code style="background:rgba(37,99,235,0.1);padding:1px 5px;border-radius:4px;color:#2563eb;">${escapeHtml(a.code)}</code></div>
+                    <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">🔗 courtqpro.online/?ref=${escapeHtml(a.code)} · Rate: ${Math.round((a.commissionRate||0.10)*100)}% · Paid: ₱${(a.totalPaid||0).toLocaleString()}</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn btn-outline btn-sm" onclick="copyAffLink('${escapeHtml(a.code)}')" style="font-size:0.65rem;">📋 Copy Link</button>
+                    <button class="btn btn-outline btn-sm" onclick="viewAffReferrals('${a.id}')" style="font-size:0.65rem;">👁️ View</button>
+                    <button class="btn btn-${isActive?'danger':'success'} btn-sm" onclick="toggleAffiliate('${a.id}','${isActive?'paused':'active'}')" style="font-size:0.65rem;">${isActive?'⏸ Pause':'▶ Resume'}</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteAffiliate('${a.id}','${escapeHtml(a.name)}')" style="font-size:0.65rem;">🗑️</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+function copyAffLink(code){
+    const url=window.location.origin+'/?ref='+code;
+    navigator.clipboard.writeText(url).then(()=>showNotif('📋 Affiliate link copied!')).catch(()=>{
+        const t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);showNotif('📋 Affiliate link copied!');
+    });
+}
+async function toggleAffiliate(id,newStatus){
+    try {
+        await db.collection('affiliates').doc(id).update({status:newStatus});
+        showNotif('Affiliate '+(newStatus==='active'?'resumed':'paused')+'.','success');
+        loadAffiliates();
+    }catch(e){showNotif('Failed: '+e.message,'error');}
+}
+async function deleteAffiliate(id,name){
+    if(!confirm('Delete affiliate "'+name+'"?' )) return;
+    try {
+        await db.collection('affiliates').doc(id).delete();
+        showNotif('Affiliate deleted.','success');
+        loadAffiliates();
+    }catch(e){showNotif('Failed: '+e.message,'error');}
+}
+async function viewAffReferrals(affId){
+    const aff=_affiliates.find(a=>a.id===affId);
+    if(!aff) return;
+    try {
+        const referrals=[];
+        const slugsSnap=await db.collection('slugs').get();
+        for(const slugDoc of slugsSnap.docs){
+            const sd=slugDoc.data();
+            const isOrg=sd.type==='organizer';
+            const vId=isOrg?sd.organizerId:sd.venueId;
+            if(!vId) continue;
+            const col=isOrg?'organizers':'venues';
+            const vDoc=await db.collection(col).doc(vId).get();
+            if(!vDoc.exists) continue;
+            const vd=vDoc.data();
+            if(vd.referralCode===aff.code){
+                let email='';
+                try{const uSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',vId).get();if(!uSnap.empty)email=uSnap.docs[0].data().email||'';}catch(e){}
+                referrals.push({name:vd.name||vd.businessName||'Unnamed',slug:slugDoc.id,email,type:isOrg?'Organizer':'Venue',createdAt:vd.createdAt,feeAccrued:((vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0))*5});
+            }
+        }
+        let html=`<div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:12px;margin-bottom:10px;">
+            <div style="font-weight:700;">${escapeHtml(aff.name)} — Referral Link: <code style="background:rgba(37,99,235,0.1);padding:1px 5px;border-radius:4px;color:#2563eb;">${escapeHtml(aff.code)}</code></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">${referrals.length} referral(s) · Commission: ${Math.round((aff.commissionRate||0.10)*100)}% of convenience fees</div>
+        </div>`;
+        if(referrals.length===0){
+            html+='<div class="empty-state"><div class="ei">📭</div><p>No referrals yet for this affiliate.</p></div>';
+        } else {
+            referrals.forEach(r=>{
+                html+=`<div style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 10px;margin-bottom:6px;">
+                    <div style="font-weight:600;font-size:0.82rem;">${escapeHtml(r.name)} <span style="color:#94a3b8;font-size:0.7rem;">/${escapeHtml(r.slug)} · ${r.type}</span></div>
+                    <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">📧 ${escapeHtml(r.email||'N/A')} · 📅 ${r.createdAt?new Date(r.createdAt).toLocaleDateString():'N/A'} · Fee accrued: ₱${r.feeAccrued.toLocaleString()}</div>
+                </div>`;
+            });
+            const totalFees=referrals.reduce((s,r)=>s+r.feeAccrued,0);
+            const commission=Math.round(totalFees*(aff.commissionRate||0.10));
+            const pending=commission-(aff.totalPaid||0);
+            const threshold=500;
+            html+=`<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px 10px;margin-top:6px;font-weight:700;font-size:0.85rem;">
+                💰 Total Fee Revenue: ₱${totalFees.toLocaleString()} · Commission Due: ₱${commission.toLocaleString()}
+                ${pending<=0?'<span style="color:#10b981;margin-left:8px;font-size:0.75rem;">✅ All paid</span>'
+                :pending<threshold?`<span style="color:#94a3b8;margin-left:8px;font-size:0.75rem;">₱${(threshold-pending).toLocaleString()} more until payout (min ₱${threshold.toLocaleString()})</span>`
+                :`<button class="btn btn-primary btn-sm" onclick="markAffPaid('${aff.id}',${pending})" style="margin-left:8px;font-size:0.65rem;">💳 Mark Paid ₱${pending.toLocaleString()}</button>`}
+            </div>`;
+        }
+        document.getElementById('invoiceContent').innerHTML=html;
+        showNotif('Referrals loaded for '+aff.name,'info');
+    }catch(e){showNotif('Failed: '+e.message,'error');}
+}
+async function markAffPaid(affId,amount){
+    if(!confirm('Mark ₱'+amount.toLocaleString()+' as paid to this affiliate?')) return;
+    try {
+        const aff=_affiliates.find(a=>a.id===affId);
+        const newPaid=(aff.totalPaid||0)+amount;
+        await db.collection('affiliates').doc(affId).update({totalPaid:newPaid});
+        showNotif('✅ Payment recorded!','success');
+        loadAffiliates();
+    }catch(e){showNotif('Failed: '+e.message,'error');}
+}
+async function calcAffiliateStats(){
+    let activeCount=0,totalPaid=0;
+    const affMap={}; // code -> {commissionRate,totalPaid}
+    for(const aff of _affiliates){
+        if(aff.status==='active') activeCount++;
+        totalPaid+=(aff.totalPaid||0);
+        affMap[aff.code.toUpperCase()]={commissionRate:aff.commissionRate||0.10,totalPaid:aff.totalPaid||0};
+    }
+    let totalReferrals=0,totalCommissions=0;
+    try {
+        const slugsSnap=await db.collection('slugs').get();
+        for(const slugDoc of slugsSnap.docs){
+            const sd=slugDoc.data();
+            const isOrg=sd.type==='organizer';
+            const vId=isOrg?sd.organizerId:sd.venueId;
+            if(!vId) continue;
+            const col=isOrg?'organizers':'venues';
+            const vDoc=await db.collection(col).doc(vId).get();
+            if(!vDoc.exists) continue;
+            const vd=vDoc.data();
+            if(vd.referralCode&&affMap[vd.referralCode.toUpperCase()]){
+                totalReferrals++;
+                const pCount=(vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0);
+                totalCommissions+=Math.round(pCount*5*affMap[vd.referralCode.toUpperCase()].commissionRate);
+            }
+        }
+    }catch(e){}
+    document.getElementById('affActiveCount').textContent=activeCount;
+    document.getElementById('affTotalReferrals').textContent=totalReferrals;
+    document.getElementById('affTotalCommissions').textContent='₱'+totalCommissions.toLocaleString();
+    document.getElementById('affTotalPaid').textContent='₱'+totalPaid.toLocaleString();
+}
+
 // ===================== LEADS =====================
 function renderLeads(){
     const tbody=document.getElementById('leadsTableBody');
@@ -2258,7 +2457,7 @@ function showPage(id,el){
                 if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();
             }
         },
-        dev:()=>{renderDevDashboard();startDemoMonitor();renderLeads();},
+        dev:()=>{renderDevDashboard();startDemoMonitor();renderLeads();loadAffiliates();},
     };
     if(actions[id]) actions[id]();
 }
@@ -4972,7 +5171,7 @@ async function renderDevDashboard(){
                 dueAmt=pendingPmts.reduce((s,p)=>s+(p.amount||0),0);
             }
             dueTotal+=dueAmt;
-            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId]});
+            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId],referralCode:vData.referralCode||''});
         }
         _devVenues=venues;
         document.getElementById('devVenueCount').textContent=venues.length+organizers.length+pending.length;
@@ -4997,7 +5196,7 @@ async function renderDevDashboard(){
                             <div style="font-weight:700;">⏳ ${escapeHtml(name)}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(p.slug)}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(ownerName)} · 📱 ${escapeHtml(mobile)} · ${courtsInfo}</div>
-                            <div style="font-size:0.72rem;color:#94a3b8;">📧 ${escapeHtml(p.owner.email||'N/A')} · Ref: ${escapeHtml(d.paymentRef||'N/A')}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">📧 ${escapeHtml(p.owner.email||'N/A')} · Ref: ${escapeHtml(d.paymentRef||'N/A')}${d.referralCode?` · 🤝 ${escapeHtml(d.referralCode)}`:''}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;">📋 Plan: <strong>${escapeHtml(d.plan||'founding')}</strong> · Monthly: ₱${(d.monthlyRate||0).toLocaleString()} · 📅 ${new Date(d.createdAt).toLocaleDateString()}</div>
                         </div>
                         <div style="text-align:right;">
@@ -5026,7 +5225,7 @@ async function renderDevDashboard(){
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:700;">${statusIcon} ${escapeHtml(v.name)}</div>
-                            <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(v.slug)} · 📧 ${escapeHtml(o.email||'?')}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(v.slug)} · 📧 ${escapeHtml(o.email||'?')}${v.referralCode?` · 🤝 <span style="color:#10b981;font-weight:600;">${escapeHtml(v.referralCode)}</span>`:''}</div>
                             ${c?`<div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(c.ownerName||o.name||'N/A')} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#64748b;">No contract set up</div>'}
                         </div>
                         <div style="text-align:right;">
@@ -5060,7 +5259,7 @@ async function renderDevDashboard(){
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
                             <div style="font-weight:700;">🎯 ${escapeHtml(o.name)}</div>
-                            <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(o.slug)} · 📧 ${escapeHtml(ownerEmail||'?')} · 📱 ${escapeHtml(ownerMobile||'?')}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(o.slug)} · 📧 ${escapeHtml(ownerEmail||'?')} · 📱 ${escapeHtml(ownerMobile||'?')}${d.referralCode?` · 🤝 <span style="color:#10b981;font-weight:600;">${escapeHtml(d.referralCode)}</span>`:''}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(d.ownerName||o.owner?.name||'N/A')} · Total Players: ${o.totalPlayers} · Total Fees: ₱${o.feeAccrued.toLocaleString()}</div>
                             <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">🪪 ${escapeHtml(d.govtIdType||'')} ${escapeHtml(d.govtId||'')}${d.govtIdUrl?` · <a href="${d.govtIdUrl}" target="_blank" style="color:#2563eb;">View ID</a>`:''}</div>
                             ${o.sessions.length>0?`<div style="margin-top:8px;border-top:1px solid rgba(139,92,246,0.15);padding-top:8px;">
@@ -5224,7 +5423,7 @@ function startDemoMonitor(){
   });
 }
 
-function refreshDevDashboard(){renderDevDashboard();renderDevUsage();showNotif('Refreshing...');}
+function refreshDevDashboard(){renderDevDashboard();renderDevUsage();loadAffiliates();showNotif('Refreshing...');}
 let _devOwnerList=[];
 function downloadOwnerCSV(){
     if(_devOwnerList.length===0){showNotif('No owner data. Refresh dev dashboard first.','error');return;}
