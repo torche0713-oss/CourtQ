@@ -1109,6 +1109,7 @@
                 <input type="text" id="affName" placeholder="Name" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
                 <input type="email" id="affEmail" placeholder="Email" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
                 <input type="text" id="affCode" placeholder="Referral Code" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;text-transform:uppercase;">
+                <input type="password" id="affPass" placeholder="Password (min 6)" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
                 <button class="btn btn-primary btn-sm" onclick="createAffiliate()">➕ Add</button>
             </div>
             <div id="affiliatesList">
@@ -2141,19 +2142,22 @@ async function createAffiliate(){
     const name=document.getElementById('affName').value.trim();
     const email=document.getElementById('affEmail').value.trim();
     let code=document.getElementById('affCode').value.trim().toUpperCase();
+    const pass=document.getElementById('affPass').value;
     if(!name||!email){showNotif('Enter name and email.','error');return;}
+    if(!pass||pass.length<6){showNotif('Password must be at least 6 characters.','error');return;}
     if(!code) code=name.toLowerCase().replace(/[^a-z0-9]+/g,'').substring(0,8)+Math.random().toString(36).substring(2,5);
-    const dup=_affiliates.find(a=>a.code===code);
-    if(dup){showNotif('Code already exists!','error');return;}
+    const dup=_affiliates.find(a=>a.code===code||a.email===email);
+    if(dup){showNotif('Code or email already exists!','error');return;}
     try {
         await db.collection('affiliates').add({
             name,email,code,status:'active',commissionRate:0.10,
-            totalPaid:0,createdAt:Date.now()
+            totalPaid:0,createdAt:Date.now(),_pass:pass,uid:''
         });
         document.getElementById('affName').value='';
         document.getElementById('affEmail').value='';
         document.getElementById('affCode').value='';
-        showNotif('Affiliate added!','success');
+        document.getElementById('affPass').value='';
+        showNotif('Affiliate added! Share login: '+email,'success');
         loadAffiliates();
     }catch(e){showNotif('Failed: '+e.message,'error');}
 }

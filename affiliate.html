@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CourtQ Pro - Affiliate Dashboard</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#f0f2f5 0%,#e2e8f0 50%,#cbd5e1 100%);min-height:100vh;color:#1e293b;}
+        .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+        .login-card{background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:32px;width:100%;max-width:420px;backdrop-filter:blur(10px);}
+        .logo{text-align:center;margin-bottom:24px;}
+        .logo-icon{font-size:2.5rem;margin-bottom:8px;}
+        .logo-text{font-size:1.4rem;font-weight:800;color:#2563eb;}
+        .pro-badge{background:linear-gradient(135deg,#f59e0b,#d68910);color:#1e293b;font-size:0.55rem;padding:2px 6px;border-radius:6px;font-weight:800;letter-spacing:1px;vertical-align:middle;margin-left:4px;}
+        .form-group{margin-bottom:14px;}
+        .form-group label{display:block;font-size:0.75rem;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+        .form-group input{width:100%;padding:10px 14px;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.12);border-radius:9px;color:#1e293b;font-size:0.9rem;transition:all 0.3s;}
+        .form-group input:focus{outline:none;border-color:#2563eb;background:rgba(37,99,235,0.06);}
+        .btn{width:100%;padding:12px;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.3s;}
+        .btn-primary{background:linear-gradient(135deg,#2563eb,#44a08d);color:#fff;}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.35);}
+        .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+        .error{color:#ef4444;font-size:0.8rem;margin-bottom:10px;display:none;text-align:center;}
+        .spinner{width:28px;height:28px;border:3px solid rgba(37,99,235,0.2);border-top:3px solid #2563eb;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+        header{background:rgba(0,0,0,0.04);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,0.1);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;}
+        .header-left{display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:800;color:#2563eb;}
+        .header-right{display:flex;align-items:center;gap:10px;}
+        .header-right span{font-size:0.8rem;color:#64748b;}
+        .dashboard{max-width:800px;margin:0 auto;padding:20px;}
+        .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+        .stat-card{background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:14px;text-align:center;backdrop-filter:blur(10px);}
+        .stat-label{font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;}
+        .stat-value{font-size:1.2rem;font-weight:800;margin-top:4px;}
+        .stat-value.blue{color:#2563eb;} .stat-value.green{color:#10b981;} .stat-value.amber{color:#f59e0b;} .stat-value.purple{color:#8b5cf6;}
+        .card{background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:20px;margin-bottom:16px;backdrop-filter:blur(10px);}
+        .card-title{font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+        .referral-link-box{background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+        .referral-link{font-family:monospace;font-size:0.85rem;color:#2563eb;font-weight:600;word-break:break-all;flex:1;min-width:200px;}
+        .btn-copy{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+        .btn-copy:hover{background:#1d4ed8;}
+        .referral-item{background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:10px;padding:12px;margin-bottom:8px;}
+        .referral-item .name{font-weight:700;font-size:0.85rem;}
+        .referral-item .meta{font-size:0.72rem;color:#94a3b8;margin-top:2px;}
+        .empty{text-align:center;padding:30px;color:#94a3b8;font-size:0.85rem;}
+        @media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+    </style>
+</head>
+<body>
+    <!-- LOGIN -->
+    <div id="loginView" class="login-wrap">
+        <div class="login-card">
+            <div class="logo">
+                <div class="logo-icon">🏓</div>
+                <div class="logo-text">CourtQ Pro <span class="pro-badge">AFFILIATE</span></div>
+            </div>
+            <div id="loginError" class="error"></div>
+            <div class="form-group"><label>Email</label><input type="email" id="affLoginEmail" placeholder="you@email.com"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="affLoginPass" placeholder="••••••••"></div>
+            <button class="btn btn-primary" id="loginBtn" onclick="affiliateLogin()">Log In</button>
+            <div style="text-align:center;margin-top:16px;font-size:0.72rem;color:#94a3b8;">Don't have an account? Contact the admin to get your affiliate link.</div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboardView" style="display:none;">
+        <header>
+            <div class="header-left">🏓 CourtQ Pro <span class="pro-badge">AFFILIATE</span></div>
+            <div class="header-right">
+                <span id="affNameDisplay"></span>
+                <button onclick="affiliateLogout()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:6px 12px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;">Logout</button>
+            </div>
+        </header>
+        <div class="dashboard">
+            <!-- Stats -->
+            <div class="stat-grid">
+                <div class="stat-card"><div class="stat-label">Total Referrals</div><div class="stat-value blue" id="dReferrals">0</div></div>
+                <div class="stat-card"><div class="stat-label">Fee Revenue</div><div class="stat-value green" id="dRevenue">₱0</div></div>
+                <div class="stat-card"><div class="stat-label">Commission Due</div><div class="stat-value amber" id="dCommission">₱0</div></div>
+                <div class="stat-card"><div class="stat-label">Paid Out</div><div class="stat-value purple" id="dPaid">₱0</div></div>
+            </div>
+
+            <!-- Referral Link -->
+            <div class="card">
+                <div class="card-title">🔗 Your Referral Link</div>
+                <div class="referral-link-box">
+                    <div class="referral-link" id="refLinkDisplay"></div>
+                    <button class="btn-copy" onclick="copyMyLink()">📋 Copy</button>
+                </div>
+                <div style="font-size:0.72rem;color:#94a3b8;margin-top:8px;">Share this link with venue owners. When they register through it, you earn commission on their convenience fees.</div>
+            </div>
+
+            <!-- Payout Info -->
+            <div class="card" id="payoutCard">
+                <div class="card-title">💰 Payout Status</div>
+                <div id="payoutInfo"></div>
+            </div>
+
+            <!-- Referred Venues -->
+            <div class="card">
+                <div class="card-title">📋 Your Referrals</div>
+                <div id="referralsList"><div class="empty">Loading referrals...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+    <script>
+        firebase.initializeApp(CQ_CONFIG.firebaseConfig);
+        const db=firebase.firestore();
+        const auth=firebase.auth();
+        let _affiliate=null;
+        let _referralCode='';
+
+        auth.onAuthStateChanged(async user=>{
+            if(user){
+                try{
+                    const snap=await db.collection('affiliates').where('uid','==',user.uid).get();
+                    if(!snap.empty){
+                        _affiliate={id:snap.docs[0].id,...snap.docs[0].data()};
+                        _referralCode=_affiliate.code||'';
+                        showDashboard();
+                    } else {
+                        document.getElementById('loginView').style.display='flex';
+                        document.getElementById('dashboardView').style.display='none';
+                    }
+                }catch(e){
+                    console.warn('[aff] auth check failed:',e);
+                }
+            } else {
+                document.getElementById('loginView').style.display='flex';
+                document.getElementById('dashboardView').style.display='none';
+            }
+        });
+
+        async function affiliateLogin(){
+            const email=document.getElementById('affLoginEmail').value.trim();
+            const pass=document.getElementById('affLoginPass').value;
+            if(!email||!pass){showLoginError('Enter email and password.');return;}
+            document.getElementById('loginBtn').disabled=true;
+            document.getElementById('loginBtn').textContent='Logging in...';
+            try{
+                await auth.signInWithEmailAndPassword(email,pass);
+            }catch(e){
+                if(e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
+                    // Try creating Auth account (first login)
+                    try{
+                        const cred=await auth.createUserWithEmailAndPassword(email,pass);
+                        // Authenticated now — query affiliates and link UID
+                        const affSnap=await db.collection('affiliates').where('email','==',email).get();
+                        if(!affSnap.empty){
+                            const affDoc=affSnap.docs[0];
+                            await affDoc.ref.update({uid:cred.user.uid,_pass:firebase.firestore.FieldValue.delete()});
+                        }
+                        return; // onAuthStateChanged handles the rest
+                    }catch(e2){
+                        if(e2.code==='auth/email-already-in-use'){
+                            showLoginError('Wrong password. Please try again.');
+                        } else {
+                            showLoginError(e2.message);
+                        }
+                    }
+                } else {
+                    showLoginError(e.message);
+                }
+                document.getElementById('loginBtn').disabled=false;
+                document.getElementById('loginBtn').textContent='Log In';
+            }
+        }
+        function affiliateLogout(){
+            auth.signOut();
+        }
+        function showLoginError(msg){
+            const el=document.getElementById('loginError');
+            el.textContent=msg;el.style.display='block';
+        }
+
+        async function showDashboard(){
+            document.getElementById('loginView').style.display='none';
+            document.getElementById('dashboardView').style.display='block';
+            document.getElementById('affNameDisplay').textContent=_affiliate.name||'Affiliate';
+            document.getElementById('refLinkDisplay').textContent=window.location.origin+'/?ref='+_referralCode;
+
+            // Find all referrals
+            const referrals=[];
+            try{
+                const slugsSnap=await db.collection('slugs').get();
+                for(const slugDoc of slugsSnap.docs){
+                    const sd=slugDoc.data();
+                    const isOrg=sd.type==='organizer';
+                    const vId=isOrg?sd.organizerId:sd.venueId;
+                    if(!vId) continue;
+                    const col=isOrg?'organizers':'venues';
+                    const vDoc=await db.collection(col).doc(vId).get();
+                    if(!vDoc.exists) continue;
+                    const vd=vDoc.data();
+                    if((vd.referralCode||'').toUpperCase()===_referralCode.toUpperCase()){
+                        let email='';
+                        try{const uSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',vId).get();if(!uSnap.empty)email=uSnap.docs[0].data().email||'';}catch(e){}
+                        const pCount=(vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0);
+                        const feeAccrued=pCount*5;
+                        let statusLabel='';
+                        if(isOrg){statusLabel=vd.activated===true?'✅ Active':'⏳ Pending';}
+                        else{statusLabel=vd.status==='active'?'✅ Active':vd.status==='pending'?'⏳ Pending':'⚪ Unknown';}
+                        referrals.push({name:vd.name||vd.businessName||'Unnamed',slug:slugDoc.id,email,type:isOrg?'Organizer':'Venue',createdAt:vd.createdAt,feeAccrued,status:statusLabel});
+                    }
+                }
+            }catch(e){console.warn('[aff] load referrals failed:',e);}
+
+            // Calculate stats
+            const totalReferrals=referrals.length;
+            const totalRevenue=referrals.reduce((s,r)=>s+r.feeAccrued,0);
+            const commissionRate=_affiliate.commissionRate||0.10;
+            const totalCommission=Math.round(totalRevenue*commissionRate);
+            const totalPaid=_affiliate.totalPaid||0;
+            const pending=totalCommission-totalPaid;
+            const threshold=500;
+
+            document.getElementById('dReferrals').textContent=totalReferrals;
+            document.getElementById('dRevenue').textContent='₱'+totalRevenue.toLocaleString();
+            document.getElementById('dCommission').textContent='₱'+totalCommission.toLocaleString();
+            document.getElementById('dPaid').textContent='₱'+totalPaid.toLocaleString();
+
+            // Payout info
+            const payoutEl=document.getElementById('payoutInfo');
+            if(pending<=0){
+                payoutEl.innerHTML='<div style="color:#10b981;font-weight:700;font-size:0.85rem;">✅ All commissions paid. Great job!</div>';
+            } else if(pending<threshold){
+                payoutEl.innerHTML=`<div style="font-size:0.85rem;color:#64748b;">Your pending commission: <strong style="color:#f59e0b;">₱${pending.toLocaleString()}</strong></div>
+                    <div style="font-size:0.75rem;color:#94a3b8;margin-top:4px;">Minimum payout threshold: ₱${threshold.toLocaleString()}. You need <strong>₱${(threshold-pending).toLocaleString()}</strong> more in commissions before payout.</div>`;
+            } else {
+                payoutEl.innerHTML=`<div style="font-size:0.85rem;">Pending payout: <strong style="color:#10b981;">₱${pending.toLocaleString()}</strong></div>
+                    <div style="font-size:0.75rem;color:#94a3b8;margin-top:4px;">Threshold of ₱${threshold.toLocaleString()} reached! Payout is processed manually by the admin.</div>`;
+            }
+
+            // Render referrals list
+            const listEl=document.getElementById('referralsList');
+            if(referrals.length===0){
+                listEl.innerHTML='<div class="empty">No referrals yet. Share your link to start earning!</div>';
+            } else {
+                listEl.innerHTML=referrals.map(r=>{
+                    const comm=Math.round(r.feeAccrued*commissionRate);
+                    return `<div class="referral-item">
+                        <div class="name">${escapeHtml(r.name)} <span style="font-size:0.7rem;color:#94a3b8;">${r.status}</span></div>
+                        <div class="meta">/${escapeHtml(r.slug)} · ${r.type} · 📧 ${escapeHtml(r.email||'N/A')}</div>
+                        <div class="meta">📅 ${r.createdAt?new Date(r.createdAt).toLocaleDateString():'N/A'} · Fee Revenue: ₱${r.feeAccrued.toLocaleString()} · Your Commission: ₱${comm.toLocaleString()}</div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        function copyMyLink(){
+            const url=window.location.origin+'/?ref='+_referralCode;
+            navigator.clipboard.writeText(url).then(()=>alert('Link copied!')).catch(()=>{
+                const t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);alert('Link copied!');
+            });
+        }
+
+        function escapeHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    </script>
+</body>
+</html>
