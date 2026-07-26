@@ -1112,6 +1112,10 @@
                 <input type="password" id="affPass" placeholder="Password (min 6)" style="flex:1;min-width:100px;padding:6px 10px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
                 <button class="btn btn-primary btn-sm" onclick="createAffiliate()">➕ Add</button>
             </div>
+            <div id="pendingAffiliatesList" style="display:none;margin-bottom:14px;">
+                <div style="font-weight:700;font-size:0.85rem;color:#f59e0b;margin-bottom:8px;">⏳ Pending Applications</div>
+                <div id="pendingAffContent"></div>
+            </div>
             <div id="affiliatesList">
                 <div class="empty-state"><div class="ei">🤝</div><p>No affiliates yet. Add one above.</p></div>
             </div>
@@ -2129,12 +2133,19 @@ async function sendFollowupEmail(subject,body){
 
 // ===================== AFFILIATES =====================
 let _affiliates=[];
+let _pendingAffiliates=[];
 async function loadAffiliates(){
     _affiliates=[];
+    _pendingAffiliates=[];
     try {
         const snap=await db.collection('affiliates').orderBy('createdAt','desc').get();
-        snap.forEach(doc=>_affiliates.push({id:doc.id,...doc.data()}));
+        snap.forEach(doc=>{
+            const d={id:doc.id,...doc.data()};
+            if(d.status==='pending') _pendingAffiliates.push(d);
+            else _affiliates.push(d);
+        });
     }catch(e){console.warn('[aff] load failed:',e);}
+    renderPendingAffiliates();
     renderAffiliatesList();
     calcAffiliateStats();
 }
@@ -2150,7 +2161,7 @@ async function createAffiliate(){
     if(dup){showNotif('Code or email already exists!','error');return;}
     try {
         await db.collection('affiliates').add({
-            name,email,code,status:'active',commissionRate:0.10,
+            name,email,code,status:'active',commissionRate:0.20,
             totalPaid:0,createdAt:Date.now(),_pass:pass,uid:''
         });
         document.getElementById('affName').value='';
@@ -2174,7 +2185,7 @@ function renderAffiliatesList(){
                 <div style="flex:1;min-width:180px;">
                     <div style="font-weight:700;font-size:0.85rem;">${escapeHtml(a.name)} ${statusBadge}</div>
                     <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">📧 ${escapeHtml(a.email)} · 🔑 <code style="background:rgba(37,99,235,0.1);padding:1px 5px;border-radius:4px;color:#2563eb;">${escapeHtml(a.code)}</code></div>
-                    <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">🔗 courtqpro.online/?ref=${escapeHtml(a.code)} · Rate: ${Math.round((a.commissionRate||0.10)*100)}% · Paid: ₱${(a.totalPaid||0).toLocaleString()}</div>
+                    <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">🔗 courtqpro.online/?ref=${escapeHtml(a.code)} · Rate: ${Math.round((a.commissionRate||0.20)*100)}% · Paid: ₱${(a.totalPaid||0).toLocaleString()}</div>
                 </div>
                 <div style="display:flex;gap:4px;">
                     <button class="btn btn-outline btn-sm" onclick="copyAffLink('${escapeHtml(a.code)}')" style="font-size:0.65rem;">📋 Copy Link</button>
@@ -2191,6 +2202,50 @@ function copyAffLink(code){
     navigator.clipboard.writeText(url).then(()=>showNotif('📋 Affiliate link copied!')).catch(()=>{
         const t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);showNotif('📋 Affiliate link copied!');
     });
+}
+function renderPendingAffiliates(){
+    const wrap=document.getElementById('pendingAffiliatesList');
+    const el=document.getElementById('pendingAffContent');
+    if(_pendingAffiliates.length===0){wrap.style.display='none';return;}
+    wrap.style.display='block';
+    el.innerHTML=_pendingAffiliates.map(a=>`<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+        <div style="font-weight:700;font-size:0.85rem;">${escapeHtml(a.name)} <span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 7px;border-radius:6px;font-size:0.65rem;font-weight:700;">Pending</span></div>
+        <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">📧 ${escapeHtml(a.email)} · 📱 ${escapeHtml(a.mobile||'N/A')}</div>
+        <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">💬 ${escapeHtml(a.reason||'N/A')}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-success btn-sm" onclick="approveAffiliate('${a.id}','${escapeHtml(a.name)}','${escapeHtml(a.email)}','${escapeHtml(a.code||'')}')" style="font-size:0.65rem;">✅ Approve</button>
+            <button class="btn btn-danger btn-sm" onclick="rejectAffiliate('${a.id}','${escapeHtml(a.name)}')" style="font-size:0.65rem;">❌ Reject</button>
+        </div>
+    </div>`).join('');
+}
+async function approveAffiliate(id,name,email,code){
+    const pass=prompt('Set a password for '+name+' (min 6 characters):');
+    if(!pass||pass.length<6){showNotif('Password must be at least 6 characters.','error');return;}
+    try{
+        await db.collection('affiliates').doc(id).update({status:'active',_pass:pass,code:code||undefined});
+        const cfg=await db.collection('config').doc('emailjs').get();
+        if(cfg.exists){
+            const ej=cfg.data();
+            emailjs.init(ej.publicKey);
+            await emailjs.send(ej.serviceId,ej.templateAuto,{
+                to_email:email,to_name:name,
+                subject:'🎉 You\'ve been approved as a CourtQ Pro Affiliate!',
+                body:`Great news — your affiliate application has been approved!\n\n━━━ YOUR LOGIN ━━━\n\n📧 Email: ${email}\n🔑 Password: ${pass}\n\n🔗 Log in now: https://www.courtqpro.online/affiliate.html\n\n━━━ IMPORTANT ━━━\n\n🔒 For your security, please change your password after your first login.\nYou'll find a "Change Password" option in your dashboard.\n\n━━━ YOUR DASHBOARD ━━━\n\nOnce logged in you'll see:\n✅ Your unique referral link\n✅ Referral stats and earnings\n✅ Payout status (₱500 minimum)\n\nShare your referral link with venue owners. When they register through it, you earn 20% commission on their convenience fees!\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`
+            });
+            showNotif('✅ Affiliate approved & credentials emailed to '+email,'success');
+        }else{
+            showNotif('✅ Affiliate approved (EmailJS not configured — share credentials manually).','success');
+        }
+        loadAffiliates();
+    }catch(e){showNotif('Failed: '+e.message,'error');}
+}
+async function rejectAffiliate(id,name){
+    if(!confirm('Reject application from "'+name+'"? This will delete their application.')) return;
+    try{
+        await db.collection('affiliates').doc(id).delete();
+        showNotif('Application rejected.','success');
+        loadAffiliates();
+    }catch(e){showNotif('Failed: '+e.message,'error');}
 }
 async function toggleAffiliate(id,newStatus){
     try {
@@ -2230,7 +2285,7 @@ async function viewAffReferrals(affId){
         }
         let html=`<div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:12px;margin-bottom:10px;">
             <div style="font-weight:700;">${escapeHtml(aff.name)} — Referral Link: <code style="background:rgba(37,99,235,0.1);padding:1px 5px;border-radius:4px;color:#2563eb;">${escapeHtml(aff.code)}</code></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">${referrals.length} referral(s) · Commission: ${Math.round((aff.commissionRate||0.10)*100)}% of convenience fees</div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">${referrals.length} referral(s) · Commission: ${Math.round((aff.commissionRate||0.20)*100)}% of convenience fees</div>
         </div>`;
         if(referrals.length===0){
             html+='<div class="empty-state"><div class="ei">📭</div><p>No referrals yet for this affiliate.</p></div>';
@@ -2242,7 +2297,7 @@ async function viewAffReferrals(affId){
                 </div>`;
             });
             const totalFees=referrals.reduce((s,r)=>s+r.feeAccrued,0);
-            const commission=Math.round(totalFees*(aff.commissionRate||0.10));
+            const commission=Math.round(totalFees*(aff.commissionRate||0.20));
             const pending=commission-(aff.totalPaid||0);
             const threshold=500;
             html+=`<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px 10px;margin-top:6px;font-weight:700;font-size:0.85rem;">
@@ -2272,7 +2327,7 @@ async function calcAffiliateStats(){
     for(const aff of _affiliates){
         if(aff.status==='active') activeCount++;
         totalPaid+=(aff.totalPaid||0);
-        affMap[aff.code.toUpperCase()]={commissionRate:aff.commissionRate||0.10,totalPaid:aff.totalPaid||0};
+        affMap[aff.code.toUpperCase()]={commissionRate:aff.commissionRate||0.20,totalPaid:aff.totalPaid||0};
     }
     let totalReferrals=0,totalCommissions=0;
     try {
