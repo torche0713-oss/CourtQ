@@ -1627,7 +1627,7 @@
             <div class="form-group"><label>Maya Name</label><input type="text" id="sMayaName" placeholder="Juan dela Cruz"></div>
         </div>
         <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
-            <div style="font-weight:700;font-size:0.85rem;color:#6366f1;margin-bottom:10px;">🖼️ Venue Logo</div>
+            <div id="logoSectionLabel" style="font-weight:700;font-size:0.85rem;color:#6366f1;margin-bottom:10px;">🖼️ Venue Logo</div>
             <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                 <div style="flex:1;min-width:200px;">
                     <div class="form-group"><label>Upload Image</label><input type="file" id="sLogoFile" accept="image/png,image/jpeg,image/webp,image/gif" style="font-size:0.78rem;padding:4px 0;"></div>
@@ -1962,7 +1962,7 @@ async function loadState(){
 function getOnboardingSteps(){
     if(IS_ORGANIZER){
         return [
-            {id:'logo', icon:'🖼️', label:'Add Your Logo', tip:'Upload a logo in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
+            {id:'logo', icon:'🖼️', label:'Add Your Photo and fill up required infos', tip:'Upload a photo in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
             {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
             {id:'portal', icon:'🔗', label:'Share Your Portal Link', tip:'Send to players so they can join', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));navigator.clipboard.writeText(window.location.origin+'/portal.html?venue='+S.venueSlug).then(()=>showNotif('Portal link copied! Share it with players.')).catch(()=>showNotif('Copy this from your browser address bar: portal.html?venue='+S.venueSlug));}, done:()=>false},
         ];
@@ -4430,6 +4430,7 @@ async function uploadLogo(){
     btn.disabled=false;
 }
 function openSettings(){
+    document.getElementById('logoSectionLabel').textContent = IS_ORGANIZER ? '🖼️ Add Your Photo' : '🖼️ Venue Logo';
     const preview=document.getElementById('sLogoPreview');
     if(S.logoUrl){preview.src=S.logoUrl;preview.style.display='block';}
     else preview.style.display='none';
