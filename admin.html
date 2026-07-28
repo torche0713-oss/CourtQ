@@ -5778,6 +5778,22 @@ async function deleteVenue(venueId,slug){
     try {
         const slugDoc=await db.collection('slugs').doc(slug).get();
         const isOrg=slugDoc.exists&&slugDoc.data().type==='organizer';
+        // Fetch owner info before deletion for email notification
+        let ownerEmail='', ownerName='', venueName='';
+        try {
+            const vDoc=await db.collection(isOrg?'organizers':'venues').doc(venueId).get();
+            if(vDoc.exists){
+                const vd=vDoc.data();
+                venueName=vd.name||vd.businessName||'Your account';
+                ownerName=vd.ownerName||'';
+            }
+            const uSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',venueId).get();
+            if(!uSnap.empty){
+                const u=uSnap.docs[0].data();
+                ownerEmail=u.email||'';
+                if(!ownerName) ownerName=u.name||'';
+            }
+        } catch(e){}
         await db.collection(isOrg?'organizers':'venues').doc(venueId).delete();
         await db.collection('slugs').doc(slug).delete();
         try { await db.collection('contracts').doc(venueId).delete(); } catch(e){}
@@ -5785,6 +5801,21 @@ async function deleteVenue(venueId,slug){
             const userSnap = await db.collection('users').where(isOrg?'organizerId':'venueId', '==', venueId).get();
             userSnap.forEach(doc => doc.ref.delete());
         } catch(e){}
+        // Send duplicate name email
+        if(ownerEmail){
+            try {
+                const cfg=await db.collection('config').doc('emailjs').get();
+                if(cfg.exists){
+                    const ej=cfg.data();
+                    emailjs.init(ej.publicKey);
+                    await emailjs.send(ej.serviceId,ej.templateAuto,{
+                        to_email:ownerEmail,to_name:ownerName||'Valued Partner',
+                        subject:'Action Required: Duplicate Account Detected — '+venueName,
+                        body:`Hi ${ownerName||'there'},\n\nWe noticed you have two CourtQ Pro accounts registered under the same venue/group name. To keep things clean and avoid confusion, we've removed the duplicate account.\n\nIf you still need to manage this venue from a second email, you can add it as a co-owner:\n\n━━━ HOW TO ADD A SECOND EMAIL ━━━\n\n1. Log in to your CourtQ Pro dashboard\n2. Go to Settings (⚙️)\n3. Under the Co-Owner / Staff section, add the other email address\n4. That email will receive an invite to access the dashboard\n\nThis way, both email addresses can manage the same venue from one account.\n\nIf you believe this was a mistake, please contact us.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291`
+                    });
+                }
+            } catch(e){ console.warn('Duplicate email send failed:',e); }
+        }
         showNotif('🗑️ Venue deleted','warning');
         renderDevDashboard();
     } catch(e){
