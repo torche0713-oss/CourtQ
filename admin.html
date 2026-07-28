@@ -5436,21 +5436,8 @@ async function renderDevDashboard(){
         });
         const ownerListEl=document.getElementById('devOwnerEmails');
         if(ownerListEl){
-            if(_devOwnerList.length===0){
-                ownerListEl.innerHTML='<div class="empty-state"><div class="ei">📭</div><p>No owners found.</p></div>';
-            } else {
-                ownerListEl.innerHTML=_devOwnerList.map(o=>
-                    '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(0,0,0,0.03);border-radius:8px;margin-bottom:4px;font-size:0.75rem;">'+
-                        '<span style="flex:2;">'+escapeHtml(o.name)+'</span>'+
-                        '<span style="flex:2;color:#94a3b8;">'+escapeHtml(o.email)+'</span>'+
-                        '<span style="flex:1;color:#94a3b8;">'+escapeHtml(o.mobile)+'</span>'+
-                        '<span style="flex:1;text-align:right;">'+
-                            '<span style="color:'+(o.status==='Pending'?'#f59e0b':o.status==='Active'?'#10b981':'#555')+';">'+escapeHtml(o.status)+'</span>'+
-                        '</span>'+
-                    '</div>'
-                ).join('');
-                ownerListEl.innerHTML+=`<div style="font-size:0.7rem;color:#64748b;margin-top:8px;text-align:right;">Total: ${_devOwnerList.length} owner(s)</div>`;
-            }
+            _emailPage=0;
+            renderEmailPage();
         }
         renderDevUsage();
         renderAnnouncements();
@@ -5563,6 +5550,44 @@ function startDemoMonitor(){
 
 function refreshDevDashboard(){renderDevDashboard();renderDevUsage();loadAffiliates();showNotif('Refreshing...');}
 let _devOwnerList=[];
+let _emailPage=0;
+const EMAIL_PAGE_SIZE=10;
+function renderEmailPage(){
+    const ownerListEl=document.getElementById('devOwnerEmails');
+    if(!ownerListEl) return;
+    if(_devOwnerList.length===0){
+        ownerListEl.innerHTML='<div class="empty-state"><div class="ei">📭</div><p>No owners found.</p></div>';
+        return;
+    }
+    const totalPages=Math.ceil(_devOwnerList.length/EMAIL_PAGE_SIZE);
+    if(_emailPage>=totalPages) _emailPage=totalPages-1;
+    if(_emailPage<0) _emailPage=0;
+    const start=_emailPage*EMAIL_PAGE_SIZE;
+    const page=_devOwnerList.slice(start,start+EMAIL_PAGE_SIZE);
+    let html=page.map(o=>
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(0,0,0,0.03);border-radius:8px;margin-bottom:4px;font-size:0.75rem;">'+
+            '<span style="flex:2;">'+escapeHtml(o.name)+'</span>'+
+            '<span style="flex:2;color:#94a3b8;">'+escapeHtml(o.email)+'</span>'+
+            '<span style="flex:1;color:#94a3b8;">'+escapeHtml(o.mobile)+'</span>'+
+            '<span style="flex:1;text-align:right;">'+
+                '<span style="color:'+(o.status==='Pending'?'#f59e0b':o.status==='Active'?'#10b981':'#555')+';">'+escapeHtml(o.status)+'</span>'+
+            '</span>'+
+        '</div>'
+    ).join('');
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:0.75rem;">
+        <span style="color:#94a3b8;">Total: ${_devOwnerList.length} owner(s)</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="emailPageNav(-1)" ${_emailPage===0?'disabled style="opacity:0.4;"':''}>◀ Prev</button>
+            <span style="color:#94a3b8;">${_emailPage+1} / ${totalPages}</span>
+            <button class="btn btn-outline btn-sm" onclick="emailPageNav(1)" ${_emailPage>=totalPages-1?'disabled style="opacity:0.4;"':''}>Next ▶</button>
+        </div>
+    </div>`;
+    ownerListEl.innerHTML=html;
+}
+function emailPageNav(dir){
+    _emailPage+=dir;
+    renderEmailPage();
+}
 function downloadOwnerCSV(){
     if(_devOwnerList.length===0){showNotif('No owner data. Refresh dev dashboard first.','error');return;}
     let csv='Venue Name,Slug,Owner Name,Email,Mobile,Status,Monthly Rate\n';
