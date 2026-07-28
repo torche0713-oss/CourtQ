@@ -5383,6 +5383,7 @@ async function renderDevDashboard(){
         // ACTIVE ORGANIZERS section
         if(organizers.length>0){
             html+=`<div style="font-size:0.75rem;font-weight:700;color:#8b5cf6;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">🎯 Active Organizers / Clubs (${organizers.length})</div>`;
+            html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">`;
             organizers.forEach(o=>{
                 const d=o.data;
                 const ownerEmail=o.owner?o.owner.email:'';
@@ -5420,6 +5421,7 @@ async function renderDevDashboard(){
                     </div>
                 </div>`;
             });
+            html+=`</div>`;
         }
         document.getElementById('devVenuesList').innerHTML=html;
         // Build owner emails list
