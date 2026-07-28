@@ -5350,7 +5350,7 @@ async function renderDevDashboard(){
                 const latestPmt=c&&c.payments&&c.payments.length>0?c.payments.reduce((a,b)=>new Date(a.dueDate||0)>new Date(b.dueDate||0)?a:b):null;
                 const o=v.owner||{};
                 const progress=calcOnboardingProgress(v.data||{},false);
-                const pDots=progress.steps.map(s=>s.done?'🟢':'🔴').join(' ');
+                const pLabeled=progress.steps.map(s=>`<span style="color:${s.done?'#10b981':'#ef4444'};font-size:0.68rem;">${s.done?'✅':'❌'} ${s.label}</span>`).join(' · ');
                 const presenceHtml=v.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+formatLastSeen(v.lastSeen)+'</span>';
                 html+=`<div style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
@@ -5358,7 +5358,8 @@ async function renderDevDashboard(){
                             <div style="font-weight:700;">${statusIcon} ${escapeHtml(v.name)}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(v.slug)} · 📧 ${escapeHtml(o.email||'?')}${v.referralCode?` · 🤝 <span style="color:#10b981;font-weight:600;">${escapeHtml(v.referralCode)}</span>`:''}</div>
                             ${c?`<div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(c.ownerName||o.name||'N/A')} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#64748b;">No contract set up</div>'}
-                            <div style="font-size:0.72rem;margin-top:4px;color:${progress.complete?'#10b981':'#f59e0b'};">Onboarding: ${progress.doneCount}/${progress.total} ${progress.complete?'✅ Complete':''} ${pDots}</div>
+                            <div style="font-size:0.72rem;margin-top:4px;color:${progress.complete?'#10b981':'#f59e0b'};">Onboarding: ${progress.doneCount}/${progress.total} ${progress.complete?'✅ Complete':''}</div>
+                            <div style="margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 8px;">${pLabeled}</div>
                             <div style="font-size:0.72rem;margin-top:2px;">${presenceHtml}</div>
                         </div>
                         <div style="text-align:right;">
@@ -5389,7 +5390,7 @@ async function renderDevDashboard(){
                 const ownerMobile=o.owner?o.owner.mobile:'';
                 const invCount=(d.invoices||[]).length;
                 const progress=calcOnboardingProgress(d,true);
-                const pDots=progress.steps.map(s=>s.done?'🟢':'🔴').join(' ');
+                const pLabeled=progress.steps.map(s=>`<span style="color:${s.done?'#10b981':'#ef4444'};font-size:0.68rem;">${s.done?'✅':'❌'} ${s.label}</span>`).join(' · ');
                 const presenceHtml=o.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+formatLastSeen(o.lastSeen)+'</span>';
                 html+=`<div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
@@ -5397,7 +5398,8 @@ async function renderDevDashboard(){
                             <div style="font-weight:700;">🎯 ${escapeHtml(o.name)}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(o.slug)} · 📧 ${escapeHtml(ownerEmail||'?')} · 📱 ${escapeHtml(ownerMobile||'?')}${d.referralCode?` · 🤝 <span style="color:#10b981;font-weight:600;">${escapeHtml(d.referralCode)}</span>`:''}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(d.ownerName||o.owner?.name||'N/A')} · Total Players: ${o.totalPlayers} · Total Fees: ₱${o.feeAccrued.toLocaleString()}</div>
-                            <div style="font-size:0.72rem;margin-top:4px;color:${progress.complete?'#10b981':'#f59e0b'};">Onboarding: ${progress.doneCount}/${progress.total} ${progress.complete?'✅ Complete':''} ${pDots}</div>
+                            <div style="font-size:0.72rem;margin-top:4px;color:${progress.complete?'#10b981':'#f59e0b'};">Onboarding: ${progress.doneCount}/${progress.total} ${progress.complete?'✅ Complete':''}</div>
+                            <div style="margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 8px;">${pLabeled}</div>
                             <div style="font-size:0.72rem;margin-top:2px;">${presenceHtml}</div>
                             <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">🪪 ${escapeHtml(d.govtIdType||'')} ${escapeHtml(d.govtId||'')}${d.govtIdUrl?` · <a href="${d.govtIdUrl}" target="_blank" style="color:#2563eb;">View ID</a>`:''}</div>
                             ${o.sessions.length>0?`<div style="margin-top:8px;border-top:1px solid rgba(139,92,246,0.15);padding-top:8px;">
