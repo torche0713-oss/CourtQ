@@ -562,8 +562,12 @@ function renderSlots(){
     const grid=document.getElementById('slotGrid');
     grid.innerHTML='';
     const open=0, close=24*60, step=60;
+    const now=new Date();
+    const isToday=date===now.toISOString().slice(0,10);
+    const nowMin=now.getHours()*60+now.getMinutes();
     let anyAvail=false;
     for(let t=open;t<close-dur+step;t+=step){
+        if(isToday && t+dur<=nowMin) continue;
         const conflicts=getBookingsForCourt(S.portal.courtId,date,t,t+dur);
         const opBlock=inSession(date,t,t+dur,S.portal.courtId);
         const taken=conflicts.length>0||opBlock;
