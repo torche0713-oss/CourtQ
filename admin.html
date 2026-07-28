@@ -2088,6 +2088,14 @@ function calcOnboardingProgress(vData, isOrg){
     const complete=vData.onboardingComplete===true;
     return {steps,doneCount,total:steps.length,complete};
 }
+function formatLastSeen(ts){
+    if(!ts) return '';
+    const diff=Date.now()-ts;
+    if(diff<60000) return 'just now';
+    if(diff<3600000) return Math.floor(diff/60000)+'m ago';
+    if(diff<86400000) return Math.floor(diff/3600000)+'h ago';
+    return Math.floor(diff/86400000)+'d ago';
+}
 
 // ===================== ONBOARDING FOLLOW-UP EMAILS =====================
 function checkOnboardingFollowup(){
@@ -5275,7 +5283,7 @@ async function renderDevDashboard(){
                 collectSessions(history);
                 const feeAccrued=totalPlayers*5;
                 const o=ownerMap[venueId];
-                organizers.push({slug:slugDoc.id,venueId,data:vData,name:vData.businessName||vData.name||'Unnamed',owner:o,totalPlayers,feeAccrued,sessions});
+                organizers.push({slug:slugDoc.id,venueId,data:vData,name:vData.businessName||vData.name||'Unnamed',owner:o,totalPlayers,feeAccrued,sessions,online:vData.online===true,lastSeen:vData.lastSeen||0});
                 continue;
             }
             if(vData.plan==='founding') foundingCount++;
@@ -5291,7 +5299,7 @@ async function renderDevDashboard(){
                 dueAmt=pendingPmts.reduce((s,p)=>s+(p.amount||0),0);
             }
             dueTotal+=dueAmt;
-            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',data:vData,totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId],referralCode:vData.referralCode||''});
+            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',data:vData,totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId],referralCode:vData.referralCode||'',online:vData.online===true,lastSeen:vData.lastSeen||0});
         }
         _devVenues=venues;
         document.getElementById('devVenueCount').textContent=venues.length+organizers.length+pending.length;
@@ -5343,6 +5351,7 @@ async function renderDevDashboard(){
                 const o=v.owner||{};
                 const progress=calcOnboardingProgress(v.data||{},false);
                 const pDots=progress.steps.map(s=>s.done?'🟢':'🔴').join(' ');
+                const presenceHtml=v.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+escapeHtml(formatLastSeen(v.lastSeen))+'</span>';
                 html+=`<div style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
@@ -5350,6 +5359,7 @@ async function renderDevDashboard(){
                             <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(v.slug)} · 📧 ${escapeHtml(o.email||'?')}${v.referralCode?` · 🤝 <span style="color:#10b981;font-weight:600;">${escapeHtml(v.referralCode)}</span>`:''}</div>
                             ${c?`<div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(c.ownerName||o.name||'N/A')} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#64748b;">No contract set up</div>'}
                             <div style="font-size:0.72rem;margin-top:4px;color:${progress.complete?'#10b981':'#f59e0b'};">Onboarding: ${progress.doneCount}/${progress.total} ${progress.complete?'✅ Complete':''} ${pDots}</div>
+                            <div style="font-size:0.72rem;margin-top:2px;">${presenceHtml}</div>
                         </div>
                         <div style="text-align:right;">
                             ${c?`<div style="font-weight:800;color:#8b5cf6;">₱${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
@@ -5380,6 +5390,7 @@ async function renderDevDashboard(){
                 const invCount=(d.invoices||[]).length;
                 const progress=calcOnboardingProgress(d,true);
                 const pDots=progress.steps.map(s=>s.done?'🟢':'🔴').join(' ');
+                const presenceHtml=o.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+escapeHtml(formatLastSeen(o.lastSeen))+'</span>';
                 html+=`<div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
@@ -5387,6 +5398,7 @@ async function renderDevDashboard(){
                             <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(o.slug)} · 📧 ${escapeHtml(ownerEmail||'?')} · 📱 ${escapeHtml(ownerMobile||'?')}${d.referralCode?` · 🤝 <span style="color:#10b981;font-weight:600;">${escapeHtml(d.referralCode)}</span>`:''}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(d.ownerName||o.owner?.name||'N/A')} · Total Players: ${o.totalPlayers} · Total Fees: ₱${o.feeAccrued.toLocaleString()}</div>
                             <div style="font-size:0.72rem;margin-top:4px;color:${progress.complete?'#10b981':'#f59e0b'};">Onboarding: ${progress.doneCount}/${progress.total} ${progress.complete?'✅ Complete':''} ${pDots}</div>
+                            <div style="font-size:0.72rem;margin-top:2px;">${presenceHtml}</div>
                             <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">🪪 ${escapeHtml(d.govtIdType||'')} ${escapeHtml(d.govtId||'')}${d.govtIdUrl?` · <a href="${d.govtIdUrl}" target="_blank" style="color:#2563eb;">View ID</a>`:''}</div>
                             ${o.sessions.length>0?`<div style="margin-top:8px;border-top:1px solid rgba(139,92,246,0.15);padding-top:8px;">
                                 <div style="font-size:0.7rem;font-weight:700;color:#2563eb;margin-bottom:6px;">📋 Sessions Ready to Invoice</div>
@@ -6859,6 +6871,19 @@ function deleteTournament(id){
     showNotif('🗑 Tournament "'+name+'" deleted.','success');
 }
 
+// ===================== PRESENCE TRACKING =====================
+function initPresence(){
+    if(!VENUE_ID) return;
+    const ref=getVenueDocRef();
+    ref.update({lastSeen:Date.now(),online:true}).catch(()=>{});
+    window.addEventListener('beforeunload',()=>{
+        ref.update({online:false,lastSeen:Date.now()}).catch(()=>{});
+    });
+    setInterval(()=>{
+        ref.update({lastSeen:Date.now(),online:true}).catch(()=>{});
+    },60000);
+}
+
 // ===================== INIT =====================
 (async () => {
     const params = new URLSearchParams(window.location.search);
@@ -6993,6 +7018,7 @@ function deleteTournament(id){
         }
 
         if(VENUE_OWNER_ID==='demo') startDemoHeartbeat();
+        initPresence();
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
         if (!IS_ORGANIZER) loadBookings();
