@@ -5351,7 +5351,7 @@ async function renderDevDashboard(){
                 const o=v.owner||{};
                 const progress=calcOnboardingProgress(v.data||{},false);
                 const pDots=progress.steps.map(s=>s.done?'🟢':'🔴').join(' ');
-                const presenceHtml=v.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+escapeHtml(formatLastSeen(v.lastSeen))+'</span>';
+                const presenceHtml=v.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+formatLastSeen(v.lastSeen)+'</span>';
                 html+=`<div style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
@@ -5390,7 +5390,7 @@ async function renderDevDashboard(){
                 const invCount=(d.invoices||[]).length;
                 const progress=calcOnboardingProgress(d,true);
                 const pDots=progress.steps.map(s=>s.done?'🟢':'🔴').join(' ');
-                const presenceHtml=o.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+escapeHtml(formatLastSeen(o.lastSeen))+'</span>';
+                const presenceHtml=o.online?'🟢 <strong style="color:#10b981;">Online now</strong>':'🔴 <span style="color:#94a3b8;">Offline · '+formatLastSeen(o.lastSeen)+'</span>';
                 html+=`<div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
