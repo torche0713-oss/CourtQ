@@ -551,8 +551,22 @@
             if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
             if (!document.getElementById('registerConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
             hideError();
-            showLoading('Creating your account...');
+            showLoading('Checking for duplicates...');
             try {
+                const venueLower = venue.toLowerCase();
+                // Check venue name in both venues and organizers collections
+                const [venueSnap, orgSnap, venueMobSnap, orgMobSnap] = await Promise.all([
+                    db.collection('venues').where('venueName','==','\uD83C\uDFCF ' + venue).get(),
+                    db.collection('organizers').where('name','==','\uD83C\uDFCF ' + venue).get(),
+                    db.collection('venues').where('mobile','==',mobile).get(),
+                    db.collection('organizers').where('mobile','==',mobile).get()
+                ]);
+                const nameExists = !venueSnap.empty || !orgSnap.empty;
+                const mobileExists = !venueMobSnap.empty || !orgMobSnap.empty;
+                if (nameExists && mobileExists) { showError('A venue with this name AND mobile number already exists. Please use a different name or contact support.'); return; }
+                if (nameExists) { showError('A venue with this name is already registered. Please choose a different venue name.'); return; }
+                if (mobileExists) { showError('This mobile number is already registered. Please use a different number or contact support.'); return; }
+                showLoading('Creating your account...');
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
                 const p = { uid: cred.user.uid, email, name, venue, mobile };
                 document.getElementById('loadingScreen').style.display = 'none';
@@ -657,8 +671,20 @@
             if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
             if (!document.getElementById('orgConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
             hideError();
-            showLoading('Creating your account...');
+            showLoading('Checking for duplicates...');
             try {
+                const [orgNameSnap, venueNameSnap, orgMobSnap, venueMobSnap] = await Promise.all([
+                    db.collection('organizers').where('name','==','\uD83C\uDFCF ' + businessName).get(),
+                    db.collection('venues').where('venueName','==','\uD83C\uDFCF ' + businessName).get(),
+                    db.collection('organizers').where('mobile','==',mobile).get(),
+                    db.collection('venues').where('mobile','==',mobile).get()
+                ]);
+                const nameExists = !orgNameSnap.empty || !venueNameSnap.empty;
+                const mobileExists = !orgMobSnap.empty || !venueMobSnap.empty;
+                if (nameExists && mobileExists) { showError('A group with this name AND mobile number already exists. Please use a different name or contact support.'); return; }
+                if (nameExists) { showError('A group with this name is already registered. Please choose a different name.'); return; }
+                if (mobileExists) { showError('This mobile number is already registered. Please use a different number or contact support.'); return; }
+                showLoading('Creating your account...');
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupMsg').textContent = 'Uploading ID and setting up your account...';
