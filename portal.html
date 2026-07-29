@@ -254,6 +254,7 @@
     <div class="landing-hero">
         <img src="/Logo.jpg" style="height:32px;width:auto;margin-bottom:8px;opacity:0.5;" alt="CourtQ Pro">
         <h1 id="heroVenueName">Book a Court</h1>
+        <div id="heroVenueAddress" style="font-size:0.85rem;color:#94a3b8;margin-top:2px;"></div>
         <p>Reserve your court in seconds. Pick a date, choose your time, and you're set.</p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-primary btn-lg" onclick="openPortal('booking')" id="bookNowBtn">📅 Book Now</button>
@@ -415,7 +416,7 @@ function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;')
 
 // ===================== STATE =====================
 let S = {
-    venueName:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[],     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+    venueName:'', address:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[],     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
 };
 let VENUE_ID = null;
@@ -1151,6 +1152,7 @@ function watchOpRegistration(email, sessionId){
             if(!snap.exists) return;
             const data = snap.data();
             S.venueName = data.name || 'Court';
+            S.address = data.address || '';
             S.logoUrl = cqFixImgurUrl(data.logoUrl || '');
             S.courts = data.courts || [];
             S.session = data.session || null;
@@ -1160,6 +1162,7 @@ function watchOpRegistration(email, sessionId){
             const cb='?t='+Date.now();
             const logoHtml=S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" class="hero-logo-img" alt="logo">`:'';
             document.getElementById('heroVenueName').innerHTML = logoHtml + escapeHtml(S.venueName);
+            document.getElementById('heroVenueAddress').innerHTML = S.address ? '📍 ' + escapeHtml(S.address) : '';
             document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
             if (!IS_ORGANIZER_PORTAL) renderCourtPicker();
             // Re-render slots if on step 2
