@@ -597,7 +597,7 @@
                     courts: defaultCourts, queue: [], soloQueue: [], session: null,
                     bookings: [], history: [], leaderboard: {}, sales: [],
                     nextId: 100, nextBId: 1,
-                    status: 'pending', mobile: p.mobile, ownerName: p.name, address: address,
+                    status: 'active', mobile: p.mobile, ownerName: p.name, address: address,
                     courtCount: 3,
                     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
                     referralCode: _referralCode || ''
@@ -605,7 +605,7 @@
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ venueId });
 
-                // Send email notification
+                // Send activation email
                 const ackNum = 'CQ-' + Date.now().toString(36).toUpperCase();
                 try {
                     const cfg = await db.collection('config').doc('emailjs').get();
@@ -614,13 +614,13 @@
                         emailjs.init(ej.publicKey);
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
-                            subject: 'Welcome to CourtQ Pro! 🎾',
-                            body: `Thank you for signing up with CourtQ Pro!\n\nHere is your submission receipt:\n──────────────────────────────\nACK Number: ${ackNum}\nVenue: ${p.venue}\nMobile: ${p.mobile}\nStatus: Pending Verification\nSlug: ${finalSlug}\n──────────────────────────────\n\nYour venue is now pending verification. We will notify you once it's activated.\n\nFor questions, email apexmindagency@gmail.com`
+                            subject: 'Your Venue "' + p.venue + '" is now LIVE! ✅',
+                            body: '✅ Great news! Your venue "' + p.venue + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your venue dashboard. Bookmark this page for quick access.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n\ud83c\udfdf\ufe0f Add your courts\n💰 Set your rates\n🎮️ Upload your logo\n💳 Add payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
                         });
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
-                            subject: `New Venue Signup: ${p.venue}`,
-                            body: `A new venue has signed up:\n\nVenue: ${p.venue}\nOwner: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                            subject: 'New Venue Registered (Auto-Approved): ' + p.venue,
+                            body: 'A new venue has been auto-approved:\n\nVenue: ' + p.venue + '\nOwner: ' + p.name + '\nEmail: ' + p.email + '\nMobile: ' + p.mobile + '\nSlug: ' + finalSlug + '\n\nView it in the Dev Dashboard.'
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
@@ -628,8 +628,8 @@
                 // Show success screen
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'none';
-                document.getElementById('successSubtitle').innerHTML = 'Your venue has been submitted for verification.<br>You\'ll receive an email confirmation shortly.';
-                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your venue and activate your account<br>2. You\'ll receive your unique subdomain (e.g., <strong style="color:#1e293b;">yourvenue.courtqpro.online</strong>)<br>3. Set up your courts, rates, and payment info in the dashboard<br>4. A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you';
+                document.getElementById('successSubtitle').innerHTML = 'Your venue is now LIVE! ✅<br>You can start accepting bookings immediately.';
+                document.getElementById('successSteps').innerHTML = '1. Log in with your email and password<br>2. You\'ll find an onboarding checklist in your dashboard<br>3. Set up your courts, rates, and logo<br>4. A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you';
                 document.getElementById('successScreen').style.display = 'block';
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
@@ -640,7 +640,7 @@
                         <div style="color:#94a3b8;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
                         <div style="color:#94a3b8;">Courts:</div><div style="font-weight:600;">3</div>
                         <div style="color:#94a3b8;">Plan:</div><div style="font-weight:600;color:#10b981;">✨ Free Forever</div>
-                        <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#f59e0b;">⏳ Pending Verification</div>
+                        <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#10b981;">✅ Active</div>
                     </div>`;
                 watchForActivation('venues', venueId, finalSlug, 'venue');
             } catch (e) {
@@ -716,7 +716,7 @@
                     slug: finalSlug, createdAt: Date.now(),
                     ownerName: p.name, mobile: p.mobile, email: p.email,
                     govtId: p.govtId, govtIdType: p.govtIdType, govtIdUrl: p.govtIdUrl,
-                    activated: false, courtCount: 4,
+                    activated: true, courtCount: 4,
                     session: null, queue: [], soloQueue: [], scheduledSessions: [],
                     history: [], leaderboard: {}, sales: [],
                     nextId: 100,
@@ -733,30 +733,30 @@
                         emailjs.init(ej.publicKey);
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
-                            subject: 'Welcome to CourtQ Pro Organizer! 🎾',
-                            body: `Thank you for registering as an organizer!\n\nACK Number: ${ackNum}\nBusiness: ${p.businessName}\nMobile: ${p.mobile}\nSlug: ${finalSlug}\n\nYour account is pending verification. We'll notify you once activated.\n\nFor questions, email apexmindagency@gmail.com`
+                            subject: 'Your Organizer "' + p.businessName + '" is now LIVE! ✅',
+                            body: '✅ Great news! Your organizer account "' + p.businessName + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your organizer dashboard.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n🎮️ Add your photo\n💳 Set payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
                         });
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
-                            subject: `New Organizer Signup: ${p.businessName}`,
-                            body: `A new organizer has signed up:\n\nBusiness: ${p.businessName}\nName: ${p.name}\nEmail: ${p.email}\nMobile: ${p.mobile}\nGovt ID: ${p.govtIdType} - ${p.govtId}\nID Image: ${p.govtIdUrl||'Upload failed'}\nACK Number: ${ackNum}\nSlug: ${finalSlug}\n\nLog into the Dev Dashboard to review and activate.`
+                            subject: 'New Organizer Registered (Auto-Approved): ' + p.businessName,
+                            body: 'A new organizer has been auto-approved:\n\nGroup: ' + p.businessName + '\nName: ' + p.name + '\nEmail: ' + p.email + '\nMobile: ' + p.mobile + '\nGovt ID: ' + p.govtIdType + ' - ' + p.govtId + '\nID Image: ' + (p.govtIdUrl||'Upload failed') + '\nSlug: ' + finalSlug + '\n\nView it in the Dev Dashboard.'
                         });
                     }
                 } catch(e) { console.warn('EmailJS send failed:', e); }
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'none';
-                document.getElementById('successSubtitle').innerHTML = 'Your organizer account has been submitted for verification.<br>You\'ll receive an email confirmation shortly.';
-                document.getElementById('successSteps').innerHTML = '1. We\'ll verify your information and activate your organizer account<br>2. You\'ll receive your unique link (e.g., <strong style="color:#1e293b;">yourorg.courtqpro.online</strong>)<br>3. Log in to manage Open Play sessions and queue rotation<br>4. A <strong style="color:#2563eb;">₱5/player fee</strong> is added to each Open Play booking — paid by the player, not by you';
+                document.getElementById('successSubtitle').innerHTML = 'Your organizer account is now LIVE! ✅<br>You can start hosting Open Play sessions immediately.';
+                document.getElementById('successSteps').innerHTML = '1. Log in with your email and password<br>2. You\'ll find an onboarding checklist in your dashboard<br>3. Set up your photo, payment details, and first session<br>4. A <strong style="color:#2563eb;">₱5/player fee</strong> is added to each Open Play booking — paid by the player, not by you';
                 document.getElementById('successScreen').style.display = 'block';
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
                         <div style="color:#94a3b8;">Receipt #:</div><div style="font-weight:600;color:#2563eb;">${ackNum}</div>
-                        <div style="color:#94a3b8;">Business:</div><div style="font-weight:600;">${escapeHtml(p.businessName)}</div>
+                        <div style="color:#94a3b8;">Group:</div><div style="font-weight:600;">${escapeHtml(p.businessName)}</div>
                         <div style="color:#94a3b8;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
                         <div style="color:#94a3b8;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
                         <div style="color:#94a3b8;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
                         <div style="color:#94a3b8;">Plan:</div><div style="font-weight:600;color:#10b981;">✨ Free Forever</div>
-                        <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#f59e0b;">⏳ Pending Verification</div>
+                        <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#10b981;">✅ Active</div>
                     </div>`;
                 watchForActivation('organizers', organizerId, finalSlug, 'organizer');
             } catch (e) {
