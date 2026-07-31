@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@google-cloud/firestore": "^8.6.0",
+    "acorn": "^8.17.0",
+    "firebase-admin": "^14.1.0",
+    "uuid": "^9.0.1"
+  }
+}

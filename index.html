@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CourtQ Pro - Venue Management</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4528294526114802"
+     crossorigin="anonymous"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 50%, #cbd5e1 100%);
+            min-height: 100vh; color: #1e293b;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .landing { width: 100%; max-width: 560px; }
+        .logo {
+            text-align: center; margin-bottom: 32px;
+        }
+        .logo-icon { font-size: 3.5rem; margin-bottom: 10px; }
+        .logo-text { font-size: 2rem; font-weight: 800; color: #2563eb; letter-spacing: -1px; }
+        .pro-badge {
+            display: inline-block; background: linear-gradient(135deg,#f59e0b,#d68910);
+            color:#1e293b; font-size:0.65rem; padding:2px 8px; border-radius:6px;
+            font-weight:800; letter-spacing:1px; vertical-align: super; margin-left: 2px;
+        }
+        .tagline { font-size: 0.85rem; color: #ffffff; margin-top: 6px; }
+
+        .card {
+            background: rgba(15,23,42,0.30);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 20px; padding: 28px; margin-bottom: 16px;
+        }
+
+        .tabs { display: flex; margin-bottom: 20px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
+        .tab { flex: 1; padding: 10px; text-align: center; background: rgba(0,0,0,0.025); color: #64748b; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; border: none; }
+        .tab.active { background: rgba(37,99,235,0.15); color: #2563eb; }
+        .tab:hover:not(.active) { color: #94a3b8; }
+
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block; font-size: 0.75rem; color: #94a3b8;
+            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 14px;
+            background: rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 10px; color: #1e293b; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: #2563eb; background: rgba(37,99,235,0.08);
+        }
+        .form-group input::placeholder { color: #64748b; }
+
+        .btn {
+            padding: 11px 20px; border: none; border-radius: 10px;
+            font-size: 0.88rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s; display: inline-flex;
+            align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-full { width: 100%; justify-content: center; }
+        .btn-primary { background: linear-gradient(135deg,#2563eb,#44a08d); color:#1e293b; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(37,99,235,0.4); }
+        .btn-outline { background:transparent; border:1px solid rgba(0,0,0,0.15); color:#ffffff; }
+        .btn-outline:hover { background:rgba(0,0,0,0.06); color:#1e293b; }
+        .btn-success { background: linear-gradient(135deg,#10b981,#27ae60); color:#1e293b; }
+        .btn-success:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(16,185,129,0.4); }
+
+        .divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: #64748b; font-size: 0.78rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid rgba(0,0,0,0.06); }
+
+        .error-msg { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #ef4444; margin-bottom: 12px; display: none; }
+        .success-msg { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #10b981; margin-bottom: 12px; display: none; }
+
+        .features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+        .feature { background: rgba(37,99,235,0.16); border: 1px solid rgba(37,99,235,0.15); border-radius: 10px; padding: 12px; text-align: center; font-size: 0.72rem; color: #ffffff; }
+        .feature-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+
+        .nav-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
+        .nav-bar .nav-links { display:flex; gap:8px; }
+
+        @media(max-width:500px) {
+            .features { grid-template-columns: 1fr 1fr; }
+            .card { padding: 20px; }
+            .nav-bar { flex-direction:column; gap:12px; }
+        }
+
+        .spinner {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 3px solid rgba(37,99,235,0.2);
+            border-top-color: #2563eb;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin { to{transform:rotate(360deg);} }
+
+        .demo-badge {
+            background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25);
+            border-radius: 8px; padding: 8px; font-size: 0.72rem; color: #f59e0b;
+            text-align: center; margin-bottom: 12px; display: none;
+        }
+        .footer-links {
+            text-align: center; margin-top: 24px; padding: 16px 0;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.7rem; color: #ffffff;
+        }
+        .footer-links a {
+            color: #ffffff; text-decoration: none; margin: 0 8px;
+            transition: color 0.3s; cursor: pointer;
+        }
+        .footer-links a:hover { color: #2563eb; }
+        .footer-links .dot { color: #444; }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8); z-index: 9999;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #ffffff; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px; max-width: 640px; width: 100%;
+            max-height: 80vh; overflow-y: auto; padding: 28px;
+            position: relative;
+        }
+        .modal-box h2 {
+            font-size: 1.1rem; color: #2563eb; margin-bottom: 16px;
+            padding-right: 40px;
+        }
+        .modal-box p, .modal-box li {
+            font-size: 0.78rem; color: #94a3b8; line-height: 1.6; margin-bottom: 8px;
+        }
+        .modal-box ul { padding-left: 20px; }
+        .modal-close {
+            position: absolute; top: 16px; right: 16px;
+            background: none; border: none; color: #64748b; font-size: 1.2rem;
+            cursor: pointer; transition: color 0.3s;
+        }
+        .modal-close:hover { color: #1e293b; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(37,99,235,0.3); border-radius: 4px; }
+        .hero-slides,
+        .hero-slide {
+            position: fixed;
+            inset: 0;
+        }
+        .hero-slides { z-index: -1; }
+        .hero-slide {
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.6s ease-in-out;
+            will-change: opacity;
+        }
+        .hero-slide.active { opacity: 1; }
+        .hero-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: rgba(255,255,255,0.30);
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-slides">
+        <div class="hero-slide active" style="background-image:url('img/hero/Gemini_Generated_Image_drs00sdrs00sdrs0.jpg')"></div>
+        <div class="hero-slide" style="background-image:url('img/hero/Gemini_Generated_Image_dwvakudwvakudwva.jpg')"></div>
+        <div class="hero-slide" style="background-image:url('img/hero/Gemini_Generated_Image_kvnmwfkvnmwfkvnm.jpg')"></div>
+        <div class="hero-slide" style="background-image:url('img/hero/Gemini_Generated_Image_xj3iutxj3iutxj3i.jpg')"></div>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="landing" id="app">
+        <div class="nav-bar">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <img src="/Logo.jpg" style="height:52px;width:auto;" alt="CourtQ Pro">
+            </div>
+            <div class="nav-links">
+                <button class="btn btn-outline" onclick="showAuthModal('login')" style="padding:6px 14px;font-size:0.78rem;">Log In</button>
+                <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:6px 14px;font-size:0.78rem;">Register Free</button>
+            </div>
+        </div>
+
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:0.95rem;color:#10b981;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">✅ 100% FREE for Venue Owners</div>
+            <h1 style="font-size:1.6rem;font-weight:900;color:#1e293b;line-height:1.3;margin-bottom:10px;letter-spacing:-1px;">Run your pickleball venue<br>like a pro</h1>
+            <p style="font-size:0.85rem;color:#ffffff;line-height:1.6;max-width:420px;margin:0 auto 14px;">
+                Online booking, court scheduling, Open Play rotation, live TV display, and tournament brackets — all in one dashboard.
+            </p>
+            <div style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:12px 16px;margin:0 auto 16px;max-width:380px;text-align:left;font-size:0.78rem;">
+                <div style="font-weight:700;color:#10b981;margin-bottom:2px;">💡 How we make money:</div>
+                <div style="color:#ffffff;line-height:1.5;">You keep 100% of your rates. A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is added to each online booking or ₱5/player for Open Play booking — charged to the player, not to you.</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-size:0.7rem;color:#ffffff;margin-bottom:16px;">
+                <span>✅ No setup fee</span>
+                <span>✅ No monthly fee</span>
+                <span>✅ No commission</span>
+                <span>✅ No hidden charges</span>
+            </div>
+            <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:10px 24px;font-size:0.9rem;">🏟️ Register as Venue Owner</button>
+                <button class="btn btn-primary" onclick="showAuthModal('organizer')" style="padding:10px 24px;font-size:0.9rem;">🎯 Register as Organizer / Club</button>
+                <button class="btn btn-outline" onclick="openDemoLeadForm()" style="padding:10px 20px;font-size:0.9rem;">📅 Book a Demo</button>
+            </div>
+        </div>
+
+        <div style="margin:0 0 20px;">
+            <a href="partners.html" style="display:block;background:linear-gradient(135deg,rgba(37,99,235,0.2) 0%,rgba(139,92,246,0.2) 100%);border:1px solid rgba(37,99,235,0.25);border-radius:14px;padding:18px 20px;text-decoration:none;text-align:center;transition:border-color 0.2s,background 0.2s;" onmouseover="this.style.borderColor='rgba(37,99,235,0.5)';this.style.background='rgba(37,99,235,0.12)'" onmouseout="this.style.borderColor='rgba(37,99,235,0.25)';this.style.background='linear-gradient(135deg,rgba(37,99,235,0.2) 0%,rgba(139,92,246,0.2) 100%)'">
+                <div style="font-size:0.68rem;color:#ffffff;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Trusted Across the Philippines</div>
+                <div style="font-size:1.1rem;font-weight:800;color:#1e293b;">🏓 See Our Growing Community of Partners</div>
+                <div style="font-size:0.78rem;color:#2563eb;margin-top:6px;font-weight:600;">View All Venues &amp; Organizers →</div>
+            </a>
+        </div>
+
+        <div style="font-size:0.72rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">All-in-One Platform</div>
+        <div class="features">
+            <div class="feature"><span class="feature-icon">🏟️</span>Court Management</div>
+            <div class="feature"><span class="feature-icon">📅</span>Online Booking</div>
+            <div class="feature"><span class="feature-icon">💳</span>POS &amp; Sales</div>
+            <div class="feature"><span class="feature-icon">🏆</span>Leaderboards</div>
+            <div class="feature"><span class="feature-icon">📺</span>Live TV Display</div>
+            <div class="feature"><span class="feature-icon">📱</span>Mobile Scoring</div>
+            <div class="feature"><span class="feature-icon">🔄</span>Open Play Engine</div>
+            <div class="feature"><span class="feature-icon">🎯</span>Tournament Engine</div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+            <div style="font-size:0.72rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">How It Works</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <div style="background:rgba(37,99,235,0.16);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);color:#2563eb;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">1</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:#1e293b;margin-bottom:4px;">Register Your Venue</div>
+                    <div style="font-size:0.68rem;color:#ffffff;line-height:1.4;">Sign up free. No credit card needed. No contracts.</div>
+                </div>
+                <div style="background:rgba(37,99,235,0.16);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);color:#2563eb;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">2</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:#1e293b;margin-bottom:4px;">Set Up Your Dashboard</div>
+                    <div style="font-size:0.68rem;color:#ffffff;line-height:1.4;">Add courts, set rates, configure payments in minutes.</div>
+                </div>
+                <div style="background:rgba(37,99,235,0.16);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:14px;text-align:center;">
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);color:#2563eb;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">3</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:#1e293b;margin-bottom:4px;">Start Accepting Bookings</div>
+                    <div style="font-size:0.68rem;color:#ffffff;line-height:1.4;">Players book online. You get paid. We add a ₱5/hr convenience fee.</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:center;margin-bottom:16px;">
+            <div style="display:inline-block;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:14px 18px;font-size:0.78rem;line-height:1.6;">
+                <div style="font-weight:700;color:#10b981;margin-bottom:2px;">💰 100% Free for Venue Owners, Organizers & Clubs</div>
+                <div style="color:#ffffff;">No setup fee. No monthly fee. No commission. <strong style="color:#2563eb;">Ever.</strong></div>
+            </div>
+        </div>
+
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:10px 24px;font-size:0.9rem;">🏟️ Register as Venue Owner</button>
+            <button class="btn btn-primary" onclick="showAuthModal('organizer')" style="padding:10px 24px;font-size:0.9rem;">🎯 Register as Organizer / Club</button>
+            <button class="btn btn-outline" onclick="showAuthModal('login')" style="padding:10px 20px;font-size:0.9rem;">🔑 Log In</button>
+        </div>
+
+        <!-- SETUP SCREEN: shown after signup while provisioning -->
+        <div class="card" id="setupScreen" style="display:none;">
+            <div style="text-align:center;padding:20px 0;">
+                <div class="spinner"></div>
+                <div style="margin-top:12px;color:#ffffff;font-size:0.9rem;" id="setupMsg">Setting up your venue...</div>
+            </div>
+        </div>
+
+        <!-- SUCCESS SCREEN -->
+        <div class="card" id="successScreen" style="display:none;">
+            <div style="text-align:center;padding:16px 0;">
+                <!-- WAITING STATE -->
+                <div id="waitingState">
+                    <div style="font-size:3rem;margin-bottom:12px;">⏳</div>
+                    <div style="font-size:1.2rem;font-weight:800;color:#f59e0b;margin-bottom:6px;">Waiting for Activation...</div>
+                    <div style="font-size:0.85rem;color:#ffffff;line-height:1.6;" id="successSubtitle">Your account has been submitted for verification.</div>
+                    <div style="margin:16px 0;">
+                        <div class="spinner" style="margin:0 auto;width:32px;height:32px;border-width:3px;"></div>
+                        <div style="font-size:0.78rem;color:#ffffff;margin-top:8px;">Checking for activation...</div>
+                    </div>
+                    <div id="ackBox" style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:14px;margin:16px 0;text-align:left;font-size:0.8rem;">
+                        <div style="font-weight:700;color:#f59e0b;margin-bottom:8px;">📋 Acknowledgement Receipt</div>
+                        <div id="ackContent"></div>
+                    </div>
+                    <div style="background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:12px;margin:12px 0;text-align:left;font-size:0.78rem;line-height:1.6;">
+                        <div style="font-weight:700;color:#2563eb;margin-bottom:4px;">📌 What happens next:</div>
+                        <div style="color:#ffffff;" id="successSteps">1. We'll verify your account and activate it<br>
+                        2. You'll receive your unique subdomain<br>
+                        3. Set up your courts, rates, and payment info in the dashboard<br>
+                        4. A <strong style="color:#2563eb;">₱5/player convenience fee</strong> is automatically added to online bookings</div>
+                    </div>
+                    <div style="font-size:0.78rem;color:#ffffff;">📧 We'll also send you an email once activated.<br>This page will update automatically.</div>
+                </div>
+                <!-- ACTIVATED STATE -->
+                <div id="activatedState" style="display:none;">
+                    <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
+                    <div style="font-size:1.2rem;font-weight:800;color:#10b981;margin-bottom:6px;">You're Live!</div>
+                    <div style="font-size:0.85rem;color:#ffffff;line-height:1.6;">Your account has been activated!</div>
+                    <div style="font-size:0.85rem;color:#ffffff;margin-top:8px;">Your portal link:</div>
+                    <p id="portalLinkDisplay" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:10px;font-weight:600;color:#10b981;word-break:break-all;margin:10px 0;font-size:0.82rem;"></p>
+                    <button class="btn btn-success" onclick="window.location.href='index.html'" style="margin-top:12px;padding:12px 32px;font-size:0.95rem;">🚀 Log In Now</button>
+                    <div style="font-size:0.75rem;color:#ffffff;margin-top:12px;">You can now log in with the email and password you used during registration.</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingScreen" style="display:none;text-align:center;padding:40px;">
+            <div class="spinner"></div>
+            <div style="margin-top:12px;color:#ffffff;font-size:0.9rem;" id="loadingMsg">Setting things up...</div>
+        </div>
+
+        <div class="footer-links">
+            <a onclick="showLegal('about')">About</a><span class="dot"> · </span>
+            <a href="partners.html">Partners</a><span class="dot"> · </span>
+            <a onclick="showLegal('privacy')">Privacy</a><span class="dot"> · </span>
+            <a onclick="showLegal('terms')">Terms</a><span class="dot"> · </span>
+            <a onclick="showLegal('disclaimer')">Disclaimer</a><span class="dot"> · </span>
+            <a onclick="showLegal('contact')">Contact</a>
+        </div>
+    </div>
+
+    <!-- Demo Lead Modal -->
+    <div class="modal-overlay" id="demoLeadModal" onclick="if(event.target===this)closeDemoLead()">
+        <div class="modal-box" style="max-width:420px;">
+            <button class="modal-close" onclick="closeDemoLead()">✕</button>
+            <div id="demoLeadContent">
+                <div id="demoLeadForm">
+                    <h2>📅 Book a Demo</h2>
+                    <p style="margin-bottom:16px;">We'll walk you through the platform. Leave your details and we'll reach out to schedule a personalized demo.</p>
+                    <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Juan dela Cruz"></div>
+                    <div class="form-group"><label>Email *</label><input type="email" id="demoLeadEmail" placeholder="you@email.com"></div>
+                    <div class="form-group"><label>Phone Number *</label><input type="tel" id="demoLeadPhone" placeholder="+63 912 345 6789"></div>
+                    <div class="form-group"><label>Preferred Schedule</label><input type="text" id="demoLeadSchedule" placeholder="e.g. Monday 2pm, or anytime this week"></div>
+                    <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#94a3b8;margin-bottom:12px;cursor:pointer;">
+                        <input type="checkbox" id="demoLeadConsent" style="margin-top:2px;width:auto;">
+                        <span>I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>. I consent to receive email communications about CourtQ Pro updates and offers.</span>
+                    </label>
+                    <div id="demoLeadError" class="error-msg"></div>
+                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">📅 Book Demo</button>
+                </div>
+                <div id="demoLeadSuccess" style="display:none;text-align:center;padding:20px 0;">
+                    <div style="font-size:3rem;margin-bottom:12px;">✅</div>
+                    <h2>Demo request sent!</h2>
+                    <p style="color:#94a3b8;margin-top:8px;">We'll contact you shortly to schedule your walkthrough.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legal Modal -->
+    <div class="modal-overlay" id="legalModal" onclick="if(event.target===this)closeLegal()">
+        <div class="modal-box" id="legalContent"></div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal" onclick="if(event.target===this)closeAuthModal()">
+        <div class="modal-box" style="max-width:460px;">
+            <button class="modal-close" onclick="closeAuthModal()">✕</button>
+            <div class="tabs">
+                <button class="tab" onclick="switchTab('login')">Log In</button>
+                <button class="tab active" onclick="switchTab('register')">Venue Owner</button>
+                <button class="tab" onclick="switchTab('organizer')">Organizer / Club</button>
+            </div>
+            <div id="errorMsg" class="error-msg"></div>
+            <div id="successMsg" class="success-msg"></div>
+            <div id="demoBadge" class="demo-badge">🔧 Demo mode — data resets periodically</div>
+
+            <div class="auth-form" id="form-login">
+                <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+                <div style="text-align:right;margin-bottom:12px;">
+                    <a href="#" onclick="forgotPassword();return false;" style="color:#2563eb;font-size:0.75rem;text-decoration:none;">Forgot Password?</a>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
+                <div class="divider">or</div>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">📅 Book a Demo</button>
+            </div>
+
+            <div class="auth-form active" id="form-register">
+                <div class="form-group"><label>Venue Name *</label><input type="text" id="registerVenue" placeholder="e.g. Riverside Pickleball"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="registerName" placeholder="e.g. Juan dela Cruz"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 912 345 6789"></div>
+                <div class="form-group"><label>Venue Address *</label><input type="text" id="registerAddress" placeholder="e.g. 123 Main St, Makati City"></div>
+                <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
+                <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#94a3b8;line-height:1.5;">
+                    <strong style="color:#10b981;">✅ Free for you.</strong> A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
+                </div>
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#94a3b8;margin-bottom:12px;cursor:pointer;">
+                    <input type="checkbox" id="registerConsent" style="margin-top:2px;width:auto;">
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>.</span>
+                </label>
+                <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
+                <div class="divider">or</div>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">📅 Book a Demo</button>
+            </div>
+
+            <div class="auth-form" id="form-organizer">
+                <div class="form-group"><label>Group Name *</label><input type="text" id="orgBusinessName" placeholder="e.g. Manila Pickleball Club"></div>
+                <div class="form-group"><label>Your Name *</label><input type="text" id="orgName" placeholder="e.g. Juan dela Cruz"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="orgEmail" placeholder="you@email.com"></div>
+                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="orgMobile" placeholder="+63 912 345 6789"></div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Govt ID Type *</label><select id="orgGovtIdType"><option value="">Select ID type</option><option>Driver's License</option><option>Passport</option><option>UMID</option><option>SSS ID</option><option>GSIS ID</option><option>PRC ID</option><option>Postal ID</option><option>Voter's ID</option><option>National ID</option></select></div>
+                    <div class="form-group"><label>Govt ID Number *</label><input type="text" id="orgGovtId" placeholder="ID number"></div>
+                </div>
+                <div class="form-group"><label>Upload Govt ID * (photo of your ID)</label><input type="file" id="orgGovtIdFile" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewOrgId(event)"></div>
+                <div id="orgGovtIdPreview" style="display:none;margin-bottom:12px;"><img style="max-width:200px;max-height:120px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div>
+                <div class="form-group"><label>Password *</label><input type="password" id="orgPass" placeholder="At least 6 characters"></div>
+                <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#94a3b8;line-height:1.5;">
+                    <strong style="color:#10b981;">✅ Free for organizers.</strong> A <strong style="color:#2563eb;">₱5/player fee</strong> is added to each Open Play booking — paid by the player. You keep 100% of your rates.
+                </div>
+                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#94a3b8;margin-bottom:12px;cursor:pointer;">
+                    <input type="checkbox" id="orgConsent" style="margin-top:2px;width:auto;">
+                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>.</span>
+                </label>
+                <button class="btn btn-success btn-full" onclick="registerOrganizer()">Register as Organizer →</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script>
+        firebase.initializeApp(CQ_CONFIG.firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Capture referral code from URL
+        const _referralCode = new URLSearchParams(window.location.search).get('ref') || '';
+
+        function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        // ── Demo session heartbeat ──
+        let _demoSessionId = null;
+        let _heartbeatInterval = null;
+
+        function startHeartbeat() {
+          if (_heartbeatInterval) return;
+          const sessionId = db.collection('demo_sessions').doc().id;
+          _demoSessionId = sessionId;
+          const touch = () => {
+            db.collection('demo_sessions').doc(sessionId).set({
+              lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              userAgent: (navigator.userAgent||'').substring(0,100)
+            }, { merge: true }).catch(() => {});
+          };
+          // Increment total visitor counter on first touch
+          const firstTouch = () => {
+            touch();
+            db.collection('demo_stats').doc('stats').set({
+              visitorCount: firebase.firestore.FieldValue.increment(1)
+            }, { merge: true }).catch(() => {});
+            _heartbeatInterval = setInterval(touch, 30000);
+          };
+          firstTouch();
+          window.addEventListener('beforeunload', () => {
+            clearInterval(_heartbeatInterval);
+            if (_demoSessionId) db.collection('demo_sessions').doc(_demoSessionId).delete().catch(() => {});
+          });
+        }
+        // Clean stale sessions on load
+        setTimeout(() => {
+          const cutoff = new Date(Date.now() - 120000);
+          db.collection('demo_sessions').where('lastSeen', '<', cutoff).get().then(snap => {
+            snap.forEach(doc => doc.ref.delete());
+          }).catch(() => {});
+        }, 5000);
+        startHeartbeat();
+
+        function showError(msg) {
+            const am=document.getElementById('authModal');
+            const el=(am&&am.classList.contains('active'))?document.getElementById('errorMsg'):document.getElementById('setupError');
+            if (el) { el.textContent = msg; el.style.display = 'block'; }
+        }
+        function showSuccess(msg) {
+            const el = document.getElementById('successMsg');
+            el.textContent = msg; el.style.display = 'block';
+        }
+        function hideMsgs() {
+            const em = document.getElementById('errorMsg');
+            const sm = document.getElementById('successMsg');
+            if (em) em.style.display = 'none';
+            if (sm) sm.style.display = 'none';
+            const se = document.getElementById('setupError');
+            if (se) se.style.display = 'none';
+        }
+        function hideError() { const el = document.getElementById('errorMsg'); if(el) el.style.display = 'none'; }
+        function hideSuccess() { document.getElementById('successMsg').style.display = 'none'; }
+
+        function showAuthModal(tab){
+            document.getElementById('authModal').classList.add('active');
+            switchTab(tab||'register');
+            hideMsgs();
+        }
+        function closeAuthModal(){
+            document.getElementById('authModal').classList.remove('active');
+            hideMsgs();
+        }
+
+        function switchTab(tab) {
+            hideMsgs();
+            const tabs = document.querySelectorAll('#authModal .tab');
+            const forms = document.querySelectorAll('#authModal .auth-form');
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
+            const idx = { login:0, register:1, organizer:2 }[tab] || 0;
+            if (tabs[idx]) tabs[idx].classList.add('active');
+            const form = document.getElementById('form-'+tab);
+            if (form) form.classList.add('active');
+        }
+
+        function showLoading(msg) {
+            closeAuthModal();
+            document.getElementById('loadingScreen').style.display = 'block';
+            document.getElementById('loadingMsg').textContent = msg || 'Loading...';
+        }
+
+        let _activationUnsub = null;
+        function watchForActivation(collection, docId, slug, type) {
+            if (_activationUnsub) _activationUnsub();
+            _activationUnsub = db.collection(collection).doc(docId).onSnapshot(snap => {
+                if (!snap.exists) return;
+                const data = snap.data();
+                const isActive = type === 'organizer' ? data.activated === true : (data.status && data.status !== 'pending');
+                if (isActive) {
+                    if (_activationUnsub) { _activationUnsub(); _activationUnsub = null; }
+                    document.getElementById('waitingState').style.display = 'none';
+                    document.getElementById('activatedState').style.display = 'block';
+                    const portalUrl = window.location.origin + '/portal.html?venue=' + slug;
+                    document.getElementById('portalLinkDisplay').textContent = portalUrl;
+                }
+            }, err => console.warn('Activation watch error:', err));
+        }
+
+        async function login() {
+            hideMsgs();
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            if (!email || !pass) { showError('Enter email and password.'); return; }
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function forgotPassword() {
+            hideMsgs();
+            const email = document.getElementById('loginEmail').value.trim();
+            if (!email) { showError('Enter your email address first.'); return; }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('Password reset email sent. Check your inbox.');
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function registerVenue() {
+            hideMsgs();
+            const venue = document.getElementById('registerVenue').value.trim();
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const mobile = document.getElementById('registerMobile').value.trim();
+            const address = document.getElementById('registerAddress').value.trim();
+            const pass = document.getElementById('registerPass').value;
+            if (!venue || !name || !email || !mobile || !address || !pass) { showError('Fill in all fields.'); return; }
+            if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
+            if (!document.getElementById('registerConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
+            hideError();
+            showLoading('Checking for duplicates...');
+            try {
+                const venueLower = venue.toLowerCase();
+                // Check venue name in both venues and organizers collections
+                const [venueSnap, orgSnap, venueMobSnap, orgMobSnap] = await Promise.all([
+                    db.collection('venues').where('venueName','==','\uD83C\uDFCF ' + venue).get(),
+                    db.collection('organizers').where('name','==','\uD83C\uDFCF ' + venue).get(),
+                    db.collection('venues').where('mobile','==',mobile).get(),
+                    db.collection('organizers').where('mobile','==',mobile).get()
+                ]);
+                const nameExists = !venueSnap.empty || !orgSnap.empty;
+                const mobileExists = !venueMobSnap.empty || !orgMobSnap.empty;
+                if (nameExists && mobileExists) { showError('A venue with this name AND mobile number already exists. Please use a different name or contact support.'); return; }
+                if (nameExists) { showError('A venue with this name is already registered. Please choose a different venue name.'); return; }
+                if (mobileExists) { showError('This mobile number is already registered. Please use a different number or contact support.'); return; }
+                showLoading('Creating your account...');
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                const p = { uid: cred.user.uid, email, name, venue, mobile };
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupMsg').textContent = 'Setting up your venue...';
+                document.getElementById('setupScreen').style.display = 'block';
+                // Directly provision the venue
+                const slug = p.venue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'venue';
+                let finalSlug = slug;
+                let slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                let attempt = 0;
+                while (slugDoc.exists) {
+                    attempt++;
+                    finalSlug = slug + '-' + attempt;
+                    slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                }
+                const venueId = db.collection('venues').doc().id;
+                const defaultCourts = [];
+                const colors = ['#2563eb','#e056a0','#10b981','#f59e0b','#ef4444','#8b5cf6','#1abc9c','#e67e22'];
+                for (let i = 1; i <= 3; i++) {
+                    defaultCourts.push({
+                        id:i, name:'Court '+i, location:'Main Area', surface:'Hard',
+                        env:'Outdoor', color:colors[(i-1)%colors.length], rate:300,
+                        status:'available', players:[], startTime:null, gameType:null, desc:''
+                    });
+                }
+                await db.collection('venues').doc(venueId).set({
+                    ownerId: p.uid, name: '🏟️ ' + p.venue, venueName: '🏟️ ' + p.venue, slug: finalSlug, createdAt: Date.now(),
+                    courts: defaultCourts, queue: [], soloQueue: [], session: null,
+                    bookings: [], history: [], leaderboard: {}, sales: [],
+                    nextId: 100, nextBId: 1,
+                    status: 'active', mobile: p.mobile, ownerName: p.name, address: address,
+                    courtCount: 3,
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+                    referralCode: _referralCode || ''
+                });
+                await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, venueId, createdAt: Date.now(), mobile: p.mobile });
+                await db.collection('slugs').doc(finalSlug).set({ venueId });
+
+                // Send activation email
+                const ackNum = 'CQ-' + Date.now().toString(36).toUpperCase();
+                try {
+                    const cfg = await db.collection('config').doc('emailjs').get();
+                    if (cfg.exists) {
+                        const ej = cfg.data();
+                        emailjs.init(ej.publicKey);
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: p.email, to_name: p.name,
+                            subject: 'Your Venue "' + p.venue + '" is now LIVE! ✅',
+                            body: '✅ Great news! Your venue "' + p.venue + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your venue dashboard. Bookmark this page for quick access.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n\ud83c\udfdf\ufe0f Add your courts\n💰 Set your rates\n🎮️ Upload your logo\n💳 Add payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
+                        });
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
+                            subject: 'New Venue Registered (Auto-Approved): ' + p.venue,
+                            body: 'A new venue has been auto-approved:\n\nVenue: ' + p.venue + '\nOwner: ' + p.name + '\nEmail: ' + p.email + '\nMobile: ' + p.mobile + '\nSlug: ' + finalSlug + '\n\nView it in the Dev Dashboard.'
+                        });
+                    }
+                } catch(e) { console.warn('EmailJS send failed:', e); }
+
+                // Show success screen
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('successSubtitle').innerHTML = 'Your venue is now LIVE! ✅<br>You can start accepting bookings immediately.';
+                document.getElementById('successSteps').innerHTML = '1. Log in with your email and password<br>2. You\'ll find an onboarding checklist in your dashboard<br>3. Set up your courts, rates, and logo<br>4. A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is automatically added to online bookings — charged to players, not to you';
+                document.getElementById('successScreen').style.display = 'block';
+                document.getElementById('ackContent').innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
+                        <div style="color:#94a3b8;">Receipt #:</div><div style="font-weight:600;color:#2563eb;">${ackNum}</div>
+                        <div style="color:#94a3b8;">Venue:</div><div style="font-weight:600;">${escapeHtml(p.venue)}</div>
+                        <div style="color:#94a3b8;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
+                        <div style="color:#94a3b8;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
+                        <div style="color:#94a3b8;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
+                        <div style="color:#94a3b8;">Courts:</div><div style="font-weight:600;">3</div>
+                        <div style="color:#94a3b8;">Plan:</div><div style="font-weight:600;color:#10b981;">✨ Free Forever</div>
+                        <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#10b981;">✅ Active</div>
+                    </div>`;
+                watchForActivation('venues', venueId, finalSlug, 'venue');
+            } catch (e) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                showAuthModal('register');
+                showError(e.message);
+            }
+        }
+
+        function previewOrgId(e){
+            const file=e.target.files[0];
+            if(!file) return;
+            const div=document.getElementById('orgGovtIdPreview');
+            div.style.display='block';
+            div.querySelector('img').src=URL.createObjectURL(file);
+        }
+        async function registerOrganizer() {
+            hideMsgs();
+            const businessName = document.getElementById('orgBusinessName').value.trim();
+            const name = document.getElementById('orgName').value.trim();
+            const email = document.getElementById('orgEmail').value.trim();
+            const mobile = document.getElementById('orgMobile').value.trim();
+            const govtIdType = document.getElementById('orgGovtIdType').value;
+            const govtId = document.getElementById('orgGovtId').value.trim();
+            const govtIdFile = document.getElementById('orgGovtIdFile').files[0];
+            const pass = document.getElementById('orgPass').value;
+            if (!businessName || !name || !email || !mobile || !govtIdType || !govtId || !pass || !govtIdFile) { showError('Fill in all fields.'); return; }
+            if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
+            if (!document.getElementById('orgConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
+            hideError();
+            showLoading('Checking for duplicates...');
+            try {
+                const [orgNameSnap, venueNameSnap, orgMobSnap, venueMobSnap] = await Promise.all([
+                    db.collection('organizers').where('name','==','\uD83C\uDFCF ' + businessName).get(),
+                    db.collection('venues').where('venueName','==','\uD83C\uDFCF ' + businessName).get(),
+                    db.collection('organizers').where('mobile','==',mobile).get(),
+                    db.collection('venues').where('mobile','==',mobile).get()
+                ]);
+                const nameExists = !orgNameSnap.empty || !venueNameSnap.empty;
+                const mobileExists = !orgMobSnap.empty || !venueMobSnap.empty;
+                if (nameExists && mobileExists) { showError('A group with this name AND mobile number already exists. Please use a different name or contact support.'); return; }
+                if (nameExists) { showError('A group with this name is already registered. Please choose a different name.'); return; }
+                if (mobileExists) { showError('This mobile number is already registered. Please use a different number or contact support.'); return; }
+                showLoading('Creating your account...');
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupMsg').textContent = 'Uploading ID and setting up your account...';
+                document.getElementById('setupScreen').style.display = 'block';
+                // Upload govt ID to Cloudinary
+                let govtIdUrl = '';
+                try {
+                    const fd=new FormData();
+                    fd.append('file',govtIdFile);
+                    fd.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
+                    fd.append('public_id','org_ids/'+cred.user.uid);
+                    const r=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:fd});
+                    const d=await r.json();
+                    if(d.secure_url) govtIdUrl=d.secure_url;
+                } catch(e){ console.warn('ID upload failed:',e); }
+                const p = { uid: cred.user.uid, email, name, businessName, mobile, govtIdType, govtId, govtIdUrl };
+                const slug = p.businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organizer';
+                let finalSlug = slug;
+                let slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                let attempt = 0;
+                while (slugDoc.exists) {
+                    attempt++;
+                    finalSlug = slug + '-' + attempt;
+                    slugDoc = await db.collection('slugs').doc(finalSlug).get();
+                }
+                const organizerId = db.collection('organizers').doc().id;
+                await db.collection('organizers').doc(organizerId).set({
+                    ownerId: p.uid, name: '🏟️ ' + p.businessName, venueName: '🏟️ ' + p.businessName,
+                    slug: finalSlug, createdAt: Date.now(),
+                    ownerName: p.name, mobile: p.mobile, email: p.email,
+                    govtId: p.govtId, govtIdType: p.govtIdType, govtIdUrl: p.govtIdUrl,
+                    activated: true, courtCount: 4,
+                    session: null, queue: [], soloQueue: [], scheduledSessions: [],
+                    history: [], leaderboard: {}, sales: [],
+                    nextId: 100,
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+                    referralCode: _referralCode || ''
+                });
+                await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, organizerId, createdAt: Date.now(), mobile: p.mobile });
+                await db.collection('slugs').doc(finalSlug).set({ organizerId, type: 'organizer' });
+                const ackNum = 'CQO-' + Date.now().toString(36).toUpperCase();
+                try {
+                    const cfg = await db.collection('config').doc('emailjs').get();
+                    if (cfg.exists) {
+                        const ej = cfg.data();
+                        emailjs.init(ej.publicKey);
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: p.email, to_name: p.name,
+                            subject: 'Your Organizer "' + p.businessName + '" is now LIVE! ✅',
+                            body: '✅ Great news! Your organizer account "' + p.businessName + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your organizer dashboard.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n🎮️ Add your photo\n💳 Set payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
+                        });
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
+                            subject: 'New Organizer Registered (Auto-Approved): ' + p.businessName,
+                            body: 'A new organizer has been auto-approved:\n\nGroup: ' + p.businessName + '\nName: ' + p.name + '\nEmail: ' + p.email + '\nMobile: ' + p.mobile + '\nGovt ID: ' + p.govtIdType + ' - ' + p.govtId + '\nID Image: ' + (p.govtIdUrl||'Upload failed') + '\nSlug: ' + finalSlug + '\n\nView it in the Dev Dashboard.'
+                        });
+                    }
+                } catch(e) { console.warn('EmailJS send failed:', e); }
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('successSubtitle').innerHTML = 'Your organizer account is now LIVE! ✅<br>You can start hosting Open Play sessions immediately.';
+                document.getElementById('successSteps').innerHTML = '1. Log in with your email and password<br>2. You\'ll find an onboarding checklist in your dashboard<br>3. Set up your photo, payment details, and first session<br>4. A <strong style="color:#2563eb;">₱5/player fee</strong> is added to each Open Play booking — paid by the player, not by you';
+                document.getElementById('successScreen').style.display = 'block';
+                document.getElementById('ackContent').innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
+                        <div style="color:#94a3b8;">Receipt #:</div><div style="font-weight:600;color:#2563eb;">${ackNum}</div>
+                        <div style="color:#94a3b8;">Group:</div><div style="font-weight:600;">${escapeHtml(p.businessName)}</div>
+                        <div style="color:#94a3b8;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
+                        <div style="color:#94a3b8;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
+                        <div style="color:#94a3b8;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
+                        <div style="color:#94a3b8;">Plan:</div><div style="font-weight:600;color:#10b981;">✨ Free Forever</div>
+                        <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#10b981;">✅ Active</div>
+                    </div>`;
+                watchForActivation('organizers', organizerId, finalSlug, 'organizer');
+            } catch (e) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                showAuthModal('organizer');
+                showError(e.message);
+            }
+        }
+
+        // ── Demo lead capture ──
+        const DISPOSABLE_DOMAINS = new Set([
+            '10minutemail.com','10minemail.com','1ce.us','1chirp.com','1pad.de','1st-forex.com',
+            '2ether.net','2prong.com','30minutemail.com','33mail.com','3d-painting.com',
+            '4warding.com','4warding.net','4warding.org','5mail.cf','5mail.co','5mail.ga',
+            '5mail.gq','5minutemail.net','6paq.com','7tags.com','9ox.net','a-bc.net',
+            'ajaxapp.net','amilegit.com','amoremail.com','anonymail.me','anonbox.net',
+            'anonymousemail.me','anonymouse.org','antireg.com','antispam24.de','armyspy.com',
+            'asdasd.nl','asdasd.ru','at0mik.org','auti.st','avastc.com','awatum.de',
+            'azazazatashkent.tk','b1of96u.com','badtrahix.biz','baxomale.ht.cx','beefmilk.com',
+            'binkmail.com','bio-muesli.info','blip.ch','bluebottle.com','bofthew.biz',
+            'bonobo.email','boopity.skin','boun.cr','bounce2020.com','boxformail.com',
+            'brefmail.com','brennendesreich.de','brkzr.de','bund.us','bunsenhoneydew.com',
+            'burnthespam.info','buyusedlibrarybooks.org','c2.hu','candymail.de','casualdx.com',
+            'cbair.com','cek.pm','cellurl.com','centermail.com','centermail.net',
+            'chacuo.net','chibakenma.ml','chicmail.me','choicemail1.com','classicalk.com',
+            'clrmail.com','cmail.com','cnmsg.net','cobarekyo1.ml','cool.fr.nf','correo.blogos.net',
+            'cosmorph.com','courriel.fr.nf','courrieltemporaire.com','crapmail.org','crazymailing.com',
+            'cubiclink.com','curryworld.de','cust.in','cutout.club','cybers-romance.com',
+            'dab.ro','dacoolest.com','dandikmail.com','dayrep.com','deadaddress.com',
+            'deadspam.com','de-fake.instafly.cf','delikkt.de','der-kombi.de','devnullmail.com',
+            'dfgh.net','digiprice.digital','discard.email','discard.ga','discordmail.com',
+            'disposable-email.ml','disposable.dnyappa.com','disposable4.me','dispose.it',
+            'dispostable.com','dm.w3internet.co.uk','dndent.com','dodgeit.com','doiea.com',
+            'dolphinnet.net','domforfb1.tk','domforfb2.tk','domforfb3.tk','domforfb4.tk',
+            'domforfb5.tk','domforfb6.tk','domforfb7.tk','domforfb8.tk','domozmail.com',
+            'dot-ml.ml','dotmsg.com','dr69.site','drdrb.net','dspam.com','dstngr.com',
+            'dumb1.com','dump-email.info','dumpmail.de','dumpmail.me','dumpyemail.com',
+            'e4ward.com','easy-trash-mail.com','einrot.com','email60.com','emailage.cf',
+            'emailage.ga','emailage.gq','emailfake.ml','emailfake.nut.cc','emailfreedom.ml',
+            'emailgenerator.de','emailgo.de','emailias.com','emailigo.de','emailinfive.com',
+            'emaillime.com','emailmiser.com','emailnator.com','emailondeck.com','emailproxsy.com',
+            'emails.ga','emails.incisivowebservices.co.uk','emailshelter.com','emailtemp.org',
+            'emailto.de','emailtmp.com','emailwarden.com','emailx.at','emailx.de','emailx.org',
+            'emailya.net','emz.net','enayu.com','ephemeral.email','etere.com','eth2btc.info',
+            'ether123.net','everytg.ml','exbte.com','expirebox.com','explodemail.com',
+            'fake-email.pp.ua','fake-mail.cf','fake-mail.ga','fake-mail.ml','fakedemail.com',
+            'fakeinbox.cf','fakeinbox.com','fakeinbox.ga','fakeinbox.ml','fakemail.fr',
+            'fakemail.io','fakemailgenerator.com','fakemailz.com','fastacura.com','fastkawasaki.com',
+            'fastmazda.com','fastmitsubishi.com','fastnissan.com','fastsubaru.com','fastsuzuki.com',
+            'fasttoyota.com','fastyamaha.com','fatflap.com','fdfdsfds.com','fightallspam.com',
+            'fiifke.de','filzmail.com','fivemail.de','fixmail.tk','fizmail.com','fleckens.de',
+            'flyinggeek.net','forgetmail.com','fr33mail.info','freakmail.de','freeschool.email',
+            'freemail.tm','freemail.hu','freemails.cf','freemails.ga','freemails.ml',
+            'freezzzm.site','friendlymail.co.uk','front14.org','fuckingduh.com','fuwamofu.com',
+            'fxnxs.com','g00g.indield.com','garrymccooey.com','getairmail.com','getmails.eu',
+            'getnada.com','getnowmail.com','getonemail.com','gishpuppy.com','glubex.com',
+            'gmial.com','gmx.us','goemailgo.com','gomail.in','gorillaswithdirtyarmpits.com',
+            'gotmail.com','gotmail.org','grr.la','gsrv.co.uk','guerillamail.biz','guerillamail.com',
+            'guerillamail.de','guerillamail.info','guerillamail.net','guerillamail.org',
+            'guerillamailblock.com','gustr.com','h8s.org','haltospam.com','harakirimail.com',
+            'hartbot.de','hatespam.org','hellodino.ml','herp.in','hidemail.de','hochsitze.com',
+            'hotpop.com','hstermail.com','hulapla.de','ieatspam.eu','ieatspam.info',
+            'ignoremail.com','ihateyoualot.info','ikbenspamvrij.nl','ilovespam.co.uk',
+            'imails.info','imgjar.com','imstations.com','inbax.tk','inbox.si','inboxalias.com',
+            'inboxbear.com','inboxclean.com','inboxclean.org','inboxed.im','inboxkitten.com',
+            'inboxproxy.com','incognitomail.com','incognitomail.net','incognitomail.org',
+            'ind.st','inoutmail.de','inoutmail.eu','inoutmail.info','ip6.li','ipoo.org',
+            'irish2me.com','iwi.net','jafps.com','jajxz.com','jetable.com','jetable.net',
+            'jetable.org','jmail.com','jopho.com','jungkamushukum.com','kademen.com',
+            'kadokawa.cf','kapoorweb.com','killmail.com','killmail.net','kiois.com','klassmaster.com',
+            'klassmaster.net','kldfkd.com','kmail.mooo.com','kms0rc.com','knolpower.nl',
+            'koszmail.pl','kulturbetrieb.info','kurzepost.de','laossm.com','lastmail.co',
+            'lazyinbox.com','legitmail.club','letthemeatspam.com','lhsdv.com','linuxmail.so',
+            'litedrop.com','lkgn.se','loadby.us','loan101.pro','loin.in','lol.ovpn.to',
+            'lolfreak.net','lookugly.com','lopl.co.cc','lortemail.dk','lovemeet.faith',
+            'lpfmgmtltd.com','lr78.com','lroid.com','lukecarriere.com','luv2.us','m4ilweb.info',
+            'mabjbo.com','mail-online.ga','mail-temp.com','mail1a.de','mail21.cc','mail2rss.org',
+            'mail333.com','mail4trash.com','mail666.ru','mail7.io','mailabp.com','mailbiz.biz',
+            'mailbucket.org','mailcat.biz','mailcatch.com','mailde.de','mailde.info',
+            'maildrop.cc','maildu.de','maildx.com','maileater.com','mailexpire.com',
+            'mailfa.tk','mailforspam.com','mailfree.ga','mailfree.gq','mailfs.com','mailguard.me',
+            'mailgutter.com','mailhazard.com','mailhazard.us','mailhex.com','mailhook.com',
+            'mailhub.top','mailimate.com','mailin8r.com','mailincubator.com','mailinator.co.uk',
+            'mailinator.com','mailinator.gq','mailinator.info','mailinator.net','mailinator.org',
+            'mailinator.us','mailinator2.com','mailincloud.com','mailinterest.com','mailismagic.com',
+            'mailjunk.org','mailmate.com','mailme.ga','mailme.gq','mailmetrash.com','mailmoat.com',
+            'mailmoth.com','mailnator.com','mailnesia.com','mailnull.com','mailonaut.com',
+            'mailorc.com','mailorg.org','mailox.fun','mailpick.biz','mailpooch.com','mailproxsy.com',
+            'mailquack.com','mailrocket.biz','mailsac.com','mailscrap.com','mailseal.de','mailshiv.com',
+            'mailsloth.net','mailspam.xyz','mailspam.me','mailspam.net','mailspam.org',
+            'mailexpire.com','mailtemp.net','mailtemporaire.com','mailtester.com','mailto.plus',
+            'mailtothis.com','mailtrey.com','mailtrash.net','mailtv.net','mailtv.tv','mailuniverse.co.uk',
+            'mailv2.com','mailwaste.com','mailwithyou.com','mailzilla.org','makemetheking.com',
+            'manybrain.com','mbt01.com','mbx.cc','mciek.com','mega.zik.dj','meinspamschutz.de',
+            'messagebeamer.de','messwiththebestdielikethe.rest','mhzayt.online','midcoastcustoms.com',
+            'midcoastcustoms.net','millionaireintraining.com','mindless.com','mini-mail.net',
+            'mintemail.com','misterpinball.com','mjukglass.nu','mkpfilm.com','ml8.ca',
+            'mobilevpn.top','moii3z.buzz','moolee.ru','mox.pp.ua','mrresourcepacks.com',
+            'msa.minsmail.com','mt2009.com','mtmdev.com','mx0.wwwnew.eu','my10minutemail.com',
+            'mycleaninbox.net','myde.ml','myemailboxy.com','myfake.cable.nu','myfake.info',
+            'myinteriasthai.com','mykazakhstansite.com','mymailoasis.com','myphantomemail.com',
+            'myspamless.com','mytemp.email','mytempemail.com','mytruemail.net','n1nja.org',
+            'negated.com','neomailbox.com','nepwk.com','nervmich.net','netscapet.net',
+            'neverbox.com','nextpwr.com','nicebush.com','nicewood.com','nincsmail.hu',
+            'nnh.com','nnot.net','no-spam.ws','nobulk.com','noclickemail.com','nokiamail.com',
+            'noopmail.org','noref.in','nospam.ze.tc','nospam4.us','nospamfor.us','nospamthanks.info',
+            'nothingtoseehere.ca','nowhere.org','nowmymail.com','ntlhelp.net','nwldx.com',
+            'o2stk.org','obobbo.com','odaymail.com','ohiotaxfixer.com','oida.icu','oistato.com',
+            'okrent.org','olypmall.ru','omail.pro','omnievents.org','one-time.email','one2mail.info',
+            'oneoffemail.com','oneoffmail.com','onlatedotcom.info','online.xyz','onmail.win',
+            'opayq.com','ordinaryamerican.net','otherinbox.com','outlawspam.com','ovpn.to',
+            'owlpic.com','pa9e.com','pagamenti.tk','pancakemail.com','paplease.com','paris2k.xyz',
+            'pcusers.otherinbox.com','pepbot.com','pfui.ru','phentermine-mortgage-news-viagra.biz',
+            'pig.pp.ua','pincoffee.com','pinkrabbit.skin','pjjkp.com','plexolan.de','pluno.com',
+            'pojok.ml','pokemail.net','polarkingxx.ml','ponp.in','ppetw.com','premyum.com',
+            'prin.be','privacy.net','privy-mail.com','privy-mail.de','privymail.de','proxymail.eu',
+            'prtz.eu','psoxs.com','puppetmail.de','put2.net','putthisinyourspamdatabase.com',
+            'pwrby.com','quickmail.in','qvy.me','qwickmail.com','r0.icyb.net.au','r4nd0m.de',
+            'r8yqnp1.com','rainbowly.ml','rakx.de','randomail.net','rarefind.com','rax.la',
+            'rbb.org','rcpt.at','receiveee.com','receptive.sale','reconmail.com','recyclemail.dk',
+            'reddit.ois.workers.dev','regbypass.com','regspaces.tk','rejo.technology','reliable-mail.com',
+            'remail.cf','remail.ga','rhyta.com','richfinances.pw','rm2lf.com','robertspcrepair.com',
+            'rollindo.agency','ronnierage.net','rotaniliam.com','rover.info','rtrtr.com',
+            's0ny.net','safe-mail.net','safersignup.com','safetymail.info','safetypost.de',
+            'sandelf.de','saynotospams.com','scam-mail.cf','scatmail.com','schachrol.com',
+            'schmeissweg.tk','sd3.in','secmail.pw','secretarea.net','secure-mail.biz',
+            'selfdestructingmail.com','selfdestructingmail.org','sendfree.org','sendhere.ru',
+            'sendspam.org','senseless-entertainment.com','server.ms','services.virus.nl',
+            'shararmail.ml','sharklasers.com','shieldedmail.com','shmeriously.com','shortmail.net',
+            'shotmail.ru','showslow.de','sibmail.com','sinnlos-mail.de','siteposter.net',
+            'skeefmail.com','skrx.tk','slapsfromlastnight.com','slaskpost.se','slave-auctions.net',
+            'slopsbox.com','slushmail.com','smashmail.de','smellfear.com','smellypotato.tk',
+            'smtp33.com','snakware.com','snapwet.com','sneakemail.com','sneakerbunko.ml',
+            'snkmail.com','sofort-mail.de','sogetthis.com','sohu.com','solvemail.info',
+            'spam-be-gone.com','spam.la','spam.su','spam4.me','spamail.de','spamarrest.com',
+            'spamavert.com','spambob.com','spambob.net','spambob.org','spambog.com','spambog.de',
+            'spambog.net','spambog.ru','spambox.info','spambox.irishspringrealty.com','spambox.us',
+            'spamcannon.com','spamcannon.net','spamcero.com','spamcon.org','spamcorptastic.com',
+            'spamcowboy.com','spamcowboy.net','spamcowboy.org','spamday.com','spamex.com',
+            'spamfree24.com','spamfree24.de','spamfree24.eu','spamfree24.info','spamfree24.net',
+            'spamfree24.org','spamgoes.in','spamgourmet.com','spamgourmet.net','spamgourmet.org',
+            'spamherelots.com','spamhereplease.com','spamhole.com','spamify.com','spaminator.de',
+            'spamkill.info','spaml.com','spamlot.net','spammbox.com','spammehere.com',
+            'spammehere.net','spammotel.com','spammy.host','spamobox.com','spamoff.de',
+            'spamsalad.in','spamslicer.com','spamspot.com','spamstack.net','spamthis.co.uk',
+            'spamthisplease.com','spamtrail.com','spamtroll.net','speed.1s.fr','spoofmail.de',
+            'squizzy.ml','ssoia.com','startfu.com','stinkefinger.net','stop-my-spam.com',
+            'streetwisemail.com','suckmyd.com','sunilbajpai.com','super-auswahl.de','supergreatmail.com',
+            'supermailer.jp','superplatyna.com','suportegen.com','surfings.ru','susanoo.jp',
+            'sute.jp','svxr.org','sweetxxx.de','tafmail.com','tagmymedia.com','talkinator.com',
+            'tanukis.org','tapchicuoihoi.com','teewars.org','telefonkostenlos.de','telegmail.com',
+            'teleworm.com','teleworm.us','temp-emails.com','temp-mail.com','temp-mail.de',
+            'temp-mail.org','temp-mail.ru','tempail.com','tempemail.biz','tempemail.co.za',
+            'tempemail.com','tempemail.net','tempinbox.co.uk','tempinbox.com','tempmail.co',
+            'tempmail.de','tempmail.eu','tempmail.info','tempmail.io','tempmail.net',
+            'tempmail.space','tempmail.top','tempmail.us','tempmail2.com','tempmaildemo.com',
+            'tempmailer.com','tempomail.fr','temporarily.de','temporarioemail.com.br',
+            'temporary-email.com','temporary-email.world','temporaryemail.net','temporaryemail.us',
+            'temporaryforwarding.com','temporaryinbox.com','temporarymail.org','thankyou2010.com',
+            'thc.st','thembones.com.au','themostemail.com','thisisnotmyrealemail.com',
+            'thismail.net','thnikka.com','thrma.com','throam.com','throwaway.email','throwaway.io',
+            'throwaway.mailinator.com','throwawayemail.com','tilien.com','timgiarevn.com',
+            'tmpeml.info','tmpjr.me','toddsbighug.com','toiea.com','tokem.co','top101.de',
+            'topranklist.de','tormail.org','trandpet.com','trash-2009.com','trash-dev.at',
+            'trash-me.com','trash2009.com','trash2010.com','trash2011.com','trash247.com',
+            'trashbox.eu','trashcanmail.com','trashdevil.de','trashemail.de','trashemails.de',
+            'trashinbox.com','trashmail.at','trashmail.com','trashmail.de','trashmail.ga',
+            'trashmail.gq','trashmail.io','trashmail.me','trashmail.net','trashmail.org',
+            'trashmail.ws','trashmailer.com','trashmails.com','trashymail.com','trashymail.net',
+            'trbvm.com','trialmail.de','trillianpro.com','tryalert.com','turual.com',
+            'twinmail.de','twoweirdtacos.com','tyldd.com','uggsrock.com','uk.to','umail.net',
+            'undo.it','unlimit.ml','unmail.ru','upliftnow.com','uplipht.com','uploadnolimit.com',
+            'urfunktion.se','uroid.com','us.af','ux.dob.jp','uyhip.com','v10mail.com',
+            'valemail.net','vanbil.tk','vevs.de','vgmails.com','viralplays.com','vjtimail.com',
+            'vnedu.me','voidbay.com','vomoto.com','vpn99.top','vsimcard.com','vssms.com',
+            'vw-cc.com','vxmail.net','w3internet.co.uk','walala.org','wantplay.site',
+            'wasd.10mail.org','webm4il.info','webmail.ericyi.com','weg-werf-email.de','wegwerf-emails.de',
+            'wegwerfmail.de','wegwerfmail.info','wegwerfmail.net','wegwerfmail.org','wegwerfmailadresse.com',
+            'wh4f.org','whatifas.tk','whippedmuffin.com','whyspam.me','williamcastillo.me',
+            'winemaven.info','wlist.ro','wmail.cf','wmail.ga','wmail.gq','wokcy.com',
+            'wolfsmail.tk','work4freedom.com','wronghead.com','wuzup.net','xagloo.com','xemaps.com',
+            'xents.com','xmaily.com','xoxy.net','xwaretech.com','xww.ro','xyzfree.net',
+            'yapped.net','ybers.eu','yep.it','yogamaven.com','yomail.info','yopmail.com',
+            'yopmail.fr','yopmail.gq','yopmail.net','yopmail.org','ypmail.webarnak.fr.eu.org',
+            'ytbmit.com','yuurok.com','zehnminutenmail.de','zetmail.com','zippymail.info',
+            'zoaxe.com','zoemail.com','zoemail.net','zoemail.org','zomg.info','zxcv.com',
+            'zxcvbnm.com','zzz.com'
+        ]);
+        const DEMO_LEAD_COOLDOWN_MS = 5 * 60 * 1000; // 5 min between demo lead saves per email
+
+        function openDemoLeadForm(){
+            hideMsgs();
+            document.getElementById('demoLeadForm').style.display = 'block';
+            document.getElementById('demoLeadSuccess').style.display = 'none';
+            document.getElementById('demoLeadError').style.display = 'none';
+            document.getElementById('demoLeadName').value = '';
+            document.getElementById('demoLeadEmail').value = '';
+            document.getElementById('demoLeadPhone').value = '';
+            document.getElementById('demoLeadSchedule').value = '';
+            document.getElementById('demoLeadConsent').checked = false;
+            document.getElementById('demoLeadModal').classList.add('active');
+        }
+
+        function closeDemoLead(){
+            document.getElementById('demoLeadModal').classList.remove('active');
+        }
+
+        async function submitDemoLead(){
+            const name = document.getElementById('demoLeadName').value.trim();
+            const email = document.getElementById('demoLeadEmail').value.trim();
+            const phone = document.getElementById('demoLeadPhone').value.trim();
+            const schedule = document.getElementById('demoLeadSchedule').value.trim();
+            const errEl = document.getElementById('demoLeadError');
+            errEl.style.display = 'none';
+            if(!name || !email || !phone){ errEl.textContent = 'Fill in all required fields.'; errEl.style.display = 'block'; return; }
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!re.test(email)){ errEl.textContent = 'Enter a valid email address.'; errEl.style.display = 'block'; return; }
+            const domain = email.split('@')[1].toLowerCase();
+            if(DISPOSABLE_DOMAINS.has(domain)){
+                errEl.textContent = 'Temporary or disposable emails are not allowed. Please use your real email address.';
+                errEl.style.display = 'block';
+                return;
+            }
+            if(!document.getElementById('demoLeadConsent').checked){
+                errEl.textContent = 'You must agree to the Privacy Policy and Terms of Service.';
+                errEl.style.display = 'block';
+                return;
+            }
+            try {
+                const docRef = db.collection('demoLeads').doc();
+                await docRef.set({
+                    name, email, phone, schedule: schedule || '', verified: true, source: 'book-demo',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('demoLeadForm').style.display = 'none';
+                document.getElementById('demoLeadSuccess').style.display = 'block';
+            } catch(e) {
+                errEl.textContent = 'Something went wrong: ' + e.message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        async function startDemo(leadId) {
+            hideMsgs();
+            if(!leadId){
+                showError('Invalid demo request.');
+                return;
+            }
+            document.getElementById('demoBadge').style.display = 'block';
+            showLoading('Creating demo venue...');
+            try {
+                // Clean up demos older than 4 hours and check concurrency limit
+                const demoSnap = await db.collection('venues').where('ownerId','==','demo').get();
+                const ONE_HOUR = 60 * 60 * 1000;
+                const now = Date.now();
+                let activeDemos = 0;
+                const deletes = [];
+                demoSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (now - (data.createdAt||0) > ONE_HOUR) {
+                        deletes.push(doc.ref.delete());
+                        // Also delete slug
+                        if (data.slug) {
+                            deletes.push(db.collection('slugs').doc(data.slug).delete());
+                        }
+                    } else {
+                        activeDemos++;
+                    }
+                });
+                try { await Promise.all(deletes); } catch(_) { /* cleanup best-effort */ }
+                if (activeDemos >= 5) {
+                    showAuthModal('register');
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    showError('Too many active demos right now. Please try again later.');
+                    return;
+                }
+                const slug = 'demo-' + crypto.randomUUID();
+                const venueId = db.collection('venues').doc().id;
+                const defaultCourts = [
+                    {id:1,name:'Court 1',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#2563eb',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:2,name:'Court 2',location:'Main Area',surface:'Hard',env:'Outdoor',color:'#e056a0',rate:35,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                    {id:3,name:'Court 3',location:'East Wing',surface:'Clay',env:'Outdoor',color:'#10b981',rate:40,status:'available',players:[],startTime:null,gameType:null,desc:''},
+                ];
+                await db.collection('venues').doc(venueId).set({
+                    ownerId: 'demo', name: '🏟️ Demo Venue', slug, createdAt: Date.now(),
+                    courts: defaultCourts, queue: [], soloQueue: [], session: null,
+                    bookings: [], history: [], leaderboard: {}, sales: [],
+                    nextId: 100, nextBId: 1,
+                    paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}}
+                });
+                await db.collection('slugs').doc(slug).set({ venueId });
+                // Mark lead as used (best-effort, rules may deny update)
+                db.collection('demoLeads').doc(leadId).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+                // Tag this session as having started a demo
+                if (_demoSessionId) {
+                  db.collection('demo_sessions').doc(_demoSessionId).update({
+                    startedDemo: true, demoVenueId: venueId, demoVenueName: '🏟️ Demo Venue'
+                  }).catch(() => {});
+                }
+                window.location.href = 'admin.html?venue=' + slug;
+            } catch (e) {
+                showAuthModal('register');
+                document.getElementById('loadingScreen').style.display = 'none';
+                showError('Demo failed: ' + e.message);
+            }
+        }
+
+        // Auto-redirect if already logged in
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        const data = userDoc.data();
+                        if (data.venueId) {
+                            const venueDoc = await db.collection('venues').doc(data.venueId).get();
+                            if (venueDoc.exists) {
+                                window.location.href = 'admin.html?venue=' + venueDoc.data().slug;
+                                return;
+                            }
+                        }
+                        if (data.organizerId) {
+                            const orgDoc = await db.collection('organizers').doc(data.organizerId).get();
+                            if (orgDoc.exists) {
+                                window.location.href = 'admin.html?venue=' + orgDoc.data().slug;
+                                return;
+                            }
+                        }
+                    }
+                    // Redirect staff/co-owner by email match
+                    const venuesSnap = await db.collection('venues').get();
+                    for (const d of venuesSnap.docs) {
+                        const v = d.data();
+                        if ((v.staffEmails||[]).includes(user.email) || (v.ownerEmails||[]).includes(user.email)) {
+                            window.location.href = 'admin.html?venue=' + v.slug;
+                            return;
+                        }
+                    }
+                } catch(e) {}
+            }
+        });
+        function closeLegal(){document.getElementById('legalModal').classList.remove('active');}
+        function showLegal(page){
+            const c=document.getElementById('legalContent');
+            const pages={
+                about:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2>
+                <p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
+                <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p>
+                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a><br>📱 0999 883 0291 (GCash / Maya)</p>`,
+
+                privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
+                <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you book a demo, we collect your name, email address, phone number, and preferred schedule.</p>
+                <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by replying to any email or contacting us.</p>
+                <p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p>
+                <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion. We retain booking data as needed for business operations and financial records.</p>
+                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p>
+                <p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p>
+                <p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p>
+                <p><em>Last updated: July 2026</em></p>`,
+
+                terms:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2>
+                <p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. By checking the consent checkbox during sign-up or demo registration, you explicitly accept these terms and our Privacy Policy. If you do not agree, do not use the platform.</p>
+                <p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p>
+                <p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue's discretion.</p>
+                <p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p>
+                <p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p>
+                <p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p>
+                <p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p>
+                <p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p>
+                <p><em>Last updated: July 2026</em></p>`,
+
+                disclaimer:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2>
+                <p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p>
+                <p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p>
+                <p><strong>Payment:</strong> CourtQ Pro does not process payments. GCash and Maya are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p>
+                <p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p>
+                <p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>`,
+
+                contact:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2>
+                <p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a></p>
+                <p><strong>Phone:</strong> 📱 0999 883 0291</p>
+                <p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#2563eb;">facebook.com/aiautomationexpert</a></p>
+                <p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p>
+                <p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p>
+                <p style="margin-top:16px;font-size:0.72rem;color:#64748b;">Apex Mind Agency<br>Talisay City, Cebu, Philippines</p>`
+            };
+            c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
+            document.getElementById('legalModal').classList.add('active');
+        }
+    </script>
+    <script>
+        (function () {
+            var slides = document.querySelectorAll('.hero-slide');
+            var current = 0;
+            setInterval(function () {
+                slides[current].classList.remove('active');
+                current = (current + 1) % slides.length;
+                slides[current].classList.add('active');
+            }, 6000);
+        })();
+    </script>
+</body>
+</html>

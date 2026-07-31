@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Court</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4528294526114802"
+     crossorigin="anonymous"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 50%, #cbd5e1 100%);
+            min-height: 100vh; color: #1e293b;
+        }
+        header {
+            background: rgba(0,0,0,0.04);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 12px 20px;
+            display: flex; justify-content: center; align-items: center;
+            position: sticky; top: 0; z-index: 200;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 800; color: #2563eb; }
+        .pro-badge {
+            background: linear-gradient(135deg,#f59e0b,#d68910);
+            color:#1e293b; font-size:0.55rem; padding:2px 6px;
+            border-radius:6px; font-weight:800; letter-spacing:1px;
+        }
+        #venueNameDisplay { font-size: 0.85rem; color: #94a3b8; font-weight: 400; }
+        #venueNameDisplay img, .receipt-box img { max-height: 28px; width: auto; vertical-align: middle; }
+        #heroVenueName img.hero-logo-img { max-height: none; }
+
+        .page { padding: 20px; max-width: 900px; margin: 0 auto; }
+
+        .card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px; padding: 24px; margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 0.95rem; font-weight: 700; color: #2563eb;
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 16px; text-align: center;
+        }
+
+        .landing-hero { text-align: center; padding: 40px 20px; }
+        .landing-hero .icon { font-size: 4rem; margin-bottom: 12px; }
+        .landing-hero h1 { font-size: 2rem; font-weight: 800; color: #2563eb; margin-bottom: 6px; }
+        .landing-hero .hero-logo-img { display:block; margin:0 auto 16px auto; height:120px; width:auto; border-radius:12px; object-fit:contain; }
+        .landing-hero p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 24px; }
+
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 10px;
+            font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s; display: inline-flex;
+            align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-full { width: 100%; justify-content: center; }
+        .btn-primary { background: linear-gradient(135deg,#2563eb,#44a08d); color:#1e293b; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(37,99,235,0.4); }
+        .btn-success { background: linear-gradient(135deg,#10b981,#27ae60); color:#1e293b; }
+        .btn-outline { background:transparent; border:1px solid rgba(0,0,0,0.15); color:#94a3b8; }
+        .btn-outline:hover { background:rgba(0,0,0,0.06); color:#1e293b; }
+        .btn-lg { padding: 16px 44px; font-size: 1.1rem; border-radius: 16px; }
+        .btn-sm { padding: 5px 10px; font-size: 0.72rem; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block; font-size: 0.75rem; color: #94a3b8;
+            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px 14px;
+            background: rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 10px; color: #1e293b; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #2563eb; background: rgba(37,99,235,0.08);
+        }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: #64748b; }
+        .form-group select option { background: #f0f2f5; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* COURT PICKER */
+        .court-picker-grid {
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px;
+        }
+        .court-picker-card {
+            background:rgba(0,0,0,0.04);
+            border:2px solid rgba(0,0,0,0.1);
+            border-radius:12px; padding:14px; cursor:pointer;
+            transition:all 0.3s; text-align:center;
+        }
+        .court-picker-card:hover { border-color:rgba(37,99,235,0.4); background:rgba(37,99,235,0.06); }
+        .court-picker-card.selected { border-color:#2563eb; background:rgba(37,99,235,0.12); }
+        .court-picker-card.unavailable { opacity:0.4; cursor:not-allowed; }
+        .court-picker-card.unavailable:hover { border-color:rgba(0,0,0,0.1); background:rgba(0,0,0,0.04); }
+
+        /* SLOT PICKER */
+        .slot-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; }
+        .slot-btn {
+            padding:10px 6px; border-radius:10px; text-align:center;
+            border:2px solid rgba(0,0,0,0.1);
+            background:rgba(0,0,0,0.03);
+            cursor:pointer; transition:all 0.3s; font-size:0.78rem;
+        }
+        .slot-btn:hover { border-color:rgba(37,99,235,0.4); background:rgba(37,99,235,0.06); }
+        .slot-btn.selected { border-color:#2563eb; background:rgba(37,99,235,0.15); color:#2563eb; font-weight:700; }
+        .slot-btn.taken { opacity:0.3; cursor:not-allowed; background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.2); }
+        .slot-btn.taken:hover { border-color:rgba(239,68,68,0.2); background:rgba(239,68,68,0.08); }
+
+        /* PAYMENT */
+        .pay-methods { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+        .pay-btn {
+            padding:14px; border-radius:12px; text-align:center;
+            border:2px solid rgba(0,0,0,0.1);
+            background:rgba(0,0,0,0.03);
+            cursor:pointer; transition:all 0.3s;
+        }
+        .pay-btn:hover { border-color:rgba(37,99,235,0.4); }
+        .pay-btn.selected { border-color:#2563eb; background:rgba(37,99,235,0.12); }
+        .pay-icon { font-size:1.8rem; display:block; margin-bottom:4px; }
+        .pay-name { font-size:0.8rem; font-weight:700; }
+        .pay-desc { font-size:0.65rem; color:#94a3b8; }
+
+        /* PORTAL OVERLAY */
+        .portal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.85); z-index:800;
+            align-items:center; justify-content:center; padding:20px;
+            overflow-y:auto;
+        }
+        .portal-overlay.active { display:flex; }
+        .portal-container {
+            background:linear-gradient(135deg,#f0f2f5,#cbd5e1);
+            border:1px solid rgba(37,99,235,0.3);
+            border-radius:24px; padding:0;
+            max-width:900px; width:100%;
+            animation:portalIn 0.4s ease-out;
+            max-height:90vh; overflow-y:auto;
+        }
+        @keyframes portalIn { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+        .portal-header {
+            background:linear-gradient(135deg,rgba(37,99,235,0.15),rgba(44,160,141,0.1));
+            border-bottom:1px solid rgba(37,99,235,0.2);
+            padding:24px 28px; border-radius:24px 24px 0 0;
+            display:flex; justify-content:space-between; align-items:center;
+        }
+        .portal-body { padding:24px 28px; }
+        .portal-steps {
+            display:flex; gap:0; margin-bottom:24px;
+            border-radius:12px; overflow:hidden;
+            border:1px solid rgba(0,0,0,0.1);
+        }
+        .portal-step {
+            flex:1; padding:10px; text-align:center;
+            background:rgba(0,0,0,0.025);
+            font-size:0.78rem; color:#64748b; font-weight:600;
+            border-right:1px solid rgba(0,0,0,0.06);
+            transition:all 0.3s;
+        }
+        .portal-step:last-child { border-right:none; }
+        .portal-step.active { background:rgba(37,99,235,0.15); color:#2563eb; }
+        .portal-step.done { background:rgba(16,185,129,0.1); color:#10b981; }
+        .portal-page { display:none; }
+        .portal-page.active { display:block; }
+
+        /* PAYMENT PROCESSING */
+        .payment-processing { text-align:center; padding:30px; }
+        .payment-spinner { width:60px; height:60px; border-radius:50%; border:4px solid rgba(37,99,235,0.2); border-top-color:#2563eb; animation:spin 1s linear infinite; margin:0 auto 16px; }
+        @keyframes spin { to{transform:rotate(360deg);} }
+        .payment-success { text-align:center; padding:30px; }
+        .success-circle { width:80px; height:80px; border-radius:50%; background:rgba(16,185,129,0.15); border:3px solid #10b981; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 16px; animation:successPop 0.5s ease-out; }
+        @keyframes successPop { from{transform:scale(0);} to{transform:scale(1);} }
+        .qr-code { width:120px; height:120px; background:#fff; border-radius:12px; margin:14px auto; display:flex; align-items:center; justify-content:center; padding:10px; }
+        .qr-inner { width:100%; height:100%; background:repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 0 0/20px 20px; border-radius:4px; }
+        .receipt-box { background:rgba(0,0,0,0.3); border-radius:12px; padding:16px; font-family:monospace; }
+        .receipt-line { display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-bottom:1px dashed rgba(255,255,255,0.07); }
+        .receipt-total { display:flex; justify-content:space-between; font-size:1rem; font-weight:800; padding:10px 0; color:#2563eb; }
+
+        .notification {
+            position:fixed; top:70px; right:20px;
+            padding:12px 18px; border-radius:12px;
+            font-weight:600; font-size:0.85rem; z-index:9999;
+            animation:nSlide 0.3s ease-out; max-width:320px; line-height:1.4;
+        }
+        .notification.success { background:linear-gradient(135deg,#2563eb,#44a08d); box-shadow:0 6px 20px rgba(37,99,235,0.4); }
+        .notification.error   { background:linear-gradient(135deg,#ef4444,#c0392b); box-shadow:0 6px 20px rgba(239,68,68,0.4); }
+        @keyframes nSlide { from{opacity:0;transform:translateX(40px);} to{opacity:1;transform:translateX(0);} }
+
+        .empty-state { text-align:center; padding:32px 20px; color:#64748b; }
+        .empty-state .ei { font-size:2.5rem; margin-bottom:8px; }
+        .empty-state p { font-size:0.85rem; }
+
+        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:rgba(0,0,0,0.025); }
+        ::-webkit-scrollbar-thumb { background:rgba(37,99,235,0.3); border-radius:3px; }
+
+        @media(max-width:900px) {
+            .form-row { grid-template-columns:1fr; }
+            .pay-methods { grid-template-columns:repeat(2,1fr); }
+        }
+        @media(max-width:500px) {
+            .portal-header { flex-direction:column; gap:10px; }
+        }
+        .footer-links {
+            text-align: center; margin-top: 32px; padding: 20px 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.7rem; color: #64748b;
+        }
+        .footer-links a {
+            color: #777; text-decoration: none; margin: 0 8px;
+            transition: color 0.3s; cursor: pointer;
+        }
+        .footer-links a:hover { color: #2563eb; }
+        .footer-links .dot { color: #444; }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8); z-index: 9999;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #ffffff; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px; max-width: 640px; width: 100%;
+            max-height: 80vh; overflow-y: auto; padding: 28px;
+            position: relative;
+        }
+        .modal-box h2 {
+            font-size: 1.1rem; color: #2563eb; margin-bottom: 16px;
+            padding-right: 40px;
+        }
+        .modal-box p, .modal-box li {
+            font-size: 0.78rem; color: #94a3b8; line-height: 1.6; margin-bottom: 8px;
+        }
+        .modal-box ul { padding-left: 20px; }
+        .modal-close {
+            position: absolute; top: 16px; right: 16px;
+            background: none; border: none; color: #64748b; font-size: 1.2rem;
+            cursor: pointer; transition: color 0.3s;
+        }
+        .modal-close:hover { color: #1e293b; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo"><img src="/Logo.jpg" style="height:28px;width:auto;vertical-align:middle;" alt="CourtQ Pro"> <span id="venueNameDisplay" style="font-weight:400;font-size:0.85rem;color:#94a3b8;"></span></div>
+    <div style="position:absolute;right:20px;"><button onclick="setLang('en')" style="background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.3);border-radius:6px;padding:4px 10px;color:#2563eb;font-size:0.72rem;cursor:pointer;margin-right:4px;">EN</button><button onclick="setLang('ms')" style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.12);border-radius:6px;padding:4px 10px;color:#94a3b8;font-size:0.72rem;cursor:pointer;">BM</button></div>
+</header>
+
+<!-- LANDING -->
+<div class="page" id="landingPage">
+    <div class="landing-hero">
+        <img src="/Logo.jpg" style="height:32px;width:auto;margin-bottom:8px;opacity:0.5;" alt="CourtQ Pro">
+        <h1 id="heroVenueName">Book a Court</h1>
+        <div id="heroVenueAddress" style="font-size:0.85rem;color:#94a3b8;margin-top:2px;"></div>
+        <p>Reserve your court in seconds. Pick a date, choose your time, and you're set.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-lg" onclick="openPortal('booking')" id="bookNowBtn">📅 Book Now</button>
+            <button class="btn btn-success btn-lg" onclick="openOpPortal()">🏓 Join Open Play</button>
+        </div>
+    </div>
+</div>
+
+<!-- BOOKING PORTAL -->
+<div class="portal-overlay" id="portalOverlay">
+    <div class="portal-container">
+        <div class="portal-header">
+            <div>
+                <div style="font-size:1.3rem;font-weight:800;color:#2563eb;">🌐 Book a Court</div>
+                <div id="portalVenueName" style="font-size:0.85rem;color:#94a3b8;margin-top:2px;"></div>
+                <div style="font-size:0.72rem;color:#f59e0b;margin-top:4px;background:rgba(245,158,11,0.1);padding:4px 10px;border-radius:6px;display:inline-block;">⚡ First Come First Serve Basis</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="closePortal()">✕ Close</button>
+        </div>
+        <div class="portal-body">
+            <div class="portal-steps" id="portalSteps">
+                <div class="portal-step active">1 · Pick Court</div>
+                <div class="portal-step">2 · Pick Time</div>
+                <div class="portal-step">3 · Your Info</div>
+                <div class="portal-step">4 · Payment</div>
+                <div class="portal-step">5 · Confirm</div>
+            </div>
+            <!-- STEP 1 -->
+            <div class="portal-page active" id="pStep1">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Choose a Court</div>
+                <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:16px;">Select the court you'd like to book.</div>
+                <div class="court-picker-grid" id="courtPickerGrid"></div>
+                <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+                    <button class="btn btn-primary" onclick="portalNext(1)">Next →</button>
+                </div>
+            </div>
+            <!-- STEP 2 -->
+            <div class="portal-page" id="pStep2">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Choose Date &amp; Time</div>
+                <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:16px;">Available slots shown below.</div>
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="pDate" onchange="renderSlots()">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <select id="pDuration" onchange="renderSlots()">
+                            <option value="60">1 hour</option>
+                            <option value="120" selected>2 hours</option>
+                            <option value="180">3 hours</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="slotGrid" class="slot-grid"></div>
+                <div style="display:flex;justify-content:space-between;margin-top:16px;">
+                    <button class="btn btn-outline" onclick="portalPrev(2)">← Back</button>
+                    <button class="btn btn-primary" onclick="portalNext(2)">Next →</button>
+                </div>
+            </div>
+            <!-- STEP 3 -->
+            <div class="portal-page" id="pStep3">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Your Information</div>
+                <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:16px;">Fill in your details to complete the booking.</div>
+                <div class="form-row">
+                    <div class="form-group"><label>First Name *</label><input type="text" id="pFirst" placeholder="Juan"></div>
+                    <div class="form-group"><label>Last Name *</label><input type="text" id="pLast" placeholder="bin Abdullah"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Phone *</label><input type="text" id="pPhone" placeholder="+63 912 345 6789"></div>
+                    <div class="form-group"><label>Email *</label><input type="text" id="pEmail" placeholder="you@email.com" autocomplete="off"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Game Type</label>
+                        <select id="pGameType">
+                            <option value="singles">Singles</option>
+                            <option value="doubles">Doubles</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Players</label>
+                        <select id="pPlayerCount" onchange="renderPortalPlayerNames()">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </div>
+                    <div id="pPlayerNamesContainer"></div>
+                </div>
+                <div class="form-group"><label>Special Requests</label><textarea id="pNotes" rows="2" placeholder="Anything we should know..."></textarea></div>
+                <div style="display:flex;justify-content:space-between;margin-top:16px;">
+                    <button class="btn btn-outline" onclick="portalPrev(3)">← Back</button>
+                    <button class="btn btn-primary" onclick="portalNext(3)">Next →</button>
+                </div>
+            </div>
+            <!-- STEP 4 -->
+            <div class="portal-page" id="pStep4">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">Payment</div>
+                <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:16px;">Send payment to the details below, then enter your reference number.</div>
+                <div id="bookingSummaryBox" style="background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px;margin-bottom:16px;"></div>
+                <div style="font-weight:700;margin-bottom:10px;font-size:0.9rem;">Select Payment Method:</div>
+                <div class="pay-methods">
+                    <div class="pay-btn" onclick="selPortalPay(this,'GCash')"><span class="pay-icon">🟢</span><div class="pay-name">GCash</div><div class="pay-desc">Send via GCash</div></div>
+                    <div class="pay-btn" onclick="selPortalPay(this,'Maya')"><span class="pay-icon">🟢</span><div class="pay-name">Maya</div><div class="pay-desc">Send via Maya</div></div>
+                </div>
+                <div id="payInputArea" style="margin-top:16px;"></div>
+                <div style="display:flex;justify-content:space-between;margin-top:16px;">
+                    <button class="btn btn-outline" onclick="portalPrev(4)">← Back</button>
+                    <button class="btn btn-success" onclick="processPortalPayment()">✅ Pay &amp; Book</button>
+                </div>
+            </div>
+            <!-- STEP 5 -->
+            <div class="portal-page" id="pStep5">
+                <div id="confirmationContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OPEN PLAY PORTAL -->
+<div class="portal-overlay" id="opPortalOverlay">
+    <div class="portal-container" style="max-width:600px;">
+        <div class="portal-header">
+            <div>
+                <div style="font-size:1.3rem;font-weight:800;color:#2563eb;">🏓 Join Open Play</div>
+                <div id="opPortalVenueName" style="font-size:1.1rem;font-weight:600;color:#1e293b;margin-top:4px;"></div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="closeOpPortal()">✕ Close</button>
+        </div>
+        <div class="portal-body">
+            <div id="opPortalContent"></div>
+        </div>
+    </div>
+</div>
+
+<div class="footer-links">
+    <a onclick="showLegal('about')">About</a><span class="dot"> · </span>
+    <a onclick="showLegal('privacy')">Privacy</a><span class="dot"> · </span>
+    <a onclick="showLegal('terms')">Terms</a><span class="dot"> · </span>
+    <a onclick="showLegal('disclaimer')">Disclaimer</a><span class="dot"> · </span>
+    <a onclick="showLegal('contact')">Contact</a>
+</div>
+
+<div class="modal-overlay" id="legalModal" onclick="if(event.target===this)closeLegal()">
+    <div class="modal-box" id="legalContent"></div>
+</div>
+
+<script src="config.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp(CQ_CONFIG.firebaseConfig);
+const db = firebase.firestore();
+const CONVENIENCE_FEE = 5;
+
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ===================== STATE =====================
+let S = {
+    venueName:'', address:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[],     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+    portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
+};
+let VENUE_ID = null;
+let unsub = null;
+let IS_ORGANIZER_PORTAL = false;
+function bkCol(){return IS_ORGANIZER_PORTAL?{onSnapshot:(a,b)=>{},get:()=>({then:(f)=>f({empty:true,forEach:()=>{}})}),doc:()=>({set:()=>Promise.resolve(),delete:()=>Promise.resolve()})}:db.collection('venues').doc(VENUE_ID).collection('bookings');}
+
+// ===================== HELPERS =====================
+function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezoneOffset()+CQ_CONFIG.utcOffset)*60000); }
+function getTodayISO(){ const d=phtNow(); return d.toISOString().split('T')[0]; }
+function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
+function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
+function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
+function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
+
+function inSession(date, sMin, eMin, courtId){
+    // Check live session
+    if(S.session&&S.session.active){
+        if(courtId==null||!S.session.courts||S.session.courts.includes(courtId)){
+            const sd=S.session.startDate||date, ed=S.session.endDate||sd;
+            const ss=timeToMin(S.session.startTime||S.session.start), se=timeToMin(S.session.endTime||S.session.end);
+            if(date>=sd&&date<=ed){
+                if(sd===ed){if(sMin<se&&eMin>ss) return true;}
+                else if(date===sd){if(eMin>ss) return true;}
+                else if(date===ed){if(sMin<se) return true;}
+                else return true;
+            }
+        }
+    }
+    // Check scheduled sessions
+    const sched=(S.scheduledSessions||[]).filter(s=>s.status==='scheduled'||s.status==='active');
+    for(const s of sched){
+        if(courtId!=null&&s.courts&&!s.courts.includes(courtId)) continue;
+        if(date!==s.date) continue;
+        const ss=timeToMin(s.startTime), se=timeToMin(s.endTime);
+        if(sMin<se&&eMin>ss) return true;
+    }
+    return false;
+}
+
+// ===================== NOTIFY =====================
+function showNotif(msg,type='success'){
+    const e=document.querySelector('.notification');if(e)e.remove();
+    const n=document.createElement('div');n.className=`notification ${type}`;n.textContent=msg;
+    document.body.appendChild(n);
+    setTimeout(()=>{n.style.opacity='0';n.style.transition='opacity 0.4s';setTimeout(()=>n.remove(),400);},3500);
+}
+
+// ===================== BOOKING HELPERS =====================
+function getBookingsForCourt(cId,date,sMin,eMin){
+    return S.bookings.filter(b=>{
+        if(b.courtId!==cId||b.date!==date||b.status==='cancelled') return false;
+        const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+        return sMin<be&&eMin>bs;
+    });
+}
+
+// ===================== PORTAL =====================
+function renderPortalPlayerNames(){
+    const container=document.getElementById('pPlayerNamesContainer');
+    const count=parseInt(document.getElementById('pPlayerCount').value);
+    container.innerHTML=Array.from({length:count},(_,i)=>
+        `<input type="text" class="portal-input" id="pName${i}" placeholder="Player ${i+1} name (optional)" style="margin-top:6px;">`
+    ).join('');
+}
+function openPortal(mode){
+    if(mode==='openplay') return openOpPortal();
+    S.portal={step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{}};
+    const cb='?t='+Date.now();
+    document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo" onerror="this.style.display='none'">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+    document.getElementById('pDate').value=getTodayISO();
+    goPortalStep(1);
+    renderCourtPicker();
+    document.getElementById('portalOverlay').classList.add('active');
+    document.getElementById('landingPage').style.display = 'none';
+}
+
+function closePortal(){
+    sessionStorage.removeItem('portalPendingBooking');
+    document.getElementById('portalOverlay').classList.remove('active');
+    document.getElementById('landingPage').style.display = 'block';
+}
+
+function goPortalStep(step){
+    document.querySelectorAll('.portal-page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.portal-step').forEach((s,i)=>{
+        s.classList.remove('active','done');
+        if(i+1<step) s.classList.add('done');
+        if(i+1===step) s.classList.add('active');
+    });
+    document.getElementById('pStep'+step).classList.add('active');
+    S.portal.step=step;
+}
+
+function portalPrev(step){ goPortalStep(step-1); }
+
+function portalNext(step){
+    if(step===1&&!S.portal.courtId){showNotif('Please select a court!','error');return;}
+    if(step===1){renderSlots();}
+    if(step===2&&S.portal.slot==null){showNotif('Please select a time slot!','error');return;}
+    if(step===3){
+        const f=document.getElementById('pFirst').value.trim();
+        const l=document.getElementById('pLast').value.trim();
+        const p=document.getElementById('pPhone').value.trim();
+        const e=document.getElementById('pEmail').value.trim();
+        if(!f||!l||!p||!e){showNotif('Fill all required fields!','error');return;}
+        S.portal.data={first:f,last:l,phone:p,email:e,gameType:document.getElementById('pGameType').value,players:document.getElementById('pPlayerCount').value,notes:document.getElementById('pNotes').value};
+        // Collect player names if provided
+        const nameInputs=document.querySelectorAll('#pPlayerNamesContainer input');
+        const pNames=Array.from(nameInputs).map(inp=>inp.value.trim()).filter(Boolean);
+        if(pNames.length>0) S.portal.data.players=pNames.join(', ');
+        renderBookingSummary();
+    }
+    if(step===4&&!S.portal.payMethod){showNotif('Select a payment method!','error');return;}
+    goPortalStep(step+1);
+}
+
+function renderCourtPicker(){
+    const grid=document.getElementById('courtPickerGrid');
+    grid.innerHTML='';
+    if(!S.courts||S.courts.length===0){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ei">🏟️</div><p>No courts available right now.</p></div>';return;}
+    S.courts.forEach(court=>{
+        const avail=court.status!=='maintenance'&&!court._tournamentId;
+        const card=document.createElement('div');
+        card.className=`court-picker-card ${!avail?'unavailable':''} ${S.portal.courtId===court.id?'selected':''}`;
+        card.innerHTML=`<div style="font-size:2rem;margin-bottom:8px;">🏟️</div>
+            <div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">${escapeHtml(court.name)}</div>
+            ${court._tournamentId?`<div style="font-size:0.65rem;color:#8b5cf6;margin-bottom:4px;">🔮 Tournament</div>`:''}
+            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:6px;">📍 ${escapeHtml(court.location)}</div>
+            <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">
+                <span style="font-size:0.65rem;background:rgba(0,0,0,0.06);padding:2px 7px;border-radius:6px;">${escapeHtml(court.surface)}</span>
+                <span style="font-size:0.65rem;background:rgba(0,0,0,0.06);padding:2px 7px;border-radius:6px;">${escapeHtml(court.env)}</span>
+            </div>
+            <div style="font-weight:800;color:#2563eb;font-size:1.1rem;">₱${court.rate}<span style="font-size:0.7rem;color:#94a3b8;font-weight:400;">/hr</span></div>`;
+        if(avail) card.onclick=()=>{S.portal.courtId=court.id;document.querySelectorAll('.court-picker-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');};
+        grid.appendChild(card);
+    });
+}
+
+function renderSlots(){
+    const date=document.getElementById('pDate').value;
+    const dur=parseInt(document.getElementById('pDuration').value);
+    S.portal.date=date; S.portal.duration=dur;
+    const grid=document.getElementById('slotGrid');
+    grid.innerHTML='';
+    const open=0, close=24*60, step=60;
+    const now=new Date();
+    const isToday=date===now.toISOString().slice(0,10);
+    const nowMin=now.getHours()*60+now.getMinutes();
+    let anyAvail=false;
+    for(let t=open;t<close-dur+step;t+=step){
+        if(isToday && t+dur<=nowMin) continue;
+        const conflicts=getBookingsForCourt(S.portal.courtId,date,t,t+dur);
+        const opBlock=inSession(date,t,t+dur,S.portal.courtId);
+        const taken=conflicts.length>0||opBlock;
+        if(!taken) anyAvail=true;
+        const btn=document.createElement('div');
+        btn.className=`slot-btn ${taken?'taken':''} ${S.portal.slot===t?'selected':''}`;
+        btn.innerHTML=`<div style="font-weight:700;">${minToTime(t)}</div><div style="font-size:0.65rem;color:${taken?'#ef4444':'#aaa'};">${opBlock?'Open Play':taken?'Booked':'Available'}</div>`;
+        if(!taken) btn.onclick=()=>{S.portal.slot=t;document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');};
+        grid.appendChild(btn);
+    }
+    const existingMsg=grid.parentElement.querySelector('.empty-state.all-booked');if(existingMsg)existingMsg.remove();
+    if(!anyAvail){const m=document.createElement('div');m.className='empty-state all-booked';m.style.marginTop='20px';m.innerHTML='<div class="ei">📅</div><p>All slots are booked for this date. Try another date or court.</p>';grid.parentElement.appendChild(m);}
+}
+
+function renderBookingSummary(){
+    const court=S.courts.find(c=>c.id===S.portal.courtId);
+    const dur=S.portal.duration;
+    const subtotal=Math.round(court.rate*(dur/60));
+    const fee=Math.round(CONVENIENCE_FEE*dur/60);
+    const total=subtotal+fee;
+    S.portal.total=total;
+    S.portal.subtotal=subtotal;
+    document.getElementById('bookingSummaryBox').innerHTML=`<div style="font-weight:700;margin-bottom:8px;color:#2563eb;">📋 Booking Summary</div>
+        <div style="display:grid;gap:4px;font-size:0.82rem;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8">Court:</span><strong>${escapeHtml(court.name)}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8">Date:</span><strong>${escapeHtml(S.portal.date)}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8">Time:</span><strong>${minToTime(S.portal.slot)} – ${minToTime(S.portal.slot+dur)}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8">Duration:</span><strong>${dur}min</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8">Court Rate:</span><strong>₱${subtotal}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#94a3b8">Convenience Fee (${dur/60}hr):</span><strong style="color:#f59e0b;">₱${fee}</strong></div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(0,0,0,0.1);padding-top:8px;margin-top:4px;"><span style="font-weight:700;color:#2563eb;font-size:1rem;">Total:</span><strong style="color:#2563eb;font-size:1rem;">₱${total}</strong></div>
+        </div>`;
+}
+
+function selPortalPay(btn,method){
+    document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    S.portal.payMethod=method;
+    const area=document.getElementById('payInputArea');
+    if(method==='GCash'||method==='Maya'){
+        const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+        const label=method==='GCash'?'🟢 Send to GCash':'💜 Send to Maya';
+        area.innerHTML=`<div style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:16px;">
+            <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${label}</div>
+            <div style="background:rgba(37,99,235,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#94a3b8;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#94a3b8;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span style="color:#94a3b8;">Court Rate:</span><strong style="color:#2563eb;">₱${S.portal.subtotal||0}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#94a3b8;">Convenience Fee (${(S.portal.duration||60)/60}hr):</span><strong style="color:#f59e0b;">₱${Math.round(CONVENIENCE_FEE*(S.portal.duration||60)/60)}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#94a3b8;">Amount to Pay:</span><strong style="color:#2563eb;">₱${S.portal.total||0}</strong></div>
+            </div>
+            <div class="form-group"><label>Reference Number *</label><input type="text" id="portalRef" placeholder="Enter your GCash/Maya reference"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;">Send the exact amount shown above. Enter the reference number after payment.</div></div>`;
+    }
+}
+
+function retryBooking(){
+    sessionStorage.removeItem('portalPendingBooking');
+    S.portal = {step:1,courtId:null,date:getTodayISO(),slot:null,duration:120,payMethod:null,data:{},ref:''};
+    document.getElementById('pDate').value=getTodayISO();
+    goPortalStep(1);
+    renderCourtPicker();
+}
+
+async function processPortalPayment(){
+    if(!S.portal.payMethod){showNotif('Select payment method!','error');return;}
+    const ref=document.getElementById('portalRef');
+    if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
+    const dur=S.portal.duration;
+    if(inSession(S.portal.date,S.portal.slot,S.portal.slot+dur,S.portal.courtId)){showNotif('Cannot book — Open Play session in progress during this time.','error');return;}
+    // Server-side check: query Firestore for overlapping bookings
+    try {
+        const snap = await bkCol().where('courtId','==',S.portal.courtId).where('date','==',S.portal.date).get();
+        let conflict=false;
+        snap.forEach(d=>{
+            const b=d.data();
+            if(b.status==='cancelled') return;
+            const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+            if(S.portal.slot<be&&(S.portal.slot+dur)>bs) conflict=true;
+        });
+        if(conflict){showNotif('Sorry, this time slot was just taken. Please choose another.','error');renderSlots();return;}
+    } catch(e){console.warn('Booking availability check failed:',e);}
+    goPortalStep(5);
+    const conf=document.getElementById('confirmationContent');
+    conf.innerHTML=`<div class="payment-processing"><div class="payment-spinner"></div><div style="font-size:1rem;font-weight:700;color:#2563eb;">Processing Payment...</div></div>`;
+    const refCode=genRef();
+    const court=S.courts.find(c=>c.id===S.portal.courtId);
+    const total=S.portal.total||(Math.round(court.rate*(dur/60))+Math.round(CONVENIENCE_FEE*dur/60));
+    const bId='BK'+Date.now().toString(36)+Math.random().toString(36).substr(2,8).toUpperCase();
+    const refNum=document.getElementById('portalRef')?.value.trim()||'';
+    const convFee=Math.round(CONVENIENCE_FEE*dur/60);
+    const b={id:bId,customer:S.portal.data.first+' '+S.portal.data.last,phone:S.portal.data.phone,email:S.portal.data.email,courtId:S.portal.courtId,date:S.portal.date,startTime:minToTime(S.portal.slot),endTime:minToTime(S.portal.slot+dur),duration:dur,gameType:S.portal.data.gameType,players:S.portal.data.players,amount:total,paymentMethod:S.portal.payMethod,status:'pending',reference:refNum,notes:S.portal.data.notes,bookedAt:Date.now(),source:'online',ref:refCode,convenienceFee:convFee,subtotal:S.portal.subtotal||Math.round(court.rate*(dur/60))};
+    try {
+        await bkCol().doc(bId).set(b);
+    } catch(e) {
+        console.warn('Booking save failed:',e);
+        showNotif('Booking failed to save. Please try again or contact the venue.','error');
+        goPortalStep(1);
+        return;
+    }
+    S.bookings.push(b);
+    sessionStorage.setItem('portalPendingBooking', bId);
+    showReceiptConfirmation(bId, b, court, refNum, total);
+}
+
+function showReceiptConfirmation(bId, booking, court, refNum, total){
+    const payInfo='₱'+total+(refNum?' (Ref: '+escapeHtml(refNum)+')':'');
+    const conf=document.getElementById('confirmationContent');
+    conf.innerHTML=`<div class="payment-success">
+        <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#f59e0b;margin-bottom:6px;">Payment Submitted!</div>
+        <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px;">Don't close this page. Please wait for confirmation from Admin.</div>
+        <div id="bookingStatusWait" style="text-align:center;">
+            <div class="payment-spinner" style="margin:10px auto;"></div>
+            <div style="font-size:0.8rem;color:#94a3b8;">Checking status...</div>
+        </div>
+        <div class="receipt-box" style="text-align:left;">
+            <div style="text-align:center;margin-bottom:10px;">
+                <div style="font-weight:700;color:#2563eb;">${S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo" onerror="this.style.display='none'">`:''}${escapeHtml(S.venueName)}</div>
+                <div style="font-size:0.68rem;color:#94a3b8;">ID: ${bId}</div>
+            </div>
+            <div class="receipt-line"><span>Name</span><span>${escapeHtml(booking.customer)}</span></div>
+            <div class="receipt-line"><span>Court</span><span>${escapeHtml(court.name)}</span></div>
+            <div class="receipt-line"><span>Date</span><span>${escapeHtml(booking.date)}</span></div>
+            <div class="receipt-line"><span>Time</span><span>${booking.startTime} – ${booking.endTime}</span></div>
+            <div class="receipt-line"><span>Reference</span><span>${escapeHtml(refNum)||'N/A'}</span></div>
+            <div class="receipt-total"><span>Total</span><span>${payInfo}</span></div>
+        </div>
+    </div>`;
+    watchBookingStatus(bId);
+}
+
+function watchBookingStatus(bId){
+    if(!VENUE_ID) return;
+    const unsubStatus = bkCol().doc(bId).onSnapshot(snap => {
+        try {
+            if(!snap.exists) return;
+            const booking = snap.data();
+            if(booking.status === 'confirmed'){
+                unsubStatus(); sessionStorage.removeItem('portalPendingBooking');
+                document.getElementById('bookingStatusWait').innerHTML=`
+                    <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#10b981;margin-bottom:6px;">Booking Confirmed!</div>
+                    <div style="font-size:0.85rem;color:#2563eb;margin-bottom:6px;">Your booking has been confirmed.</div>
+                    <div style="font-size:0.9rem;font-weight:700;color:#2563eb;margin-bottom:10px;">Thank you for booking with us!</div>
+                    <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                        Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
+                        <span style="color:#f59e0b;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
+                        <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
+                    </div>`;
+            }
+            if(booking.status === 'cancelled'){
+                unsubStatus(); sessionStorage.removeItem('portalPendingBooking');
+                document.getElementById('bookingStatusWait').innerHTML=`
+                    <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                    <div style="font-size:1rem;font-weight:800;color:#ef4444;margin-bottom:6px;">Booking Not Available</div>
+                    <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
+                    <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
+            }
+        } catch(e){}
+    }, err => {
+        console.warn('onSnapshot failed, falling back to polling', err);
+        const fb = setInterval(async () => {
+            try {
+                const snap = await bkCol().doc(bId).get();
+                if(!snap.exists) return;
+                const booking = {id:snap.id,...snap.data()};
+                if(!booking) return;
+                if(booking.status === 'confirmed' || booking.status === 'cancelled'){
+                    clearInterval(fb); sessionStorage.removeItem('portalPendingBooking');
+                    if(booking.status === 'confirmed'){
+                        document.getElementById('bookingStatusWait').innerHTML=`
+                            <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                            <div style="font-size:1.1rem;font-weight:800;color:#10b981;margin-bottom:6px;">Booking Confirmed!</div>
+                            <div style="font-size:0.85rem;color:#2563eb;margin-bottom:6px;">Your booking has been confirmed.</div>
+                            <div style="font-size:0.9rem;font-weight:700;color:#2563eb;margin-bottom:10px;">Thank you for booking with us!</div>
+                            <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                                Please show Booking ID <strong>${bId}</strong> at the venue when you arrive.<br>
+                                <span style="color:#f59e0b;">⏰ Please be there at least 15 minutes ahead of your booking schedule.</span>
+                            </div>
+                            <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+                                <button class="btn btn-primary" onclick="closePortal()">✅ Done</button>
+                                <button class="btn btn-outline" onclick="openPortal()">📅 Book Another</button>
+                            </div>`;
+                    } else {
+                        document.getElementById('bookingStatusWait').innerHTML=`
+                            <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                            <div style="font-size:1rem;font-weight:800;color:#ef4444;margin-bottom:6px;">Booking Not Available</div>
+                            <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px;">Sorry, another party has booked faster the slots you booked. Please select another slot.</div>
+                            <button class="btn btn-primary" onclick="retryBooking()">🔄 Try Again</button>`;
+                    }
+                }
+            } catch(e){}
+        }, 30000);
+    });
+}
+
+async function showPendingBooking(bId){
+    try {
+        const snap = await bkCol().doc(bId).get();
+        if(!snap.exists){ sessionStorage.removeItem('portalPendingBooking'); return; }
+        const booking = {id:snap.id,...snap.data()};
+        if(booking.status === 'confirmed' || booking.status === 'cancelled'){ sessionStorage.removeItem('portalPendingBooking'); return; }
+        const court = S.courts.find(c=>c.id===booking.courtId);
+        if(!court){ sessionStorage.removeItem('portalPendingBooking'); return; }
+        S.portal = {step:5,courtId:booking.courtId,date:booking.date,slot:timeToMin(booking.startTime),duration:booking.duration,payMethod:booking.paymentMethod,data:{first:booking.customer,last:'',phone:booking.phone,email:booking.email,gameType:booking.gameType,players:booking.players,notes:booking.notes}};
+        document.getElementById('pDate').value=booking.date;
+        document.getElementById('portalVenueName').innerHTML=S.logoUrl?`<img src="${escapeHtml(S.logoUrl)}?t=${Date.now()}" style="height:20px;width:auto;vertical-align:middle;margin-right:6px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+        document.getElementById('portalOverlay').classList.add('active');
+        document.getElementById('landingPage').style.display='none';
+        goPortalStep(5);
+        showReceiptConfirmation(bId, booking, court, booking.reference, booking.amount);
+    } catch(e){
+        console.warn('Failed to restore pending booking:', e);
+        sessionStorage.removeItem('portalPendingBooking');
+    }
+}
+
+// ===================== OPEN PLAY PORTAL =====================
+let _opJoinCtx = null;
+let _opPayMethod = null;
+
+function openOpPortal(){
+    const orgTag=IS_ORGANIZER_PORTAL?`<div style="font-size:0.65rem;color:#94a3b8;font-weight:400;text-transform:uppercase;letter-spacing:1px;">ORGANIZED BY</div>`:'';
+    const cb='?t='+Date.now();
+    const logoUrl=S.logoUrl?S.logoUrl+cb:'';
+    const nameDisplay=logoUrl
+        ? `<img src="${escapeHtml(logoUrl)}" style="height:32px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo">${escapeHtml(S.venueName)}`
+        : escapeHtml(S.venueName);
+    const venueExtra=S.session?.venueName
+        ? `<div style="font-size:0.85rem;color:#94a3b8;font-weight:400;margin-top:2px;">📍 ${escapeHtml(S.session.venueName)}</div>`
+        : '';
+    document.getElementById('opPortalVenueName').innerHTML=orgTag+nameDisplay+venueExtra;
+    document.getElementById('opPortalOverlay').classList.add('active');
+    document.getElementById('landingPage').style.display='none';
+    if(VENUE_ID){
+        db.collection(IS_ORGANIZER_PORTAL?'organizers':'venues').doc(VENUE_ID).get({source:'server'}).then(snap=>{
+            if(snap.exists){
+                const data=snap.data();
+                S.scheduledSessions = data.scheduledSessions || [];
+                if(data.session) S.session = data.session;
+            }
+            renderOpSessionList();
+        }).catch(e=>{
+            console.warn('[OP] Firestore get failed:', e);
+            renderOpSessionList();
+        });
+    } else {
+        renderOpSessionList();
+    }
+}
+
+function closeOpPortal(){
+    _opJoinCtx=null;
+    _opPayMethod=null;
+    if(window._opWatchInterval){clearInterval(window._opWatchInterval);window._opWatchInterval=null;window._opWatching=false;}
+    document.getElementById('opPortalOverlay').classList.remove('active');
+    document.getElementById('landingPage').style.display='block';
+}
+
+function renderOpSessionList(){
+    _opPayMethod=null;
+    if(window._opWatchInterval){clearInterval(window._opWatchInterval);window._opWatchInterval=null;window._opWatching=false;}
+    sessionStorage.removeItem('opPendingReg');
+    const content=document.getElementById('opPortalContent');
+    const now=phtNow();
+    const today=getTodayISO();
+    const nowMins=now.getHours()*60+now.getMinutes();
+    const allSessions=[];
+    // Include active live session
+    if(S.session?.active){
+        allSessions.push({
+            id:'LIVE_'+S.session.id, date:S.session.startDate||today,
+            startTime:S.session.startTime||S.session.start||'00:00',
+            endTime:S.session.endTime||S.session.end||'23:59',
+            mode:S.session.mode||'fourOnFour', fee:S.session.fee||0,
+            maxPlayers:S.session.maxPlayers||0, courts:S.session.courts||[],
+            players:S.session._players||[], status:'active',
+            _isLive:true
+        });
+    }
+    // Include upcoming scheduled sessions (skip the one already started as live)
+    (S.scheduledSessions||[]).filter(s=>{
+        if(s.status!=='scheduled'&&s.status!=='active') return false;
+        if(s.date<today||(s.date===today&&timeToMin(s.endTime)<=nowMins)) return false;
+        if(S.session?.active&&s.date===(S.session.startDate||today)&&s.startTime===(S.session.startTime||S.session.start)) return false;
+        return true;
+    }).forEach(s=>allSessions.push(s));
+    allSessions.sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime));
+    if(allSessions.length===0){
+        const raw=JSON.stringify(S.scheduledSessions);
+        const todayInfo=`today=${today} nowMins=${nowMins}`;
+        let debug='';
+        if(S.scheduledSessions&&S.scheduledSessions.length){
+            debug=S.scheduledSessions.map(s=>`  ${s.id}: date=${s.date} end=${s.endTime} endMins=${timeToMin(s.endTime)} status=${s.status} date>today=${s.date>today} date===today=${s.date===today} timeOk=${timeToMin(s.endTime)>nowMins}`).join('\n');
+        }
+        const liveInfo=S.session?.active?`\n▶ Live session active: ${S.session.startDate||today} ${S.session.startTime||S.session.start||'?'}–${S.session.endTime||S.session.end||'?'}`:'';
+        content.innerHTML=`<div class="empty-state"><div class="ei">🏓</div><p>No upcoming Open Play sessions scheduled right now.<br>Check back later or contact the venue.</p><pre style="font-size:0.6rem;background:rgba(0,0,0,0.3);padding:8px;border-radius:6px;margin-top:8px;text-align:left;max-height:200px;overflow:auto;color:#94a3b8;">${todayInfo}\nsessions=${raw}${liveInfo}</pre><button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:12px;">← Back</button></div>`;
+        return;
+    }
+    content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:12px;">🏓 Open Play</div>
+        <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:16px;">Select a session to join. No need to book a specific court — just show up and play!</div>
+        ${allSessions.map(s=>{
+            const courtNames=IS_ORGANIZER_PORTAL?(s.courtCount?s.courtCount+' courts':'Virtual courts'):(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
+            const vName=s._isLive&&S.session?.venueName?S.session.venueName:(s.venueName||'');
+            const pCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
+            const max=s.maxPlayers||'∞';
+            const full=s.maxPlayers?pCount>=s.maxPlayers:false;
+            const badge=s._isLive?'<span style="background:#10b981;color:#1e293b;font-size:0.6rem;padding:2px 6px;border-radius:4px;margin-left:6px;">LIVE</span>':'';
+            return `<div style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:16px;margin-bottom:10px;${!full?'cursor:pointer;transition:all 0.2s;':''}" ${!full?`onclick="selectOpSession('${s.id}')" onmouseover="this.style.borderColor='rgba(37,99,235,0.4)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.1)'"`:''}>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem;">${escapeHtml(s.date)}${badge}</div>
+                        <div style="font-size:0.82rem;color:#2563eb;">${s.startTime} – ${s.endTime}</div>
+                        ${vName?`<div style="font-size:0.78rem;color:#94a3b8;margin-top:3px;">📍 ${escapeHtml(vName)}</div>`:''}
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.78rem;color:#94a3b8;">${s._isLive?(s.maxPlayers?pCount+'/'+s.max+' players':'⏳ Ongoing'):pCount+'/'+max+' players'}</div>
+                        <div style="font-size:0.72rem;color:#f59e0b;">${s.fee>0?'₱'+s.fee:'Free'}</div>
+                    </div>
+                </div>
+                <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">🏟️ ${escapeHtml(courtNames)} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}</div>
+                ${full?`<div style="color:#ef4444;font-size:0.72rem;margin-top:6px;">⚠️ Session Full</div>`:`<div style="color:#2563eb;font-size:0.72rem;margin-top:6px;">${s._isLive?'▶ Open Play is happening now — click to join!':'✅ Spots available — click to join'}</div>`}
+            </div>`;
+        }).join('')}
+        <button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:8px;">← Back</button>`;
+}
+
+function selectOpSession(id){
+    let s;
+    let isLive=false;
+    if(id.startsWith('LIVE_')){
+        if(!S.session?.active){showNotif('Live session is no longer active.','error');return;}
+        s={...S.session,id,date:S.session.startDate||getTodayISO(),startTime:S.session.startTime||S.session.start||'00:00',endTime:S.session.endTime||S.session.end||'23:59',_isLive:true,players:S.session._players||[],maxPlayers:S.session.maxPlayers||0};
+        isLive=true;
+    } else {
+        s=S.scheduledSessions.find(x=>x.id===id);
+    }
+    if(!s) return;
+    const currentCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
+    if(s.maxPlayers&&currentCount>=s.maxPlayers){showNotif('Session is full!','error');return;}
+    _opJoinCtx={...s,_isLive:isLive};
+    const content=document.getElementById('opPortalContent');
+    const feeSection=s.fee>0?`
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px;font-size:0.8rem;margin-bottom:12px;">
+            <strong>💰 Drop-in Fee: ₱${s.fee} per player</strong><br>
+            <span id="opFeeTotal" style="color:#2563eb;">Total: <strong>₱${s.fee}</strong></span><br>
+            <span style="color:#94a3b8;">Pay via GCash or Maya to secure your slot. Show transaction on site.</span>
+        </div>
+        <div style="margin-bottom:12px;">
+            <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">Select Payment Method</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'GCash')"><span class="pay-icon">🟢</span><div class="pay-name">GCash</div><div class="pay-desc">Send via GCash</div></div>
+                <div class="pay-btn op-pay-btn" onclick="opSelPay(this,'Maya')"><span class="pay-icon">🟢</span><div class="pay-name">Maya</div><div class="pay-desc">Send via Maya</div></div>
+            </div>
+            <div id="opPayInputArea"></div>
+        </div>`:'';
+    content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:4px;">👋 Your Info</div>
+        <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong>${s.venueName?` · 📍 <strong>${escapeHtml(s.venueName)}</strong>`:''}</div>
+        <div class="form-row">
+            <div class="form-group"><label>First Name *</label><input type="text" id="opFirstName" placeholder="Juan"></div>
+            <div class="form-group"><label>Last Name *</label><input type="text" id="opLastName" placeholder="dela Cruz"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Phone *</label><input type="text" id="opPhone" placeholder="+63 912 345 6789"></div>
+            <div class="form-group"><label>Email *</label><input type="text" id="opEmail" placeholder="you@email.com"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Number of Players</label>
+                <input type="number" id="opPlayerCount" value="1" min="1" max="20" onchange="updateOpFeeTotal()">
+            </div>
+            <div class="form-group"><label>Skill Level</label>
+                <select id="opSkill">
+                    <option value="2">2.0 – Newbie</option>
+                    <option value="2.5">2.5 – Novice</option>
+                    <option value="3" selected>3.0 – Low Intermediate</option>
+                    <option value="3.5">3.5 – High Intermediate</option>
+                    <option value="4">4.0 – Advanced</option>
+                    <option value="4.5">4.5 – Expert</option>
+                    <option value="5">5.0 – Pro</option>
+                </select>
+            </div>
+        </div>
+        ${feeSection}
+        <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" onclick="renderOpSessionList()">← Back</button>
+            <button class="btn btn-success" onclick="confirmJoinOpSession()">✅ Join Open Play</button>
+        </div>`;
+}
+
+function updateOpFeeTotal(){
+    const s=_opJoinCtx;
+    if(!s) return;
+    const n=parseInt(document.getElementById('opPlayerCount')?.value)||1;
+    const subtotal=n*s.fee;
+    const total=subtotal+n*CONVENIENCE_FEE;
+    const el=document.getElementById('opFeeTotal');
+    if(el) el.innerHTML=`Total: <strong>₱${total}</strong> <span style="font-size:0.68rem;color:#94a3b8;">(incl. ₱${n*CONVENIENCE_FEE} convenience fee)</span>`;
+    const area=document.getElementById('opPayInputArea');
+    if(area&&area.innerHTML.trim()){
+        const sel=document.querySelector('.op-pay-btn.selected');
+        if(sel) opSelPay(sel,_opPayMethod);
+    }
+}
+
+function opSelPay(btn,method){
+    document.querySelectorAll('.op-pay-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _opPayMethod=method;
+    const area=document.getElementById('opPayInputArea');
+    const s=_opJoinCtx;
+    const info=method==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+    const n=parseInt(document.getElementById('opPlayerCount')?.value)||1;
+    const subtotal=n*(s?.fee||0);
+    const total=subtotal+n*CONVENIENCE_FEE;
+    const label=method==='GCash'?'🟢 Send to GCash':'💜 Send to Maya';
+    area.innerHTML=`<div style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:16px;">
+        <div style="font-size:0.82rem;font-weight:700;margin-bottom:8px;">${label}</div>
+        <div style="background:rgba(37,99,235,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#94a3b8;">Number:</span><strong>${escapeHtml(info.number)||'Not set'}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#94a3b8;">Name:</span><strong>${escapeHtml(info.name)||'Not set'}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#94a3b8;">Players:</span><strong>${n}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:#94a3b8;">Per Player:</span><strong>₱${s?s.fee:0}</strong></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#94a3b8;">Convenience Fee (${n} player${n>1?'s':''}):</span><strong style="color:#f59e0b;">₱${n*CONVENIENCE_FEE}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:800;border-top:1px solid rgba(0,0,0,0.1);padding-top:8px;margin-top:4px;"><span style="color:#94a3b8;">Total:</span><strong style="color:#2563eb;">₱<span id="opFeeAmount">${total}</span></strong></div>
+        </div>
+        <div class="form-group"><label>Reference Number *</label><input type="text" id="opRef" placeholder="Enter your GCash/Maya reference"></div>
+        <div style="font-size:0.72rem;color:#94a3b8;">Send the exact amount shown above. Enter the reference number after payment.</div></div>`;
+}
+
+async function confirmJoinOpSession(){
+    const s=_opJoinCtx;
+    if(!s) return;
+    const fn=document.getElementById('opFirstName').value.trim();
+    const ln=document.getElementById('opLastName').value.trim();
+    const phone=document.getElementById('opPhone').value.trim();
+    const email=document.getElementById('opEmail').value.trim();
+    if(!fn||!ln||!phone||!email){showNotif('Fill all required fields!','error');return;}
+    const skill=parseInt(document.getElementById('opSkill').value);
+    const playerCount=parseInt(document.getElementById('opPlayerCount').value)||1;
+    const gameType=playerCount<=2?'singles':'doubles';
+    const subtotal=s.fee*playerCount;
+    const totalAmount=subtotal+playerCount*CONVENIENCE_FEE;
+    if(totalAmount>0){
+        if(!_opPayMethod){showNotif('Select a payment method!','error');return;}
+        const ref=document.getElementById('opRef');
+        if(!ref||!ref.value.trim()){showNotif('Enter your payment reference number!','error');return;}
+    }
+    const player={name:fn+' '+ln,phone,email,skill,gameType,players:playerCount,source:'online',joinedAt:Date.now(),status:'pending'};
+    if(totalAmount>0){
+        player.paymentMethod=_opPayMethod;
+        player.reference=document.getElementById('opRef').value.trim();
+        player.amount=totalAmount;
+        player.subtotal=subtotal;
+        player.convenienceFee=playerCount*CONVENIENCE_FEE;
+        player.paid=true;
+    }
+    // Save to Firestore
+    if(VENUE_ID){
+        try {
+            const venueRef = db.collection(IS_ORGANIZER_PORTAL?'organizers':'venues').doc(VENUE_ID);
+            const snap=await venueRef.get({source:'server'});
+            const data=snap.data();
+            if(s._isLive){
+                const session={...(data.session||{}),_players:[...(data.session?._players||[]),player]};
+                await venueRef.update({session});
+                S.session=session;
+            } else {
+                let sessions=data.scheduledSessions||[];
+                const idx=sessions.findIndex(x=>x.id===s.id);
+                if(idx===-1){showNotif('Session no longer available.','error');return;}
+                const curCount=(sessions[idx].players||[]).reduce((sum,p)=>sum+(p.players||1),0);
+                if(sessions[idx].maxPlayers&&curCount+playerCount>sessions[idx].maxPlayers){showNotif(`Session full — only ${sessions[idx].maxPlayers-curCount} spot(s) left.`,'error');return;}
+                sessions[idx]={...sessions[idx],players:[...(sessions[idx].players||[]),player]};
+                await venueRef.update({scheduledSessions:sessions});
+                S.scheduledSessions=sessions;
+            }
+        } catch(e){
+            console.warn('Failed to join Open Play:',e);
+            showNotif('Failed to join. Please try again.','error');
+            return;
+        }
+    } else {
+        showNotif('Venue not available.','error');
+        return;
+    }
+    // Store pending registration in sessionStorage for live tracking & restore on refresh
+    sessionStorage.setItem('opPendingReg', JSON.stringify({sessionId:s.id, email, name:fn+' '+ln}));
+    // Show confirmation with live status watcher
+    const content=document.getElementById('opPortalContent');
+    content.innerHTML=`<div class="payment-success">
+        <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#f59e0b;margin-bottom:6px;">Payment Submitted!</div>
+        <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px;">Don't close this page. Please wait for confirmation from Admin.</div>
+        <div id="opStatusWait" style="text-align:center;">
+            <div class="payment-spinner" style="margin:10px auto;"></div>
+            <div style="font-size:0.8rem;color:#94a3b8;">Checking status...</div>
+        </div>
+        <div style="background:rgba(37,99,235,0.08);border-radius:8px;padding:10px;margin:10px 0;font-size:0.82rem;text-align:left;">
+            <div><strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
+            <div style="font-size:0.75rem;color:#94a3b8;">${(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ')} · ${(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0)+(playerCount)} player(s)</div>
+            ${s.fee>0?`<div style="font-size:0.75rem;color:#94a3b8;">💳 ${_opPayMethod} · Ref: ${player.reference||'N/A'}</div>`:''}
+            <div style="font-size:0.75rem;color:#94a3b8;">💰 ${s.fee>0?'₱'+totalAmount:'Free'}</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="closeOpPortal()">✅ Done</button>
+            <button class="btn btn-outline" onclick="renderOpSessionList()">📅 Join Another</button>
+        </div>`;
+    watchOpRegistration(email, s.id);
+}
+
+function watchOpRegistration(email, sessionId){
+    if(window._opWatchInterval) clearInterval(window._opWatchInterval);
+    window._opWatching=true;
+    window._opWatchInterval=setInterval(()=>{
+        const sid=sessionId;
+        const s=S.scheduledSessions.find(x=>x.id===sid)||(S.session?.active?{...S.session,id:'LIVE_'+S.session.startDate,players:S.session._players||[]}:null);
+        if(!s) return;
+        const match=(s.players||[]).find(p=>p.email&&p.email.toLowerCase()===email.toLowerCase()&&p.source==='online');
+        const waitEl=document.getElementById('opStatusWait');
+        if(!waitEl) return;
+        if(!match||match.status==='rejected'){
+            clearInterval(window._opWatchInterval);
+            window._opWatchInterval=null;
+            window._opWatching=false;
+            sessionStorage.removeItem('opPendingReg');
+            waitEl.innerHTML=`
+                <div style="font-size:2rem;margin-bottom:10px;">😔</div>
+                <div style="font-size:1rem;font-weight:800;color:#ef4444;margin-bottom:6px;">Registration Not Available</div>
+                <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:16px;">Sorry, your registration could not be confirmed. Please contact the venue for details.</div>
+                <button class="btn btn-primary" onclick="renderOpSessionList()">📅 Try Another Session</button>`;
+            return;
+        }
+        if(match.status==='confirmed'){
+            clearInterval(window._opWatchInterval);
+            window._opWatchInterval=null;
+            window._opWatching=false;
+            sessionStorage.removeItem('opPendingReg');
+            waitEl.innerHTML=`
+                <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                <div style="font-size:1.1rem;font-weight:800;color:#10b981;margin-bottom:6px;">Registration Confirmed!</div>
+                <div style="font-size:0.85rem;color:#2563eb;margin-bottom:6px;">Your spot has been confirmed.</div>
+                <div style="font-size:0.9rem;font-weight:700;color:#2563eb;margin-bottom:10px;">See you at the venue!</div>
+                <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:8px;padding:10px;margin:10px 0;font-size:0.85rem;">
+                    Show up at the venue during the session time.<br>
+                    <span style="color:#f59e0b;">⏰ Please be there at least 15 minutes early.</span>
+                </div>`;
+        }
+    },3000);
+}
+
+// ===================== INIT =====================
+(async () => {
+    const params = new URLSearchParams(window.location.search);
+    let venueSlug = params.get('venue') || params.get('org');
+    IS_ORGANIZER_PORTAL = !!params.get('org');
+    if (!venueSlug) {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        venueSlug = pathParts[0] || null;
+    }
+    if (!venueSlug) { document.getElementById('heroVenueName').textContent = 'No venue specified'; return; }
+    try {
+        const slugDoc = await db.collection('slugs').doc(venueSlug).get();
+        if (!slugDoc.exists) { document.getElementById('heroVenueName').textContent = 'Venue not found'; return; }
+        if (slugDoc.data().type === 'organizer' || IS_ORGANIZER_PORTAL) {
+            IS_ORGANIZER_PORTAL = true;
+            VENUE_ID = slugDoc.data().organizerId;
+        } else {
+            VENUE_ID = slugDoc.data().venueId;
+        }
+        document.title='CourtQ · '+venueSlug;
+        // Hide court picker and booking portal for organizers
+        if (IS_ORGANIZER_PORTAL) {
+            document.getElementById('bookNowBtn').style.display = 'none';
+        }
+        if (!IS_ORGANIZER_PORTAL) {
+        bkCol().onSnapshot(snap=>{S.bookings=[];snap.forEach(d=>S.bookings.push({id:d.id,...d.data()}));if(S.portal?.step===2)renderSlots();},()=>{});
+        }
+        let _pendingBookingChecked = false;
+        unsub=db.collection(IS_ORGANIZER_PORTAL?'organizers':'venues').doc(VENUE_ID).onSnapshot(snap=>{
+            if(!snap.exists) return;
+            const data = snap.data();
+            S.venueName = data.name || 'Court';
+            S.address = data.address || '';
+            S.logoUrl = cqFixImgurUrl(data.logoUrl || '');
+            S.courts = data.courts || [];
+            S.session = data.session || null;
+            S.scheduledSessions = data.scheduledSessions || [];
+            S.nextBId = data.nextBId || 1;
+            S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
+            const cb='?t='+Date.now();
+            const logoHtml=S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" class="hero-logo-img" alt="logo">`:'';
+            document.getElementById('heroVenueName').innerHTML = logoHtml + escapeHtml(S.venueName);
+            document.getElementById('heroVenueAddress').innerHTML = S.address ? '📍 ' + escapeHtml(S.address) : '';
+            document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
+            if (!IS_ORGANIZER_PORTAL) renderCourtPicker();
+            // Re-render slots if on step 2
+            if(S.portal?.step===2) renderSlots();
+            // Re-render Open Play list if portal is open (but not while confirmation watcher is active)
+            if(document.getElementById('opPortalOverlay').classList.contains('active') && !window._opWatching) renderOpSessionList();
+            // Restore pending booking after refresh
+            if(!_pendingBookingChecked && S.courts.length > 0){
+                _pendingBookingChecked = true;
+                const pid = sessionStorage.getItem('portalPendingBooking');
+                if(pid && VENUE_ID) showPendingBooking(pid);
+                const opReg = sessionStorage.getItem('opPendingReg');
+                if(opReg && VENUE_ID){
+                    try {
+                        const {sessionId,email}=JSON.parse(opReg);
+                        if(sessionId&&email) watchOpRegistration(email, sessionId);
+                    } catch(e){}
+                }
+            }
+        }, err=>{
+            console.warn('onSnapshot error:', err);
+        });
+    } catch(e) {
+        console.error(e);
+        document.getElementById('heroVenueName').textContent = 'Error loading venue';
+    }
+})();
+renderPortalPlayerNames();
+
+function closeLegal(){document.getElementById('legalModal').classList.remove('active');}
+function showLegal(page){
+    const c=document.getElementById('legalContent');
+    const pages={
+        about:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2><p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p><p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p><p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a><br>📱 0999 883 0291</p>',
+        privacy:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2><p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p><p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by contacting us.</p><p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p><p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion.</p><p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p><p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p><p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p><p><em>Last updated: July 2026</em></p>',
+        terms:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2><p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. By checking the consent checkbox during sign-up or demo registration, you explicitly accept these terms and our Privacy Policy. If you do not agree, do not use the platform.</p><p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p><p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue\'s discretion.</p><p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p><p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p><p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p><p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p><p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p><p><em>Last updated: July 2026</em></p>',
+        disclaimer:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2><p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p><p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p><p><strong>Payment:</strong> CourtQ Pro does not process payments. GCash and Maya are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p><p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p><p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>',
+        contact:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2><p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a></p><p><strong>Phone:</strong> 📱 0999 883 0291</p><p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#2563eb;">facebook.com/aiautomationexpert</a></p><p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p><p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p><p style="margin-top:16px;font-size:0.72rem;color:#64748b;">Apex Mind Agency<br>Talisay City, Cebu, Philippines</p>'
+    };
+    c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
+    document.getElementById('legalModal').classList.add('active');
+}
+</script>
+</body>
+</html>

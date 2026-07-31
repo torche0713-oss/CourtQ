@@ -1,0 +1,7 @@
+.vercel
+node_modules/
+*.mp4
+*.mp4.*
+courtq-2e744-firebase-adminsdk-fbsvc-c2f78c3d30.json
+backup/
+0730/

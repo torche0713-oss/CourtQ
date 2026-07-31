@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourtQ Live</title>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4528294526114802"
+ crossorigin="anonymous"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#080816;color:#fff;font-family:'Inter','Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh;}
+#app{padding:28px 36px;max-width:1920px;margin:0 auto;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;gap:20px;flex-wrap:wrap;}
+.header-left{display:flex;align-items:center;gap:20px;}
+.header-left h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,#4ecdc4,#2ecc71);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.venue-name{font-size:1.4rem;color:#aaa;font-weight:500;}
+.clock{font-size:1.3rem;color:#f39c12;font-weight:700;font-variant-numeric:tabular-nums;}
+.session-badge{font-size:1rem;padding:8px 18px;border-radius:24px;font-weight:700;}
+.session-badge.active{background:rgba(78,205,196,0.2);color:#4ecdc4;border:2px solid rgba(78,205,196,0.4);}
+.session-badge.inactive{background:rgba(255,255,255,0.06);color:#666;border:2px solid rgba(255,255,255,0.1);}
+.controls{display:flex;gap:12px;align-items:center;}
+.controls button{background:rgba(255,255,255,0.07);border:2px solid rgba(255,255,255,0.12);color:#bbb;padding:10px 20px;border-radius:10px;cursor:pointer;font-size:0.95rem;font-weight:600;transition:all 0.2s;}
+.controls button:hover{background:rgba(255,255,255,0.14);color:#fff;}
+.controls button.fullscreen{background:rgba(78,205,196,0.12);border-color:rgba(78,205,196,0.25);color:#4ecdc4;}
+.controls button.fullscreen:hover{background:rgba(78,205,196,0.22);}
+.court-grid{display:grid;gap:18px;margin-bottom:32px;}
+.court-grid.cols-1{grid-template-columns:1fr;}
+.court-grid.cols-2{grid-template-columns:1fr 1fr;}
+.court-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.court-grid.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.court-grid.cols-5{grid-template-columns:1fr 1fr 1fr 1fr 1fr;}
+.court-grid.cols-6{grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;}
+.court-card{background:linear-gradient(145deg,#141428,#1c1c38);border-radius:20px;padding:28px 24px;position:relative;overflow:hidden;border:2px solid rgba(255,255,255,0.07);box-shadow:0 6px 32px rgba(0,0,0,0.5);transition:transform 0.2s,box-shadow 0.2s;}
+.court-card:hover{transform:translateY(-3px);box-shadow:0 10px 40px rgba(0,0,0,0.5);}
+.court-card.available{border-color:rgba(0,230,118,0.35);box-shadow:0 0 24px rgba(0,230,118,0.06);}
+.court-card.available .court-status{color:#00e676;}
+.court-card.occupied{border-color:rgba(68,138,255,0.35);box-shadow:0 0 24px rgba(68,138,255,0.06);}
+.court-card.occupied .court-status{color:#448aff;}
+.court-card.tournament{border-color:rgba(187,0,255,0.35);box-shadow:0 0 24px rgba(187,0,255,0.06);}
+.court-card.tournament .court-status{color:#bb00ff;}
+.court-card.maintenance{opacity:0.55;border-color:rgba(255,23,68,0.25);}
+.court-card.maintenance .court-status{color:#ff1744;}
+.court-card.booked{border-color:rgba(255,171,0,0.35);box-shadow:0 0 24px rgba(255,171,0,0.06);}
+.court-card.booked .court-status{color:#ffab00;}
+.court-card .color-bar{position:absolute;top:0;left:0;right:0;height:4px;}
+.court-card .color-bar.available{background:linear-gradient(90deg,#00e676,#00c853);}
+.court-card .color-bar.occupied{background:linear-gradient(90deg,#448aff,#2979ff);}
+.court-card .color-bar.tournament{background:linear-gradient(90deg,#bb00ff,#9d00ff);}
+.court-card .color-bar.maintenance{background:linear-gradient(90deg,#ff1744,#d50000);}
+.court-card .color-bar.booked{background:linear-gradient(90deg,#ffab00,#ff6d00);}
+.usage-badge{font-size:0.78rem;font-weight:700;padding:4px 14px;border-radius:14px;display:inline-block;letter-spacing:0.5px;}
+.usage-badge.openplay{background:rgba(68,138,255,0.18);color:#448aff;border:1px solid rgba(68,138,255,0.35);}
+.usage-badge.tournament{background:rgba(187,0,255,0.18);color:#bb00ff;border:1px solid rgba(187,0,255,0.35);}
+.usage-badge.booking{background:rgba(255,171,0,0.18);color:#ffab00;border:1px solid rgba(255,171,0,0.35);}
+.court-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.court-name{font-size:1.5rem;font-weight:800;}
+.court-status{font-size:0.92rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.court-meta{font-size:0.88rem;color:#888;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+.court-players{display:flex;gap:18px;margin-top:8px;}
+.court-players .team{flex:1;}
+.court-players .team-label{font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:6px;font-weight:700;}
+.court-players .team-label.team-a{color:#00e676;}
+.court-players .team-label.team-b{color:#ff5252;}
+.player-avatar{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);padding:6px 14px 6px 8px;border-radius:24px;margin:3px;}
+.player-avatar .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:2px solid rgba(255,255,255,0.15);}
+.player-avatar .name{font-size:1.1rem;font-weight:700;}
+.player-avatar .skill{font-size:0.82rem;color:#888;margin-left:3px;}
+.rr-round{font-size:0.85rem;color:#f39c12;background:rgba(243,156,18,0.12);padding:4px 14px;border-radius:14px;display:inline-block;font-weight:700;}
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px;}
+.queue-panel,.results-panel,.tournament-panel{background:linear-gradient(145deg,#141428,#1c1c38);border-radius:20px;padding:24px;border:2px solid rgba(255,255,255,0.07);}
+.right-column{display:flex;flex-direction:column;gap:28px;}
+.panel-title{font-size:0.95rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#f39c12;margin-bottom:14px;}
+.queue-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.queue-item:last-child{border-bottom:none;}
+.queue-item .q-name{font-size:1rem;font-weight:700;}
+.queue-item .q-meta{font-size:0.85rem;color:#888;}
+.queue-item .q-wait{font-size:0.85rem;color:#f39c12;font-weight:700;}
+.empty-msg{color:#555;font-size:1rem;text-align:center;padding:24px 0;}
+.none-msg{color:#444;font-size:0.9rem;text-align:center;padding:10px 0;}
+.result-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.result-item:last-child{border-bottom:none;}
+.result-item .r-players{font-size:0.95rem;font-weight:700;}
+.result-item .r-winner{font-size:0.9rem;color:#00e676;font-weight:700;}
+.result-item .r-score{font-size:0.9rem;color:#ffab00;font-weight:800;}
+.result-item .r-time{font-size:0.78rem;color:#666;margin-left:8px;}
+.tournament-match{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.92rem;}
+.tournament-match:last-child{border-bottom:none;}
+.tournament-match .t-players{display:flex;gap:10px;align-items:center;}
+.tournament-match .t-stage{font-size:0.78rem;color:#888;text-transform:uppercase;}
+.leaderboard-scroll{max-height:300px;overflow-y:auto;}
+.leaderboard-scroll::-webkit-scrollbar{width:6px;}
+.leaderboard-scroll::-webkit-scrollbar-track{background:transparent;}
+.leaderboard-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:4px;}
+@media(max-width:1200px){.court-grid.cols-4,.court-grid.cols-5,.court-grid.cols-6{grid-template-columns:1fr 1fr 1fr;}}
+@media(max-width:900px){.court-grid.cols-3,.court-grid.cols-4,.court-grid.cols-5,.court-grid.cols-6{grid-template-columns:1fr 1fr;}.bottom-row{grid-template-columns:1fr;}}
+@media(max-width:600px){#app{padding:16px;}.court-grid{grid-template-columns:1fr!important;}.header{flex-direction:column;align-items:flex-start;}}
+
+/* Timeline for TV */
+.tv-timeline-wrap{margin-bottom:32px;}
+.tv-timeline-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.tv-timeline-scroll{overflow-x:auto;overflow-y:hidden;}
+.tv-timeline-scroll::-webkit-scrollbar{height:8px;}
+.tv-timeline-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,0.04);border-radius:4px;}
+.tv-timeline-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:4px;}
+.tv-timeline-scroll .timeline-grid{min-width:800px;background:linear-gradient(145deg,rgba(0,0,0,0.4),rgba(0,0,0,0.2));border-radius:16px;padding:18px;border:2px solid rgba(255,255,255,0.06);}
+.tv-timeline-scroll .tl-hours{display:flex;margin-left:110px;margin-bottom:8px;}
+.tv-timeline-scroll .tl-hour{flex:1;font-size:0.72rem;color:#666;text-align:center;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;}
+.tv-timeline-scroll .tl-row{display:flex;align-items:center;margin-bottom:6px;height:38px;border-radius:8px;}
+.tv-timeline-scroll .tl-label{width:110px;font-size:0.85rem;font-weight:700;flex-shrink:0;padding-right:10px;}
+.tv-timeline-scroll .tl-slots{flex:1;height:100%;position:relative;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);}
+.tv-timeline-scroll .tl-slot{position:absolute;top:2px;bottom:2px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:0.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-shadow:0 1px 4px rgba(0,0,0,0.5);z-index:2;}
+.tv-timeline-scroll .tl-op{background:linear-gradient(135deg,rgba(0,230,118,0.4),rgba(0,230,118,0.15));color:#69f0ae;border:1px solid rgba(0,230,118,0.5);}
+.tv-timeline-scroll .tl-tournament{background:linear-gradient(135deg,rgba(187,0,255,0.4),rgba(187,0,255,0.15));color:#d4a5ff;border:1px solid rgba(187,0,255,0.5);}
+.tv-timeline-scroll .tl-booked{background:linear-gradient(135deg,rgba(255,171,0,0.45),rgba(255,171,0,0.15));color:#ffd740;border:1px solid rgba(255,171,0,0.5);}
+.tv-timeline-scroll .tl-playing{background:linear-gradient(135deg,rgba(68,138,255,0.45),rgba(68,138,255,0.15));color:#82b1ff;border:1px solid rgba(68,138,255,0.5);}
+.tv-timeline-scroll .tl-gridline{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.05);z-index:0;}
+.tv-timeline-scroll .tl-now{position:absolute;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#f39c12,#ff1744);z-index:5;box-shadow:0 0 12px rgba(243,156,18,0.5);}
+.tv-timeline-scroll .tl-now-lbl{position:absolute;top:-18px;font-size:0.65rem;color:#f39c12;transform:translateX(-50%);font-weight:800;text-shadow:0 0 10px rgba(243,156,18,0.5);}
+</style>
+</head>
+<body>
+<div id="app">
+    <div class="header">
+        <div class="header-left">
+            <h1><img src="./Logo.jpg" alt="" style="height:52px;vertical-align:middle;"></h1>
+            <span class="venue-name" id="venueName">—</span>
+            <span class="session-badge inactive" id="sessionBadge">No Active Session</span>
+        </div>
+        <span style="font-size:1.4rem;font-weight:800;color:#888;letter-spacing:3px;text-transform:uppercase;text-shadow:0 0 20px rgba(255,255,255,0.05);">TV Display</span>
+        <div class="controls">
+            <span class="clock" id="clockDisplay">--:--:--</span>
+            <button onclick="toggleTimeline()" id="tlToggleBtn" style="background:rgba(243,156,18,0.08);border-color:rgba(243,156,18,0.15);color:#f39c12;">📅 Schedule</button>
+            <button onclick="toggleFullscreen()" class="fullscreen" title="Fullscreen">⛶ Fullscreen</button>
+        </div>
+    </div>
+    <div id="courtGrid" class="court-grid cols-3"></div>
+    <div id="tvTimelineWrap" class="tv-timeline-wrap" style="display:none;">
+        <div class="tv-timeline-header">
+            <span class="panel-title">📅 Today's Schedule</span>
+        </div>
+        <div class="tv-timeline-scroll">
+            <div class="timeline-grid" id="tvTlGrid"></div>
+        </div>
+    </div>
+    <div class="bottom-row">
+        <div class="queue-panel">
+            <div class="panel-title">⏳ Queue</div>
+            <div id="queueList"></div>
+        </div>
+        <div class="right-column">
+            <div class="results-panel">
+                <div class="panel-title">🏁 Recent Results</div>
+                <div id="resultsList"></div>
+            </div>
+            <div class="tournament-panel">
+                <div class="panel-title">🏆 Tournament</div>
+                <div id="tournamentList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp(CQ_CONFIG.firebaseConfig);
+const db = firebase.firestore();
+const SKILL_LABELS={2:'Newbie',2.5:'Novice',3:'Low Intermediate',3.5:'High Intermediate',4:'Advanced',4.5:'Expert',5:'Pro'};
+let VENUE_ID = null;
+let unsub = null;
+
+function phtNow(){
+    const d=new Date();
+    d.setMinutes(d.getMinutes()+d.getTimezoneOffset()+CQ_CONFIG.utcOffset);
+    return d;
+}
+
+function updateClock(){
+    document.getElementById('clockDisplay').textContent=phtNow().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:CQ_CONFIG.timezone});
+}
+setInterval(updateClock,1000);updateClock();
+
+function toggleFullscreen(){
+    if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(()=>{});}
+    else{document.exitFullscreen().catch(()=>{});}
+}
+
+function getCourtCols(n){
+    if(n<=3) return n;
+    if(n<=4) return 4;
+    if(n<=6) return 6;
+    return 6;
+}
+
+function getGTLabel(gt){return gt==='singles'?'1v1':gt==='doubles'?'2v2':gt||'—';}
+function getWait(m){if(m<1)return '<1m';if(m<60)return m+'m';const h=Math.floor(m/60);return h+'h'+(m%60?m%60+'m':'')}
+
+function getTimeMins(t){
+    if(!t) return -1;
+    const parts=t.split(':').map(Number);
+    return parts[0]*60+(parts[1]||0);
+}
+
+function isBookingActive(b, now){
+    if(b.status==='cancelled'||b.status==='completed') return false;
+    const today=phtNow().toISOString().slice(0,10);
+    if(b.date!==today) return false;
+    const nowMins=now.getHours()*60+now.getMinutes();
+    const startM=getTimeMins(b.startTime);
+    const endM=getTimeMins(b.endTime);
+    return nowMins>=startM&&nowMins<endM;
+}
+
+function isBookingUpcoming(b, now){
+    if(b.status==='cancelled'||b.status==='completed'||b.status==='active') return false;
+    const today=phtNow().toISOString().slice(0,10);
+    if(b.date!==today) return false;
+    const nowMins=now.getHours()*60+now.getMinutes();
+    const startM=getTimeMins(b.startTime);
+    return startM>nowMins&&startM-nowMins<=120;
+}
+
+function nextBooking(b, now, bookings){
+    // Already handled by isBookingActive/Upcoming per court
+    return null;
+}
+
+// ── Timeline helpers ──
+function escapeHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function getTodayISO(){return phtNow().toISOString().split('T')[0];}
+function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
+function minToTime(m){const h=Math.floor(m/60),mn=m%60;return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`;}
+function nowMin(){const n=phtNow();return n.getHours()*60+n.getMinutes();}
+
+function inSessionTV(date,sMin,eMin,courtId,session){
+    if(!session||!session.active) return false;
+    if(courtId!=null&&session.courts&&!session.courts.includes(courtId)) return false;
+    const sd=session.startDate||date,ed=session.endDate||sd;
+    const ss=timeToMin(session.startTime||session.start),se=timeToMin(session.endTime||session.end);
+    if(date<sd||date>ed) return false;
+    if(sd===ed) return sMin<se&&eMin>ss;
+    if(date===sd) return eMin>ss;
+    if(date===ed) return sMin<se;
+    return true;
+}
+
+function getBookingsForCourtTV(cId,date,sMin,eMin,bookings){
+    return bookings.filter(b=>{
+        if(b.courtId!==cId||b.date!==date||b.status==='cancelled'||b.status==='completed') return false;
+        const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+        return sMin<be&&eMin>bs;
+    });
+}
+
+let lastData=null;
+let _bookings=[];
+let _lastLiveScores={};
+let _unsubLiveScores=null;
+let _unsubBookings=null;
+let _pollTimer=null;
+let showTimeline=false;
+
+function toggleTimeline(){
+    showTimeline=!showTimeline;
+    const wrap=document.getElementById('tvTimelineWrap');
+    wrap.style.display=showTimeline?'block':'none';
+    document.getElementById('tlToggleBtn').textContent=showTimeline?'⊞ Live':'📅 Schedule';
+    if(showTimeline&&lastData) renderTVTimeline(lastData);
+}
+
+function renderTVTimeline(data){
+    const grid=document.getElementById('tvTlGrid');
+    if(!grid) return;
+    const date=getTodayISO();
+    const courts=data.courts||[];
+    const bookings=_bookings.length>0?_bookings:data.bookings||[];
+    const session=data.session;
+    const sH=0,eH=23,total=24;
+    const nMin=nowMin();
+    let html=`<div class="tl-hours">`;
+    for(let h=sH;h<=eH;h++) html+=`<div class="tl-hour">${h%12||12}${h<12?'am':'pm'}</div>`;
+    html+='</div>';
+    const pct=t=>((timeToMin(t)-sH*60)/(total*60))*100;
+    let gridlines='';
+    for(let h=1;h<=eH;h++) gridlines+=`<div class="tl-gridline" style="left:${(h/total)*100}%;"></div>`;
+    courts.forEach(court=>{
+        let slots=gridlines;
+        const tournamentInfo=(()=>{
+            if(!court._tournamentId) return null;
+            const t=(data.tournaments||[]).find(x=>x.id===court._tournamentId);
+            if(!t||t.status==='completed') return null;
+            return {name:t.name,status:t.status};
+        })();
+        if(tournamentInfo) slots+=`<div class="tl-slot tl-tournament" style="left:0%;width:100%;">🔮 ${tournamentInfo.name}</div>`;
+        if(session&&session.active&&inSessionTV(date,sH*60,(eH+1)*60,court.id,session)){
+            const ss=timeToMin(session.startTime||session.start),se=timeToMin(session.endTime||session.end);
+            const sd=session.startDate||date,ed=session.endDate||sd;
+            const sesStart=sd!==ed&&date===ed?0:Math.max(ss,sH*60);
+            const sesEnd=sd!==ed&&date===sd?24*60:Math.min(se,(eH+1)*60);
+            const bks=getBookingsForCourtTV(court.id,date,sesStart,sesEnd,bookings).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+            let cur=sesStart;
+            bks.forEach(b=>{
+                const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">Open Play</div>`;
+                slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+                cur=be;
+            });
+            if(cur<sesEnd) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((sesEnd-cur)/(total*60))*100,100)}%;">Open Play</div>`;
+        } else {
+            // Check scheduled Open Play sessions
+            let renderedScheduled=false;
+            (data.scheduledSessions||[]).filter(s=>(s.status==='scheduled'||s.status==='active')&&s.date===date&&(!court.id||!s.courts||s.courts.includes(court.id))).forEach(s=>{
+                renderedScheduled=true;
+                const ss=Math.max(timeToMin(s.startTime),sH*60);
+                const se=Math.min(timeToMin(s.endTime),(eH+1)*60);
+                if(ss<se){
+                    const bks=getBookingsForCourtTV(court.id,date,ss,se,bookings).sort((a,b)=>timeToMin(a.startTime)-timeToMin(b.startTime));
+                    let cur=ss;
+                    bks.forEach(b=>{
+                        const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                        if(cur<bs) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((bs-cur)/(total*60))*100,100)}%;">📅 Open Play</div>`;
+                        slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+                        cur=be;
+                    });
+                    if(cur<se) slots+=`<div class="tl-slot tl-op" style="left:${pct(minToTime(cur))}%;width:${Math.min(((se-cur)/(total*60))*100,100)}%;">📅 Open Play</div>`;
+                }
+            });
+            if(!renderedScheduled){
+                bookings.filter(b=>b.courtId===court.id&&b.date===date&&b.status!=='cancelled'&&b.status!=='checkedin'&&b.status!=='completed').forEach(b=>{
+                    const bs=timeToMin(b.startTime),be=timeToMin(b.endTime);
+                    slots+=`<div class="tl-slot tl-booked" style="left:${pct(b.startTime)}%;width:${((be-bs)/(total*60))*100}%;">${escapeHtml(b.customerName||b.customer||'Guest')}</div>`;
+                });
+            }
+        }
+        if(court.status==='occupied'&&court.startTime){
+            const el=Math.floor((Date.now()-court.startTime)/60000);
+            const ps=nMin-el;
+            const l=((ps-sH*60)/(total*60))*100;
+            const w=(el/(total*60))*100;
+            if(l>=0) slots+=`<div class="tl-slot tl-playing" style="left:${l}%;width:${Math.max(w,0.5)}%;">Playing</div>`;
+        }
+        const nowLine=`<div class="tl-now" style="left:${((nMin-sH*60)/(total*60))*100}%;"><span class="tl-now-lbl">NOW</span></div>`;
+        html+=`<div class="tl-row"><div class="tl-label" style="color:${court.color||'#fff'};">${court.name}</div><div class="tl-slots">${slots}${nowLine}</div></div>`;
+    });
+    grid.innerHTML=html;
+    const scrollWrap=document.querySelector('.tv-timeline-scroll');
+    if(scrollWrap){
+        const scrollPct=nMin/(24*60);
+        scrollWrap.scrollLeft=scrollWrap.scrollWidth*scrollPct-scrollWrap.clientWidth/2;
+    }
+}
+
+function renderVenueName(){
+    if(!lastData)return;
+    document.getElementById('venueName').textContent=lastData.venueName||'—';
+    const sb=document.getElementById('sessionBadge');
+    const s=lastData.session;
+    if(s&&s.active){
+        const modeLabels={winnersSplit:'Winners Split',roundRobin:'Round Robin',fourOnFour:'4 on/4 off'};
+        const ml=modeLabels[s.mode]||s.mode||'Open Play';
+        sb.textContent='● '+ml;
+        sb.className='session-badge active';
+    } else {
+        sb.textContent='○ No Active Session';
+        sb.className='session-badge inactive';
+    }
+}
+function renderCourts(){
+    if(!lastData)return;
+    const courts=lastData.courts||[];
+    const tournaments=lastData.tournaments||[];
+    const bookings=_bookings.length>0?_bookings:lastData.bookings||[];
+    const now=phtNow();
+    const activeBookings={};
+    const upcomingBookings={};
+    bookings.forEach(b=>{
+        if(isBookingActive(b,now)){(activeBookings[b.courtId]||(activeBookings[b.courtId]=[])).push(b);}
+        if(isBookingUpcoming(b,now)){(upcomingBookings[b.courtId]||(upcomingBookings[b.courtId]=[])).push(b);}
+    });
+    const grid=document.getElementById('courtGrid');
+    grid.className='court-grid cols-'+getCourtCols(courts.length);
+    grid.innerHTML=courts.map(c=>{
+        const occ=c.status==='occupied';
+        const maint=c.status==='maintenance';
+        const isTournament=!!c._tournamentId&&tournaments.some(t=>t.id===c._tournamentId&&(t.status==='groups'||t.status==='elimination'));
+        const hasActiveBookings=activeBookings[c.id]&&activeBookings[c.id].length>0;
+        const hasUpcoming=upcomingBookings[c.id]&&upcomingBookings[c.id].length>0;
+        const isBookingOcc=occ&&!c._tournamentId&&hasActiveBookings;
+        const isOpenPlay=occ&&!c._tournamentId&&!hasActiveBookings&&lastData.session&&lastData.session.active;
+        const cardType=maint?'maintenance':isTournament?'tournament':isBookingOcc?'booked':isOpenPlay?'occupied':occ?'occupied':hasActiveBookings?'booked':c.status;
+        let usageBadge='';
+        if(isTournament) usageBadge='<span class="usage-badge tournament">🏆 Tournament</span>';
+        else if(isBookingOcc) usageBadge='<span class="usage-badge booking">📅 Booking</span>';
+        else if(isOpenPlay) usageBadge='<span class="usage-badge openplay">🎯 Open Play</span>';
+        const isSingles=c.gameType==='singles';
+        const mid=Math.ceil(c.players.length/2);
+        const teamA=c.team1||c.players.slice(0,mid);
+        const teamB=c.team2||c.players.slice(mid);
+        let playersHTML='';
+        if(occ&&c.players.length>0){
+            if(isSingles||c.players.length<=2){
+                playersHTML=`<div class="court-players" style="justify-content:center;">${c.players.map((p,i)=>`<span class="player-avatar"><span class="dot" style="background:${p.color||(i===0?'#4ecdc4':'#e74c3c')}"></span><span class="name">${p.name}</span></span>`).join('<span style="color:#444;font-weight:700;">vs</span>')}</div>`;
+            } else {
+                playersHTML=`<div class="court-players"><div class="team"><div class="team-label team-a">● Team A</div>${teamA.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#4ecdc4'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}</div><div class="team"><div class="team-label team-b">● Team B</div>${teamB.map(p=>`<span class="player-avatar"><span class="dot" style="background:${p.color||'#e74c3c'}"></span><span class="name">${p.name}<span class="skill">${p.skill||'?'}.0</span></span></span>`).join('')}</div></div>`;
+            }
+        } else if(isTournament&&!occ){
+            const tour=tournaments.find(t=>t.id===c._tournamentId);
+            const tMatch=tour?(tour.groups||[]).reduce((found,g)=>(found||(g.matches||[]).find(m=>m.courtId===c.id)),null)||(tour.elimination?tour.elimination.rounds.reduce((found,r)=>(found||(r.matches||[]).find(m=>m.courtId===c.id&&m.p1&&m.p2)),null):null):null;
+            if(tMatch) playersHTML=`<div class="court-players" style="justify-content:center;"><span class="player-avatar"><span class="dot" style="background:#4ecdc4"></span><span class="name">${escapeHtml(tMatch.p1)}</span></span><span style="color:#444;font-weight:700;">vs</span><span class="player-avatar"><span class="dot" style="background:#e74c3c"></span><span class="name">${escapeHtml(tMatch.p2)}</span></span></div>`;
+        }
+        let bookingHTML='';
+        if(hasActiveBookings) bookingHTML=activeBookings[c.id].map(b=>`<div style="font-size:0.78rem;color:#f1c40f;margin-top:6px;padding:6px 10px;background:rgba(241,196,15,0.06);border-radius:8px;border:1px solid rgba(241,196,15,0.1);">📅 ${b.customerName||'Guest'} · ${b.startTime}-${b.endTime}</div>`).join('');
+        else if(hasUpcoming) bookingHTML=upcomingBookings[c.id].slice(0,2).map(b=>`<div style="font-size:0.72rem;color:#f39c12;margin-top:4px;opacity:0.7;">⏳ ${b.startTime} ${b.customerName?'· '+b.customerName:''}</div>`).join('');
+        const rrHTML=c.rr?`<span class="rr-round" style="margin-top:6px;">🔄 Round ${c.rr.round+1}/3</span>`:'';
+        const statusLabel=maint?'● Maintenance':isTournament?'● Tournament':isBookingOcc?'● Booked':isOpenPlay?'● In Play':occ?'● In Play':hasActiveBookings?'● Booked':c.status==='available'?'● Available':'—';
+        return `<div class="court-card ${cardType}"><div class="color-bar ${cardType}"></div><div class="court-header"><span class="court-name" style="color:${c.color||'#fff'}">${c.name}</span><span style="display:flex;align-items:center;gap:6px;">${usageBadge}<span class="court-status">${statusLabel}</span></span></div><div class="court-meta">${c.location?`<span>📍 ${c.location}</span>`:''}${occ&&c.gameType?`<span>🎮 ${getGTLabel(c.gameType)}</span>`:''}${c.rate?`<span>₱${c.rate}</span>`:''}${isOpenPlay&&c.startTime?`<span>⏱ ${Math.floor((Date.now()-c.startTime)/60000)}m</span>`:''}</div>${occ?playersHTML:''}${rrHTML}${bookingHTML}${(occ||isTournament)&&_lastLiveScores[c.id]?`<div style="display:flex;justify-content:center;align-items:center;gap:24px;margin-top:12px;padding:12px 16px;background:rgba(255,255,255,0.04);border-radius:14px;border:2px solid rgba(255,255,255,0.08);"><span style="font-size:2.8rem;font-weight:900;color:#00e676;text-shadow:0 0 20px rgba(0,230,118,0.15);">${_lastLiveScores[c.id].scoreA||0}</span><span style="font-size:0.85rem;color:#888;font-weight:700;letter-spacing:2px;">SCORE</span><span style="font-size:2.8rem;font-weight:900;color:#ff5252;text-shadow:0 0 20px rgba(255,82,82,0.15);">${_lastLiveScores[c.id].scoreB||0}</span></div>`:''}${maint?'<div style="font-size:0.95rem;color:#ff1744;margin-top:10px;text-align:center;font-weight:600;">🔧 Under Maintenance</div>':''}${cardType==='available'?'<div style="font-size:1.8rem;text-align:center;padding:16px 0;color:#00e676;font-weight:700;letter-spacing:2px;opacity:0.6;">✓ AVAILABLE</div>':''}${!occ&&!maint&&cardType==='booked'&&!hasActiveBookings&&!hasUpcoming?'<div style="font-size:1.4rem;text-align:center;padding:16px 0;color:#555;font-weight:600;opacity:0.4;">—</div>':''}</div>`;
+    }).join('');
+}
+function renderQueue(){
+    if(!lastData)return;
+    const queue=lastData.queue||[];
+    const soloQueue=lastData.soloQueue||[];
+    const session=lastData.session;
+    const ql=document.getElementById('queueList');
+    const soloCount=soloQueue.reduce((a,s)=>a+s.players.length,0);
+    const poolMode=session&&(session.mode==='winnersSplit'||session.mode==='roundRobin');
+    if(poolMode){
+        if(session.mode==='roundRobin'&&session.rrSchedule){
+            const s=session.rrSchedule;
+            const done=s.matches.filter(m=>m.completed).length;
+            if(s.completed){
+                const sorted=[...s.teams].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||(b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst));
+                ql.innerHTML=`<div style="font-size:0.7rem;color:#2ecc71;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🏆 Round Robin Complete</div><div style="background:rgba(46,204,113,0.1);border-radius:6px;padding:6px 10px;margin-bottom:6px;font-weight:700;color:#2ecc71;font-size:0.82rem;">Winner: ${sorted[0].name}</div>${s.teams.map((t,i)=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${i+1}. ${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
+            } else {
+                ql.innerHTML=`<div style="font-size:0.68rem;color:#9b59b6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🔄 Round Robin · ${done}/${s.matches.length}</div><div style="font-size:0.7rem;color:#888;margin-bottom:6px;">${s.teams.length} ${session.rrGameType==='singles'?'players':'teams'}</div>${s.teams.map(t=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span>${t.name}</span><span style="color:#aaa;">${t.wins}W/${t.losses}L${t.draws?'/'+t.draws+'D':''} ${t.pointsFor}-${t.pointsAgainst}</span></div>`).join('')}`;
+            }
+        } else if(soloCount===0){
+            ql.innerHTML='<div class="empty-msg">Pool is empty</div>';
+        } else {
+            const entries=session.mode==='roundRobin'&&session.rrGameType==='singles'?soloQueue.map(e=>`<div class="queue-item"><span class="q-name">${e.players.map(p=>p.name).join(', ')}</span><span class="q-wait">waiting</span></div>`).join(''):soloQueue.map(e=>{const label=e._halfTeam?'👫 '+e.players.map(p=>p.name).join(' & '):e._solo?'🙋 '+e.players[0].name:e.players.map(p=>p.name).join(', ');const skill=e.players[0]?SKILL_LABELS[e.skillLevel]||'—':'—';return `<div class="queue-item"><span class="q-name">${label}</span><span class="q-meta">⭐${skill}</span><span class="q-wait">${getWait(Math.floor((Date.now()-e.joinedAt)/60000))}</span></div>`;}).join('');
+            ql.innerHTML=entries+'<div class="queue-item" style="color:#f39c12;font-size:0.72rem;font-weight:600;">👥 '+soloCount+' player'+(soloCount>1?'s':'')+' in pool</div>';
+        }
+    } else {
+        const full=queue.filter(g=>!g._halfTeam);
+        if(full.length===0&&soloCount===0){ql.innerHTML='<div class="empty-msg">Queue is empty</div>';}
+        else {
+            let html='';
+            full.forEach((g,i)=>{
+                const name=g.groupName||g.players.map(p=>p.name).join(' & ');
+                const meta=getGTLabel(g.gameType)+' · ⭐'+(SKILL_LABELS[g.skillLevel]||'?');
+                const wait=getWait(Math.floor((Date.now()-g.joinedAt)/60000));
+                if(i===0&&full.length>0) html+=`<div class="queue-item" style="border:1px solid rgba(78,205,196,0.2);border-radius:8px;padding:10px;margin-bottom:6px;"><span class="q-name" style="color:#4ecdc4;font-size:0.9rem;">▶ ${name}</span><span class="q-wait" style="font-size:0.82rem;">Next Up</span></div>`;
+                else html+=`<div class="queue-item"><span class="q-name">${name}</span><span class="q-meta">${meta}</span><span class="q-wait">${wait}</span></div>`;
+            });
+            if(soloCount>0) html+='<div class="queue-item"><span class="q-name" style="color:#f39c12;">⏳ '+soloCount+' waiting for partner</span></div>';
+            ql.innerHTML=html;
+        }
+    }
+}
+function renderResults(){
+    if(!lastData)return;
+    const courts=lastData.courts||[];
+    const rl=document.getElementById('resultsList');
+    const allHistory=[];
+    courts.forEach(c=>{(c.history||[]).forEach(h=>{allHistory.push({courtName:c.name,courtId:c.id,courtColor:c.color,...h});});});
+    (lastData.history||[]).forEach(h=>{allHistory.push({...h,courtName:h.court,courtColor:'#555'});});
+    allHistory.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+    const top=allHistory.slice(0,8);
+    if(top.length===0){rl.innerHTML='<div class="empty-msg">No completed games yet</div>';}
+    else {
+        rl.innerHTML=top.map(h=>{
+            const wt=h.winner==='A'?h.teamA:h.winner==='B'?h.teamB:null;
+            const winnerName=wt?(Array.isArray(wt)?wt.map(p=>p.name).join(' & '):''):'—';
+            const scoreText=(h.scoreA!=null&&h.scoreB!=null)?`${h.scoreA}-${h.scoreB}`:'';
+            const timeStr=h.timestamp?(()=>{const d=new Date(h.timestamp);if(isNaN(d.getTime()))return'';return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:CQ_CONFIG.timezone});})():'';
+            const playersStr=h.players?h.players.map(p=>typeof p==='string'?p:(p.name||'')).join(' vs '):'';
+            return `<div class="result-item"><span class="r-players" style="border-left:3px solid ${h.courtColor||'#555'};padding-left:8px;">${h.courtName?h.courtName+': ':''}${playersStr||'—'}</span><span><span class="r-winner">🏆 ${winnerName}</span>${scoreText?' <span class="r-score">'+scoreText+'</span>':''}${timeStr?' <span class="r-time">'+timeStr+'</span>':''}</span></div>`;
+        }).join('');
+    }
+}
+function renderTournament(){
+    if(!lastData)return;
+    const courts=lastData.courts||[];
+    const tournaments=lastData.tournaments||[];
+    const tl=document.getElementById('tournamentList');
+    const activeTours=tournaments.filter(t=>t.status==='groups'||t.status==='elimination');
+    if(activeTours.length===0){tl.innerHTML='<div class="empty-msg">No active tournament</div>';}
+    else {
+        const first=activeTours[0];
+        const groups=first.groups||[];
+        const elimRounds=first.elimination?.rounds||[];
+        const tourCourts=courts.filter(c=>c._tournamentId===first.id);
+        let html=`<div style="font-size:0.82rem;font-weight:700;color:#9b59b6;margin-bottom:8px;">🏆 ${escapeHtml(first.name)}</div>`;
+        if(tourCourts.length>0){html+=`<div style="font-size:0.72rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Live on Court</div>${tourCourts.map(c=>`<div class="tournament-match"><span class="t-players">🔮 ${escapeHtml(c.name)}: ${(c.players||[]).map(p=>escapeHtml(p.name||p)).join(' vs ')}</span></div>`).join('')}`;}
+        if(groups.length>0){html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Groups</div>${groups.map(g=>`<div style="font-size:0.75rem;color:#888;margin-bottom:2px;">📊 ${escapeHtml(g.name)}: ${g.players.map(p=>escapeHtml(p)).join(', ')}</div>`).join('')}`;}
+        if(elimRounds.length>0){const rl={r32:'R32',r16:'R16',r8:'R8',qf:'QF',sf:'SF',final:'Final'};html+=`<div style="font-size:0.72rem;color:#f39c12;margin-top:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Elimination</div>`;elimRounds.forEach(round=>{(round.matches||[]).slice(0,10).forEach(m=>{const pa=m.p1||'TBD',pb=m.p2||'TBD';const s=(m.s1!=null&&m.s2!=null)?`${m.s1}-${m.s2}`:'';const cn=m.courtName||(courts.find(c=>c.id===m.courtId)?.name)||'';html+=`<div class="tournament-match"><span class="t-players">${escapeHtml(pa)} vs ${escapeHtml(pb)}</span><span style="font-size:0.72rem;color:#888;">${rl[round.name]||round.name}${s?' · '+s:''}${cn?' · '+escapeHtml(cn):''}</span></div>`;});});}
+        if(!tourCourts.length&&!groups.length&&!elimRounds.length) html+='<div class="empty-msg">Setting up...</div>';
+        tl.innerHTML=html;
+    }
+}
+function renderAll(){
+    renderVenueName();renderCourts();renderQueue();renderResults();renderTournament();
+    if(showTimeline) renderTVTimeline(lastData);
+}
+
+async function init(){
+    const params=new URLSearchParams(window.location.search);
+    let venueSlug=params.get('venue')||params.get('org');
+    let IS_ORG_TV = !!params.get('org');
+    if(!venueSlug){
+        const pathParts=window.location.pathname.split('/').filter(Boolean);
+        if(pathParts.length>=2&&pathParts[1]==='tv') venueSlug=pathParts[0];
+    }
+    if(!venueSlug){
+        document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;"><img src="./Logo.jpg" alt="" style="height:48px;margin-bottom:20px;opacity:0.5;"><h2 style="color:#888;margin-bottom:10px;">Live TV</h2><p style="color:#555;">Add <code style="background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">?venue=your-slug</code> to the URL.</p></div>';
+        return;
+    }
+    try {
+        const slugDoc=await db.collection('slugs').doc(venueSlug).get();
+        if(!slugDoc.exists){document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;color:#e74c3c;">❌ Venue not found</div>';return;}
+        if (slugDoc.data().type === 'organizer' || IS_ORG_TV) {
+            IS_ORG_TV = true;
+            VENUE_ID = slugDoc.data().organizerId;
+        } else {
+            VENUE_ID = slugDoc.data().venueId;
+        }
+        document.title='CourtQ Live · '+venueSlug;
+        if (!IS_ORG_TV) {
+        _unsubBookings=db.collection('venues').doc(VENUE_ID).collection('bookings').onSnapshot(snap=>{
+            _bookings=[];
+            snap.forEach(d=>_bookings.push({id:d.id,...d.data()}));
+            if(lastData){renderCourts();if(showTimeline)renderTVTimeline(lastData);}
+        },()=>{});
+        }
+        unsub=db.collection(IS_ORG_TV?'organizers':'venues').doc(VENUE_ID).onSnapshot(snap=>{
+            if(snap.exists){lastData=snap.data();renderAll();}
+        },err=>{
+            console.warn('onSnapshot error:',err);
+            // Fallback: poll every 3s
+            if(unsub){unsub();unsub=null;}
+            if(!_pollTimer) _pollTimer=setInterval(async()=>{
+                try{const doc=await db.collection(IS_ORG_TV?'organizers':'venues').doc(VENUE_ID).get();if(doc.exists){lastData=doc.data();renderAll();}}catch(e){}
+            },3000);
+        });
+        // Listen to live scores
+        _unsubLiveScores=db.collection('liveScores').where('venueId','==',VENUE_ID).onSnapshot(snap=>{
+            _lastLiveScores={};
+            snap.forEach(doc=>{const d=doc.data();_lastLiveScores[d.courtId]=d;});
+            if(lastData) renderCourts();
+        },()=>{});
+        // Show score URL at bottom
+        const el=document.createElement('div');
+        el.id='scoreUrlHint';
+        el.style.cssText='text-align:center;padding:12px 0 4px;color:#444;font-size:0.72rem;letter-spacing:0.5px;';
+        el.textContent='📱 Update scores: '+window.location.origin+'/score.html?venue='+venueSlug;
+        document.getElementById('app').appendChild(el);
+    } catch(e){
+        document.getElementById('app').innerHTML='<div style="text-align:center;padding:80px 20px;color:#e74c3c;">❌ Error loading venue</div>';
+    }
+}
+init();
+</script>
+</body>
+</html>
