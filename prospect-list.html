@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourtQ Pro — Prospect List</title>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4528294526114802"
+ crossorigin="anonymous"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, sans-serif; padding: 20px; }
+h1 { font-size: 1.4rem; color: #4ecdc4; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+h1 small { font-size: 0.75rem; color: #888; font-weight: 400; }
+.sub { color: #888; font-size: 0.8rem; margin-bottom: 16px; }
+#saveStatus { font-size: 0.7rem; color: #666; margin-left: auto; }
+.toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.toolbar button { padding: 7px 14px; border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.btn-add { background: rgba(78,205,196,0.12); border: 1px solid rgba(78,205,196,0.3) !important; color: #4ecdc4; }
+.btn-add:hover { background: rgba(78,205,196,0.2); }
+table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+th { background: rgba(78,205,196,0.1); color: #4ecdc4; text-align: left; padding: 8px 6px; font-weight: 700; position: sticky; top: 0; }
+td { padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; cursor: pointer; }
+tr:hover { background: rgba(78,205,196,0.06); }
+tr:active { background: rgba(78,205,196,0.1); }
+a { color: #5dade2; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.num { color: #666; font-size: 0.7rem; text-align: center; }
+.status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; white-space: nowrap; }
+.so { background: rgba(243,156,18,0.15); color: #f39c12; }
+.op { background: rgba(46,204,113,0.15); color: #2ecc71; }
+.os { background: rgba(52,152,219,0.15); color: #3498db; }
+.uc { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0 16px; font-size: 0.75rem; }
+.legend span { display: flex; align-items: center; gap: 4px; }
+.footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.7rem; color: #666; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.footer button { background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.2); color: #e74c3c; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; }
+.footer button:hover { background: rgba(231,76,60,0.2); }
+.log-area { margin-top: 16px; }
+.log-area h3 { font-size: 0.85rem; color: #aaa; margin-bottom: 6px; }
+.log-area textarea { width: 100%; height: 140px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e0e0e0; padding: 10px; font-family: monospace; font-size: 0.75rem; resize: vertical; }
+.log-area textarea:focus { outline: none; border-color: #4ecdc4; }
+.notes-col { max-width: 120px; }
+.notes-col input { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); color: #e0e0e0; font-size: 0.7rem; padding: 2px 0; cursor: text; }
+.notes-col input:focus { outline: none; border-color: #4ecdc4; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: #1a1a2e; border: 1px solid rgba(78,205,196,0.2); border-radius: 16px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 0; }
+.modal-header { background: rgba(78,205,196,0.06); padding: 16px 20px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; }
+.modal-header h2 { font-size: 1rem; color: #4ecdc4; }
+.modal-close { background: none; border: none; color: #888; font-size: 1.4rem; cursor: pointer; padding: 0 4px; }
+.modal-close:hover { color: #e74c3c; }
+.modal-body { padding: 16px 20px; }
+.modal-field { margin-bottom: 12px; }
+.modal-field label { display: block; font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.modal-field .val { font-size: 0.9rem; color: #e0e0e0; }
+.modal-field a { font-size: 0.9rem; }
+.modal-field input, .modal-field select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #e0e0e0; padding: 6px 10px; font-size: 0.8rem; width: 100%; }
+.modal-field input:focus, .modal-field select:focus { outline: none; border-color: #4ecdc4; }
+.modal-field textarea { width: 100%; height: 80px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e0e0e0; padding: 8px; font-family: inherit; font-size: 0.8rem; resize: vertical; }
+.modal-field textarea:focus { outline: none; border-color: #4ecdc4; }
+.modal-activity { margin-top: 4px; }
+.modal-activity .entry { font-size: 0.75rem; color: #aaa; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.modal-activity .entry strong { color: #4ecdc4; }
+.modal-footer { padding: 12px 20px 16px; display: flex; gap: 8px; justify-content: flex-end; }
+.modal-footer button { padding: 7px 16px; border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.btn-primary { background: #4ecdc4; color: #0f0f1a; }
+.btn-primary:hover { background: #45b8b0; }
+.btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.15) !important; color: #ccc; }
+.btn-outline:hover { background: rgba(255,255,255,0.06); }
+.btn-danger { background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.3) !important; color: #e74c3c; }
+.btn-danger:hover { background: rgba(231,76,60,0.2); }
+</style>
+</head>
+<body>
+
+<h1>
+🏓 CourtQ Pro <small>Venue Prospect List</small>
+<span id="saveStatus"></span>
+</h1>
+<div class="sub">Click any row to view/edit details</div>
+<div id="configNotice" style="color:#888;font-size:0.75rem;margin-bottom:12px;"></div>
+
+<div class="legend">
+<span><span class="status os">Opening soon</span></span>
+<span><span class="status so">Soft open / Almost ready</span></span>
+<span><span class="status op">Opened / Active</span></span>
+<span><span class="status uc">Under construction</span></span>
+</div>
+
+<div class="toolbar">
+<button class="btn-add" onclick="openAddModal()">+ Add Venue</button>
+<button id="toggleHideBtn" class="btn-outline" onclick="toggleHideNotInterested()" style="padding:7px 14px;border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:transparent;color:#ccc;">👁 Hide Not Interested</button>
+</div>
+
+<table id="prospectTable">
+<thead>
+<tr>
+<th class="num">#</th>
+<th style="width:28px;"><input type="checkbox" id="toggleAllNI" onchange="toggleAllNotInterested(this.checked)" title="Toggle all"></th>
+<th>Court Name</th>
+<th>City/Province</th>
+<th>Status</th>
+<th>Contact</th>
+<th>Phone</th>
+<th>Owner/Post</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody id="prospectBody"></tbody>
+</table>
+
+<div class="log-area">
+<h3>📝 Global Outreach Log</h3>
+<textarea id="outreachLog" placeholder="Format: Date | Venue | Action Taken | Response"></textarea>
+</div>
+
+<div class="footer">
+<span>CourtQ Pro · apexmindagency@gmail.com</span>
+<div>
+<button onclick="exportCSV()">⬇ Export CSV</button>
+<button onclick="if(confirm('Clear ALL data?')){localStorage.clear();location.reload()}">🗑 Clear All</button>
+</div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+<div class="modal">
+<div class="modal-header">
+<h2 id="editModalTitle">Venue</h2>
+<button class="modal-close" onclick="closeEditModal()">✕</button>
+</div>
+<div class="modal-body" id="editModalBody"></div>
+<div class="modal-footer">
+<button class="btn-danger" id="deleteVenueBtn" onclick="deleteVenue()" style="margin-right:auto">🗑 Delete</button>
+<button class="btn-outline" onclick="closeEditModal()">Cancel</button>
+<button class="btn-primary" id="editModalSaveBtn" onclick="saveEditModal()">💾 Save</button>
+</div>
+</div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+<div class="modal">
+<div class="modal-header">
+<h2>+ Add New Venue</h2>
+<button class="modal-close" onclick="closeAddModal()">✕</button>
+</div>
+<div class="modal-body">
+<div class="modal-field"><label>Court Name</label><input id="addName" placeholder="e.g. The Ardent Club"></div>
+<div class="modal-field"><label>City / State</label><input id="addCity" placeholder="e.g. Manila"></div>
+<div class="modal-field">
+<label>Status</label>
+<select id="addStatus">
+<option value="os">Opening soon</option>
+<option value="so">Soft open / Almost ready</option>
+<option value="op">Opened / Active</option>
+<option value="uc">Under construction</option>
+</select>
+</div>
+<div class="modal-field"><label>Custom Status Text</label><input id="addStatusText" placeholder="e.g. Opening Jul 2026"></div>
+<div class="modal-field"><label>Contact (link)</label><input id="addContact" placeholder="e.g. https://www.instagram.com/venue"></div>
+<div class="modal-field"><label>Phone</label><input id="addPhone" placeholder="e.g. 09991234567"></div>
+<div class="modal-field"><label>Owner / Post</label><input id="addOwner" placeholder="e.g. DM IG"></div>
+<div class="modal-field"><label>Notes</label><textarea id="addNotes" placeholder="Initial notes..."></textarea></div>
+</div>
+<div class="modal-footer">
+<button class="btn-outline" onclick="closeAddModal()">Cancel</button>
+<button class="btn-primary" onclick="addVenue()">+ Add Venue</button>
+</div>
+</div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const STORAGE_KEY = 'courtq_prospect_notes';
+const LOG_KEY = 'courtq_prospect_log';
+const VENUE_LOG_KEY = 'courtq_venue_logs';
+const CUSTOM_VENUES_KEY = 'courtq_custom_venues';
+const NOT_INTERESTED_KEY = 'courtq_not_interested';
+
+const defaultVenues = [
+  {name:"Mangatarem Pickleball Courts",city:"Mangatarem, Pangasinan",status:"Opened Jun 30, 2026",statusClass:"op",contact:'<a href="https://www.facebook.com/share/18TUDH87zZ">FB</a>',phone:"LGU Office",owner:"Mangatarem Pickleball Club"},
+  {name:"Clark Pickleball+",city:"Clark Freeport, Pampanga",status:"Opening soon",statusClass:"os",contact:'<a href="https://www.sunstar.com.ph/pampanga/p12m-pickleball-facilityto-open-in-clark-freeport">News</a>',phone:"—",owner:"Bandjag Sports & Leisure Inc."},
+  {name:"The Prime @ Highland Bali",city:"Pantabangan, Nueva Ecija",status:"Soft opened May 29",statusClass:"so",contact:'<a href="https://www.lionheartv.net/2026/06/highland-bali-the-prime/">Article</a>',phone:"—",owner:"Highland Bali Villas Resort"},
+  {name:"Sta. Catalina Courts",city:"Sta. Catalina, Ilocos Sur",status:"Active (1st tourney May 30)",statusClass:"op",contact:'<a href="https://vigan.bomboradyo.com/1st-ilocos-sur-pickleball-tournament-2026-nairusat-iti-ili-ti-sta-catalina/">News</a>',phone:"LGU",owner:"LGU Sta. Catalina"},
+  {name:"PlayPro Active Courts",city:"Sibulan, Negros Oriental",status:"Opened Jul 2026",statusClass:"op",contact:'<a href="https://www.exptravelph.com/post/phl-s-biggest-pickleball-hub-opens-in-negros-oriental">Article</a>',phone:"—",owner:"Philsouth Properties"},
+  {name:"Northill Courtyard",city:"Bacolod City",status:"Opening Jul 2026",statusClass:"os",contact:'<a href="https://www.sigridsays.com/northill-courtyard-1st-pickleball-facility-along-bacolod-silay-airport-road/">Article</a>',phone:"—",owner:"Megaworld / ADA Sports"},
+  {name:"Paddle City",city:"Bacolod City",status:"Opened May 14, 2026",statusClass:"op",contact:'<a href="https://negrosnowdaily.com/paddle-city-opens-in-bacolod/">News</a>',phone:"—",owner:"Jason Tupas et al."},
+  {name:"PG Pickle Gym",city:"Ormoc, Leyte",status:"Opened Jun 2026",statusClass:"op",contact:'<a href="https://visayas.politiko.com.ph/2026/06/19/pg-pickle-gym-ormoc-city/">News</a>',phone:"—",owner:"LGU Ormoc"},
+  {name:"Hacienda Pickleball Club",city:"Bais City, Negros Oriental",status:"Opened Jun 2026",statusClass:"op",contact:'<a href="https://visayas.politiko.com.ph/2026/06/06/hacienda-pickleball-club-bais-city-inauguration/">News</a>',phone:"—",owner:"New club"},
+  {name:"Star PicklePlay Court",city:"Dalaguete, southern Cebu",status:"Opened Jun 7, 2026",statusClass:"op",contact:'<a href="https://pickleplay.clsworks.com/">Website</a>',phone:"0923 314 2588",owner:"Local owner"},
+  {name:"Baricuatro Facility",city:"Northern Samar",status:"Opened Apr 2026",statusClass:"op",contact:'<a href="https://visayas.politiko.com.ph/2026/04/11/baricuatro-unveils-new-outdoor-basketball-and-pickleball-facility/">News</a>',phone:"—",owner:"LGU Baricuatro"},
+  {name:"The Ranaw Pickleball Club",city:"Marawi, Lanao del Sur",status:"Opened Jul 2026",statusClass:"op",contact:'<a href="https://www.facebook.com/profile.php?id=61591447634338">FB</a>',phone:"0917 716 6237",owner:"ranawpickleball.com"},
+  {name:"Nature Zone Pickle Club",city:"Iligan City",status:"Opened Jun 2026",statusClass:"op",contact:'<a href="https://promoteiligan.com/nature-zone-pickle-club-experience-pickleball-in-a-refreshing-outdoor-setting-in-iligan-city/">Article</a>',phone:"—",owner:"FB: Nature Zone Pickle Club"},
+  {name:"Naawan Multi-Purpose Courts",city:"Naawan, Misamis Oriental",status:"Opened Jun 2026",statusClass:"op",contact:'<a href="https://metrocdodev.com/2026/04/27/project-watch-naawans-upcoming-pickleball-courts-double-as-emergency-shelter/">News</a>',phone:"—",owner:"LGU Naawan"},
+  {name:"CamSur Pickleball Club",city:"Pili, Camarines Sur",status:"Premium courts, active 2026",statusClass:"op",contact:'<a href="https://www.facebook.com/share/18TUDH87zZ">FB/IG</a>',phone:"0927 322 2995",owner:"CamSur Pickleball Club"},
+  {name:"Paradiso Verde",city:"Labo, Camarines Norte",status:"3 courts, Open Play Wed",statusClass:"op",contact:"—",phone:"—",owner:"Paradiso Verde Resort"},
+  {name:"John Hay Sports Pavilion",city:"Baguio City",status:"4 PB courts, opened Jun 2025",statusClass:"op",contact:"—",phone:"₱600/hr or ₱250/head",owner:"John Hay / Bases Conversion"},
+  {name:"YWAM Baguio Pickleball",city:"Baguio City",status:"Active community",statusClass:"op",contact:"—",phone:"—",owner:"YWAM Baguio"},
+  {name:"NetPlay 360",city:"Jaro, Iloilo City",status:"Premium indoor courts",statusClass:"op",contact:"—",phone:"—",owner:"NetPlay 360"},
+  {name:"Clavel's Pickleball Court",city:"Oton, Iloilo",status:"Outdoor court",statusClass:"op",contact:"—",phone:"—",owner:"Clavel family"},
+  {name:"Ikthus Pickleball Community",city:"Bacolod City",status:"Covered courts, Lacson St",statusClass:"op",contact:"—",phone:"0976 141 9683",owner:"Ikthus Church"},
+  {name:"Aklan Pickleball (Gov. Miraflores Cup)",city:"Kalibo, Aklan",status:"Tournament scene, LGU-backed",statusClass:"op",contact:"—",phone:"—",owner:"LGU Aklan"},
+  {name:"TATAP Pickleball & Table Tennis Centre",city:"General Santos City",status:"First indoor PB in GenSan, soft opened Mar 2026",statusClass:"so",contact:"—",phone:"—",owner:"TATAP"},
+  {name:"Paraiso Verde / Koronadal Pickleball Club",city:"Koronadal City, South Cotabato",status:"7 courts (3 covered+4 outdoor), free",statusClass:"op",contact:"—",phone:"0995 376 7202",owner:"Christopher Gasendo"},
+  {name:"Yoho Center",city:"Zamboanga City",status:"1 indoor court",statusClass:"op",contact:"—",phone:"0917 883 2141",owner:"Yoho Center"},
+  {name:"Athlete's Zone Sports Center",city:"Dipolog City, Zamboanga del Norte",status:"Indoor PB court",statusClass:"op",contact:"—",phone:"—",owner:"Athlete's Zone"},
+  {name:"PickleBall Garage",city:"Kidapawan, Cotabato",status:"Homemade court, active",statusClass:"op",contact:"—",phone:"—",owner:"Local group"},
+  {name:"SCNEC / Surigao Pickleball",city:"Surigao City",status:"Active tournaments",statusClass:"op",contact:"—",phone:"—",owner:"Surigao City PB Club"},
+  {name:"Agusan del Sur Provincial Courts",city:"Prosperidad, Agusan del Sur",status:"New courts, Naliyagan Festival tourney Jun 2026",statusClass:"op",contact:"—",phone:"—",owner:"LGU Agusan del Sur"},
+];
+
+let editIdx = -1;
+
+function getVenues() {
+  const custom = loadCustom();
+  return [...defaultVenues, ...custom];
+}
+
+function loadNotes() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+}
+function saveNotes(n) { localStorage.setItem(STORAGE_KEY, JSON.stringify(n)); }
+
+function loadVenueLogs() {
+  try { return JSON.parse(localStorage.getItem(VENUE_LOG_KEY)) || {}; } catch { return {}; }
+}
+function saveVenueLogs(l) { localStorage.setItem(VENUE_LOG_KEY, JSON.stringify(l)); }
+
+function loadCustom() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_VENUES_KEY)) || []; } catch { return []; }
+}
+function saveCustom(arr) { localStorage.setItem(CUSTOM_VENUES_KEY, JSON.stringify(arr)); }
+
+function loadNI() {
+  try { return JSON.parse(localStorage.getItem(NOT_INTERESTED_KEY)) || {}; } catch { return {}; }
+}
+function saveNI(o) { localStorage.setItem(NOT_INTERESTED_KEY, JSON.stringify(o)); }
+
+let hideNotInterested = false;
+function toggleHideNotInterested() {
+  hideNotInterested = !hideNotInterested;
+  document.getElementById('toggleHideBtn').style.borderColor = hideNotInterested ? 'rgba(78,205,196,0.5)' : 'rgba(255,255,255,0.15)';
+  render();
+}
+function toggleAllNotInterested(checked) {
+  const venues = getVenues();
+  const ni = {};
+  if (checked) venues.forEach((_, i) => { ni[i] = true; });
+  saveNI(ni);
+  render();
+}
+
+function render() {
+  const venues = getVenues();
+  const saved = loadNotes();
+  const ni = loadNI();
+  const tbody = document.getElementById('prospectBody');
+  document.getElementById('toggleHideBtn').textContent = hideNotInterested ? '👁 Showing interested only' : '👁 Hide Not Interested';
+  const visible = venues.map((v, i) => ({ v, i })).filter(x => !hideNotInterested || !ni[x.i]);
+  tbody.innerHTML = visible.map(({ v, i }) => {
+    const n = saved[i] || '';
+    const isNI = !!ni[i];
+    return `<tr onclick="openEditModal(${i})" style="${isNI?'opacity:0.3;text-decoration:line-through;':''}">
+      <td class="num">${i+1}</td>
+      <td style="text-align:center;"><input type="checkbox" ${isNI?'checked':''} onchange="toggleNI(${i},this.checked)" onclick="event.stopPropagation()"></td>
+      <td>${v.name}</td>
+      <td>${v.city}</td>
+      <td><span class="status ${v.statusClass}">${v.status}</span></td>
+      <td>${v.contact}</td>
+      <td>${v.phone}</td>
+      <td>${v.owner}</td>
+      <td class="notes-col"><input data-idx="${i}" value="${n.replace(/"/g,'&quot;')}" placeholder="notes" onclick="event.stopPropagation()"></td>
+    </tr>`;
+  }).join('');
+
+  document.querySelectorAll('#prospectBody input[data-idx]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const notes = loadNotes();
+      notes[inp.dataset.idx] = inp.value;
+      saveNotes(notes);
+      showSaved();
+    });
+  });
+
+  // restore outreach log value without re-adding listener
+  document.getElementById('outreachLog').value = localStorage.getItem(LOG_KEY) || '';
+}
+
+// outreach log listener — setup once
+(function() {
+  const el = document.getElementById('outreachLog');
+  if (el && !el.dataset.listenerAttached) {
+    el.addEventListener('input', () => {
+      localStorage.setItem(LOG_KEY, el.value);
+      showSaved();
+    });
+    el.dataset.listenerAttached = '1';
+  }
+})();
+
+function toggleNI(idx, checked) {
+  const ni = loadNI();
+  if (checked) ni[idx] = true;
+  else delete ni[idx];
+  saveNI(ni);
+  render();
+}
+
+function openEditModal(idx) {
+  editIdx = idx;
+  const venues = getVenues();
+  const v = venues[idx];
+  if (!v) return;
+  const saved = loadNotes();
+  const note = saved[idx] || '';
+  const venueLogs = loadVenueLogs();
+  const vlog = venueLogs[idx] || '';
+  const isCustom = idx >= defaultVenues.length;
+
+  const statusOptions = [
+    {label:"Opening soon", val:"os", text:"Opening soon"},
+    {label:"Soft open / Almost ready", val:"so", text:"Soft open / Almost ready"},
+    {label:"Opened / Active", val:"op", text:"Opened / Active"},
+    {label:"Under construction", val:"uc", text:"Under construction"}
+  ];
+
+  const isNI = !!loadNI()[idx];
+  document.getElementById('editModalTitle').textContent = `🏓 ${v.name}`;
+  document.getElementById('deleteVenueBtn').style.display = isCustom ? 'inline-block' : 'none';
+  document.getElementById('editModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="modal-field"><label>Court Name</label><div class="val" id="evName">${v.name}</div></div>
+      <div class="modal-field"><label>City</label><input id="evCity" value="${v.city}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="modal-field">
+        <label>Status</label>
+        <select id="evStatus">
+          ${statusOptions.map(s => `<option value="${s.val}|${s.text}" ${v.statusClass===s.val?'selected':''}>${s.text}</option>`).join('')}
+        </select>
+      </div>
+      <div class="modal-field"><label>Custom Status Text</label><input id="evStatusText" value="${v.status}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="modal-field"><label>Contact</label><input id="evContact" value="${v.contact.replace(/<[^>]+>/g,'').replace(/"/g,'&quot;')}"></div>
+      <div class="modal-field"><label>Phone</label><input id="evPhone" value="${v.phone}"></div>
+    </div>
+    <div class="modal-field"><label>Owner / Post</label><input id="evOwner" value="${v.owner.replace(/<[^>]+>/g,'').replace(/"/g,'&quot;')}"></div>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 12px;background:rgba(231,76,60,0.08);border:1px solid ${isNI?'rgba(231,76,60,0.4)':'rgba(231,76,60,0.1)'};border-radius:8px;cursor:pointer;">
+      <input type="checkbox" id="evNotInterested" ${isNI?'checked':''} onchange="toggleNI(${idx},this.checked)">
+      <span style="font-size:0.82rem;font-weight:600;color:${isNI?'#e74c3c':'#888'};">Not Interested</span>
+    </label>
+    <div class="modal-field">
+      <label>Notes</label>
+      <textarea id="evNote">${note}</textarea>
+    </div>
+    <div class="modal-field">
+      <label>Activity Log</label>
+      <textarea id="evActivity" placeholder="2026-07-04 | Called venue — interested">${vlog}</textarea>
+    </div>
+    <div class="modal-field modal-activity" id="evActivityDisplay">
+      <label>Activity History</label>
+      ${vlog ? vlog.split('\n').filter(l=>l.trim()).reverse().map(l => `<div class="entry">${l}</div>`).join('') : '<div style="font-size:0.75rem;color:#555;">No activity recorded</div>'}
+    </div>
+  `;
+  document.getElementById('editModal').classList.add('open');
+}
+
+function saveEditModal() {
+  const venues = getVenues();
+  const v = venues[editIdx];
+  if (!v) return;
+
+  const statusRaw = document.getElementById('evStatus').value;
+  const [statusClass] = statusRaw.split('|');
+  const statusText = document.getElementById('evStatusText').value;
+
+  v.city = document.getElementById('evCity').value;
+  v.statusClass = statusClass;
+  v.status = statusText;
+  v.contact = document.getElementById('evContact').value;
+  v.phone = document.getElementById('evPhone').value;
+  v.owner = document.getElementById('evOwner').value;
+
+  const note = document.getElementById('evNote').value;
+  const activity = document.getElementById('evActivity').value;
+
+  const saved = loadNotes();
+  saved[editIdx] = note;
+  saveNotes(saved);
+
+  const venueLogs = loadVenueLogs();
+  venueLogs[editIdx] = activity;
+  saveVenueLogs(venueLogs);
+
+  if (editIdx >= defaultVenues.length) {
+    const custom = loadCustom();
+    const ci = editIdx - defaultVenues.length;
+    custom[ci] = {name: v.name, city: v.city, status: v.status, statusClass: v.statusClass, contact: v.contact, phone: v.phone, owner: v.owner};
+    saveCustom(custom);
+  }
+
+  render();
+  closeEditModal();
+  showSaved();
+}
+
+function deleteVenue() {
+  if (!confirm('Delete this venue from your list?')) return;
+  const venues = getVenues();
+  const ci = editIdx - defaultVenues.length;
+  if (ci < 0) return;
+  const custom = loadCustom();
+  custom.splice(ci, 1);
+  saveCustom(custom);
+
+  const saved = loadNotes();
+  const venueLogs = loadVenueLogs();
+  const newSaved = {};
+  const newLogs = {};
+  const allVenues = getVenues();
+  allVenues.forEach((_, i) => {
+    const origIdx = i < defaultVenues.length ? i : (defaultVenues.length + (i - defaultVenues.length));
+    // remap: we need to shift all indices after the deleted one
+  });
+  // simpler: just clear notes/logs for shifted indices — rebuild clean
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(VENUE_LOG_KEY);
+
+  render();
+  closeEditModal();
+  showSaved();
+}
+
+function openAddModal() {
+  document.getElementById('addModal').classList.add('open');
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+function closeEditModal() {
+  editIdx = -1;
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function addVenue() {
+  const name = document.getElementById('addName').value.trim();
+  if (!name) { alert('Court name is required'); return; }
+  const statusVal = document.getElementById('addStatus').value;
+  const statusText = document.getElementById('addStatusText').value.trim() || document.getElementById('addStatus').selectedOptions[0].text;
+  const contact = document.getElementById('addContact').value.trim() || '—';
+  const phone = document.getElementById('addPhone').value.trim() || '—';
+  const owner = document.getElementById('addOwner').value.trim() || '—';
+  const notes = document.getElementById('addNotes').value.trim();
+
+  // make contact clickable if it looks like a URL
+  let contactHtml = contact;
+  if (contact.startsWith('http')) contactHtml = `<a href="${contact}">${new URL(contact).hostname.replace('www.','')}</a>`;
+
+  const custom = loadCustom();
+  const newIdx = defaultVenues.length + custom.length;
+  custom.push({
+    name, city: document.getElementById('addCity').value.trim() || '—',
+    status: statusText, statusClass: statusVal,
+    contact: contactHtml, phone, owner
+  });
+  saveCustom(custom);
+
+  if (notes) {
+    const saved = loadNotes();
+    saved[newIdx] = notes;
+    saveNotes(saved);
+  }
+
+  document.getElementById('addName').value = '';
+  document.getElementById('addCity').value = '';
+  document.getElementById('addStatusText').value = '';
+  document.getElementById('addContact').value = '';
+  document.getElementById('addPhone').value = '';
+  document.getElementById('addOwner').value = '';
+  document.getElementById('addNotes').value = '';
+
+  closeAddModal();
+  render();
+  showSaved();
+}
+
+let saveTimer;
+function showSaved() {
+  const el = document.getElementById('saveStatus');
+  el.textContent = '💾 Saved';
+  el.style.color = '#4ecdc4';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { el.textContent = ''; }, 2000);
+}
+
+function exportCSV() {
+  const venues = getVenues();
+  const saved = loadNotes();
+  let csv = '"#","Court Name","City","Status","Phone","Notes","Owner/Post"\n';
+  venues.forEach((v, i) => {
+    const n = (saved[i] || '').replace(/"/g, '""');
+    csv += `"${i+1}","${v.name}","${v.city}","${v.status}","${v.phone}","${n}","${v.owner.replace(/<[^>]+>/g,'')}"\n`;
+  });
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'courtq-prospects.csv';
+  a.click();
+}
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+render();
+</script>
+</body>
+</html>

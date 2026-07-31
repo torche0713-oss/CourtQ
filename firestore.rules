@@ -1,0 +1,199 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: is the requester signed in?
+    function isAuth() { return request.auth != null; }
+
+    // Helper: is the requester the developer?
+    function isDev() { return isAuth() && request.auth.token.email == 'pinoymemesforever@gmail.com'; }
+
+    // Helper: get the venue document for a given venueId
+    function getVenueDoc(venueId) {
+      return get(/databases/$(database)/documents/venues/$(venueId)).data;
+    }
+
+    // Helper: does the requester own or co-own the venue?
+    function isVenueOwner(venueId) {
+      let venue = getVenueDoc(venueId);
+      return venue != null && isAuth() && (request.auth.uid == venue.ownerId || (venue.ownerEmails != null && request.auth.token.email in venue.ownerEmails));
+    }
+
+    // Helper: get the organizer document for a given organizerId
+    function getOrganizerDoc(organizerId) {
+      return get(/databases/$(database)/documents/organizers/$(organizerId)).data;
+    }
+
+    // Helper: is the requester staff or owner of the venue?
+    function isVenueStaff(venueId) {
+      let venue = getVenueDoc(venueId);
+      let isOwner = venue != null && isAuth() && (request.auth.uid == venue.ownerId || (venue.ownerEmails != null && request.auth.token.email in venue.ownerEmails));
+      let isStaff = venue != null && isAuth() && venue.staffEmails != null && request.auth.token.email in venue.staffEmails;
+      return isOwner || isStaff;
+    }
+
+    // ──────────────────────────────────────────
+    // slugs collection — publicly readable
+    // ──────────────────────────────────────────
+    match /slugs/{slug} {
+      allow read: if true;
+      allow create: if
+        // Venue owner creating a slug for their own venue
+        (isAuth() && !exists(/databases/$(database)/documents/slugs/$(slug)) && getVenueDoc(request.resource.data.venueId) != null && getVenueDoc(request.resource.data.venueId).ownerId == request.auth.uid)
+        // Demo venue slug
+        || (request.resource.data.venueId != null && exists(/databases/$(database)/documents/venues/$(request.resource.data.venueId)) && getVenueDoc(request.resource.data.venueId).ownerId == 'demo')
+        // Organizer creating a slug for their own organizer account
+        || (isAuth() && !exists(/databases/$(database)/documents/slugs/$(slug)) && request.resource.data.type == 'organizer' && request.resource.data.organizerId != null && getOrganizerDoc(request.resource.data.organizerId) != null && getOrganizerDoc(request.resource.data.organizerId).ownerId == request.auth.uid);
+      allow update, delete: if isDev();
+    }
+
+    // ──────────────────────────────────────────
+    // venues collection
+    // ──────────────────────────────────────────
+    match /venues/{venueId} {
+      // Anyone can read a venue (public portal needs court data, etc.)
+      allow read: if true;
+      // Write: only venue owner or dev
+      allow create: if isAuth() || request.resource.data.ownerId == 'demo';
+      allow update, delete: if isVenueOwner(venueId) || isDev();
+      // Demo venues — allow full unauthenticated updates (saveState writes all fields)
+      allow update: if request.resource.data.ownerId == 'demo';
+      // Unauthenticated can only update nextBId (portal booking increments the ID counter)
+      allow update: if !isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nextBId']);
+      // Unauthenticated can update scheduledSessions (portal Open Play join)
+      allow update: if !isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scheduledSessions']);
+    }
+
+    // ──────────────────────────────────────────
+    // contracts collection — dev only
+    // ──────────────────────────────────────────
+    match /contracts/{venueId} {
+      allow read: if isVenueStaff(venueId) || isDev();
+      allow write: if isDev();
+    }
+
+    // ──────────────────────────────────────────
+    // users collection — own user doc only
+    // ──────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isAuth() && (request.auth.uid == userId || isDev());
+      allow create: if isAuth() && request.auth.uid == userId;
+      allow update, delete: if isAuth() && request.auth.uid == userId;
+    }
+
+    // ──────────────────────────────────────────
+    // config collection
+    //  - emailjs doc readable by any signed-in user (needed for signup emails)
+    //  - announcements doc readable by any signed-in user (shown on owner dashboards)
+    //  - all other config docs dev-only (API keys)
+    // ──────────────────────────────────────────
+    match /config/emailjs {
+      allow read: if isAuth();
+      allow write: if isDev();
+    }
+    match /config/announcements {
+      allow read: if isAuth();
+      allow write: if isDev();
+    }
+    match /config/{doc} {
+      allow read: if isDev();
+      allow write: if isDev();
+    }
+
+    // ──────────────────────────────────────────
+    // demo_sessions — anyone can write heartbeat, only dev can read all
+    // ──────────────────────────────────────────
+    match /demo_sessions/{session} {
+      allow read: if isDev();
+      allow create, update: if true;
+      allow delete: if isDev() || request.auth == null;
+    }
+
+    // ──────────────────────────────────────────
+    // demo_stats — anyone can increment counter, only dev can read
+    // ──────────────────────────────────────────
+    match /demo_stats/{doc} {
+      allow read: if isDev();
+      allow write: if true;
+    }
+
+    // ──────────────────────────────────────────
+    // demoLeads — anyone can submit (Try Demo form), only dev can read/delete
+    // ──────────────────────────────────────────
+    match /demoLeads/{doc} {
+      allow create: if true;
+      allow read, delete: if isDev();
+      allow update: if false;
+    }
+
+    // ──────────────────────────────────────────
+    // Bookings subcollection — created by portal (unauthenticated) and admin (owner/staff)
+    // ──────────────────────────────────────────
+    match /venues/{venueId}/bookings/{bookingId} {
+      allow read: if true;
+      // Create: unauthenticated users (portal booking) or venue owner/staff
+      allow create: if !isAuth() || isVenueStaff(venueId);
+      // Update: only venue owner/staff can change status (confirm, cancel, check-in)
+      allow update: if isVenueStaff(venueId);
+      // Delete: only venue owner/staff
+      allow delete: if isVenueStaff(venueId) || isDev();
+    }
+
+    // ──────────────────────────────────────────
+    // liveScores — anyone can read/write (used by score.html & tv display)
+    // ──────────────────────────────────────────
+    match /liveScores/{doc} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ──────────────────────────────────────────
+    // invoices — dev full access, venue owners can read/write their own
+    // ──────────────────────────────────────────
+    match /invoices/{docId} {
+      allow read, write: if isDev() || (isAuth() && isVenueOwner(docId.split('_')[0]));
+    }
+
+    // ──────────────────────────────────────────
+    // organizers collection
+    //  - Create: any authenticated user (registration flow)
+    //  - Read: anyone (portal needs to list sessions)
+    //  - Update: dev, owner, or unauthenticated adding to scheduledSessions
+    //  - Delete: dev only
+    // ──────────────────────────────────────────
+    match /organizers/{organizerId} {
+      allow create: if isAuth();
+      allow read: if true;
+      allow update: if isDev() || (isAuth() && request.auth.uid == resource.data.ownerId);
+      allow update: if !isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scheduledSessions']);
+      allow delete: if isDev();
+    }
+
+    // ──────────────────────────────────────────
+    // org_invoices — dev full access, organizer can read own
+    // ──────────────────────────────────────────
+    match /org_invoices/{invId} {
+      allow read: if isDev() || (isAuth() && resource.data.organizerId != null && getOrganizerDoc(resource.data.organizerId) != null && getOrganizerDoc(resource.data.organizerId).ownerId == request.auth.uid);
+      allow create: if isDev();
+      allow update: if isDev() || (isAuth() && resource.data.organizerId != null && getOrganizerDoc(resource.data.organizerId) != null && getOrganizerDoc(resource.data.organizerId).ownerId == request.auth.uid);
+      allow delete: if isDev();
+    }
+
+    // ──────────────────────────────────────────
+    // affiliates — dev full access, affiliates can read own + query by email for first login
+    // ──────────────────────────────────────────
+    match /affiliates/{docId} {
+      allow read: if isDev() || isAuth();
+      allow create: if isDev();
+      allow update: if isDev() || (isAuth() && resource.data.uid == request.auth.uid);
+      allow delete: if isDev();
+    }
+
+    // ──────────────────────────────────────────
+    // Deny everything else
+    // ──────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
