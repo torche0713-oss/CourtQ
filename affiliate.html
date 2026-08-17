@@ -57,6 +57,8 @@
         .referral-link{font-family:monospace;font-size:0.85rem;color:#2563eb;font-weight:600;word-break:break-all;flex:1;min-width:200px;}
         .btn-copy{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;}
         .btn-copy:hover{background:#1d4ed8;}
+        .btn-back{width:100%;padding:12px;border:1px solid rgba(0,0,0,0.12);border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;background:transparent;color:#64748b;transition:all 0.2s;}
+        .btn-back:hover{background:rgba(0,0,0,0.04);color:#1e293b;}
         .referral-item{background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:10px;padding:12px;margin-bottom:8px;}
         .referral-item .name{font-weight:700;font-size:0.85rem;}
         .referral-item .meta{font-size:0.72rem;color:#94a3b8;margin-top:2px;}
@@ -65,41 +67,27 @@
     </style>
 </head>
 <body>
-    <!-- APPLY / LOGIN / PENDING -->
+    <!-- DETAILS / PENDING -->
     <div id="authView" class="center-wrap">
         <div class="card-box">
             <div class="logo">
                 <div class="logo-icon">🏓</div>
                 <div class="logo-text">CourtQ Pro <span class="pro-badge">AFFILIATE</span></div>
             </div>
-            <div class="tabs">
-                <div class="tab active" onclick="switchAuthTab('apply')">Apply</div>
-                <div class="tab" onclick="switchAuthTab('login')">Log In</div>
-            </div>
-            <div id="authError" class="error"></div>
-            <div id="authSuccess" class="success"></div>
 
-            <!-- APPLY FORM -->
             <div id="tab-apply" class="form-section active">
                 <div style="margin-bottom:16px;">
-                    <div class="benefit"><div class="benefit-icon">💰</div><div class="benefit-text"><strong>Earn 20% commission</strong> on convenience fees from every venue you refer.</div></div>
+                    <div class="benefit"><div class="benefit-icon">💰</div><div class="benefit-text"><strong>Earn 20% commission</strong> on convenience fees from every venue and organizer you refer.</div></div>
+                    <div class="benefit"><div class="benefit-icon">🏓</div><div class="benefit-text"><strong>Organizers are auto-affiliates</strong> — register as an organizer and you also earn 20% on your own Open Play convenience fees, no application needed.</div></div>
                     <div class="benefit"><div class="benefit-icon">🔗</div><div class="benefit-text"><strong>Unique referral link</strong> — share it on social media, group chats, or directly with venue owners.</div></div>
                     <div class="benefit"><div class="benefit-icon">📊</div><div class="benefit-text"><strong>Real-time dashboard</strong> — track your referrals, earnings, and payouts.</div></div>
-                    <div class="benefit"><div class="benefit-icon">💳</div><div class="benefit-text"><strong>₱500 minimum payout</strong> — paid via GCash or Maya.</div></div>
+                    <div class="benefit"><div class="benefit-icon">💳</div><div class="benefit-text"><strong>₱200 minimum payout</strong> — paid via GCash or Maya.</div></div>
                 </div>
-                <div class="form-group"><label>Full Name *</label><input type="text" id="appName" placeholder="e.g. Maria Santos"></div>
-                <div class="form-group"><label>Email *</label><input type="email" id="appEmail" placeholder="you@email.com"></div>
-                <div class="form-group"><label>Mobile Number</label><input type="tel" id="appMobile" placeholder="+63 912 345 6789"></div>
-                <div class="form-group"><label>How will you promote CourtQ Pro? *</label><textarea id="appReason" placeholder="e.g. I run a pickleball group with 500+ members, I'm a sports facility consultant, I have a YouTube channel about racket sports..."></textarea></div>
-                <button class="btn btn-primary" id="applyBtn" onclick="submitApplication()">🚀 Submit Application</button>
-            </div>
-
-            <!-- LOGIN FORM -->
-            <div id="tab-login" class="form-section">
-                <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
-                <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
-                <button class="btn btn-primary" id="loginBtn" onclick="affiliateLogin()">Log In</button>
-                <div style="text-align:center;margin-top:12px;font-size:0.72rem;color:#94a3b8;">Not yet approved? <a href="#" onclick="switchAuthTab('apply');return false;" style="color:#2563eb;text-decoration:none;">Apply here</a></div>
+                <div class="form-group"><label>How will you promote CourtQ Pro?</label><textarea id="appReason" placeholder="e.g. I run a pickleball group with 500+ members, I'm a sports facility consultant, I have a YouTube channel about racket sports..."></textarea></div>
+                <button class="btn btn-primary" onclick="goApply()">🎯 Apply Now — Register as an Organizer</button>
+                <div style="text-align:center;margin-top:14px;">
+                    <button class="btn btn-back" onclick="goBack()">← Back to CourtQ Pro</button>
+                </div>
             </div>
         </div>
     </div>
@@ -141,6 +129,7 @@
                 <div class="dash-card-title">💡 How It Works</div>
                 <div style="font-size:0.82rem;color:#64748b;line-height:1.7;">
                     <div style="margin-bottom:6px;">You earn <strong style="color:#10b981;">20% commission</strong> on all convenience fees generated by venues and organizers you refer.</div>
+                    <div style="margin-bottom:6px;">Are you an organizer? Your <strong style="color:#10b981;">own Open Play convenience fees count too</strong> — you earn 20% on them automatically.</div>
                     <div style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-radius:10px;padding:12px;margin-bottom:8px;">
                         <div style="font-weight:700;font-size:0.82rem;color:#1e293b;margin-bottom:6px;">Convenience Fees</div>
                         <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -163,7 +152,7 @@
                     <div class="referral-link" id="refLinkDisplay"></div>
                     <button class="btn-copy" onclick="copyMyLink()">📋 Copy</button>
                 </div>
-                <div style="font-size:0.72rem;color:#94a3b8;margin-top:8px;">Share this link with venue owners and organizers. When they register through it, you earn 20% on their convenience fees.</div>
+                <div style="font-size:0.72rem;color:#94a3b8;margin-top:8px;">Share this link with venue owners and organizers. When they register through it, you earn 20% on their convenience fees. Organizers also earn 20% on their own Open Play fees.</div>
             </div>
             <div class="dash-card">
                 <div class="dash-card-title">💰 Payout Status</div>
@@ -226,108 +215,13 @@
             document.getElementById('dashboardView').style.display='none';
         }
 
-        function switchAuthTab(tab){
-            document.querySelectorAll('#authView .tab').forEach(t=>t.classList.remove('active'));
-            document.querySelectorAll('#authView .form-section').forEach(f=>f.classList.remove('active'));
-            hideMsgs();
-            if(tab==='apply'){
-                document.querySelectorAll('#authView .tab')[0].classList.add('active');
-                document.getElementById('tab-apply').classList.add('active');
-            } else {
-                document.querySelectorAll('#authView .tab')[1].classList.add('active');
-                document.getElementById('tab-login').classList.add('active');
-            }
+        // ── NAVIGATION ──
+        function goApply(){
+            const ref=new URLSearchParams(window.location.search).get('ref');
+            window.location.href='index.html?register=organizer'+(ref?'&ref='+ref:'');
         }
-
-        function hideMsgs(){
-            document.getElementById('authError').style.display='none';
-            document.getElementById('authSuccess').style.display='none';
-        }
-        function showErr(msg){const el=document.getElementById('authError');el.textContent=msg;el.style.display='block';}
-        function showSuccess(msg){const el=document.getElementById('authSuccess');el.textContent=msg;el.style.display='block';}
-
-        // ── APPLICATION ──
-        async function submitApplication(){
-            const name=document.getElementById('appName').value.trim();
-            const email=document.getElementById('appEmail').value.trim();
-            const mobile=document.getElementById('appMobile').value.trim();
-            const reason=document.getElementById('appReason').value.trim();
-            if(!name||!email||!reason){showErr('Fill in name, email, and how you\'ll promote.');return;}
-            if(!email.includes('@')){showErr('Enter a valid email.');return;}
-            hideMsgs();
-            document.getElementById('applyBtn').disabled=true;
-            document.getElementById('applyBtn').textContent='Submitting...';
-            try{
-                // Check for duplicate email
-                const dup=await db.collection('affiliates').where('email','==',email.toLowerCase()).get();
-                if(!dup.empty){
-                    const existing=dup.docs[0].data();
-                    if(existing.status==='pending'){showErr('You already have a pending application. We\'ll review it soon!');}
-                    else if(existing.status==='active'){showErr('An account with this email already exists. Try logging in.');}
-                    else{showErr('Application already submitted. Please wait for review.');}
-                    document.getElementById('applyBtn').disabled=false;
-                    document.getElementById('applyBtn').textContent='🚀 Submit Application';
-                    return;
-                }
-                // Generate referral code from name
-                const code=name.toLowerCase().replace(/[^a-z0-9]+/g,'').substring(0,8)+Math.random().toString(36).substring(2,5);
-                await db.collection('affiliates').add({
-                    name,email:email.toLowerCase(),mobile,reason,code:code.toUpperCase(),
-                    status:'pending',commissionRate:0.20,totalPaid:0,createdAt:Date.now(),uid:''
-                });
-                document.getElementById('appName').value='';
-                document.getElementById('appEmail').value='';
-                document.getElementById('appMobile').value='';
-                document.getElementById('appReason').value='';
-                hideAll();document.getElementById('pendingView').style.display='flex';
-            }catch(e){
-                showErr('Something went wrong: '+e.message);
-                document.getElementById('applyBtn').disabled=false;
-                document.getElementById('applyBtn').textContent='🚀 Submit Application';
-            }
-        }
-
-        // ── LOGIN ──
-        async function affiliateLogin(){
-            const email=document.getElementById('loginEmail').value.trim();
-            const pass=document.getElementById('loginPass').value;
-            if(!email||!pass){showErr('Enter email and password.');return;}
-            document.getElementById('loginBtn').disabled=true;
-            document.getElementById('loginBtn').textContent='Logging in...';
-            try{
-                await auth.signInWithEmailAndPassword(email,pass);
-            }catch(e){
-                if(e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
-                    try{
-                        const cred=await auth.createUserWithEmailAndPassword(email,pass);
-                        const affSnap=await db.collection('affiliates').where('email','==',email.toLowerCase()).get();
-                        if(!affSnap.empty){
-                            const affDoc=affSnap.docs[0];
-                            const affData=affDoc.data();
-                            if(affData.status==='active'){
-                                await affDoc.ref.update({uid:cred.user.uid});
-                                return;
-                            } else {
-                                auth.signOut();
-                                showErr('Your application is still under review. Please wait for approval.');
-                            }
-                        } else {
-                            auth.signOut();
-                            showErr('No affiliate account found. Please apply first.');
-                        }
-                    }catch(e2){
-                        if(e2.code==='auth/email-already-in-use'){
-                            showErr('Wrong password. Please try again.');
-                        } else {
-                            showErr(e2.message);
-                        }
-                    }
-                } else {
-                    showErr(e.message);
-                }
-                document.getElementById('loginBtn').disabled=false;
-                document.getElementById('loginBtn').textContent='Log In';
-            }
+        function goBack(){
+            window.location.href='index.html';
         }
 
         function affiliateLogout(){auth.signOut();}
@@ -341,12 +235,30 @@
 
             const referrals=[];
             try{
+                // Own Open Play convenience fees (organizer-affiliates earn 20% on their own sessions too)
+                let ownOrgId=_affiliate.organizerId||'';
+                if(!ownOrgId&&_affiliate.uid){
+                    try{
+                        const ownSnap=await db.collection('organizers').where('ownerId','==',_affiliate.uid).get();
+                        if(!ownSnap.empty) ownOrgId=ownSnap.docs[0].id;
+                    }catch(e){}
+                }
+                if(ownOrgId){
+                    const oDoc=await db.collection('organizers').doc(ownOrgId).get();
+                    if(oDoc.exists){
+                        const vd=oDoc.data();
+                        let feeAccrued=0;
+                        try{const invSnap=await db.collection('org_invoices').where('organizerId','==',ownOrgId).get();invSnap.docs.forEach(d=>{const dd=d.data();if(dd.status==='pending'||dd.status==='paid')feeAccrued+=(dd.feeAmount||0);});}catch(e){}
+                        referrals.push({name:(vd.name||vd.businessName||'Your Own Open Plays')+' (Your Own Open Plays)',slug:vd.slug||'your-sessions',email:vd.email||'',type:'Your Own Open Play',createdAt:vd.createdAt,feeAccrued,status:'✅ Active'});
+                    }
+                }
                 const slugsSnap=await db.collection('slugs').get();
                 for(const slugDoc of slugsSnap.docs){
                     const sd=slugDoc.data();
                     const isOrg=sd.type==='organizer';
                     const vId=isOrg?sd.organizerId:sd.venueId;
                     if(!vId) continue;
+                    if(isOrg&&vId===ownOrgId) continue;
                     const col=isOrg?'organizers':'venues';
                     const vDoc=await db.collection(col).doc(vId).get();
                     if(!vDoc.exists) continue;
@@ -354,8 +266,13 @@
                     if((vd.referralCode||'').toUpperCase()===_referralCode.toUpperCase()){
                         let email='';
                         try{const uSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',vId).get();if(!uSnap.empty)email=uSnap.docs[0].data().email||'';}catch(e){}
-                        const pCount=(vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0);
-                        const feeAccrued=pCount*5;
+                        let feeAccrued=0;
+                        if(isOrg){
+                            try{const invSnap=await db.collection('org_invoices').where('organizerId','==',vId).get();invSnap.docs.forEach(d=>{const dd=d.data();if(dd.status==='pending'||dd.status==='paid')feeAccrued+=(dd.feeAmount||0);});}catch(e){}
+                        } else {
+                            const pCount=(vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0);
+                            feeAccrued=pCount*5;
+                        }
                         let statusLabel='';
                         if(isOrg){statusLabel=vd.activated===true?'✅ Active':'⏳ Pending';}
                         else{statusLabel=vd.status==='active'?'✅ Active':vd.status==='pending'?'⏳ Pending':'⚪ Unknown';}
@@ -370,7 +287,7 @@
             const totalCommission=Math.round(totalRevenue*commissionRate);
             const totalPaid=_affiliate.totalPaid||0;
             const pending=totalCommission-totalPaid;
-            const threshold=500;
+            const threshold=200;
 
             document.getElementById('dReferrals').textContent=totalReferrals;
             document.getElementById('dRevenue').textContent='₱'+totalRevenue.toLocaleString();
@@ -415,7 +332,7 @@
             const nw=document.getElementById('pwNew').value;
             const cf=document.getElementById('pwConfirm').value;
             const msgEl=document.getElementById('pwMsg');
-            function showPwMsg(text isError){
+            function showPwMsg(text, isError){
                 msgEl.textContent=text;
                 msgEl.style.display='block';
                 msgEl.style.background=isError?'rgba(239,68,68,0.1)':'rgba(16,185,129,0.1)';

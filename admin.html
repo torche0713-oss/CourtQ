@@ -6,6 +6,7 @@
     <title>CourtQ Pro - Venue Management</title>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4528294526114802"
      crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -157,6 +158,15 @@
         .btn-outline:hover { background:rgba(0,0,0,0.06); color:#1e293b; }
         .btn-sm { padding:5px 10px; font-size:0.72rem; }
         .btn-full { width:100%; justify-content:center; }
+
+        /* WALK-IN PAYMENT */
+        .walkin-pay-btn {
+            flex:1; padding:10px 8px; border-radius:10px; text-align:center;
+            border:2px solid rgba(0,0,0,0.1); background:rgba(0,0,0,0.03);
+            cursor:pointer; transition:all 0.3s; font-size:0.75rem; font-weight:700; color:#1e293b;
+        }
+        .walkin-pay-btn:hover { border-color:rgba(37,99,235,0.4); }
+        .walkin-pay-btn.selected { border-color:#2563eb; background:rgba(37,99,235,0.12); }
 
         /* COURT MANAGEMENT */
         .courts-manage-grid {
@@ -549,7 +559,7 @@
             <span id="venueLogo"></span><span id="venueText">🏟️ Riverside Pickleball</span>
         </div>
         <button class="btn btn-primary btn-sm" onclick="copyPortalLink()">🔗 Share Booking Online Link</button>
-        <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;margin-right:2px;">?</span>
+        <span class="help-btn" id="bookingHelpBtn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;margin-right:2px;">?</span>
         <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/tv-display.html?venue='+S.venueSlug).then(()=>showNotif('TV Display link copied!')).catch(()=>showNotif('Failed to copy'))">📺 Share TV Link</button>
         <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/score.html?venue='+S.venueSlug).then(()=>showNotif('Mobile Scoring link copied!')).catch(()=>showNotif('Failed to copy'))">📱 Share Scoring Link</button>
         <button class="btn btn-outline btn-sm" onclick="openSettings()" id="settingsBtn">⚙️ Settings</button>
@@ -561,13 +571,11 @@
 </header>
 
 <nav class="main-nav">
-    <button class="nav-tab active" onclick="showPage('openplay',this)">🏓 Open Play</button>
-    <button class="nav-tab" id="courtsBtn" onclick="showPage('courts',this)">🏟️ Courts</button>
-    <button class="nav-tab" id="bookingBtn" onclick="showPage('booking',this)">📅 Bookings</button>
-    <button class="nav-tab" onclick="showPage('confirmations',this)">✅ Confirmations</button>
+    <button class="nav-tab active" id="dashboardBtn" onclick="showPage('dashboard',this)">📋 Dashboard</button>
+    <button class="nav-tab" id="openplayBtn" onclick="showPage('openplay',this)">🏓 Open Play</button>
     <button class="nav-tab" onclick="showPage('financials',this)" id="financialsTab" title="Set an access code in Settings → Financials Access Code first">💰 Financials</button>
     <button class="nav-tab" id="leaderboardBtn" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
-    <button class="nav-tab" onclick="showPage('history',this)">📋 History</button>
+    <button class="nav-tab" id="historyBtn" onclick="showPage('history',this)">📋 History</button>
     <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
     <button class="nav-tab" id="tournamentsBtn" onclick="showPage('tournaments',this)">🏆 Tournaments</button>
 </nav>
@@ -578,7 +586,7 @@
     <h2 id="pendingTitle" style="color:#f59e0b;font-size:1.5rem;margin-bottom:8px;">Venue Pending Approval</h2>
     <p id="pendingDesc" style="color:#94a3b8;font-size:0.9rem;max-width:500px;margin:0 auto 20px;">Your venue has been submitted and is awaiting verification. We'll notify you via email once it's activated. This usually takes a few hours.</p>
     <div id="pendingDetails" style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:20px;max-width:400px;margin:0 auto;text-align:left;font-size:0.82rem;"></div>
-    <div style="margin-top:20px;font-size:0.78rem;color:#64748b;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a> · 📱 0999 883 0291</div>
+    <div style="margin-top:20px;font-size:0.78rem;color:#64748b;">Questions? Email <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a> · 📱 0976 290 7119</div>
 </div>
 
 <!-- ONBOARDING CHECKLIST -->
@@ -613,7 +621,7 @@
 </div>
 
 <!-- OPEN PLAY PAGE -->
-<div class="page active" id="page-openplay">
+<div class="page" id="page-openplay">
     <div id="sessionDisplay"></div>
     <div class="four-col" id="opStats" style="margin-bottom:16px;"></div>
     <div id="scheduledOpCard" style="display:none;margin-bottom:16px;">
@@ -684,6 +692,16 @@
                     </select>
                 </div>
                 <div class="form-group"><label>Group Name (optional)</label><input type="text" id="groupName" placeholder="e.g. Team Awesome" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')"></div>
+                <div class="form-group">
+                    <label>💳 Payment</label>
+                    <div id="walkinFeeBox" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:9px;padding:10px;font-size:0.8rem;margin-bottom:10px;"></div>
+                    <div style="display:flex;gap:8px;margin-bottom:10px;">
+                        <button type="button" class="walkin-pay-btn" onclick="selWalkinPay(this,'GCash')">🟢 GCash</button>
+                        <button type="button" class="walkin-pay-btn" onclick="selWalkinPay(this,'Maya')">💜 Maya</button>
+                        <button type="button" class="walkin-pay-btn" onclick="selWalkinPay(this,'Cash')">💵 Cash</button>
+                    </div>
+                    <div id="walkinPayInputArea"></div>
+                </div>
                 <button type="button" class="btn btn-primary btn-full" onclick="joinQueue()">🏓 Join Queue</button>
                 </form>
             </div>
@@ -707,23 +725,27 @@
     </div>
 </div>
 
-<!-- COURTS MANAGEMENT PAGE -->
-<div class="page" id="page-courts">
+<!-- DASHBOARD PAGE (Courts + Bookings + Confirmations) -->
+<div class="page active" id="page-dashboard">
+
+    <!-- CONFIRMATIONS SECTION -->
     <div class="card">
         <div class="card-title">
-            <span>🏟️ Court Management</span>
+            <span>✅ Confirmations <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
             <div style="display:flex;gap:6px;">
-                <button class="btn btn-outline btn-sm" onclick="aiPricingSuggest()">🔮 Pricing</button>
-                <button class="btn btn-primary" onclick="openAddCourtModal()">➕ Add Court</button>
+                <select id="cFilter" onchange="renderConfirmations()" style="padding:4px 8px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
+                    <option value="all">All Methods</option>
+                    <option value="GCash">🟢 GCash</option>
+                    <option value="Maya">🟢 Maya</option>
+                </select>
+                <button onclick="refreshConfirmations()" style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:7px;color:#2563eb;padding:4px 10px;cursor:pointer;font-size:0.78rem;">🔄</button>
             </div>
         </div>
-        <div style="font-size:0.82rem;color:#94a3b8;margin-bottom:16px;">Manage your courts — add, edit, remove, or toggle maintenance. Courts with active games or bookings are protected.</div>
-        <div class="courts-manage-grid" id="courtsManageGrid"></div>
+        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:12px;">Review pending bookings and Open Play registrations. Verify the payment reference number, then confirm.</div>
+        <div id="confirmationList"></div>
     </div>
-</div>
 
-<!-- BOOKING PAGE -->
-<div class="page" id="page-booking">
+    <!-- BOOKINGS SECTION -->
     <div class="card">
         <div class="card-title">
             <span>📅 Court Schedule <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
@@ -807,25 +829,20 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- CONFIRMATIONS PAGE -->
-<div class="page" id="page-confirmations">
+    <!-- COURT MANAGEMENT SECTION -->
     <div class="card">
         <div class="card-title">
-            <span>✅ Confirmations <span class="help-btn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
+            <span>🏟️ Court Management</span>
             <div style="display:flex;gap:6px;">
-                <select id="cFilter" onchange="renderConfirmations()" style="padding:4px 8px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:7px;color:#1e293b;font-size:0.78rem;">
-                    <option value="all">All Methods</option>
-                    <option value="GCash">🟢 GCash</option>
-                    <option value="Maya">🟢 Maya</option>
-                </select>
-                <button onclick="refreshConfirmations()" style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:7px;color:#2563eb;padding:4px 10px;cursor:pointer;font-size:0.78rem;">🔄</button>
+                <button class="btn btn-outline btn-sm" onclick="aiPricingSuggest()">🔮 Pricing</button>
+                <button class="btn btn-primary" onclick="openAddCourtModal()">➕ Add Court</button>
             </div>
         </div>
-        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:12px;">Review pending bookings and Open Play registrations. Verify the payment reference number, then confirm.</div>
-        <div id="confirmationList"></div>
+        <div style="font-size:0.82rem;color:#94a3b8;margin-bottom:16px;">Manage your courts — add, edit, remove, or toggle maintenance. Courts with active games or bookings are protected.</div>
+        <div class="courts-manage-grid" id="courtsManageGrid"></div>
     </div>
+
 </div>
 
 <!-- FINANCIALS PAGE -->
@@ -838,6 +855,7 @@
         <button class="btn btn-primary" onclick="unlockFinancials()">🔓 Unlock</button>
     </div>
     <div id="financialsContent" style="display:none;">
+        <div id="venueFinStats">
         <div class="card">
             <div class="card-title">
                 <span>💰 Financial Summary <span class="help-btn" onclick="showHelp('financials')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
@@ -981,6 +999,7 @@
             <div class="card-title" style="font-size:0.78rem;margin-top:14px;">🏅 Top 10 Loyal Players</div>
             <div id="finLoyalPlayers" style="margin-bottom:4px;"></div>
         </div>
+        </div>
         <div class="card">
             <div id="finInvoiceHeader" class="card-title">
                 <span id="finInvoiceTitle">🧾 Weekly Convenience Fee Invoice</span>
@@ -992,6 +1011,12 @@
             <div id="venueInvoiceContent">
                 <div class="empty-state"><div class="ei">🧾</div><p>Select a week to view your convenience fee invoice.</p></div>
             </div>
+        </div>
+        <div class="card" id="orgAffiliateCard" style="display:none;">
+            <div class="card-title">
+                <span>🤝 Affiliate Earnings <span class="help-btn" onclick="showHelp('affiliate')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;">?</span></span>
+            </div>
+            <div id="orgAffContent"><div class="empty-state"><div class="ei">🤝</div><p>Loading your affiliate dashboard...</p></div></div>
         </div>
     </div>
 </div>
@@ -1078,7 +1103,7 @@
                     <button class="btn btn-primary btn-sm" onclick="openEmailCampaign()">📧 Email Campaign</button>
                 </div>
             </div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:10px;">Collected from "Book a Demo" on the login page. Stored independently from venue accounts.</div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:10px;">Collected from "Watch Demo Videos" on the login page. Stored independently from venue accounts.</div>
             <div id="leadsTableWrap" style="overflow-x:auto;">
                 <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
                     <thead>
@@ -1111,7 +1136,7 @@
         </div>
         <div class="card">
             <div class="card-title"><span>🤝 Affiliates</span><button class="btn btn-primary btn-sm" onclick="loadAffiliates()">🔄 Refresh</button></div>
-            <div style="margin-bottom:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            <div style="margin-bottom:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
                 <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:10px;text-align:center;">
                     <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Active Affiliates</div>
                     <div style="font-size:1.1rem;font-weight:800;color:#10b981;" id="affActiveCount">0</div>
@@ -1127,6 +1152,10 @@
                 <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:10px;text-align:center;">
                     <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Paid Out</div>
                     <div style="font-size:1.1rem;font-weight:800;color:#8b5cf6;" id="affTotalPaid">₱0</div>
+                </div>
+                <div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:10px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">🟢 Payout Ready</div>
+                    <div style="font-size:1.1rem;font-weight:800;color:#10b981;" id="affPayoutReady">0</div>
                 </div>
             </div>
             <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
@@ -1167,6 +1196,7 @@
         <div class="modal-title">📧 Email Campaign</div>
         <div class="form-group"><label>To</label>
             <select id="campaignRecipients" style="padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;width:100%;">
+                <option value="organizers">All Organizers</option>
                 <option value="verified">Verified leads only</option>
                 <option value="all">All leads</option>
             </select>
@@ -1412,13 +1442,14 @@
     <div class="modal">
         <div class="modal-title">📅 Schedule Open Play</div>
         <div class="form-row">
-            <div class="form-group"><label>Date *</label><input type="date" id="schedOpDate"></div>
-            <div class="form-group"><label>Max Players</label><input type="number" id="schedOpMax" value="16" min="2"></div>
+            <div class="form-group"><label>Date *</label><input type="date" id="schedOpDate" onchange="syncSchedOpEndDate()"></div>
+            <div class="form-group"><label>End Date *</label><input type="date" id="schedOpEndDate"></div>
         </div>
         <div class="form-row">
             <div class="form-group"><label>Start Time *</label><input type="time" id="schedOpStart" value="14:00"></div>
             <div class="form-group"><label>End Time *</label><input type="time" id="schedOpEnd" value="18:00"></div>
         </div>
+        <div class="form-group"><label>Max Players</label><input type="number" id="schedOpMax" value="16" min="2"></div>
         <div class="form-group" id="schedOpVenueNameRow" style="display:none;margin-bottom:8px;">
             <label>Venue Name</label>
             <input type="text" id="schedOpVenueName" placeholder="e.g. Riverside Pickleball" style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:10px 14px;color:#1e293b;font-size:0.85rem;width:100%;outline:none;">
@@ -1669,6 +1700,51 @@
             <div style="font-size:0.72rem;color:#94a3b8;">Upload a PNG, JPG, or WebP file. Max 2MB. Recommended: 200x200px or smaller.</div>
         </div>
         <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div id="venuePhotoSectionLabel" style="font-weight:700;font-size:0.85rem;color:#0ea5e9;margin-bottom:10px;">📸 Venue Photo</div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="flex:1;min-width:200px;">
+                    <div class="form-group"><label>Upload Image</label><input type="file" id="sVenuePhotoFile" accept="image/png,image/jpeg,image/webp,image/gif" style="font-size:0.78rem;padding:4px 0;"></div>
+                    <button class="btn btn-primary btn-sm" onclick="uploadVenuePhoto()" id="uploadVenuePhotoBtn" style="margin-top:4px;">☁️ Upload</button>
+                    <span id="uploadVenuePhotoStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
+                </div>
+                <div style="text-align:center;">
+                    <img id="sVenuePhotoPreview" style="width:120px;height:80px;object-fit:cover;border-radius:10px;border:2px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.03);display:none;">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label>Or paste image URL</label><input type="url" id="sVenuePhotoUrl" placeholder="https://example.com/venue.jpg" oninput="previewVenuePhotoUrl()"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;">Upload a PNG, JPG, or WebP file. Max 2MB. Recommended: 1200x800px or smaller. Shows at the top of your portal.</div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div style="font-weight:700;font-size:0.85rem;color:#10b981;margin-bottom:10px;">📍 Pin Your Location</div>
+            <div class="form-group"><label>Place / Address</label><input type="text" id="sVenueAddress" placeholder="e.g. 123 P. Dela Rosa St, Makati City"></div>
+            <div style="display:flex;gap:10px;">
+                <div class="form-group" style="flex:1;"><label>Latitude</label><input type="text" id="sLat" placeholder="e.g. 14.5547" inputmode="decimal"></div>
+                <div class="form-group" style="flex:1;"><label>Longitude</label><input type="text" id="sLng" placeholder="e.g. 121.0244" inputmode="decimal"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" type="button" onclick="useMyLocation()" style="margin-top:2px;">📍 Use My Current Location</button>
+            <span id="locStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
+            <div id="settingsMapWrap" style="margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,0.12);height:240px;position:relative;">
+                <div id="settingsMap" style="width:100%;height:100%;"></div>
+                <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:0.7rem;color:#fff;background:rgba(0,0,0,0.55);padding:4px 8px;pointer-events:none;">📌 Click anywhere on the map to drop a pin, or drag the pin to fine-tune</div>
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Pin your venue on the map, or tap "Use My Current Location". Coordinates fill automatically so players can find you.</div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div style="font-weight:700;font-size:0.85rem;color:#f59e0b;margin-bottom:10px;">🎉 Amenities</div>
+            <div class="form-group"><label>Amenities (comma separated)</label><input type="text" id="sAmenities" placeholder="e.g. Parking, Wifi, Aircon, Shower, Pro Shop"></div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div style="font-weight:700;font-size:0.85rem;color:#2563eb;margin-bottom:10px;">📱 Social Media</div>
+            <div class="form-row">
+                <div class="form-group"><label>Facebook</label><input type="url" id="sFb" placeholder="https://facebook.com/..."></div>
+                <div class="form-group"><label>Instagram</label><input type="url" id="sIg" placeholder="https://instagram.com/..."></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>TikTok</label><input type="url" id="sTt" placeholder="https://tiktok.com/@..."></div>
+                <div class="form-group"><label>Website</label><input type="url" id="sWeb" placeholder="https://..."></div>
+            </div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
             <div style="font-weight:700;font-size:0.85rem;color:#f59e0b;margin-bottom:10px;">🔒 Financials Access Code</div>
             <div class="form-group"><label>Set Access Code (4-6 digits)</label><input type="text" id="sAccessCode" placeholder="e.g. 1234" maxlength="6" inputmode="numeric"></div>
             <div style="font-size:0.72rem;color:#94a3b8;">Share this code with the venue owner to access the Financials page.</div>
@@ -1749,6 +1825,27 @@
     </div>
 </div>
 
+<!-- ORGANIZER FIRST-LOGIN WELCOME -->
+<div class="modal-overlay" id="orgWelcomeModal" onclick="if(event.target===this)orgWelcomeAction(false)">
+    <div class="modal" style="max-width:430px;padding:26px 24px;">
+        <button class="modal-close" onclick="orgWelcomeAction(false)">✕</button>
+        <div style="font-size:2.4rem;margin-bottom:10px;text-align:center;">👋</div>
+        <div style="font-size:1.15rem;font-weight:800;color:#8b5cf6;text-align:center;margin-bottom:6px;">You're registered as an <br>Organizer / Club — not a venue</div>
+        <div style="font-size:0.8rem;color:#94a3b8;line-height:1.6;margin-bottom:6px;">CourtQ Pro is a <strong style="color:#475569;">platform</strong>, not a court. As an organizer you host Open Play sessions &amp; tournaments — players register and pay online through <strong style="color:#475569;">your portal link</strong>.</div>
+        <div style="background:rgba(139,92,246,0.07);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:10px 12px;font-size:0.78rem;color:#475569;line-height:1.6;margin-bottom:14px;">
+            <div style="font-weight:700;color:#8b5cf6;margin-bottom:4px;">🚀 Your dashboard is built for:</div>
+            <div>🏓 Scheduling Open Play sessions</div>
+            <div>🎯 Managing players &amp; tournaments</div>
+            <div>🔗 Sharing your portal link so players can join</div>
+            <div>💰 Earning 20% of convenience fees</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            <button class="btn btn-success" onclick="orgWelcomeAction(false)" style="width:100%;">Great, let's start! 🏓</button>
+            <button class="btn btn-outline" onclick="orgWelcomeAction(true)" style="width:100%;">I actually meant to register a venue →</button>
+        </div>
+    </div>
+</div>
+
 <!-- Firebase SDK -->
 <script src="config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -1756,6 +1853,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 // ===================== CONSTANTS =====================
 const CONVENIENCE_FEE=5;
@@ -1793,6 +1891,7 @@ let S = {
     nextBId:3,
     venueSlug:'',
     logoUrl:'',
+    photoUrl:'',
     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     accessCode:'',
     staffEmails:[],
@@ -1800,6 +1899,13 @@ let S = {
     ownerEmails:[],
     tournaments:[],
     scheduledSessions:[],
+    _portalShared:false,
+    address:'',
+    lat:'',
+    lng:'',
+    amenities:[],
+    socialMedia:'',
+    socials:{facebook:'',instagram:'',tiktok:'',website:''},
 
 };
 
@@ -1861,6 +1967,17 @@ function showHelp(topic){
 <p><strong>Peak Hour Analysis:</strong> Identify your busiest times to optimize pricing.</p>
 <p><strong>AI Pricing:</strong> Get AI-suggested rates based on your venue data.</p>
 <p>Data can be exported to CSV for your records.</p>`
+        },
+        affiliate:{
+            title:'🤝 Affiliate Earnings',
+            body:`<p>Every organizer is automatically an affiliate. You earn <strong>20%</strong> on:</p>
+<ul style="margin:4px 0 8px 18px;line-height:1.8;">
+<li>The ₱5/player convenience fees from <strong>your own Open Play sessions</strong></li>
+<li>The convenience fees from every <strong>venue or organizer you refer</strong> via your unique link</li>
+</ul>
+<p>Copy your affiliate link and share it with other venue owners and organizers. When they register through it, you earn 20% on their convenience fees.</p>
+<p>Payouts are released once your pending commission reaches <strong>₱200</strong>, paid via GCash or Maya.</p>
+<p><em>Below this section you'll find your own Open Play convenience fee invoices — these are settled with the CourtQ Pro team.</em></p>`
         }
     }[topic];
     if(!c) return;
@@ -1911,8 +2028,9 @@ function resetUsage(){
 }
 
 // ===================== PERSISTENCE =====================
-const PERSISTENT_KEYS = ['venueName','logoUrl','courts','queue','soloQueue','session','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails','tournaments'];
+const PERSISTENT_KEYS = ['venueName','logoUrl','photoUrl','courts','queue','soloQueue','session','history','leaderboard','sales','nextId','nextBId','paymentInfo','accessCode','staffEmails','costs','ownerEmails','tournaments','_portalShared','address','lat','lng','amenities','socialMedia','socials'];
 let IS_ORGANIZER = false;
+let IS_DEV = false;
 function getVenueDocRef(){return IS_ORGANIZER?db.collection('organizers').doc(VENUE_ID):db.collection('venues').doc(VENUE_ID);}
 function bkCol(){return IS_ORGANIZER?{onSnapshot:(a,b)=>{},get:()=>({then:(f)=>f({empty:true,forEach:()=>{}})}),doc:()=>({set:(()=>{}),delete:(()=>{}),get:()=>Promise.resolve({exists:false})})}:db.collection('venues').doc(VENUE_ID).collection('bookings');}
 function saveBooking(b){if(!VENUE_ID)return;bkCol().doc(b.id).set(b,{merge:true}).catch(()=>{});}
@@ -1939,6 +2057,7 @@ async function saveStateNow(){
     try{
         const state={};
         PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
+        Object.keys(state).forEach(k=>{ if(state[k]===undefined) delete state[k]; });
         await getVenueDocRef().set(state,{merge:true});
         return true;
     }catch(e){
@@ -1954,6 +2073,7 @@ function saveState(){
         try{
             const state={};
             PERSISTENT_KEYS.forEach(k=>state[k]=S[k]);
+            Object.keys(state).forEach(k=>{ if(state[k]===undefined) delete state[k]; });
             const size=new Blob([JSON.stringify(state)]).size;
             console.log('[saveState] writing',Object.keys(state).length,'keys, ~'+size+' bytes');
             getVenueDocRef().set(state,{merge:true}).then(()=>{
@@ -1986,21 +2106,24 @@ async function loadState(){
 }
 
 // ===================== ONBOARDING CHECKLIST =====================
+function isCourtComplete(c){
+    return !!c && !!(c.name&&String(c.name).trim()) && !!(c.location&&String(c.location).trim()) && !!(c.rate&&c.rate>0);
+}
 function getOnboardingSteps(){
     if(IS_ORGANIZER){
         return [
-            {id:'logo', icon:'🖼️', label:'Add Your Photo and fill up required infos', tip:'Upload a photo in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
+            {id:'logo', icon:'🖼️', label:'Add Your Group Selfie / Photo', tip:'Upload a selfie or photo in Settings — or use the one from signup', action:()=>openSettings(), done:()=>!!(S.photoUrl||S.logoUrl)},
+            {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info', action:()=>openSettings(), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
             {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
-            {id:'portal', icon:'🔗', label:'Share Your Portal Link', tip:'Send to players so they can join', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));navigator.clipboard.writeText(window.location.origin+'/portal.html?venue='+S.venueSlug).then(()=>showNotif('Portal link copied! Share it with players.')).catch(()=>showNotif('Copy this from your browser address bar: portal.html?venue='+S.venueSlug));}, done:()=>false},
+            {id:'portal', icon:'🔗', label:'Publish Your Portal Link', tip:'Send to players so they can join', action:()=>publishPortalLink(), done:()=>!!S._portalShared},
         ];
     }
     return [
-        {id:'courts', icon:'🏟️', label:'Add Your Courts', tip:'Set up your courts in the Courts tab', action:()=>showPage('courts',document.getElementById('courtsBtn')), done:()=>(S.courts||[]).length>0},
-        {id:'rates', icon:'💰', label:'Set Your Rates', tip:'Configure pricing per court', action:()=>showPage('courts',document.getElementById('courtsBtn')), done:()=>(S.courts||[]).some(c=>c.rate&&c.rate>0)},
-        {id:'logo', icon:'🖼️', label:'Add Your Logo', tip:'Upload a logo in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
-        {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info', action:()=>openSettings(), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
+        {id:'courts', icon:'🏟️', label:'Review Your Courts & Rates', tip:'Your courts were created at registration — review or edit them', action:()=>showPage('dashboard',document.getElementById('dashboardBtn')), done:()=>(S.courts||[]).some(isCourtComplete)},
+        {id:'showcase', icon:'🖼️', label:'Review Your Venue Showcase', tip:'Check your logo, venue photo, hours, and amenities in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
+        {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info so players can pay online', action:()=>openSettings(), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
         {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
-        {id:'portal', icon:'🔗', label:'Share Your Portal Link', tip:'Send to players so they can book', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));navigator.clipboard.writeText(window.location.origin+'/portal.html?venue='+S.venueSlug).then(()=>showNotif('Portal link copied! Share it with players.')).catch(()=>showNotif('Copy this from your browser address bar: portal.html?venue='+S.venueSlug));}, done:()=>false},
+        {id:'portal', icon:'🔗', label:'Publish Your Portal Link', tip:'Copy your booking link to share with players', action:()=>publishPortalLink(), done:()=>!!S._portalShared},
     ];
 }
 function renderOnboardingChecklist(){
@@ -2008,20 +2131,20 @@ function renderOnboardingChecklist(){
     if(!VENUE_ID||!S.venueSlug){bar.style.display='none';return;}
     if(S._onboardingDismissed){bar.style.display='none';return;}
     const steps=getOnboardingSteps();
-    const detectableSteps=steps.filter(s=>!(s.id==='portal'));
+    const detectableSteps=steps;
     const detectableDone=detectableSteps.filter(s=>s.done()).length;
     if(detectableDone===detectableSteps.length){markOnboardingComplete();return;}
-    const doneCount=steps.filter(s=>s.done()).length;
+    const doneCount=detectableDone;
     const total=steps.length;
     const pct=Math.round((doneCount/total)*100);
     document.getElementById('onboardFill').style.width=pct+'%';
     document.getElementById('onboardPct').textContent=pct+'%';
     if(IS_ORGANIZER){
         document.getElementById('onboardTitle').textContent='🚀 Get Started as an Organizer';
-        document.getElementById('onboardSubtitle').textContent='Set up your organization and start hosting Open Play sessions';
+        document.getElementById('onboardSubtitle').textContent='Finish setup to start hosting Open Play sessions';
     } else {
         document.getElementById('onboardTitle').textContent='🚀 Get Started with CourtQ Pro';
-        document.getElementById('onboardSubtitle').textContent='Complete these steps to start accepting bookings';
+        document.getElementById('onboardSubtitle').textContent='Your courts, rates, and showcase are set from signup. Complete these last steps to go live.';
     }
     if(pct===100){
         document.getElementById('onboardSubtitle').textContent='All done! Your dashboard is fully set up.';
@@ -2060,7 +2183,7 @@ async function sendCompletionAgreementEmail(){
         await emailjs.send(ej.serviceId, ej.templateAuto, {
             to_email:ownerEmail, to_name:venueName,
             subject:isOrg?'🎉 Setup complete! Sign your organizer agreement':'🎉 Setup complete! Sign your venue agreement',
-            body:isOrg?`Great news — you've completed the setup for "${venueName}"!\n\nYour organizer account is fully configured and ready to go.\n\n━━━ SIGN YOUR AGREEMENT ━━━\n\nTo finalize your partnership with CourtQ Pro, please review and sign the following document:\n\n📄 Letter of Agreement:\nhttps://www.courtqpro.online/agreement-organizer.html\n\nPlease download, review, sign, and return the signed copy to us via email at apexmindagency@gmail.com.\n\n━━━ WHAT'S NEXT? ━━━\n\n✅ Share your portal link with players!\n✅ Start your first Open Play session!\n✅ Your dashboard is live — monitor sessions and player activity in real time.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`:`Great news — you've completed the setup for "${venueName}"!\n\nYour venue is fully configured and ready to accept bookings.\n\n━━━ SIGN YOUR AGREEMENT ━━━\n\nTo finalize your partnership with CourtQ Pro, please review and sign the following document:\n\n📄 Letter of Agreement:\nhttps://www.courtqpro.online/agreement.html\n\nPlease download, review, sign, and return the signed copy to us via email at apexmindagency@gmail.com.\n\n━━━ WHAT'S NEXT? ━━━\n\n✅ Share your portal link with players!\n✅ Your courts are live — players can book and pay online!\n✅ Monitor bookings and revenue from your dashboard.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`
+            body:isOrg?`Great news — you've completed the setup for "${venueName}"!\n\nYour organizer account is fully configured and ready to go.\n\n━━━ SIGN YOUR AGREEMENT ━━━\n\nTo finalize your partnership with CourtQ Pro, please review and sign the following document:\n\n📄 Letter of Agreement:\nhttps://www.courtqpro.online/agreement-organizer.html\n\nPlease download, review, sign, and return the signed copy to us via email at apexmindagency@gmail.com.\n\n━━━ WHAT'S NEXT? ━━━\n\n✅ Share your portal link with players!\n✅ Start your first Open Play session!\n✅ Your dashboard is live — monitor sessions and player activity in real time.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`:`Great news — you've completed the setup for "${venueName}"!\n\nYour venue is fully configured and ready to accept bookings.\n\n━━━ SIGN YOUR AGREEMENT ━━━\n\nTo finalize your partnership with CourtQ Pro, please review and sign the following document:\n\n📄 Letter of Agreement:\nhttps://www.courtqpro.online/agreement.html\n\nPlease download, review, sign, and return the signed copy to us via email at apexmindagency@gmail.com.\n\n━━━ WHAT'S NEXT? ━━━\n\n✅ Share your portal link with players!\n✅ Your courts are live — players can book and pay online!\n✅ Monitor bookings and revenue from your dashboard.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`
         });
         console.log('[onboarding] agreement email sent to', ownerEmail);
     }catch(e){ console.warn('[onboarding] agreement email failed:', e); }
@@ -2082,14 +2205,13 @@ function calcOnboardingProgress(vData, isOrg){
         steps.push({label:'Photo',done:!!vData.logoUrl});
         steps.push({label:'Payment',done:(vData.paymentInfo&&vData.paymentInfo.gcash&&vData.paymentInfo.gcash.number)||(vData.paymentInfo&&vData.paymentInfo.maya&&vData.paymentInfo.maya.number)});
         steps.push({label:'Session',done:(vData.scheduledSessions||[]).length>0});
-        steps.push({label:'Portal',done:false});
+        steps.push({label:'Portal',done:!!vData._portalShared});
     } else {
-        steps.push({label:'Courts',done:(vData.courts||[]).length>0});
-        steps.push({label:'Rates',done:(vData.courts||[]).some(c=>c.rate&&c.rate>0)});
-        steps.push({label:'Logo',done:!!vData.logoUrl});
+        steps.push({label:'Courts',done:(vData.courts||[]).length>0&&(vData.courts||[]).some(c=>c.rate&&c.rate>0)});
+        steps.push({label:'Showcase',done:!!vData.logoUrl});
         steps.push({label:'Payment',done:(vData.paymentInfo&&vData.paymentInfo.gcash&&vData.paymentInfo.gcash.number)||(vData.paymentInfo&&vData.paymentInfo.maya&&vData.paymentInfo.maya.number)});
         steps.push({label:'Session',done:(vData.scheduledSessions||[]).length>0});
-        steps.push({label:'Portal',done:false});
+        steps.push({label:'Portal',done:!!vData._portalShared});
     }
     const doneCount=steps.filter(s=>s.done).length;
     const complete=vData.onboardingComplete===true;
@@ -2108,7 +2230,7 @@ function formatLastSeen(ts){
 function checkOnboardingFollowup(){
     if(S._onboardingComplete || S._onboardingDismissed) return;
     const steps=getOnboardingSteps();
-    const detectable=steps.filter(s=>s.id!=='portal');
+    const detectable=steps;
     const allDetectableDone=detectable.every(s=>s.done());
     if(allDetectableDone) return;
     const doc=getVenueDocRef();
@@ -2140,11 +2262,11 @@ function checkOnboardingFollowup(){
         if(IS_ORGANIZER){
             const orgEmails={
                 1:{subject:'Welcome! Ready to schedule your first session? 🏓',body:`Hi there!\n\nYour organizer account is active — congratulations!\n\nYou're just one step away from hosting your first Open Play session:\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏓 Open Play tab\n3. Click "📅 Schedule an Open Play Session Here"\n4. Set your date, time, drop-in fee, and max players\n5. Share your portal link with your community!\n\nIt takes less than 2 minutes. Players are ready to join! 🎯\n\nNeed help? Reply to this email or visit https://www.youtube.com/@CourtQPro\n\nLet's get started! 💪`},
-                3:{subject:'Your first session is waiting to be created! 🏓',body:`Hi there!\n\nYour organizer account has been active for a few days, but you haven't scheduled your first Open Play session yet.\n\nIt's quick and easy:\n\n1. Log in → https://www.courtqpro.online/\n2. 🏓 Open Play → "📅 Schedule an Open Play Session Here"\n3. Pick a date, time, and set your drop-in fee\n4. Share your portal link — players can register online!\n\nThe sooner you create a session, the sooner players can join. 🎯\n\nQuestions? Reply to this email or call 📱 0999 883 0291`},
-                7:{subject:'Need help getting started? 🤝',body:`Hi there!\n\nIt's been a week since your organizer account was activated, and we noticed you haven't scheduled your first Open Play session yet.\n\nNo worries — we're here to help!\n\n━━━ QUICK START ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏓 Open Play tab\n3. Click "📅 Schedule an Open Play Session Here"\n4. Set your date, time, drop-in fee, and max players\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYou've got this! 💪`},
-                14:{subject:'Your community is waiting — let\'s host a session! 🏟️',body:`Hi there!\n\nIt's been two weeks since your organizer account was activated. We'd love to see you hosting Open Play sessions!\n\nHere's what makes CourtQ Pro great for organizers:\n\n✅ Online player registration — no more manual headcounts\n✅ Automated queue rotation — fair play for everyone\n✅ Convenient fee handling — players pay ₱5 online, you focus on the game\n✅ Portal link — share once, players book anytime\n\nTo get started, just log in and schedule your first session:\nhttps://www.courtqpro.online/\n\nNeed a walkthrough? Reply to this email — we'll guide you step by step.\n\n🎬 Video guides: https://www.youtube.com/@CourtQPro\n📱 0999 883 0291`},
-                21:{subject:'Quick question — anything holding you back? 💬',body:`Hi there!\n\nWe noticed you haven't created an Open Play session yet on CourtQ Pro. We wanted to check in — is there anything we can help with?\n\nCommon questions from new organizers:\n\n❓ "How do I set up a session?" → Log in, go to Open Play, click Schedule\n❓ "Do I need a court?" → You can host at any partner venue\n❓ "How do players pay?" → They pay the ₱5 convenience fee online when they register\n❓ "How do I share my link?" → Copy your portal link from the dashboard and send it to your group chat\n\nWe're happy to help with anything else!\n\n📧 Reply to this email\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nLooking forward to seeing your first session live! 🎾`},
-                28:{subject:'Last reminder — your organizer account is ready! ✨',body:`Hi there!\n\nIt's been a month since your organizer account was activated on CourtQ Pro. This is our last follow-up reminder.\n\nIf you haven't had a chance to set things up, no pressure — your account will remain active and ready whenever you are.\n\nWhen you're ready, here's all you need to do:\n\n1. Log in → https://www.courtqpro.online/\n2. Schedule an Open Play session\n3. Share your portal link with your community\n4. Players register and pay online — you just run the session!\n\nIf you have any questions or need assistance, we're always here:\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWishing you great games ahead! 🏓✨`},
+                3:{subject:'Your first session is waiting to be created! 🏓',body:`Hi there!\n\nYour organizer account has been active for a few days, but you haven't scheduled your first Open Play session yet.\n\nIt's quick and easy:\n\n1. Log in → https://www.courtqpro.online/\n2. 🏓 Open Play → "📅 Schedule an Open Play Session Here"\n3. Pick a date, time, and set your drop-in fee\n4. Share your portal link — players can register online!\n\nThe sooner you create a session, the sooner players can join. 🎯\n\nQuestions? Reply to this email or call 📱 0976 290 7119`},
+                7:{subject:'Need help getting started? 🤝',body:`Hi there!\n\nIt's been a week since your organizer account was activated, and we noticed you haven't scheduled your first Open Play session yet.\n\nNo worries — we're here to help!\n\n━━━ QUICK START ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏓 Open Play tab\n3. Click "📅 Schedule an Open Play Session Here"\n4. Set your date, time, drop-in fee, and max players\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0976 290 7119\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYou've got this! 💪`},
+                14:{subject:'Your community is waiting — let\'s host a session! 🏟️',body:`Hi there!\n\nIt's been two weeks since your organizer account was activated. We'd love to see you hosting Open Play sessions!\n\nHere's what makes CourtQ Pro great for organizers:\n\n✅ Online player registration — no more manual headcounts\n✅ Automated queue rotation — fair play for everyone\n✅ Convenient fee handling — players pay ₱5 online, you focus on the game\n✅ Portal link — share once, players book anytime\n\nTo get started, just log in and schedule your first session:\nhttps://www.courtqpro.online/\n\nNeed a walkthrough? Reply to this email — we'll guide you step by step.\n\n🎬 Video guides: https://www.youtube.com/@CourtQPro\n📱 0976 290 7119`},
+                21:{subject:'Quick question — anything holding you back? 💬',body:`Hi there!\n\nWe noticed you haven't created an Open Play session yet on CourtQ Pro. We wanted to check in — is there anything we can help with?\n\nCommon questions from new organizers:\n\n❓ "How do I set up a session?" → Log in, go to Open Play, click Schedule\n❓ "Do I need a court?" → You can host at any partner venue\n❓ "How do players pay?" → They pay the ₱5 convenience fee online when they register\n❓ "How do I share my link?" → Copy your portal link from the dashboard and send it to your group chat\n\nWe're happy to help with anything else!\n\n📧 Reply to this email\n📱 Call/Text: 0976 290 7119\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nLooking forward to seeing your first session live! 🎾`},
+                28:{subject:'Last reminder — your organizer account is ready! ✨',body:`Hi there!\n\nIt's been a month since your organizer account was activated on CourtQ Pro. This is our last follow-up reminder.\n\nIf you haven't had a chance to set things up, no pressure — your account will remain active and ready whenever you are.\n\nWhen you're ready, here's all you need to do:\n\n1. Log in → https://www.courtqpro.online/\n2. Schedule an Open Play session\n3. Share your portal link with your community\n4. Players register and pay online — you just run the session!\n\nIf you have any questions or need assistance, we're always here:\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119\n🎬 https://www.youtube.com/@CourtQPro\n\nWishing you great games ahead! 🏓✨`},
             };
             const e=orgEmails[followupDay];
             if(e){subject=e.subject;body=e.body;}
@@ -2152,10 +2274,10 @@ function checkOnboardingFollowup(){
             const venueEmails={
                 1:{subject:'Welcome to CourtQ Pro — let\'s set up your venue! 🏟️',body:`Hi there!\n\nYour venue is live on CourtQ Pro — congratulations!\n\nLet's get you set up in just a few minutes:\n\n1. Log in → https://www.courtqpro.online/\n2. 🏟️ Courts tab → Add your courts and set rates\n3. ⚙️ Settings → Upload your logo and add GCash/Maya details\n4. 🏓 Schedule your first Open Play session\n5. 🔗 Share your portal link with players!\n\nEach step takes less than a minute. Start with the Courts tab!\n\nNeed help? Reply to this email or visit https://www.youtube.com/@CourtQPro\n\nLet's get those courts booked! 🎾`},
                 3:{subject:'Your venue is activated — finish setup in 5 minutes! ⏱️',body:`Your venue is live on CourtQ Pro! But you haven't finished setting up yet.\n\nHere's what's left:\n\n1. 🏟️ Add your courts (Courts tab)\n2. 🖼️ Upload your logo (Settings)\n3. 💳 Add GCash/Maya details (Settings)\n4. 🏓 Schedule your first Open Play session\n5. 🔗 Share your portal link with players\n\nEach step takes less than a minute. Start with the Courts tab!\n\nLog in now → https://www.courtqpro.online/\n\nNeed help? Reply to this email or check https://www.youtube.com/@CourtQPro`},
-                7:{subject:'Your venue is ready — let\'s get players booking! 🎾',body:`Hi there!\n\nIt's been a week since your venue was activated, and we noticed you haven't finished setting up yet.\n\nLet's get you live in just a few minutes!\n\n━━━ REMAINING STEPS ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏟️ Courts tab to add your courts\n3. Click ⚙️ Settings to upload your logo and add payment details\n4. Click 📅 Schedule an Open Play Session to create your first event\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYour courts are waiting! 🏟️`},
-                14:{subject:'Your courts are empty — players want to book! 🏟️',body:`Hi there!\n\nIt's been two weeks since your venue was activated on CourtQ Pro. Here's what you're missing:\n\n✅ Online bookings — players book and pay via GCash/Maya automatically\n✅ Open Play sessions — host group games with automated queue rotation\n✅ TV Display — show live court status on a screen at your venue\n✅ Real-time dashboard — see bookings, revenue, and player activity\n\nTo start receiving bookings, you just need to:\n\n1. Add your courts → Courts tab\n2. Set your rates → Courts tab (click edit on each court)\n3. Add payment info → Settings (GCash/Maya numbers)\n4. Share your portal link → let players book online!\n\nLog in now → https://www.courtqpro.online/\n\nNeed help? Reply to this email or call 📱 0999 883 0291`},
-                21:{subject:'Quick question — is everything set up okay? 💬',body:`Hi there!\n\nWe noticed your venue hasn't finished setting up on CourtQ Pro yet. We wanted to check in — is there anything we can help with?\n\nCommon questions from new venues:\n\n❓ "How do I add courts?" → Log in, go to Courts tab, click + Add Court\n❓ "How do players pay?" → Add your GCash/Maya in Settings, players pay online\n❓ "What's the convenience fee?" → ₱5/player for Open Play — paid by players, not you\n❓ "How do I share my link?" → Click "Share Booking Online Link" in the header\n❓ "Can I try it first?" → Yes! Use the demo mode to explore all features\n\nWe're happy to walk you through anything.\n\n📧 Reply to this email\n📱 Call/Text: 0999 883 0291\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nLooking forward to seeing your venue live! 🏟️`},
-                28:{subject:'Last reminder — your venue is ready when you are! ✨',body:`Hi there!\n\nIt's been a month since your venue was activated on CourtQ Pro. This is our last follow-up reminder.\n\nNo pressure at all — your account will remain active and ready whenever you decide to start.\n\nWhen you're ready, here's the quick setup:\n\n1. Log in → https://www.courtqpro.online/\n2. Add courts in the 🏟️ Courts tab\n3. Set rates and payment in ⚙️ Settings\n4. Share your portal link — players book and pay online!\n\nThat's it. Your venue goes live the moment you share the link.\n\nIf you need anything:\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWishing you packed courts ahead! 🏟️✨`},
+                7:{subject:'Your venue is ready — let\'s get players booking! 🎾',body:`Hi there!\n\nIt's been a week since your venue was activated, and we noticed you haven't finished setting up yet.\n\nLet's get you live in just a few minutes!\n\n━━━ REMAINING STEPS ━━━\n\n1. Log in at https://www.courtqpro.online/\n2. Click the 🏟️ Courts tab to add your courts\n3. Click ⚙️ Settings to upload your logo and add payment details\n4. Click 📅 Schedule an Open Play Session to create your first event\n5. Share your portal link with players!\n\n━━━ NEED HELP? ━━━\n\n📧 Reply to this email or contact us at apexmindagency@gmail.com\n📱 Call/Text: 0976 290 7119\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nYour courts are waiting! 🏟️`},
+                14:{subject:'Your courts are empty — players want to book! 🏟️',body:`Hi there!\n\nIt's been two weeks since your venue was activated on CourtQ Pro. Here's what you're missing:\n\n✅ Online bookings — players book and pay via GCash/Maya automatically\n✅ Open Play sessions — host group games with automated queue rotation\n✅ TV Display — show live court status on a screen at your venue\n✅ Real-time dashboard — see bookings, revenue, and player activity\n\nTo start receiving bookings, you just need to:\n\n1. Add your courts → Courts tab\n2. Set your rates → Courts tab (click edit on each court)\n3. Add payment info → Settings (GCash/Maya numbers)\n4. Share your portal link → let players book online!\n\nLog in now → https://www.courtqpro.online/\n\nNeed help? Reply to this email or call 📱 0976 290 7119`},
+                21:{subject:'Quick question — is everything set up okay? 💬',body:`Hi there!\n\nWe noticed your venue hasn't finished setting up on CourtQ Pro yet. We wanted to check in — is there anything we can help with?\n\nCommon questions from new venues:\n\n❓ "How do I add courts?" → Log in, go to Courts tab, click + Add Court\n❓ "How do players pay?" → Add your GCash/Maya in Settings, players pay online\n❓ "What's the convenience fee?" → ₱5/player for Open Play — paid by players, not you\n❓ "How do I share my link?" → Click "Share Booking Online Link" in the header\n❓ "Can I try it first?" → Yes! Use the demo mode to explore all features\n\nWe're happy to walk you through anything.\n\n📧 Reply to this email\n📱 Call/Text: 0976 290 7119\n🎬 Video tutorials: https://www.youtube.com/@CourtQPro\n\nLooking forward to seeing your venue live! 🏟️`},
+                28:{subject:'Last reminder — your venue is ready when you are! ✨',body:`Hi there!\n\nIt's been a month since your venue was activated on CourtQ Pro. This is our last follow-up reminder.\n\nNo pressure at all — your account will remain active and ready whenever you decide to start.\n\nWhen you're ready, here's the quick setup:\n\n1. Log in → https://www.courtqpro.online/\n2. Add courts in the 🏟️ Courts tab\n3. Set rates and payment in ⚙️ Settings\n4. Share your portal link — players book and pay online!\n\nThat's it. Your venue goes live the moment you share the link.\n\nIf you need anything:\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119\n🎬 https://www.youtube.com/@CourtQPro\n\nWishing you packed courts ahead! 🏟️✨`},
             };
             const e=venueEmails[followupDay];
             if(e){subject=e.subject;body=e.body;}
@@ -2202,6 +2324,7 @@ async function loadAffiliates(){
     }catch(e){console.warn('[aff] load failed:',e);}
     renderPendingAffiliates();
     renderAffiliatesList();
+    refreshAffiliatePayouts();
     calcAffiliateStats();
 }
 async function createAffiliate(){
@@ -2241,6 +2364,7 @@ function renderAffiliatesList(){
                     <div style="font-weight:700;font-size:0.85rem;">${escapeHtml(a.name)} ${statusBadge}</div>
                     <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">📧 ${escapeHtml(a.email)} · 🔑 <code style="background:rgba(37,99,235,0.1);padding:1px 5px;border-radius:4px;color:#2563eb;">${escapeHtml(a.code)}</code></div>
                     <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">🔗 courtqpro.online/?ref=${escapeHtml(a.code)} · Rate: ${Math.round((a.commissionRate||0.20)*100)}% · Paid: ₱${(a.totalPaid||0).toLocaleString()}</div>
+                    <div id="affPayout_${a.id}" style="font-size:0.72rem;margin-top:2px;"><span style="color:#94a3b8;">Checking payout status...</span></div>
                 </div>
                 <div style="display:flex;gap:4px;">
                     <button class="btn btn-outline btn-sm" onclick="copyAffLink('${escapeHtml(a.code)}')" style="font-size:0.65rem;">📋 Copy Link</button>
@@ -2251,6 +2375,29 @@ function renderAffiliatesList(){
             </div>
         </div>`;
     }).join('');
+}
+async function refreshAffiliatePayouts(){
+    let readyCount=0;
+    const threshold=200;
+    await Promise.all(_affiliates.map(async a=>{
+        const el=document.getElementById('affPayout_'+a.id);
+        if(!el) return;
+        try{
+            const stats=await computeAffStats(a);
+            if(stats.pending<=0){
+                el.innerHTML='<span style="color:#10b981;font-weight:700;">✅ All commissions paid</span>';
+            } else if(stats.pending>=threshold){
+                readyCount++;
+                el.innerHTML=`<span style="color:#10b981;font-weight:700;">🟢 Payout Ready — ₱${stats.pending.toLocaleString()} due</span> <button class="btn btn-primary btn-sm" onclick="markAffPaid('${a.id}',${stats.pending})" style="font-size:0.62rem;padding:2px 8px;">💳 Mark Paid</button>`;
+            } else {
+                el.innerHTML=`<span style="color:#94a3b8;">₱${(threshold-stats.pending).toLocaleString()} more until payout (min ₱${threshold.toLocaleString()})</span>`;
+            }
+        }catch(e){
+            el.innerHTML='<span style="color:#94a3b8;">—</span>';
+        }
+    }));
+    const cr=document.getElementById('affPayoutReady');
+    if(cr) cr.textContent=readyCount;
 }
 function copyAffLink(code){
     const url=window.location.origin+'/?ref='+code;
@@ -2285,7 +2432,7 @@ async function approveAffiliate(id,name,email,code){
             await emailjs.send(ej.serviceId,ej.templateAuto,{
                 to_email:email,to_name:name,
                 subject:'🎉 You\'ve been approved as a CourtQ Pro Affiliate!',
-                body:`Great news — your affiliate application has been approved!\n\n━━━ YOUR LOGIN ━━━\n\n📧 Email: ${email}\n🔑 Password: ${pass}\n\n🔗 Log in now: https://www.courtqpro.online/affiliate.html\n\n━━━ IMPORTANT ━━━\n\n🔒 For your security, please change your password after your first login.\nYou'll find a "Change Password" option in your dashboard.\n\n━━━ YOUR DASHBOARD ━━━\n\nOnce logged in you'll see:\n✅ Your unique referral link\n✅ Referral stats and earnings\n✅ Payout status (₱500 minimum)\n\nShare your referral link with venue owners. When they register through it, you earn 20% commission on their convenience fees!\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`
+                body:`Great news — your affiliate application has been approved!\n\n━━━ YOUR LOGIN ━━━\n\n📧 Email: ${email}\n🔑 Password: ${pass}\n\n🔗 Log in now: https://www.courtqpro.online/affiliate.html\n\n━━━ IMPORTANT ━━━\n\n🔒 For your security, please change your password after your first login.\nYou'll find a "Change Password" option in your dashboard.\n\n━━━ YOUR DASHBOARD ━━━\n\nOnce logged in you'll see:\n✅ Your unique referral link\n✅ Referral stats and earnings\n✅ Payout status (₱200 minimum)\n\nShare your referral link with venue owners. When they register through it, you earn 20% commission on their convenience fees!\n\nOrganizers are automatically affiliates — they also earn 20% on their own Open Play convenience fees.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119\n🎬 https://www.youtube.com/@CourtQPro\n\nWelcome aboard! 🏓`
             });
             showNotif('✅ Affiliate approved & credentials emailed to '+email,'success');
         }else{
@@ -2321,26 +2468,11 @@ async function viewAffReferrals(affId){
     const aff=_affiliates.find(a=>a.id===affId);
     if(!aff) return;
     try {
-        const referrals=[];
-        const slugsSnap=await db.collection('slugs').get();
-        for(const slugDoc of slugsSnap.docs){
-            const sd=slugDoc.data();
-            const isOrg=sd.type==='organizer';
-            const vId=isOrg?sd.organizerId:sd.venueId;
-            if(!vId) continue;
-            const col=isOrg?'organizers':'venues';
-            const vDoc=await db.collection(col).doc(vId).get();
-            if(!vDoc.exists) continue;
-            const vd=vDoc.data();
-            if(vd.referralCode===aff.code){
-                let email='';
-                try{const uSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',vId).get();if(!uSnap.empty)email=uSnap.docs[0].data().email||'';}catch(e){}
-                referrals.push({name:vd.name||vd.businessName||'Unnamed',slug:slugDoc.id,email,type:isOrg?'Organizer':'Venue',createdAt:vd.createdAt,feeAccrued:((vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0))*5});
-            }
-        }
+        const stats=await computeAffStats(aff);
+        const referrals=stats.referrals;
         let html=`<div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:12px;margin-bottom:10px;">
             <div style="font-weight:700;">${escapeHtml(aff.name)} — Referral Link: <code style="background:rgba(37,99,235,0.1);padding:1px 5px;border-radius:4px;color:#2563eb;">${escapeHtml(aff.code)}</code></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">${referrals.length} referral(s) · Commission: ${Math.round((aff.commissionRate||0.20)*100)}% of convenience fees</div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">${referrals.length} referral(s) · Commission: ${Math.round(stats.commissionRate*100)}% of convenience fees ${aff.organizerId?'· includes own Open Play fees':''}</div>
         </div>`;
         if(referrals.length===0){
             html+='<div class="empty-state"><div class="ei">📭</div><p>No referrals yet for this affiliate.</p></div>';
@@ -2351,15 +2483,12 @@ async function viewAffReferrals(affId){
                     <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">📧 ${escapeHtml(r.email||'N/A')} · 📅 ${r.createdAt?new Date(r.createdAt).toLocaleDateString():'N/A'} · Fee accrued: ₱${r.feeAccrued.toLocaleString()}</div>
                 </div>`;
             });
-            const totalFees=referrals.reduce((s,r)=>s+r.feeAccrued,0);
-            const commission=Math.round(totalFees*(aff.commissionRate||0.20));
-            const pending=commission-(aff.totalPaid||0);
-            const threshold=500;
+            const threshold=200;
             html+=`<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px 10px;margin-top:6px;font-weight:700;font-size:0.85rem;">
-                💰 Total Fee Revenue: ₱${totalFees.toLocaleString()} · Commission Due: ₱${commission.toLocaleString()}
-                ${pending<=0?'<span style="color:#10b981;margin-left:8px;font-size:0.75rem;">✅ All paid</span>'
-                :pending<threshold?`<span style="color:#94a3b8;margin-left:8px;font-size:0.75rem;">₱${(threshold-pending).toLocaleString()} more until payout (min ₱${threshold.toLocaleString()})</span>`
-                :`<button class="btn btn-primary btn-sm" onclick="markAffPaid('${aff.id}',${pending})" style="margin-left:8px;font-size:0.65rem;">💳 Mark Paid ₱${pending.toLocaleString()}</button>`}
+                💰 Total Fee Revenue: ₱${stats.totalRevenue.toLocaleString()} · Commission Due: ₱${stats.totalCommission.toLocaleString()}
+                ${stats.pending<=0?'<span style="color:#10b981;margin-left:8px;font-size:0.75rem;">✅ All paid</span>'
+                :stats.pending<threshold?`<span style="color:#94a3b8;margin-left:8px;font-size:0.75rem;">₱${(threshold-stats.pending).toLocaleString()} more until payout (min ₱${threshold.toLocaleString()})</span>`
+                :`<button class="btn btn-primary btn-sm" onclick="markAffPaid('${aff.id}',${stats.pending})" style="margin-left:8px;font-size:0.65rem;">💳 Mark Paid ₱${stats.pending.toLocaleString()}</button>`}
             </div>`;
         }
         document.getElementById('invoiceContent').innerHTML=html;
@@ -2379,27 +2508,55 @@ async function markAffPaid(affId,amount){
 async function calcAffiliateStats(){
     let activeCount=0,totalPaid=0;
     const affMap={}; // code -> {commissionRate,totalPaid}
+    const orgAffMap={}; // organizerId -> {commissionRate,totalPaid}
     for(const aff of _affiliates){
         if(aff.status==='active') activeCount++;
         totalPaid+=(aff.totalPaid||0);
         affMap[aff.code.toUpperCase()]={commissionRate:aff.commissionRate||0.20,totalPaid:aff.totalPaid||0};
+        let orgId=aff.organizerId||'';
+        if(!orgId&&aff.uid){
+            try{
+                const ownSnap=await db.collection('organizers').where('ownerId','==',aff.uid).get();
+                if(!ownSnap.empty) orgId=ownSnap.docs[0].id;
+            }catch(e){}
+        }
+        if(orgId) orgAffMap[orgId]={commissionRate:aff.commissionRate||0.20,totalPaid:aff.totalPaid||0};
     }
     let totalReferrals=0,totalCommissions=0;
     try {
+        // Own Open Play fees for organizer-affiliates
+        for(const orgId of Object.keys(orgAffMap)){
+            const oDoc=await db.collection('organizers').doc(orgId).get();
+            if(oDoc.exists){
+                let feeAccrued=0;
+                try{const invSnap=await db.collection('org_invoices').where('organizerId','==',orgId).get();invSnap.docs.forEach(d=>{const dd=d.data();if(dd.status==='pending'||dd.status==='paid')feeAccrued+=(dd.feeAmount||0);});}catch(e){}
+                if(feeAccrued>0){
+                    totalReferrals++;
+                    totalCommissions+=Math.round(feeAccrued*orgAffMap[orgId].commissionRate);
+                }
+            }
+        }
         const slugsSnap=await db.collection('slugs').get();
         for(const slugDoc of slugsSnap.docs){
             const sd=slugDoc.data();
             const isOrg=sd.type==='organizer';
             const vId=isOrg?sd.organizerId:sd.venueId;
             if(!vId) continue;
+            if(isOrg&&orgAffMap[vId]) continue;
             const col=isOrg?'organizers':'venues';
             const vDoc=await db.collection(col).doc(vId).get();
             if(!vDoc.exists) continue;
             const vd=vDoc.data();
             if(vd.referralCode&&affMap[vd.referralCode.toUpperCase()]){
                 totalReferrals++;
-                const pCount=(vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0);
-                totalCommissions+=Math.round(pCount*5*affMap[vd.referralCode.toUpperCase()].commissionRate);
+                let feeAccrued=0;
+                if(isOrg){
+                    try{const invSnap=await db.collection('org_invoices').where('organizerId','==',vId).get();invSnap.docs.forEach(d=>{const dd=d.data();if(dd.status==='pending'||dd.status==='paid')feeAccrued+=(dd.feeAmount||0);});}catch(e){}
+                } else {
+                    const pCount=(vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0);
+                    feeAccrued=pCount*5;
+                }
+                totalCommissions+=Math.round(feeAccrued*affMap[vd.referralCode.toUpperCase()].commissionRate);
             }
         }
     }catch(e){}
@@ -2426,7 +2583,7 @@ function renderLeads(){
             const date=d.createdAt?new Date(d.createdAt.seconds*1000).toLocaleDateString():'—';
             const status=d.verified?'<span style="color:#10b981;">✓ Verified</span>':'<span style="color:#f59e0b;">⏳ Pending</span>';
             const phone=d.phone?escapeHtml(d.phone):'—';
-            const sched=d.schedule?escapeHtml(d.schedule):'—';
+            const sched=d.schedule?escapeHtml(d.schedule):(d.source==='watch-videos'?'🎬 Video Guides':'—');
             html+=`<tr style="border-bottom:1px solid rgba(0,0,0,0.04);">
                 <td style="padding:8px 10px;">${escapeHtml(d.name||'—')}</td>
                 <td style="padding:8px 10px;">${escapeHtml(d.email||'—')}</td>
@@ -2492,16 +2649,28 @@ async function sendEmailCampaign(){
     if(!subject||!body){ errEl.textContent='Fill in subject and message.'; errEl.style.display='block'; return; }
     const btn=document.querySelector('#emailCampaignModal .btn-primary');
     btn.disabled=true; btn.textContent='⏳ Sending...';
-    statusEl.textContent='Fetching leads...';
+    statusEl.textContent='Fetching recipients...';
     try {
-        const snap=await db.collection('demoLeads').get();
         let leads=[];
-        snap.forEach(doc=>{
-            const d=doc.data();
-            if(mode==='verified'&&!d.verified) return;
-            leads.push(d);
-        });
-        if(leads.length===0){ errEl.textContent='No leads match the selected filter.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='📤 Send Campaign'; return; }
+        if(mode==='organizers'){
+            const orgSnap=await db.collection('organizers').get();
+            const seen=new Set();
+            orgSnap.forEach(doc=>{
+                const d=doc.data();
+                const email=(d.email||'').trim().toLowerCase();
+                if(!email||seen.has(email)) return;
+                seen.add(email);
+                leads.push({email,name:d.businessName||d.name||d.venueName||'there'});
+            });
+        } else {
+            const snap=await db.collection('demoLeads').get();
+            snap.forEach(doc=>{
+                const d=doc.data();
+                if(mode==='verified'&&!d.verified) return;
+                leads.push(d);
+            });
+        }
+        if(leads.length===0){ errEl.textContent='No recipients match the selected filter.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='📤 Send Campaign'; return; }
         // Load EmailJS config
         const cfg=await db.collection('config').doc('emailjs').get();
         if(!cfg.exists){ errEl.textContent='EmailJS not configured. Set it up in Dev Dashboard first.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='📤 Send Campaign'; return; }
@@ -2545,7 +2714,7 @@ function renderVenueDisplay(){
 // ===================== PAGE NAV =====================
 function showPage(id,el){
     if (!IS_OWNER && id === 'financials') {
-        showPage('openplay', document.querySelector('.nav-tab'));
+        showPage('dashboard', document.getElementById('dashboardBtn'));
         return;
     }
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -2553,19 +2722,23 @@ function showPage(id,el){
     document.getElementById('page-'+id).classList.add('active');
     if(el) el.classList.add('active');
     const actions={
-        booking:()=>{document.getElementById('tlDate').value=getTodayISO();renderBookingTimeline();renderConflicts();renderBookings();renderBookingCourtSelect();},
+        dashboard:()=>{document.getElementById('tlDate').value=getTodayISO();renderConfirmations();renderBookingTimeline();renderConflicts();renderBookings();renderBookingCourtSelect();renderCourtsManage();},
         tournaments:()=>{backToTournamentList();},
         leaderboard:renderLeaderboard,
         history:renderHistory,
-        confirmations:renderConfirmations,
         financials:()=>{
             const title=document.getElementById('finInvoiceTitle');
             const btns=document.getElementById('finInvoiceButtons');
             if(IS_ORGANIZER){
-                title.textContent='🧾 Open Play Convenience Fees';
+                document.getElementById('venueFinStats').style.display='none';
+                document.getElementById('orgAffiliateCard').style.display='block';
+                title.textContent='🧾 Your Own Open Play Convenience Fees';
                 btns.style.display='none';
+                renderOrganizerAffiliateDashboard();
                 renderOrganizerInvoice();
             } else {
+                document.getElementById('venueFinStats').style.display='block';
+                document.getElementById('orgAffiliateCard').style.display='none';
                 title.textContent='🧾 Weekly Convenience Fee Invoice';
                 btns.style.display='flex';
                 if(document.getElementById('financialsContent').style.display!=='none')renderFinancials();
@@ -2830,7 +3003,7 @@ async function startSession(){
     }
     const rrGameType=mode==='roundRobin'?(document.querySelector('input[name="rrGameType"]:checked')?.value||'doubles'):null;
     const venueName=IS_ORGANIZER?document.getElementById('sesVenueName').value.trim():'';
-    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked,venueName};
+    S.session={id:'SES'+Date.now(),startDate:sd,startTime:st,endDate:ed,endTime:et,start:st,end:et,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:selectedCourts,looping:mode==='fourOnFour'&&document.getElementById('sesLooping').checked,venueName,walkIns:[]};
     _sessionReminderShown=false;
     updateJoinFormMode();
     closeModal('sessionModal');
@@ -2884,7 +3057,7 @@ function renderScheduledOpList(){
                 const ci=upcoming.indexOf(se)%colors.length;
                 const pc=se.players?se.players.reduce((a,p)=>a+(p.players||1),0):0;
                 const mx=se.maxPlayers||'∞';
-                cellHtml+=`<div style="position:absolute;top:2px;left:${left}%;width:${width}%;height:20px;background:${colors[ci]};border-radius:3px;font-size:0.5rem;color:#1e293b;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;cursor:pointer;opacity:0.85;" onclick="openScheduledOpDetail('${se.id}')" title="${se.startTime}-${se.endTime} ${pc}/${mx}">${pc}/${mx}</div>`;
+                cellHtml+=`<div style="position:absolute;top:2px;left:${left}%;width:${width}%;height:20px;background:${colors[ci]};border-radius:3px;font-size:0.5rem;color:#1e293b;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;cursor:pointer;opacity:0.85;" onclick="openScheduledOpDetail('${se.id}')" title="${opTimeRange(se)} ${pc}/${mx}">${pc}/${mx}</div>`;
             });
             cellHtml+='</div>';
             tlHtml+=cellHtml;
@@ -2902,7 +3075,7 @@ function renderScheduledOpList(){
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.03);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:all 0.2s;" onclick="openScheduledOpDetail('${s.id}')" onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='rgba(0,0,0,0.03)'">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                 <span style="font-weight:700;font-size:0.85rem;">${label}</span>
-                <span style="font-size:0.78rem;color:#94a3b8;">${s.startTime}–${s.endTime}</span>
+                <span style="font-size:0.78rem;color:#94a3b8;">${opTimeRange(s)}</span>
                 <span style="font-size:0.72rem;color:#2563eb;">${courtNames}</span>
                 ${venueTag}
             </div>
@@ -2933,7 +3106,7 @@ function renderBookedOpList(){
         return `<div style="border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:12px;margin-bottom:10px;background:rgba(37,99,235,0.04);">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
                 <div>
-                    <div style="font-weight:700;font-size:0.85rem;color:#2563eb;">📅 ${s.date} ${s.startTime}–${s.endTime}</div>
+                    <div style="font-weight:700;font-size:0.85rem;color:#2563eb;">📅 ${s.date} ${opTimeRange(s)}</div>
                     <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}${s.venueName?' · 📍 '+escapeHtml(s.venueName):''}${onsite.length>0?' · <span style="color:#f59e0b;">➕ '+onsite.length+' onsite</span>':''}</div>
                 </div>
                 <div style="font-size:0.78rem;color:#94a3b8;">${confirmed.reduce((s,p)=>s+(p.players||1),0)}/${max} players</div>
@@ -2951,7 +3124,7 @@ function renderBookedOpList(){
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(37,99,235,0.06);border-radius:6px;margin-bottom:3px;font-size:0.78rem;">
                         <div>
                             <span style="font-weight:600;color:#1e293b;">${i+1}.</span>
-                            <input type="text" value="${escapeHtml((p._names&&p._names[sub])?p._names[sub]:p.name)}" style="background:transparent;border:none;border-bottom:1px dashed rgba(0,0,0,0.12);color:#ddd;font-size:0.78rem;width:120px;outline:none;padding:0 4px;transition:border-color 0.2s;cursor:text;" onfocus="this.style.borderBottomColor='rgba(37,99,235,0.5)'" onblur="this.style.borderBottomColor='rgba(0,0,0,0.12)';saveBookedPlayerName('${s.id}',${idx},${sub},this)">
+                            <input type="text" value="${escapeHtml((p._names&&p._names[sub])?p._names[sub]:p.name)}" style="background:transparent;border:none;border-bottom:1px dashed rgba(0,0,0,0.12);color:#1e293b;font-size:0.78rem;width:120px;outline:none;padding:0 4px;transition:border-color 0.2s;cursor:text;" onfocus="this.style.borderBottomColor='rgba(37,99,235,0.5)'" onblur="this.style.borderBottomColor='rgba(0,0,0,0.12)';saveBookedPlayerName('${s.id}',${idx},${sub},this)">
                             <span style="color:#94a3b8;font-size:0.7rem;margin-left:4px;">⭐${p.skill||3}.0 · ${p.gameType==='singles'?'1v1':'2v2'}</span>
                             ${p.phone?'<span style="color:#64748b;font-size:0.65rem;"> 📞'+escapeHtml(p.phone)+'</span>':''}
                         </div>
@@ -2987,7 +3160,7 @@ function confirmOpenPlayPlayer(sessionId, playerIdx){
     s.players[playerIdx]={...p,status:'confirmed'};
     saveScheduledSessions();
     document.getElementById('successModalTitle').textContent='✅ Confirmed!';
-    document.getElementById('successModalBody').innerHTML=`<strong>${escapeHtml(p.name)}</strong> confirmed for Open Play<br><span style="font-size:0.8rem;color:#2563eb;">📅 ${s.date} ${s.startTime}–${s.endTime}</span>`;
+    document.getElementById('successModalBody').innerHTML=`<strong>${escapeHtml(p.name)}</strong> confirmed for Open Play<br><span style="font-size:0.8rem;color:#2563eb;">📅 ${s.date} ${opTimeRange(s)}</span>`;
     openModal('successModal');
     renderBookedOpList();
     renderConfirmations();
@@ -3006,7 +3179,9 @@ function rejectOpenPlayPlayer(sessionId, playerIdx){
 }
 
 function openScheduleOpModal(){
-    document.getElementById('schedOpDate').value=getTodayISO();
+    const today=getTodayISO();
+    document.getElementById('schedOpDate').value=today;
+    document.getElementById('schedOpEndDate').value=today;
     if (IS_ORGANIZER) {
         document.getElementById('schedOpCourts').style.display = 'none';
         document.getElementById('schedOpCourtCountRow').style.display = 'block';
@@ -3027,14 +3202,15 @@ function openScheduleOpModal(){
 
 async function saveScheduledOp(){
     const date=document.getElementById('schedOpDate').value;
+    const endDate=document.getElementById('schedOpEndDate').value;
     const start=document.getElementById('schedOpStart').value;
     const end=document.getElementById('schedOpEnd').value;
     const mode=document.querySelector('input[name="schedOpMode"]:checked')?.value||'fourOnFour';
     const fee=parseInt(document.getElementById('schedOpFee').value)||0;
     const max=parseInt(document.getElementById('schedOpMax').value)||0;
     const looping=document.getElementById('schedOpLooping').checked;
-    if(!date||!start||!end){showNotif('Fill date and time!','error');return;}
-    if(end<=start){showNotif('End must be after start!','error');return;}
+    if(!date||!endDate||!start||!end){showNotif('Fill date and time!','error');return;}
+    if(new Date(endDate+'T'+end)<=new Date(date+'T'+start)){showNotif('End must be after start!','error');return;}
     let selectedCourts, courtCount;
     if (IS_ORGANIZER) {
         courtCount = parseInt(document.getElementById('schedOpCourtCount').value) || 2;
@@ -3045,21 +3221,31 @@ async function saveScheduledOp(){
     }
     const id='OP_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4).toUpperCase();
     const venueName=IS_ORGANIZER?document.getElementById('schedOpVenueName').value.trim():'';
-    const sessionData = {id,date,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],looping,createdAt:Date.now(),venueName};
+    const sessionData = {id,date,endDate,startTime:start,endTime:end,mode,fee,maxPlayers:max,courts:selectedCourts,status:'scheduled',players:[],looping,createdAt:Date.now(),venueName};
     if (IS_ORGANIZER) sessionData.courtCount = courtCount;
     S.scheduledSessions.push(sessionData);
     saveScheduledSessions();
     closeModal('scheduleOpModal');
     await saveStateNow();
     renderScheduledOpList();
-    showNotif(`📅 Open Play scheduled for ${date} ${start}–${end}`,'success');
+    showNotif(`📅 Open Play scheduled for ${date} ${start}–${endDate} ${end}`,'success');
+}
+
+function syncSchedOpEndDate(){
+    const ed=document.getElementById('schedOpEndDate');
+    if(ed&&!ed.value) ed.value=document.getElementById('schedOpDate').value;
+}
+
+function opTimeRange(s){
+    const ed=s.endDate&&s.endDate!==s.date?s.endDate+' ':'';
+    return `${s.startTime}–${ed}${s.endTime}`;
 }
 
 function openScheduledOpDetail(id){
     const s=S.scheduledSessions.find(x=>x.id===id);
     if(!s) return;
     _schedOpCtx=s;
-    document.getElementById('schedOpDetailTitle').textContent=s.date+' '+s.startTime+'–'+s.endTime;
+    document.getElementById('schedOpDetailTitle').textContent=s.date+' '+opTimeRange(s);
     const courtNames=IS_ORGANIZER?('🏟️ '+(s.courtCount||'?')+' courts'):(s.courts||[]).map(cid=>S.courts.find(c=>c.id===cid)?.name||'Court '+cid).join(', ');
     document.getElementById('schedOpDetailMeta').innerHTML=`
         <div>${courtNames} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}${s.fee>0?' · ₱'+s.fee:' · Free'}${s.venueName?' · 📍 '+escapeHtml(s.venueName):''}</div>
@@ -3199,8 +3385,8 @@ function startScheduledSession(sessionId){
     const mode=s.mode;
     const rrGameType=mode==='roundRobin'?'doubles':null;
     const startDT=new Date(s.date+'T'+s.startTime);
-    const endDT=new Date(s.date+'T'+s.endTime);
-    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour',venueName:s.venueName||'',maxPlayers:s.maxPlayers||0,_players:(s.players||[]).filter(p=>p.source==='online')};
+    const endDT=new Date((s.endDate||s.date)+'T'+s.endTime);
+    S.session={id:'SES'+Date.now(),startDate:s.date,startTime:s.startTime,endDate:s.endDate||s.date,endTime:s.endTime,start:s.startTime,end:s.endTime,startDT:startDT.getTime(),endDT:endDT.getTime(),rot,fee:s.fee,mode,rrGameType,startedAt:Date.now(),active:true,courts:sessionCourts,looping:s.looping||mode==='fourOnFour',venueName:s.venueName||'',maxPlayers:s.maxPlayers||0,_players:(s.players||[]).filter(p=>p.source==='online'),walkIns:[]};
     _sessionReminderShown=false;
     teamUpPlayers(s);
     tryCombineTeams();
@@ -3212,8 +3398,8 @@ function startScheduledSession(sessionId){
     closeModal('scheduleOpModal');
     saveStateNow();
     const _teamedCount=(s.players||[]).reduce((a,p)=>a+(p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')?(p.players||1):0),0);
-    showNotif(`▶ Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime} — ${_teamedCount} players teamed up`,'success');
-    announce(`Scheduled Open Play started! ${s.date} ${s.startTime}–${s.endTime}.`);
+    showNotif(`▶ Scheduled Open Play started! ${s.date} ${opTimeRange(s)} — ${_teamedCount} players teamed up`,'success');
+    announce(`Scheduled Open Play started! ${s.date} ${opTimeRange(s)}.`);
     updateJoinFormMode();
     renderAll();
 }
@@ -3223,7 +3409,7 @@ function cancelScheduledOp(){
     _schedOpCtx.status='cancelled';
     saveScheduledSessions();
     if(S.session && S.session.active){
-        endSession();
+        endSession(true);
         closeModal('scheduledOpDetailModal');
         return;
     }
@@ -3282,13 +3468,16 @@ function addSessionCourt(cId){
     saveState();
 }
 
-function endSession(){
+function endSession(skipInvoice){
     if(!S.session) return;
+    const _ses=S.session;
+    const _sched=(S.scheduledSessions||[]).find(s=>s.status==='active');
     const sessionCourts=S.session.courts||[];
     // Free in-progress RR matches so they can be reassigned later
     if(S.session.mode==='roundRobin'&&S.session.rrSchedule){
         S.session.rrSchedule.matches.forEach(m=>{if(m.courtId&&!m.completed){const c=S.courts.find(x=>x.id===m.courtId);if(c)delete c._rrMatchId;m.courtId=null;}});
     }
+    if(!skipInvoice&&IS_ORGANIZER) finalizeOrgSessionFees(_ses,_sched);
     S.session.active=false; S.session=null;
     S.courts.forEach(c=>{ if(c.status==='occupied'&&sessionCourts.includes(c.id)&&!S.bookings.some(b=>b.courtId===c.id&&b.status==='checkedin')) completeRelease(c,null); if(c.rr) delete c.rr; delete c._rrMatchId; });
     // Clean up virtual courts for organizers
@@ -3302,6 +3491,36 @@ function endSession(){
     showNotif('⏹ Session ended.','warning');
     announce('Open Play session ended. Thank you!');
     renderAll();
+}
+
+async function finalizeOrgSessionFees(_ses,_sched){
+    if(!IS_ORGANIZER||!VENUE_ID||!_ses) return;
+    const sessionId=_ses.id;
+    const walkIns=[...(_ses.walkIns||[])];
+    const schedPlayers=[...((_sched&&_sched.players)||[])];
+    const sessionDate=_sched?(_sched.date||_sched.startDate||''):'';
+    let pCount=0;
+    schedPlayers.forEach(p=>{
+        if(p.source==='online'){ if(p.paid&&(!p.status||p.status==='confirmed')) pCount+=p.players||1; }
+        else pCount+=p.players||1;
+    });
+    walkIns.forEach(w=>pCount+=(w.count||1));
+    if(pCount<=0) return;
+    try{
+        const existing=await db.collection('org_invoices').where('organizerId','==',VENUE_ID).where('sessionId','==',sessionId).get();
+        if(!existing.empty) return;
+        const feeAmount=pCount*5;
+        const invRef=await db.collection('org_invoices').add({organizerId:VENUE_ID,slug:S.venueSlug||'',sessionId,sessionDate,pCount,feeAmount,generatedAt:Date.now(),status:'pending',paidAt:null});
+        const oDoc=await db.collection('organizers').doc(VENUE_ID).get();
+        if(oDoc.exists){
+            const data=oDoc.data();
+            const invs=data.invoices||[];
+            invs.push({id:invRef.id,sessionId,pCount,feeAmount,generatedAt:Date.now(),status:'pending'});
+            const invoicedSessions=data.invoicedSessions||[];
+            invoicedSessions.push({id:sessionId,pCount,feeAmount,date:sessionDate,invoicedAt:Date.now()});
+            await db.collection('organizers').doc(VENUE_ID).update({invoices:invs,invoicedSessions});
+        }
+    }catch(e){console.warn('[inv] auto-invoice failed:',e);}
 }
 
 let _sessionReminderShown=false;
@@ -3334,6 +3553,7 @@ function updateJoinFormMode(){
     if(epEl){const isDbl=document.getElementById('gameType')?.value==='doubles';epEl.style.display=mode==='winnersSplit'||(mode==='roundRobin'&&S.session?.rrGameType==='singles')||!isDbl?'none':'block';}
     const lbl=document.querySelector('#joinCard .card-title');
     if(lbl) lbl.textContent=mode==='winnersSplit'||mode==='roundRobin'?'🎯 Join Pool':'🎯 Join Queue';
+    updateWalkinFee();
 }
 
 // ===================== QUEUE =====================
@@ -3343,12 +3563,118 @@ function onGTChange(){
     const isDoubles=document.getElementById('gameType').value==='doubles';
     document.getElementById('extraPlayers').style.display=isDoubles?'block':'none';
     document.getElementById('groupName').parentElement.style.display=isDoubles?'none':'';
+    updateWalkinFee();
 }
 
 function onJoinAsChange(){
     const isTeam=document.querySelector('input[name="joinAs"]:checked').value==='team';
     document.getElementById('teamFields').style.display=isTeam?'block':'none';
     document.getElementById('soloFields').style.display=isTeam?'none':'block';
+    updateWalkinFee();
+}
+
+function walkInCountFromForm(){
+    const mode=S.session?.mode;
+    if(mode==='winnersSplit'||mode==='roundRobin') return 1;
+    const gt=document.getElementById('gameType')?.value||'singles';
+    if(gt==='doubles'){
+        const joinAs=document.querySelector('input[name="joinAs"]:checked')?.value||'team';
+        if(joinAs==='team') return document.getElementById('p2')?.value.trim()?2:0;
+        return 1;
+    }
+    return 1;
+}
+function logWalkin(count){
+    if(!IS_ORGANIZER||!S.session) return;
+    if(!S.session.walkIns) S.session.walkIns=[];
+    S.session.walkIns.push({count,addedAt:Date.now()});
+    saveState();
+}
+
+// ===================== WALK-IN PAYMENT =====================
+let _walkinPayMethod=null;
+let _commitWalkinId=null;
+
+function selWalkinPay(btn,method){
+    document.querySelectorAll('.walkin-pay-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _walkinPayMethod=method;
+    updateWalkinFee();
+}
+
+function updateWalkinFee(){
+    const feeBox=document.getElementById('walkinFeeBox');
+    if(!feeBox) return;
+    if(!S.session||!S.session.active){feeBox.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;">Start an Open Play session to collect payments.</span>';return;}
+    const fee=S.session.fee?parseInt(S.session.fee):0;
+    const count=walkInCountFromForm();
+    const subtotal=count*fee;
+    const conv=count*CONVENIENCE_FEE;
+    const total=subtotal+conv;
+    feeBox.innerHTML=`
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span style="color:#94a3b8;">Players:</span><strong>${count}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span style="color:#94a3b8;">Drop-in Fee:</span><strong>₱${subtotal}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;"><span style="color:#94a3b8;">Convenience Fee (${count} player${count>1?'s':''}):</span><strong style="color:#f59e0b;">₱${conv}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:800;border-top:1px solid rgba(245,158,11,0.2);padding-top:6px;margin-top:4px;"><span style="color:#94a3b8;">Total:</span><strong style="color:#2563eb;">₱${total}</strong></div>`;
+    const area=document.getElementById('walkinPayInputArea');
+    if(!area) return;
+    if(!_walkinPayMethod){area.innerHTML='';return;}
+    if(_walkinPayMethod==='Cash'){
+        area.innerHTML='<div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:9px;padding:10px;font-size:0.75rem;color:#10b981;">💵 Cash payment collected on-site. No reference number needed.</div>';
+        return;
+    }
+    const info=_walkinPayMethod==='GCash'?S.paymentInfo.gcash:S.paymentInfo.maya;
+    const label=_walkinPayMethod==='GCash'?'🟢 GCash':'💜 Maya';
+    area.innerHTML=`<div style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:9px;padding:10px;">
+        <div style="font-size:0.75rem;font-weight:700;margin-bottom:6px;">${label} — collect <strong>₱${total}</strong></div>
+        <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:6px;">Send to 📱 ${escapeHtml(info.number)||'Not set'} (${escapeHtml(info.name)||'Not set'})</div>
+        <input type="text" id="walkinRef" placeholder="Enter the reference number" style="width:100%;padding:9px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:9px;color:#1e293b;font-size:0.85rem;">
+    </div>`;
+}
+
+function commitWalkinToQueue(entryId){
+    if(!S.session||!S.session.active){showNotif('No active session!','error');return;}
+    const entry=(S.session.pendingWalkIns||[]).find(e=>e.id===entryId);
+    if(!entry){showNotif('Entry not found.','error');return;}
+    document.getElementById('p1').value=entry.name;
+    document.getElementById('skillLevel').value=entry.skill;
+    const gtEl=document.getElementById('gameType');
+    if(gtEl&&entry.gameType) gtEl.value=entry.gameType;
+    const asTeam=entry.joinAs!=='solo';
+    const radio=document.querySelector(`input[name="joinAs"][value="${asTeam?'team':'solo'}"]`);
+    if(radio) radio.checked=true;
+    document.getElementById('p2').value=entry.p2||'';
+    document.getElementById('fixedTeam').checked=!!entry.fixedTeam;
+    onGTChange();
+    onJoinAsChange();
+    document.getElementById('groupName').value=entry.groupName||'';
+    _commitWalkinId=entry.id;
+    const _before=S.soloQueue.flatMap(s=>(s.players||[]).map(p=>p.name.toLowerCase())).concat(S.queue.flatMap(g=>(g.players||[]).map(p=>p.name.toLowerCase()))).filter(n=>n===entry.name.toLowerCase()).length;
+    joinQueue();
+    _commitWalkinId=null;
+    const _after=S.soloQueue.flatMap(s=>(s.players||[]).map(p=>p.name.toLowerCase())).concat(S.queue.flatMap(g=>(g.players||[]).map(p=>p.name.toLowerCase()))).filter(n=>n===entry.name.toLowerCase()).length;
+    if(_after>_before){
+        S.session.pendingWalkIns=S.session.pendingWalkIns.filter(e=>e.id!==entryId);
+        saveState();
+        renderAll();
+        renderConfirmations();
+        document.getElementById('successModalTitle').textContent='✅ Confirmed!';
+        document.getElementById('successModalBody').innerHTML=`<strong>${escapeHtml(entry.name)}</strong> confirmed and added to the queue<br><span style="font-size:0.8rem;color:#2563eb;">💳 ${entry.paymentMethod}${entry.reference?' · Ref: '+escapeHtml(entry.reference):''} · ₱${entry.amount}</span>`;
+        openModal('successModal');
+    }else{
+        showNotif('Could not add to the queue — please check and try again.','error');
+    }
+}
+
+function rejectWalkinEntry(entryId){
+    if(!S.session) return;
+    const entry=(S.session.pendingWalkIns||[]).find(e=>e.id===entryId);
+    if(!entry) return;
+    if(!confirm(`Remove pending walk-in "${entry.name}"?`)) return;
+    S.session.pendingWalkIns=S.session.pendingWalkIns.filter(e=>e.id!==entryId);
+    saveState();
+    renderConfirmations();
+    showNotif(`✕ ${entry.name} rejected.`,'warning');
 }
 
 function joinQueue(){
@@ -3359,6 +3685,44 @@ function joinQueue(){
     if(S.session.mode==='roundRobin'){showNotif('Round Robin uses admin setup — click "📋 Setup Round Robin" in the queue panel.','warning');return;}
     const allEx=[...S.soloQueue.map(s=>s.players.map(p=>p.name.toLowerCase())).flat(),...S.queue.map(g=>g.players.map(p=>p.name.toLowerCase())).flat()];
     if(allEx.includes(p1n.toLowerCase())){showNotif(`"${p1n}" already in queue!`,'error');return;}
+    if(!_commitWalkinId){
+        const pendingNames=(S.session.pendingWalkIns||[]).map(e=>e.name.toLowerCase());
+        if(pendingNames.includes(p1n.toLowerCase())){showNotif(`"${p1n}" already awaiting confirmation!`,'warning');return;}
+        if(!_walkinPayMethod){showNotif('Select a payment method!','error');return;}
+        if(_walkinPayMethod!=='Cash'){
+            const refEl=document.getElementById('walkinRef');
+            if(!refEl||!refEl.value.trim()){showNotif('Enter the payment reference number!','error');return;}
+        }
+        const _gt=document.getElementById('gameType').value;
+        const _joinAs=document.querySelector('input[name="joinAs"]:checked')?.value||'team';
+        if(_gt==='doubles'&&_joinAs==='team'&&!document.getElementById('p2').value.trim()){showNotif('Enter your partner\'s name!','error');return;}
+        const count=walkInCountFromForm();
+        const fee=S.session.fee?parseInt(S.session.fee):0;
+        const amount=count*(fee+CONVENIENCE_FEE);
+        const pending={
+            id:++S.nextId,
+            name:p1n, skill:sk,
+            gameType:_gt,
+            joinAs:_joinAs,
+            p2:document.getElementById('p2').value.trim(),
+            fixedTeam:document.getElementById('fixedTeam').checked,
+            groupName:document.getElementById('groupName').value.trim(),
+            mode:S.session.mode,
+            paymentMethod:_walkinPayMethod,
+            reference:_walkinPayMethod==='Cash'?'':document.getElementById('walkinRef').value.trim(),
+            count, amount,
+            status:'pending',
+            joinedAt:Date.now()
+        };
+        if(!S.session.pendingWalkIns) S.session.pendingWalkIns=[];
+        S.session.pendingWalkIns.push(pending);
+        saveState();
+        clearJoinForm();
+        showNotif(`✅ ${p1n} added to Confirmations (${_walkinPayMethod} ₱${amount})`,'success');
+        renderConfirmations();
+        return;
+    }
+    if(IS_ORGANIZER){const _wi=walkInCountFromForm();if(_wi>0)logWalkin(_wi);}
     const p1={name:p1n,skill:sk,color:COLORS[0]};
     if(S.session.mode==='winnersSplit'){
         const rrGT=S.session.mode==='roundRobin'?S.session.rrGameType:'doubles';
@@ -3510,7 +3874,7 @@ function tryCombineTeams(){
     } while(combined);
 }
 
-function clearJoinForm(){['p1','p2','p3','p4','groupName'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
+function clearJoinForm(){['p1','p2','p3','p4','groupName'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const _r=document.getElementById('walkinRef');if(_r)_r.value='';}
 
 function balanceTeams(players){
     const sorted=[...players].sort((a,b)=>b.skill-a.skill);
@@ -4455,6 +4819,12 @@ function previewLogoUrl(){
     if(url){preview.src=url;preview.style.display='block';}
     else preview.style.display='none';
 }
+function previewVenuePhotoUrl(){
+    const url=document.getElementById('sVenuePhotoUrl').value.trim();
+    const preview=document.getElementById('sVenuePhotoPreview');
+    if(url){preview.src=url;preview.style.display='block';}
+    else preview.style.display='none';
+}
 async function uploadLogo(){
     const fileInput=document.getElementById('sLogoFile');
     const file=fileInput.files[0];
@@ -4484,8 +4854,38 @@ async function uploadLogo(){
     }
     btn.disabled=false;
 }
+async function uploadVenuePhoto(){
+    const fileInput=document.getElementById('sVenuePhotoFile');
+    const file=fileInput.files[0];
+    if(!file){showNotif('Select an image file first!','error');return;}
+    if(file.size>2*1024*1024){showNotif('Image must be under 2MB!','error');return;}
+    const ext=file.name.split('.').pop().toLowerCase();
+    if(!['png','jpg','jpeg','webp','gif'].includes(ext)){showNotif('Only PNG, JPG, WebP, or GIF allowed!','error');return;}
+    const btn=document.getElementById('uploadVenuePhotoBtn');
+    const status=document.getElementById('uploadVenuePhotoStatus');
+    btn.disabled=true;status.textContent='⏳ Uploading...';
+    try {
+        const formData=new FormData();
+        formData.append('file',file);
+        formData.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
+        formData.append('public_id','photos/'+VENUE_ID+'_'+Date.now());
+        const res=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:formData});
+        const data=await res.json();
+        if(!data.secure_url) throw new Error(data.error?.message||'Upload failed');
+        document.getElementById('sVenuePhotoUrl').value=data.secure_url;
+        document.getElementById('sVenuePhotoPreview').src=data.secure_url;
+        document.getElementById('sVenuePhotoPreview').style.display='block';
+        status.textContent='✅ Uploaded!';
+        showNotif('✅ Venue photo uploaded! Save settings to apply.','success');
+    } catch(e){
+        status.textContent='❌ Failed: '+e.message;
+        showNotif('Upload failed: '+e.message,'error');
+    }
+    btn.disabled=false;
+}
 function openSettings(){
     document.getElementById('logoSectionLabel').textContent = IS_ORGANIZER ? '🖼️ Add Your Photo' : '🖼️ Venue Logo';
+    document.getElementById('venuePhotoSectionLabel').textContent = IS_ORGANIZER ? '📸 Add your Group Selfie' : '📸 Venue Photo';
     const preview=document.getElementById('sLogoPreview');
     if(S.logoUrl){preview.src=S.logoUrl;preview.style.display='block';}
     else preview.style.display='none';
@@ -4494,14 +4894,32 @@ function openSettings(){
     document.getElementById('sMayaNum').value=S.paymentInfo.maya.number||'';
     document.getElementById('sMayaName').value=S.paymentInfo.maya.name||'';
     document.getElementById('sLogoUrl').value=S.logoUrl||'';
+    const vp=document.getElementById('sVenuePhotoPreview');
+    if(S.photoUrl){vp.src=S.photoUrl;vp.style.display='block';}
+    else vp.style.display='none';
+    document.getElementById('sVenuePhotoUrl').value=S.photoUrl||'';
     document.getElementById('sAccessCode').value=S.accessCode||'';
+    document.getElementById('sVenueAddress').value=S.address||'';
+    document.getElementById('sLat').value=S.lat||'';
+    document.getElementById('sLng').value=S.lng||'';
+    document.getElementById('sAmenities').value=(S.amenities||[]).join(', ');
+    const _soc=S.socials||{};
+    document.getElementById('sFb').value=_soc.facebook||'';
+    document.getElementById('sIg').value=_soc.instagram||'';
+    document.getElementById('sTt').value=_soc.tiktok||'';
+    document.getElementById('sWeb').value=_soc.website||'';
+    if(!_soc.facebook&&!_soc.instagram&&!_soc.tiktok&&!_soc.website&&S.socialMedia) document.getElementById('sFb').value=S.socialMedia;
+    document.getElementById('locStatus').textContent='';
     document.getElementById('staffSection').style.display=IS_OWNER?'':'none';
     document.getElementById('ownerSection').style.display=IS_OWNER?'':'none';
     document.getElementById('uploadLogoStatus').textContent='';
     document.getElementById('sLogoFile').value='';
+    document.getElementById('uploadVenuePhotoStatus').textContent='';
+    document.getElementById('sVenuePhotoFile').value='';
     renderStaffList();
     renderOwnerList();
     document.getElementById('settingsModal').classList.add('active');
+    initSettingsMap();
     checkInviteBadges();
 }
 function renderStaffList(){
@@ -4604,7 +5022,7 @@ async function sendInviteEmail(email,role){
         await emailjs.send(ej.serviceId, ej.templateAuto, {
             to_email:email, to_name:email.split('@')[0],
             subject:`${emoji} You've been invited as ${roleLabel} on CourtQ Pro!`,
-            body:`You've been invited to join "${S.venueName||'a venue'}" as ${roleLabel} on CourtQ Pro.\n\n━━━ ACCEPT YOUR INVITATION ━━━\n\nClick the link below to create your account:\n${inviteUrl}\n\n━━━ WHAT YOU'LL GET ━━━\n\n${isOwner?'✅ Full access — Financials, Settings, Confirmations, and all dashboard features':'✅ Dashboard access — view courts, bookings, and Open Play sessions (no Financials or Settings access)'}\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291\n🎬 https://www.youtube.com/@CourtQPro\n\nSee you on the dashboard! 🏓`
+            body:`You've been invited to join "${S.venueName||'a venue'}" as ${roleLabel} on CourtQ Pro.\n\n━━━ ACCEPT YOUR INVITATION ━━━\n\nClick the link below to create your account:\n${inviteUrl}\n\n━━━ WHAT YOU'LL GET ━━━\n\n${isOwner?'✅ Full access — Financials, Settings, Confirmations, and all dashboard features':'✅ Dashboard access — view courts, bookings, and Open Play sessions (no Financials or Settings access)'}\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119\n🎬 https://www.youtube.com/@CourtQPro\n\nSee you on the dashboard! 🏓`
         });
         showNotif('📧 Invitation email sent to '+email,'success');
     } catch(e){
@@ -4643,8 +5061,67 @@ function saveSettings(){
     S.paymentInfo.maya.name=document.getElementById('sMayaName').value.trim();
     let logoUrl=cqFixImgurUrl(document.getElementById('sLogoUrl').value.trim());
     S.logoUrl=logoUrl;
+    let photoUrl=cqFixImgurUrl(document.getElementById('sVenuePhotoUrl').value.trim());
+    S.photoUrl=photoUrl;
     S.accessCode=document.getElementById('sAccessCode').value.trim();
+    S.address=document.getElementById('sVenueAddress').value.trim();
+    S.lat=document.getElementById('sLat').value.trim();
+    S.lng=document.getElementById('sLng').value.trim();
+    S.amenities=document.getElementById('sAmenities').value.split(',').map(s=>s.trim()).filter(Boolean);
+    S.socials={
+        facebook:document.getElementById('sFb').value.trim(),
+        instagram:document.getElementById('sIg').value.trim(),
+        tiktok:document.getElementById('sTt').value.trim(),
+        website:document.getElementById('sWeb').value.trim()
+    };
+    S.socialMedia=S.socials.facebook||S.socials.instagram||S.socials.tiktok||S.socials.website||'';
     closeModal('settingsModal');saveState();showNotif('Settings saved!');
+}
+let _settingsMap=null,_settingsMarker=null;
+const PH_DEFAULT=[14.5995,120.9842];
+function initSettingsMap(){
+    const wrap=document.getElementById('settingsMapWrap');
+    const el=document.getElementById('settingsMap');
+    if(!el||!window.L) return;
+    if(_settingsMap){_settingsMap.invalidateSize();return;}
+    _settingsMap=L.map(el,{scrollWheelZoom:false,zoomControl:true}).setView(PH_DEFAULT,12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(_settingsMap);
+    _settingsMap.on('click',e=>{
+        placePin(e.latlng.lat,e.latlng.lng);
+        _settingsMap.setView([e.latlng.lat,e.latlng.lng],Math.max(_settingsMap.getZoom(),15));
+    });
+    const lat=parseFloat(document.getElementById('sLat').value);
+    const lng=parseFloat(document.getElementById('sLng').value);
+    if(isFinite(lat)&&isFinite(lng)){placePin(lat,lng);_settingsMap.setView([lat,lng],15);}
+}
+function placePin(lat,lng){
+    document.getElementById('sLat').value=Number(lat).toFixed(6);
+    document.getElementById('sLng').value=Number(lng).toFixed(6);
+    if(!_settingsMap) return;
+    if(_settingsMarker){_settingsMarker.setLatLng([lat,lng]);}
+    else{
+        _settingsMarker=L.marker([lat,lng],{draggable:true,title:'Drag to fine-tune'}).addTo(_settingsMap);
+        _settingsMarker.on('dragend',e=>{
+            const p=e.target.getLatLng();
+            document.getElementById('sLat').value=p.lat.toFixed(6);
+            document.getElementById('sLng').value=p.lng.toFixed(6);
+        });
+    }
+}
+function useMyLocation(){
+    const status=document.getElementById('locStatus');
+    if(!navigator.geolocation){status.textContent='❌ Geolocation not supported';return;}
+    status.textContent='⏳ Locating...';
+    navigator.geolocation.getCurrentPosition(pos=>{
+        const lat=pos.coords.latitude,lng=pos.coords.longitude;
+        placePin(lat,lng);
+        if(_settingsMap)_settingsMap.setView([lat,lng],16);
+        status.textContent='✅ Location pinned!';
+        showNotif('📍 Location pinned! Save settings to apply.','success');
+    },err=>{
+        status.textContent='❌ '+(err.message||'Could not get location');
+        showNotif('Could not get location: '+(err.message||'Unknown error'),'error');
+    },{enableHighAccuracy:true,timeout:10000});
 }
 
 // ===================== BOOKING TIMELINE & CONFLICTS =====================
@@ -4768,7 +5245,14 @@ function renderConfirmations(){
         });
     });
 
-    if(pendingBookings.length===0&&opPending.length===0){list.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No pending confirmations.</p></div>';return;}
+    const activeWalkIns=[];
+    if(S.session&&S.session.active){
+        (S.session.pendingWalkIns||[]).forEach(p=>{
+            if(p.status==='pending') activeWalkIns.push(p);
+        });
+    }
+
+    if(pendingBookings.length===0&&opPending.length===0&&activeWalkIns.length===0){list.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No pending confirmations.</p></div>';return;}
 
     const bookingHtml=pendingBookings.map(b=>{
         const court=S.courts.find(c=>c.id===b.courtId);
@@ -4812,7 +5296,28 @@ function renderConfirmations(){
     }).join('');
 
     const divider=pendingBookings.length>0&&opPending.length>0?'<div style="height:1px;background:rgba(255,255,255,0.06);margin:14px 0;"></div>':'';
-    list.innerHTML=bookingHtml+divider+opHtml;
+    const walkinHtml=activeWalkIns.map(p=>{
+        const gtLabel=p.gameType==='singles'?'Singles':'Doubles';
+        const joinLabel=(p.gameType==='doubles'&&p.joinAs==='solo')?' (needs partner)':(p.gameType==='doubles'&&p.joinAs==='team'&&p.p2?' (with '+escapeHtml(p.p2)+')':'');
+        return `<div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <div style="font-weight:700;">${escapeHtml(p.name)} <span style="font-size:0.72rem;color:#10b981;font-weight:400;">(Walk-in)</span></div>
+                    <div style="font-size:0.75rem;color:#94a3b8;margin-top:3px;">🎯 ${gtLabel}${joinLabel} · ${p.count} player(s)</div>
+                    <div style="font-size:0.75rem;color:#94a3b8;">💳 ${escapeHtml(p.paymentMethod)} · ₱${p.amount}</div>
+                    <div style="margin-top:8px;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;font-size:0.82rem;">
+                        <div><span style="color:#f59e0b;">🔑 Ref:</span> <strong>${escapeHtml(p.reference)||'Cash — collected on-site'}</strong></div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                    <button class="btn btn-success btn-sm" onclick="commitWalkinToQueue(${p.id})">✅ Confirm</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectWalkinEntry(${p.id})">✕ Reject</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    const divider2=(activeWalkIns.length>0&&(pendingBookings.length>0||opPending.length>0))?'<div style="height:1px;background:rgba(255,255,255,0.06);margin:14px 0;"></div>':'';
+    list.innerHTML=bookingHtml+divider+opHtml+divider2+walkinHtml;
 }
 
 function confirmBookingPayment(bId){
@@ -4851,7 +5356,14 @@ function unlockFinancials(){
     if(code!==S.accessCode){showNotif('Wrong access code!','error');return;}
     document.getElementById('financialsGate').style.display='none';
     document.getElementById('financialsContent').style.display='block';
-    renderFinancials();
+    if(IS_ORGANIZER){
+        document.getElementById('venueFinStats').style.display='none';
+        document.getElementById('orgAffiliateCard').style.display='block';
+        renderOrganizerAffiliateDashboard();
+        renderOrganizerInvoice();
+    } else {
+        renderFinancials();
+    }
 }
 function lockFinancials(){
     document.getElementById('financialsGate').style.display='block';
@@ -5623,7 +6135,7 @@ async function sendReminder(venueId,slug,email,name){
         await emailjs.send(ej.serviceId, ej.templateAuto, {
             to_email: email, to_name: name,
             subject: '📋 Weekly Invoice Reminder — CourtQ Pro',
-            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your weekly convenience fee invoice for "'+slug+'".\n\nPlease log into your dashboard and go to the Financials tab to view and settle your invoice.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
+            body: 'Hi '+name+',\n\nThis is a friendly reminder regarding your weekly convenience fee invoice for "'+slug+'".\n\nPlease log into your dashboard and go to the Financials tab to view and settle your invoice.\n\nhttps://www.courtqpro.online/\n\nThank you for your continued partnership!\n\n━━━ CourtQ Pro Team ━━━\n📧 apexmindagency@gmail.com\n📱 0976 290 7119'
         });
         showNotif('📧 Reminder sent to '+name,'success');
     } catch(e){
@@ -5741,7 +6253,7 @@ That's it — takes less than 5 minutes!
 Click the "?" button (❓) throughout your dashboard — each page has built-in tips.
 
 📧 apexmindagency@gmail.com
-📱 0999 883 0291`:`✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!
+📱 0976 290 7119`:`✅ Great news! Your venue "${vData.name||'Your Venue'}" has been approved and is now active!
 
 ━━━ LOG IN ━━━
 
@@ -5772,7 +6284,7 @@ That's it — takes less than 5 minutes!
 Click the "?" button (❓) throughout your dashboard — each page has built-in tips.
 
 📧 apexmindagency@gmail.com
-📱 0999 883 0291`
+📱 0976 290 7119`
                 });
             }
         } catch(e){ console.warn('EmailJS activation send failed:', e); }
@@ -5820,7 +6332,7 @@ async function deleteVenue(venueId,slug){
                     await emailjs.send(ej.serviceId,ej.templateAuto,{
                         to_email:ownerEmail,to_name:ownerName||'Valued Partner',
                         subject:'Action Required: Duplicate Account Detected — '+venueName,
-                        body:`Hi ${ownerName||'there'},\n\nWe noticed you have two CourtQ Pro accounts registered under the same venue/group name. To keep things clean and avoid confusion, we've removed the duplicate account.\n\nIf you still need to manage this venue from a second email, you can add it as a co-owner:\n\n━━━ HOW TO ADD A SECOND EMAIL ━━━\n\n1. Log in to your CourtQ Pro dashboard\n2. Go to Settings (⚙️)\n3. Under the Co-Owner / Staff section, add the other email address\n4. That email will receive an invite to access the dashboard\n\nThis way, both email addresses can manage the same venue from one account.\n\nIf you believe this was a mistake, please contact us.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291`
+                        body:`Hi ${ownerName||'there'},\n\nWe noticed you have two CourtQ Pro accounts registered under the same venue/group name. To keep things clean and avoid confusion, we've removed the duplicate account.\n\nIf you still need to manage this venue from a second email, you can add it as a co-owner:\n\n━━━ HOW TO ADD A SECOND EMAIL ━━━\n\n1. Log in to your CourtQ Pro dashboard\n2. Go to Settings (⚙️)\n3. Under the Co-Owner / Staff section, add the other email address\n4. That email will receive an invite to access the dashboard\n\nThis way, both email addresses can manage the same venue from one account.\n\nIf you believe this was a mistake, please contact us.\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119`
                     });
                 }
             } catch(e){ console.warn('Duplicate email send failed:',e); }
@@ -5960,6 +6472,15 @@ function copyPortalLink(){
         const input=document.createElement('input');input.value=url;document.body.appendChild(input);input.select();document.execCommand('copy');document.body.removeChild(input);
         showNotif('Portal link copied!');
     });
+}
+function publishPortalLink(){
+    const url = window.location.origin + '/' + S.venueSlug;
+    navigator.clipboard.writeText(url).then(()=>showNotif('Portal link copied! Your venue is now live. 🎉')).catch(()=>{
+        const input=document.createElement('input');input.value=url;document.body.appendChild(input);input.select();document.execCommand('copy');document.body.removeChild(input);
+        showNotif('Portal link copied! Your venue is now live. 🎉');
+    });
+    S._portalShared=true;
+    saveState();
 }
 
 
@@ -6440,6 +6961,10 @@ function confirmClear(type){
 // ===================== MODALS =====================
 function openModal(id){document.getElementById(id).classList.add('active');}
 function closeModal(id){document.getElementById(id).classList.remove('active');}
+function orgWelcomeAction(goVenue){
+    closeModal('orgWelcomeModal');
+    if(goVenue) window.location.href='index.html?register=venue';
+}
 document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',function(e){if(e.target===this){this.classList.remove('active');if(this.id==='scoreModal')S.tournamentPending=null;}});});
 // ===================== NOTIFY =====================
 function showNotif(msg,type='success'){
@@ -7035,6 +7560,7 @@ function initPresence(){
             }
             // Show dev tab only for developer's email
             if (user.email === 'pinoymemesforever@gmail.com') {
+                IS_DEV = true;
                 document.getElementById('devTabBtn').style.display = '';
             }
             // Check if venue is pending approval
@@ -7058,9 +7584,9 @@ function initPresence(){
             }
             // Hide organizer-irrelevant tabs
             if (IS_ORGANIZER) {
-                document.getElementById('courtsBtn').style.display = 'none';
-                document.getElementById('bookingBtn').style.display = 'none';
+                document.getElementById('dashboardBtn').style.display = 'none';
                 document.getElementById('tournamentsBtn').style.display = 'none';
+                document.getElementById('financialsTab').innerHTML = '💰 Affiliate Financials';
             }
             // Check if venue/organizer is pending activation
             const isPending = IS_ORGANIZER ? (data.activated === false) : (data.status === 'pending');
@@ -7086,7 +7612,7 @@ function initPresence(){
         document.getElementById('tlDate').value=getTodayISO();
         document.getElementById('bDate').value=getTodayISO();
         if (!IS_ORGANIZER) loadBookings();
-        setInterval(()=>{if(IS_ORGANIZER){getVenueDocRef().get().then(snap=>{if(snap.exists){S.scheduledSessions=snap.data().scheduledSessions||[];renderScheduledOpList();renderBookedOpList();saveState();renderOpCourts();renderOpStats();renderSession();renderConfirmations();}}).catch(()=>{});}else{autoFreeExpiredBookings();getVenueDocRef().get().then(snap=>{if(snap.exists){            S.scheduledSessions=snap.data().scheduledSessions||[];const ft=(snap.data().tournaments||[]),ftIds=new Set(ft.map(x=>x.id));if(!S.tournaments)S.tournaments=[];ft.forEach(x=>{if(!S.tournaments.find(t=>t.id===x.id))S.tournaments.push(x);});S.tournaments=S.tournaments.filter(t=>ftIds.has(t.id));const activeTids=new Set((S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').map(t=>t.id));(S.courts||[]).forEach(c=>{if(c._tournamentId&&!activeTids.has(c._tournamentId))delete c._tournamentId;});(S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').forEach(t=>assignTournamentCourts(t));let changed=false;S.scheduledSessions.filter(s=>s.status==='active').forEach(s=>{let _sc=(s.players||[]).reduce((a,p)=>a+(p.players||1),0);(s.players||[]).filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')&&!p._queued).forEach(p=>{if(s.maxPlayers&&_sc+(p.players||1)>s.maxPlayers)return;_sc+=p.players||1;p._queued=true;changed=true;if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}});});if(changed)saveScheduledSessions();renderScheduledOpList();renderBookedOpList();}}).catch(()=>{}).finally(()=>{saveState();renderTournamentList();renderOpCourts();renderOpStats();renderSession();renderConfirmations();});const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}}},30000);
+        setInterval(()=>{if(IS_ORGANIZER){getVenueDocRef().get().then(snap=>{if(snap.exists){S.scheduledSessions=snap.data().scheduledSessions||[];renderScheduledOpList();renderBookedOpList();saveState();renderOpCourts();renderOpStats();renderSession();renderConfirmations();}}).catch(()=>{});}else{autoFreeExpiredBookings();getVenueDocRef().get().then(snap=>{if(snap.exists){            S.scheduledSessions=snap.data().scheduledSessions||[];const ft=(snap.data().tournaments||[]),ftIds=new Set(ft.map(x=>x.id));if(!S.tournaments)S.tournaments=[];ft.forEach(x=>{if(!S.tournaments.find(t=>t.id===x.id))S.tournaments.push(x);});S.tournaments=S.tournaments.filter(t=>ftIds.has(t.id));const activeTids=new Set((S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').map(t=>t.id));(S.courts||[]).forEach(c=>{if(c._tournamentId&&!activeTids.has(c._tournamentId))delete c._tournamentId;});(S.tournaments||[]).filter(t=>t.status==='groups'||t.status==='elimination').forEach(t=>assignTournamentCourts(t));let changed=false;S.scheduledSessions.filter(s=>s.status==='active').forEach(s=>{let _sc=(s.players||[]).reduce((a,p)=>a+(p.players||1),0);(s.players||[]).filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')&&!p._queued).forEach(p=>{if(s.maxPlayers&&_sc+(p.players||1)>s.maxPlayers)return;_sc+=p.players||1;p._queued=true;changed=true;if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}});});if(changed)saveScheduledSessions();renderScheduledOpList();renderBookedOpList();}}).catch(()=>{}).finally(()=>{saveState();renderTournamentList();renderOpCourts();renderOpStats();renderSession();renderConfirmations();});const overdue=S.session?.active?S.courts.filter(c=>c.status==='occupied'&&(S.session.courts||S.courts.map(x=>x.id)).includes(c.id)&&c.startTime&&(Date.now()-c.startTime)>=(S.session.rot||20)*60000):[];if(overdue.length>0&&!window._rotWarnShown){window._rotWarnShown=true;showNotif(`⏰ ${overdue.length} court(s) past rotation time!`,'warning');setTimeout(()=>window._rotWarnShown=false,10000);}}checkSessionTimeout();},30000);
         // Immediate queue migration for online players (active sessions only — scheduled players stay in Booked section)
         (S.scheduledSessions||[]).filter(s=>s.status==='active').forEach(s=>{let _sc=(s.players||[]).reduce((a,p)=>a+(p.players||1),0);(s.players||[]).filter(p=>p.source==='online'&&p.paid&&(!p.status||p.status==='confirmed')&&!p._queued).forEach(p=>{if(s.maxPlayers&&_sc+(p.players||1)>s.maxPlayers)return;_sc+=p.players||1;p._queued=true;if(p.gameType==='singles'){S.soloQueue.push({id:++S.nextId,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],skillLevel:p.skill||3,joinedAt:Date.now(),_scheduled:true});}else{S.queue.push({id:++S.nextId,groupName:p.name+' & Partner',gameType:'doubles',skillLevel:p.skill||3,players:[{name:p.name,color:COLORS[S.nextId%COLORS.length],skill:p.skill||3}],joinedAt:Date.now(),_scheduled:true});}});});
         renderAll();
@@ -7095,6 +7621,15 @@ function initPresence(){
             renderOnboardingChecklist();
             checkOnboardingFollowup();
         }
+        // First-login welcome for organizers (escape hatch if they meant to register a venue)
+        if(IS_ORGANIZER && data._welcomeShown !== true){
+            setTimeout(()=>{
+                getVenueDocRef().update({_welcomeShown:true}).catch(()=>{});
+                openModal('orgWelcomeModal');
+            },800);
+        }
+        // Pure developer account: strip venue management UI, keep Financials + Dev Dashboard
+        if (IS_DEV) setupDevOnlyMode();
         checkSessionTimeout();
         // Fetch announcements
         try {
@@ -7112,6 +7647,39 @@ function initPresence(){
         window.location.href = 'index.html';
     }
 })();
+
+// ===================== PURE DEVELOPER MODE =====================
+function setupDevOnlyMode(){
+    // Hide venue-identity header items and share/booking links
+    const vd=document.getElementById('venueDisplay');
+    if(vd) vd.style.display='none';
+    const hb=document.querySelector('header .header-right');
+    if(hb){
+        Array.from(hb.querySelectorAll('button')).forEach(b=>{
+            const txt=(b.textContent||'').toLowerCase();
+            if(txt.indexOf('share')!==-1||txt.indexOf('booking')!==-1) b.style.display='none';
+        });
+    }
+    const bh=document.getElementById('bookingHelpBtn');
+    if(bh) bh.style.display='none';
+    // Keep only the Dev Dashboard nav tab
+    ['openplayBtn','dashboardBtn','leaderboardBtn','historyBtn','tournamentsBtn','financialsTab'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.style.display='none';
+    });
+    document.getElementById('devTabBtn').style.display='';
+    // Hide venue pages and helpers
+    ['openplay','dashboard','leaderboard','history','tournaments','financials'].forEach(id=>{
+        const el=document.getElementById('page-'+id);
+        if(el) el.classList.remove('active');
+    });
+    const ob=document.getElementById('onboardBar');
+    if(ob) ob.style.display='none';
+    const vg=document.getElementById('videoGuidesNotice');
+    if(vg) vg.style.display='none';
+    // Land on the Dev Dashboard
+    showPage('dev', document.getElementById('devTabBtn'));
+}
 
 function logout() {
     if (auth.currentUser) auth.signOut();
@@ -7440,6 +8008,156 @@ async function markInvoicePaid(invDocId){
         showNotif('Failed: '+e.message,'error');
     }
 }
+async function computeAffStats(aff){
+    const referrals=[];
+    // Own Open Play convenience fees (organizer-affiliates earn 20% on their own sessions too)
+    let ownOrgId=aff.organizerId||'';
+    if(!ownOrgId&&aff.uid){
+        try{
+            const ownSnap=await db.collection('organizers').where('ownerId','==',aff.uid).get();
+            if(!ownSnap.empty) ownOrgId=ownSnap.docs[0].id;
+        }catch(e){}
+    }
+    if(ownOrgId){
+        try{
+            const oDoc=await db.collection('organizers').doc(ownOrgId).get();
+            if(oDoc.exists){
+                const vd=oDoc.data();
+                let feeAccrued=0;
+                try{
+                    const invSnap=await db.collection('org_invoices').where('organizerId','==',ownOrgId).get();
+                    invSnap.docs.forEach(d=>{const dd=d.data();if(dd.status==='pending'||dd.status==='paid')feeAccrued+=(dd.feeAmount||0);});
+                }catch(e2){console.warn('[aff] inv stats failed:',e2);}
+                referrals.push({name:(vd.name||vd.businessName||'Your Own Open Plays')+' (Your Own Open Plays)',slug:vd.slug||'your-sessions',email:vd.email||'',type:'Your Own Open Play',createdAt:vd.createdAt,feeAccrued,status:'✅ Active'});
+            }
+        }catch(e){console.warn('[aff] own stats failed:',e);}
+    }
+    try {
+        const slugsSnap=await db.collection('slugs').get();
+        for(const slugDoc of slugsSnap.docs){
+            const sd=slugDoc.data();
+            const isOrg=sd.type==='organizer';
+            const vId=isOrg?sd.organizerId:sd.venueId;
+            if(!vId) continue;
+            if(isOrg&&vId===ownOrgId) continue;
+            const col=isOrg?'organizers':'venues';
+            const vDoc=await db.collection(col).doc(vId).get();
+            if(!vDoc.exists) continue;
+            const vd=vDoc.data();
+            if((vd.referralCode||'').toUpperCase()===(aff.code||'').toUpperCase()){
+                let email='';
+                try{const uSnap=await db.collection('users').where(isOrg?'organizerId':'venueId','==',vId).get();if(!uSnap.empty)email=uSnap.docs[0].data().email||'';}catch(e){}
+                let feeAccrued=0;
+                if(isOrg){
+                    try{const invSnap=await db.collection('org_invoices').where('organizerId','==',vId).get();invSnap.docs.forEach(d=>{const dd=d.data();if(dd.status==='pending'||dd.status==='paid')feeAccrued+=(dd.feeAmount||0);});}catch(e2){console.warn('[aff] inv stats failed:',e2);}
+                } else {
+                    const pCount=(vd.history||[]).reduce((s,h)=>{const p=h.players||[];return s+p.reduce((a,pl)=>a+(pl.players||1),0);},0);
+                    feeAccrued=pCount*5;
+                }
+                let statusLabel='';
+                if(isOrg){statusLabel=vd.activated===true?'✅ Active':'⏳ Pending';}
+                else{statusLabel=vd.status==='active'?'✅ Active':vd.status==='pending'?'⏳ Pending':'⚪ Unknown';}
+                referrals.push({name:vd.name||vd.businessName||'Unnamed',slug:slugDoc.id,email,type:isOrg?'Organizer':'Venue',createdAt:vd.createdAt,feeAccrued,status:statusLabel});
+            }
+        }
+    }catch(e){console.warn('[aff] referrals failed:',e);}
+    const totalRevenue=referrals.reduce((s,r)=>s+r.feeAccrued,0);
+    const commissionRate=aff.commissionRate||0.20;
+    const totalCommission=Math.round(totalRevenue*commissionRate);
+    const totalPaid=aff.totalPaid||0;
+    const pending=totalCommission-totalPaid;
+    return {referrals,totalRevenue,totalCommission,totalPaid,pending,commissionRate};
+}
+async function renderOrganizerAffiliateDashboard(){
+    const el=document.getElementById('orgAffContent');
+    if(!el) return;
+    el.innerHTML='<div style="text-align:center;padding:20px;"><div class="spinner"></div><p style="font-size:0.8rem;color:#94a3b8;margin-top:10px;">Loading affiliate earnings...</p></div>';
+    try {
+        let aff=null;
+        const snap=await db.collection('affiliates').where('organizerId','==',VENUE_ID).get();
+        if(!snap.empty){
+            aff={id:snap.docs[0].id,...snap.docs[0].data()};
+        } else {
+            const u=firebase.auth().currentUser;
+            const orgName=S.venueName||'Organizer';
+            const code=orgName.toLowerCase().replace(/[^a-z0-9]+/g,'').substring(0,8)+Math.random().toString(36).substring(2,5);
+            const ref=await db.collection('affiliates').add({
+                name:orgName,email:(u&&u.email)?u.email:'',mobile:'',
+                code:code.toUpperCase(),status:'active',commissionRate:0.20,totalPaid:0,
+                createdAt:Date.now(),uid:u?u.uid:'',organizerId:VENUE_ID,isOrganizerAffiliate:true
+            });
+            aff={id:ref.id,code:code.toUpperCase(),name:orgName,commissionRate:0.20,totalPaid:0};
+        }
+        const stats=await computeAffStats(aff);
+        const link=window.location.origin+'/?ref='+aff.code;
+        const threshold=200;
+        let payoutHtml;
+        if(stats.pending<=0){
+            payoutHtml='<div style="color:#10b981;font-weight:700;font-size:0.85rem;">✅ All commissions paid. Great job!</div>';
+        } else if(stats.pending<threshold){
+            payoutHtml=`<div style="font-size:0.85rem;color:#64748b;">Pending commission: <strong style="color:#f59e0b;">₱${stats.pending.toLocaleString()}</strong></div>
+                <div style="font-size:0.75rem;color:#94a3b8;margin-top:4px;">Minimum payout: ₱${threshold.toLocaleString()}. You need <strong>₱${(threshold-stats.pending).toLocaleString()}</strong> more.</div>`;
+        } else {
+            payoutHtml=`<div style="font-size:0.85rem;">Pending payout: <strong style="color:#10b981;">₱${stats.pending.toLocaleString()}</strong></div>
+                <div style="font-size:0.75rem;color:#94a3b8;margin-top:4px;">Threshold reached! Payout is processed manually by the admin.</div>`;
+        }
+        let listHtml;
+        if(stats.referrals.length===0){
+            listHtml='<div class="empty-state"><div class="ei">🤝</div><p>No earnings yet. Share your referral link to start earning!</p></div>';
+        } else {
+            listHtml=stats.referrals.map(r=>{
+                const comm=Math.round(r.feeAccrued*stats.commissionRate);
+                return `<div style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                        <div style="flex:1;min-width:180px;">
+                            <div style="font-weight:700;font-size:0.85rem;">${escapeHtml(r.name)} <span style="font-size:0.7rem;color:#94a3b8;">${r.status}</span></div>
+                            <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">${r.type} · 📅 ${r.createdAt?new Date(r.createdAt).toLocaleDateString():'N/A'}</div>
+                        </div>
+                        <div style="text-align:right;font-size:0.8rem;">
+                            <div style="font-weight:700;color:#8b5cf6;">₱${r.feeAccrued.toLocaleString()}</div>
+                            <div style="font-size:0.68rem;color:#10b981;">You earn ₱${comm.toLocaleString()}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        el.innerHTML=`
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+                <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:12px;padding:12px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Referrals</div>
+                    <div style="font-size:1.2rem;font-weight:800;color:#2563eb;margin-top:4px;">${stats.referrals.length}</div>
+                </div>
+                <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:12px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Fee Revenue</div>
+                    <div style="font-size:1.2rem;font-weight:800;color:#10b981;margin-top:4px;">₱${stats.totalRevenue.toLocaleString()}</div>
+                </div>
+                <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Commission Due</div>
+                    <div style="font-size:1.2rem;font-weight:800;color:#f59e0b;margin-top:4px;">₱${stats.totalCommission.toLocaleString()}</div>
+                </div>
+                <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:12px;text-align:center;">
+                    <div style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;">Paid Out</div>
+                    <div style="font-size:1.2rem;font-weight:800;color:#8b5cf6;margin-top:4px;">₱${stats.totalPaid.toLocaleString()}</div>
+                </div>
+            </div>
+            <div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:12px;margin-bottom:14px;">
+                <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:6px;">🔗 Your Affiliate Link (share to earn 20% from referred venues &amp; organizers)</div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <code style="background:rgba(37,99,235,0.1);padding:6px 10px;border-radius:6px;color:#2563eb;font-weight:600;font-size:0.8rem;flex:1;min-width:180px;word-break:break-all;">${escapeHtml(link)}</code>
+                    <button class="btn btn-primary btn-sm" onclick="copyAffLink('${escapeHtml(aff.code)}')" style="font-size:0.7rem;">📋 Copy</button>
+                </div>
+            </div>
+            <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:10px;padding:12px;margin-bottom:14px;">
+                <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;margin-bottom:6px;font-weight:700;">💳 Payout Status (min ₱${threshold.toLocaleString()})</div>
+                ${payoutHtml}
+            </div>
+            <div class="card-title" style="font-size:0.8rem;">📋 Earnings Breakdown</div>
+            ${listHtml}`;
+    } catch(e){
+        console.warn('[aff] organizer dashboard failed:',e);
+        el.innerHTML='<div class="empty-state"><div class="ei">❌</div><p>Failed to load affiliate earnings.</p></div>';
+    }
+}
 async function renderOrganizerInvoice(){
     const el=document.getElementById('venueInvoiceContent');
     el.innerHTML='<div style="text-align:center;padding:20px;"><div class="spinner"></div><p style="font-size:0.8rem;color:#94a3b8;margin-top:10px;">Loading invoices...</p></div>';
@@ -7494,7 +8212,7 @@ async function renderOrganizerInvoice(){
         });
         html+=`</tbody></table>`;
         if(pending.length>0){
-            html+=`<div style="margin-top:10px;font-size:0.7rem;color:#94a3b8;">Send payment to GCash: <strong>09998830291</strong> / <strong>CourtQ Pro</strong></div>`;
+            html+=`<div style="margin-top:10px;font-size:0.7rem;color:#94a3b8;">Send payment to GCash: <strong>09762907119</strong> / <strong>CourtQ Pro</strong></div>`;
         }
         el.innerHTML=html;
     } catch(e){
@@ -7624,7 +8342,7 @@ async function renderVenueInvoice(weekOffset){
         } catch(e){ console.warn('Invoice status check failed:',e); }
         html+=paidStatus||`<div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
             <button class="btn btn-primary btn-sm" onclick="markInvoicePaid('${VENUE_ID+'_'+weekStart.replace(/-/g,'')}')" style="background:linear-gradient(135deg,#10b981,#27ae60);border:none;">✅ Mark as Paid</button>
-            <span style="font-size:0.7rem;color:#94a3b8;">Send ₱${totalFee.toLocaleString()} to GCash/Maya: <strong>09998830291</strong> / <strong>CourtQ Pro</strong></span>
+            <span style="font-size:0.7rem;color:#94a3b8;">Send ₱${totalFee.toLocaleString()} to GCash/Maya: <strong>09762907119</strong> / <strong>CourtQ Pro</strong></span>
         </div>`;
         el.innerHTML=html;
     } catch(e){

@@ -45,6 +45,29 @@
         }
 
         .landing-hero { text-align: center; padding: 40px 20px; }
+
+        .venue-details {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 16px; padding: 20px; margin: 0 0 20px;
+            text-align: left;
+        }
+        .venue-details-photo { width: 100%; max-height: 260px; object-fit: cover; border-radius: 12px; margin-bottom: 16px; }
+        .venue-details-title { font-size: 0.95rem; font-weight: 800; color: #2563eb; margin-bottom: 12px; }
+        .venue-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 0.82rem; }
+        .venue-details-grid .vd-item { display: flex; justify-content: space-between; gap: 8px; }
+        .vd-label { color: #64748b; }
+        .vd-val { color: #1e293b; font-weight: 600; text-align: right; }
+        .vd-chip {
+            font-size: 0.68rem; background: rgba(37,99,235,0.12); color: #2563eb;
+            padding: 2px 8px; border-radius: 6px; margin: 2px 4px 2px 0;
+            display: inline-block;
+        }
+        .vd-social a { color: #2563eb; text-decoration: none; font-weight: 600; }
+        .vd-map a { color: #2563eb; text-decoration: none; font-weight: 600; }
+        @media (max-width: 520px) { .venue-details-grid { grid-template-columns: 1fr; } }
+
         .landing-hero .icon { font-size: 4rem; margin-bottom: 12px; }
         .landing-hero h1 { font-size: 2rem; font-weight: 800; color: #2563eb; margin-bottom: 6px; }
         .landing-hero .hero-logo-img { display:block; margin:0 auto 16px auto; height:120px; width:auto; border-radius:12px; object-fit:contain; }
@@ -263,6 +286,7 @@
             <button class="btn btn-success btn-lg" onclick="openOpPortal()">🏓 Join Open Play</button>
         </div>
     </div>
+    <div id="venueDetails"></div>
 </div>
 
 <!-- BOOKING PORTAL -->
@@ -418,7 +442,7 @@ function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;')
 
 // ===================== STATE =====================
 let S = {
-    venueName:'', address:'', logoUrl:'', courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[],     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
+    venueName:'', address:'', logoUrl:'', photoUrl:'', courtType:'', courtCount:0, hourlyRate:0, operatingHours:'', socialMedia:'', lat:'', lng:'', amenities:[], courts:[], bookings:[], sales:[], nextBId:1, session:null, scheduledSessions:[], queue:[], soloQueue:[],     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
     portal:{step:1,courtId:null,date:null,slot:null,duration:120,payMethod:null,data:{}},
 };
 let VENUE_ID = null;
@@ -431,6 +455,7 @@ function phtNow(){ const d=new Date(); return new Date(d.getTime()+(d.getTimezon
 function getTodayISO(){ const d=phtNow(); return d.toISOString().split('T')[0]; }
 function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
 function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
+function opTimeRange(s){ const ed=s.endDate&&s.endDate!==s.date?s.endDate+' ':''; return `${s.startTime} – ${ed}${s.endTime}`; }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
 function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 
@@ -549,13 +574,37 @@ function renderCourtPicker(){
             ${court._tournamentId?`<div style="font-size:0.65rem;color:#8b5cf6;margin-bottom:4px;">🔮 Tournament</div>`:''}
             <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:6px;">📍 ${escapeHtml(court.location)}</div>
             <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">
-                <span style="font-size:0.65rem;background:rgba(0,0,0,0.06);padding:2px 7px;border-radius:6px;">${escapeHtml(court.surface)}</span>
-                <span style="font-size:0.65rem;background:rgba(0,0,0,0.06);padding:2px 7px;border-radius:6px;">${escapeHtml(court.env)}</span>
+                <span style="font-size:0.65rem;background:rgba(0,0,0,0.06);padding:2px 7px;border-radius:6px;">${escapeHtml(court.surface||'')}</span>
+                <span style="font-size:0.65rem;background:rgba(0,0,0,0.06);padding:2px 7px;border-radius:6px;">${escapeHtml(court.env||'')}</span>
+                ${S.courtType?`<span style="font-size:0.65rem;background:rgba(37,99,235,0.1);color:#2563eb;padding:2px 7px;border-radius:6px;font-weight:700;">${escapeHtml(S.courtType)}</span>`:''}
             </div>
-            <div style="font-weight:800;color:#2563eb;font-size:1.1rem;">₱${court.rate}<span style="font-size:0.7rem;color:#94a3b8;font-weight:400;">/hr</span></div>`;
+            <div style="font-weight:800;color:#2563eb;font-size:1.1rem;">₱${court.rate||0}<span style="font-size:0.7rem;color:#94a3b8;font-weight:400;">/hr</span></div>`;
         if(avail) card.onclick=()=>{S.portal.courtId=court.id;document.querySelectorAll('.court-picker-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');};
         grid.appendChild(card);
     });
+}
+
+function renderVenueDetails(){
+    const box=document.getElementById('venueDetails');
+    if(!box) return;
+    const photo=S.photoUrl?`<img src="${escapeHtml(S.photoUrl)}?t=${Date.now()}" class="venue-details-photo" alt="Venue photo" onerror="this.style.display='none'">`:'';
+    const type=S.courtType?`<div class="vd-item"><span class="vd-label">Court Type</span><span class="vd-val">${escapeHtml(S.courtType)}</span></div>`:'';
+    const count=S.courtCount?`<div class="vd-item"><span class="vd-label">Courts</span><span class="vd-val">${S.courtCount}</span></div>`:'';
+    const rate=S.hourlyRate?`<div class="vd-item"><span class="vd-label">Rate</span><span class="vd-val">₱${S.hourlyRate}/hr</span></div>`:'';
+    const hours=S.operatingHours?`<div class="vd-item"><span class="vd-label">Hours</span><span class="vd-val">${escapeHtml(S.operatingHours)}</span></div>`:'';
+    const _soc=S.socials||{};
+    const _socLinks=[['facebook','📘','Facebook',_soc.facebook],['instagram','📸','Instagram',_soc.instagram],['tiktok','🎵','TikTok',_soc.tiktok],['website','🌐','Website',_soc.website]].filter(x=>x[3]);
+    if(_socLinks.length===0 && S.socialMedia) _socLinks.push(['social','🔗','Social',S.socialMedia]);
+    const social=_socLinks.length?`<div class="vd-item"><span class="vd-label">Social</span><span class="vd-val vd-social">${_socLinks.map(x=>`<a href="${escapeHtml(x[3])}" target="_blank" rel="noopener" style="margin-right:8px;">${x[1]} ${x[2]}</a>`).join('')}</span></div>`:'';
+    const map=(S.lat&&S.lng)?`<div class="vd-item"><span class="vd-label">Map</span><span class="vd-val vd-map"><a href="https://www.google.com/maps?q=${S.lat},${S.lng}" target="_blank" rel="noopener">View Map</a></span></div>`:'';
+    const amens=(S.amenities||[]).map(a=>`<span class="vd-chip">${escapeHtml(a)}</span>`).join('');
+    const grid=[type,count,rate,hours,social,map].filter(Boolean).join('');
+    box.innerHTML=`<div class="venue-details">
+        <div class="venue-details-title">${IS_ORGANIZER_PORTAL?'🏓 Group/Club Details':'🏟️ Venue Details'}</div>
+        ${photo}
+        ${grid?`<div class="venue-details-grid">${grid}</div>`:''}
+        ${amens?`<div style="margin-top:10px;">${amens}</div>`:''}
+    </div>`;
 }
 
 function renderSlots(){
@@ -815,6 +864,8 @@ function openOpPortal(){
                 const data=snap.data();
                 S.scheduledSessions = data.scheduledSessions || [];
                 if(data.session) S.session = data.session;
+                S.queue = data.queue || [];
+                S.soloQueue = data.soloQueue || [];
             }
             renderOpSessionList();
         }).catch(e=>{
@@ -832,6 +883,44 @@ function closeOpPortal(){
     if(window._opWatchInterval){clearInterval(window._opWatchInterval);window._opWatchInterval=null;window._opWatching=false;}
     document.getElementById('opPortalOverlay').classList.remove('active');
     document.getElementById('landingPage').style.display='block';
+}
+
+function liveOpPlayerCount(){
+    const physical=new Set();
+    const addP=(p)=>{ if(p&&p.name) physical.add(String(p.name).toLowerCase()); };
+    // Everyone physically present: rotation queue (walk-ins AND scheduled-session
+    // players migrated in by the admin) plus players currently on court.
+    (S.queue||[]).forEach(g=>(g.players||[]).forEach(addP));
+    (S.soloQueue||[]).forEach(g=>(g.players||[]).forEach(addP));
+    // Round Robin participants are stored in the schedule's teams, not the queue.
+    if(S.session?.mode==='roundRobin'&&S.session.rrSchedule){
+        (S.session.rrSchedule.teams||[]).forEach(t=>(t.players||[]).forEach(addP));
+    }
+    const assigned=S.session.courts||(S.courts||[]).map(c=>c.id);
+    (S.courts||[]).forEach(c=>{
+        if(!assigned.includes(c.id)) return;
+        if(c.status!=='occupied') return;
+        if(c._tournamentId) return;
+        if(getBookingNow(c.id)) return;
+        (c.players||[]).forEach(addP);
+    });
+    let total=physical.size;
+    // Online registrants who are not yet on court / in the queue (e.g. joined but
+    // not confirmed). Already-present names are skipped to avoid double counting.
+    (S.session?._players||[]).forEach(p=>{
+        if(p._queued) return;
+        const nm=String(p.name||'').toLowerCase();
+        if(!nm||physical.has(nm)) return;
+        total+=p.players||1;
+        physical.add(nm);
+    });
+    return total;
+}
+
+function getBookingNow(cId){
+    const n=phtNow(), today=getTodayISO();
+    const nm=n.getHours()*60+n.getMinutes();
+    return S.bookings.find(b=>b.courtId===cId&&b.date===today&&(b.status==='pending'||b.status==='confirmed')&&nm>=timeToMin(b.startTime)&&nm<timeToMin(b.endTime));
 }
 
 function renderOpSessionList(){
@@ -858,7 +947,8 @@ function renderOpSessionList(){
     // Include upcoming scheduled sessions (skip the one already started as live)
     (S.scheduledSessions||[]).filter(s=>{
         if(s.status!=='scheduled'&&s.status!=='active') return false;
-        if(s.date<today||(s.date===today&&timeToMin(s.endTime)<=nowMins)) return false;
+        const ed=s.endDate||s.date;
+        if(ed<today||(ed===today&&timeToMin(s.endTime)<=nowMins)) return false;
         if(S.session?.active&&s.date===(S.session.startDate||today)&&s.startTime===(S.session.startTime||S.session.start)) return false;
         return true;
     }).forEach(s=>allSessions.push(s));
@@ -879,7 +969,7 @@ function renderOpSessionList(){
         ${allSessions.map(s=>{
             const courtNames=IS_ORGANIZER_PORTAL?(s.courtCount?s.courtCount+' courts':'Virtual courts'):(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ');
             const vName=s._isLive&&S.session?.venueName?S.session.venueName:(s.venueName||'');
-            const pCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
+            const pCount=s._isLive?liveOpPlayerCount():(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
             const max=s.maxPlayers||'∞';
             const full=s.maxPlayers?pCount>=s.maxPlayers:false;
             const badge=s._isLive?'<span style="background:#10b981;color:#1e293b;font-size:0.6rem;padding:2px 6px;border-radius:4px;margin-left:6px;">LIVE</span>':'';
@@ -887,16 +977,16 @@ function renderOpSessionList(){
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
                     <div>
                         <div style="font-weight:700;font-size:0.9rem;">${escapeHtml(s.date)}${badge}</div>
-                        <div style="font-size:0.82rem;color:#2563eb;">${s.startTime} – ${s.endTime}</div>
+                        <div style="font-size:0.82rem;color:#2563eb;">${opTimeRange(s)}</div>
                         ${vName?`<div style="font-size:0.78rem;color:#94a3b8;margin-top:3px;">📍 ${escapeHtml(vName)}</div>`:''}
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-size:0.78rem;color:#94a3b8;">${s._isLive?(s.maxPlayers?pCount+'/'+s.max+' players':'⏳ Ongoing'):pCount+'/'+max+' players'}</div>
+                        <div style="font-size:0.78rem;color:#94a3b8;">${s._isLive?(s.maxPlayers?pCount+'/'+s.maxPlayers+' players':pCount+' player'+(pCount===1?'':'s')):pCount+'/'+max+' players'}</div>
                         <div style="font-size:0.72rem;color:#f59e0b;">${s.fee>0?'₱'+s.fee:'Free'}</div>
                     </div>
                 </div>
                 <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">🏟️ ${escapeHtml(courtNames)} · ${s.mode==='fourOnFour'?'4 on/4 off':s.mode==='winnersSplit'?'Winners Stay & Split':'Round Robin'}</div>
-                ${full?`<div style="color:#ef4444;font-size:0.72rem;margin-top:6px;">⚠️ Session Full</div>`:`<div style="color:#2563eb;font-size:0.72rem;margin-top:6px;">${s._isLive?'▶ Open Play is happening now — click to join!':'✅ Spots available — click to join'}</div>`}
+                ${full?`<div style="color:#ef4444;font-size:0.72rem;margin-top:6px;">⚠️ Session Full</div>`:`<div style="color:#2563eb;font-size:0.72rem;margin-top:6px;">${s._isLive?`▶ Open Play is happening now — ${pCount} player${pCount===1?'':'s'} joined — click to join!`:'✅ Spots available — click to join'}</div>`}
             </div>`;
         }).join('')}
         <button class="btn btn-outline" onclick="closeOpPortal()" style="margin-top:8px;">← Back</button>`;
@@ -913,7 +1003,7 @@ function selectOpSession(id){
         s=S.scheduledSessions.find(x=>x.id===id);
     }
     if(!s) return;
-    const currentCount=(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
+    const currentCount=isLive?liveOpPlayerCount():(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);
     if(s.maxPlayers&&currentCount>=s.maxPlayers){showNotif('Session is full!','error');return;}
     _opJoinCtx={...s,_isLive:isLive};
     const content=document.getElementById('opPortalContent');
@@ -932,7 +1022,7 @@ function selectOpSession(id){
             <div id="opPayInputArea"></div>
         </div>`:'';
     content.innerHTML=`<div style="font-size:0.95rem;font-weight:700;margin-bottom:4px;">👋 Your Info</div>
-        <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong>${s.venueName?` · 📍 <strong>${escapeHtml(s.venueName)}</strong>`:''}</div>
+        <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:16px;">Joining <strong>${escapeHtml(s.date)} ${opTimeRange(s)}</strong>${s.venueName?` · 📍 <strong>${escapeHtml(s.venueName)}</strong>`:''}</div>
         <div class="form-row">
             <div class="form-group"><label>First Name *</label><input type="text" id="opFirstName" placeholder="Juan"></div>
             <div class="form-group"><label>Last Name *</label><input type="text" id="opLastName" placeholder="dela Cruz"></div>
@@ -1073,8 +1163,8 @@ async function confirmJoinOpSession(){
             <div style="font-size:0.8rem;color:#94a3b8;">Checking status...</div>
         </div>
         <div style="background:rgba(37,99,235,0.08);border-radius:8px;padding:10px;margin:10px 0;font-size:0.82rem;text-align:left;">
-            <div><strong>${escapeHtml(s.date)} ${s.startTime}–${s.endTime}</strong></div>
-            <div style="font-size:0.75rem;color:#94a3b8;">${(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ')} · ${(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0)+(playerCount)} player(s)</div>
+            <div><strong>${escapeHtml(s.date)} ${opTimeRange(s)}</strong></div>
+            <div style="font-size:0.75rem;color:#94a3b8;">${(s.courts||[]).map(id=>S.courts.find(c=>c.id===id)?.name||'Court '+id).join(', ')} · ${(()=>{const bc=s._isLive?liveOpPlayerCount():(s.players||[]).reduce((sum,p)=>sum+(p.players||1),0);return s._isLive?bc:bc+playerCount;})()} player(s)</div>
             ${s.fee>0?`<div style="font-size:0.75rem;color:#94a3b8;">💳 ${_opPayMethod} · Ref: ${player.reference||'N/A'}</div>`:''}
             <div style="font-size:0.75rem;color:#94a3b8;">💰 ${s.fee>0?'₱'+totalAmount:'Free'}</div>
         </div>
@@ -1159,9 +1249,21 @@ function watchOpRegistration(email, sessionId){
             S.venueName = data.name || 'Court';
             S.address = data.address || '';
             S.logoUrl = cqFixImgurUrl(data.logoUrl || '');
+            S.photoUrl = cqFixImgurUrl(data.photoUrl || '');
+            S.courtType = data.courtType || '';
+            S.courtCount = data.courtCount || (data.courts||[]).length;
+            S.hourlyRate = data.hourlyRate || 0;
+            S.operatingHours = data.operatingHours || '';
+            S.socialMedia = data.socialMedia || '';
+            S.socials = data.socials || {};
+            S.lat = data.lat || '';
+            S.lng = data.lng || '';
+            S.amenities = data.amenities || [];
             S.courts = data.courts || [];
             S.session = data.session || null;
             S.scheduledSessions = data.scheduledSessions || [];
+            S.queue = data.queue || [];
+            S.soloQueue = data.soloQueue || [];
             S.nextBId = data.nextBId || 1;
             S.paymentInfo = data.paymentInfo || {gcash:{number:'',name:''},maya:{number:'',name:''}};
             const cb='?t='+Date.now();
@@ -1170,6 +1272,7 @@ function watchOpRegistration(email, sessionId){
             document.getElementById('heroVenueAddress').innerHTML = S.address ? '📍 ' + escapeHtml(S.address) : '';
             document.getElementById('venueNameDisplay').innerHTML = S.logoUrl?`<img src="${escapeHtml(S.logoUrl+cb)}" style="height:16px;width:auto;vertical-align:middle;margin-right:4px;" alt="logo">${escapeHtml(S.venueName)}`:escapeHtml(S.venueName);
             if (!IS_ORGANIZER_PORTAL) renderCourtPicker();
+            renderVenueDetails();
             // Re-render slots if on step 2
             if(S.portal?.step===2) renderSlots();
             // Re-render Open Play list if portal is open (but not while confirmation watcher is active)
@@ -1201,11 +1304,11 @@ function closeLegal(){document.getElementById('legalModal').classList.remove('ac
 function showLegal(page){
     const c=document.getElementById('legalContent');
     const pages={
-        about:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2><p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p><p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p><p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a><br>📱 0999 883 0291</p>',
-        privacy:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2><p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p><p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by contacting us.</p><p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p><p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion.</p><p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p><p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p><p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p><p><em>Last updated: July 2026</em></p>',
-        terms:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2><p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. By checking the consent checkbox during sign-up or demo registration, you explicitly accept these terms and our Privacy Policy. If you do not agree, do not use the platform.</p><p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p><p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue\'s discretion.</p><p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p><p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p><p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p><p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p><p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p><p><em>Last updated: July 2026</em></p>',
+        about:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2><p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p><p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p><p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a><br>📱 0976 290 7119</p>',
+        privacy:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2><p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details, court type, hourly rates, operating hours, amenities, social media links, and map location. Venue owners may also upload a venue logo and venue photos, which are stored via Cloudinary. When you sign up for a demo via the "Try Demo" feature, we collect your name and email address.</p><p><strong>Venue Owner Privacy:</strong> The personal name of a venue owner is never displayed on the public booking portal. Only venue business information (venue name, address, photos, court details, rates, and hours) is shown to players.</p><p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by contacting us.</p><p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p><p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Venue photos and logos are stored via Cloudinary. Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion.</p><p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting, and Cloudinary for storing venue images. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p><p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p><p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p><p><em>Last updated: August 2026</em></p>',
+        terms:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2><p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. By checking the consent checkbox during sign-up or demo registration, you explicitly accept these terms and our Privacy Policy. If you do not agree, do not use the platform.</p><p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, court type, hourly rates, operating hours, amenities, map location, and photos. You agree to honor all confirmed bookings made through the platform. Showcasing a venue on the booking portal is optional and displays only business information; your personal name is never shown to players.</p><p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue\'s discretion.</p><p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p><p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p><p><strong>Venue Showcase Content:</strong> Venue owners grant CourtQ Pro a non-exclusive license to display venue photos, logos, and business details on the public booking portal for the purpose of enabling player discovery and bookings. You confirm you have the right to use and display any uploaded images.</p><p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p><p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p><p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p><p><em>Last updated: August 2026</em></p>',
         disclaimer:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2><p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p><p><strong>Accuracy:</strong> Venue information, pricing, and availability are provided by venue owners. We make no guarantees about accuracy and recommend confirming details directly with the venue.</p><p><strong>Payment:</strong> CourtQ Pro does not process payments. GCash and Maya are third-party services. Any payment disputes must be resolved directly with the venue owner or payment provider.</p><p><strong>Availability:</strong> We strive for 99.9% uptime but do not guarantee uninterrupted service. Scheduled maintenance and unforeseen outages may occur.</p><p><strong>Health & Safety:</strong> Players participate in sports activities at their own risk. Venues are responsible for maintaining safe playing conditions.</p>',
-        contact:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2><p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a></p><p><strong>Phone:</strong> 📱 0999 883 0291</p><p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#2563eb;">facebook.com/aiautomationexpert</a></p><p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p><p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p><p style="margin-top:16px;font-size:0.72rem;color:#64748b;">Apex Mind Agency<br>Talisay City, Cebu, Philippines</p>'
+        contact:'<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2><p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a></p><p><strong>Phone:</strong> 📱 0976 290 7119</p><p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#2563eb;">facebook.com/aiautomationexpert</a></p><p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p><p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p><p style="margin-top:16px;font-size:0.72rem;color:#64748b;">Apex Mind Agency<br>Talisay City, Cebu, Philippines</p>'
     };
     c.innerHTML=pages[page]||'<button class="modal-close" onclick="closeLegal()">✕</button><p>Page not found.</p>';
     document.getElementById('legalModal').classList.add('active');

@@ -3,46 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CourtQ Pro - Venue Management</title>
+    <title>CourtQ Pro — Free Booking Software for Pickleball Venues</title>
+    <meta name="description" content="CourtQ Pro is the free platform that gets your pickleball courts booked online and paid via GCash or Maya. No setup fee. No monthly fee. No commission. Free forever.">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4528294526114802"
      crossorigin="anonymous"></script>
     <meta name="google-adsense-account" content="ca-pub-4528294526114802">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 50%, #cbd5e1 100%);
-            min-height: 100vh; color: #1e293b;
-            display: flex; align-items: center; justify-content: center;
-            padding: 20px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #334155 100%);
+            min-height: 100vh; color: #ffffff;
         }
-        .landing { width: 100%; max-width: 560px; }
-        .logo {
-            text-align: center; margin-bottom: 32px;
-        }
-        .logo-icon { font-size: 3.5rem; margin-bottom: 10px; }
-        .logo-text { font-size: 2rem; font-weight: 800; color: #2563eb; letter-spacing: -1px; }
-        .pro-badge {
-            display: inline-block; background: linear-gradient(135deg,#f59e0b,#d68910);
-            color:#1e293b; font-size:0.65rem; padding:2px 8px; border-radius:6px;
-            font-weight:800; letter-spacing:1px; vertical-align: super; margin-left: 2px;
-        }
-        .tagline { font-size: 0.85rem; color: #ffffff; margin-top: 6px; }
+        .landing { width: 100%; max-width: 960px; margin: 0 auto; padding: 20px; }
 
+        .nav-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom: 48px; }
+        .nav-bar .nav-links { display:flex; gap:8px; }
+
+        /* ── Hero ── */
+        .hero { text-align:center; margin-bottom: 40px; }
+        .eyebrow {
+            display:inline-block; font-size:0.72rem; font-weight:800;
+            text-transform:uppercase; letter-spacing:2px; color:#10b981;
+            background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3);
+            border-radius:999px; padding:6px 14px; margin-bottom:20px;
+        }
+        .hero h1 {
+            font-size: 2.3rem; font-weight: 900; line-height: 1.2;
+            letter-spacing: -1px; margin-bottom: 14px;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        }
+        .hero h1 span { color: #60a5fa; }
+        .hero .sub {
+            font-size: 1.05rem; line-height: 1.6; color: #cbd5e1;
+            max-width: 620px; margin: 0 auto 24px;
+        }
+        .hero .sub strong { color: #ffffff; }
+        .cta-row { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-bottom: 20px; }
+        .hero .note { font-size:0.78rem; color:#94a3b8; }
+        .hero .note a { color:#60a5fa; text-decoration:none; }
+        .hero .note a:hover { text-decoration:underline; }
+
+        .trust-row { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; font-size:0.75rem; color:#ffffff; margin-bottom: 8px; }
+        .trust-row span { background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.28); border-radius:999px; padding:4px 12px; }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 10px;
+            font-size: 0.9rem; font-weight: 800; cursor: pointer;
+            transition: all 0.25s; display: inline-flex;
+            align-items: center; justify-content: center; gap: 6px;
+            text-decoration: none; text-align: center;
+        }
+        .btn-full { width: 100%; justify-content: center; }
+        .btn-primary { background: linear-gradient(135deg,#2563eb,#44a08d); color:#ffffff; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(37,99,235,0.45); }
+        .btn-success { background: linear-gradient(135deg,#10b981,#059669); color:#ffffff; }
+        .btn-success:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(16,185,129,0.4); }
+        .btn-amber { background: linear-gradient(135deg,#f59e0b,#d97706); color:#1e293b; }
+        .btn-amber:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(245,158,11,0.4); }
+        .btn-outline { background:transparent; border:1px solid rgba(255,255,255,0.25); color:#ffffff; }
+        .btn-outline:hover { background:rgba(255,255,255,0.1); }
+        .btn-lg { padding: 14px 34px; font-size: 1rem; }
+        .btn-sm { padding: 6px 14px; font-size: 0.78rem; }
+
+        /* ── Section headers ── */
+        .section-label {
+            text-align:center; font-size:0.72rem; font-weight:800; color:#10b981;
+            text-transform:uppercase; letter-spacing:1.5px; margin-bottom: 8px;
+        }
+        .section-title { text-align:center; font-size:1.5rem; font-weight:900; letter-spacing:-0.5px; margin-bottom: 28px; }
+
+        /* ── Cards ── */
         .card {
-            background: rgba(15,23,42,0.30);
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 20px; padding: 28px; margin-bottom: 16px;
+            background: rgba(15,23,42,0.45);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 24px; margin-bottom: 16px;
         }
+        .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+        .feature-card { background: rgba(37,99,235,0.14); border:1px solid rgba(37,99,235,0.28); border-radius:14px; padding:18px; text-align:center; }
+        .feature-card .icon { font-size:1.7rem; display:block; margin-bottom:8px; }
+        .feature-card .name { font-size:0.85rem; font-weight:800; color:#ffffff; margin-bottom:4px; }
+        .feature-card .desc { font-size:0.72rem; color:#cbd5e1; line-height:1.5; }
 
+        /* ── Section blocks ── */
+        .section { margin-bottom: 44px; }
+        .pain-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+        .pain-card { background:rgba(239,68,68,0.10); border:1px solid rgba(239,68,68,0.25); border-radius:14px; padding:18px; }
+        .pain-card .icon { font-size:1.6rem; margin-bottom:8px; display:block; }
+        .pain-card .title { font-size:0.88rem; font-weight:800; color:#ffffff; margin-bottom:6px; }
+        .pain-card .desc { font-size:0.75rem; color:#cbd5e1; line-height:1.5; }
+
+        .how-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+        .how-step { background:rgba(37,99,235,0.14); border:1px solid rgba(37,99,235,0.28); border-radius:14px; padding:20px; text-align:center; }
+        .how-step .num {
+            width:36px; height:36px; border-radius:50%; background:rgba(37,99,235,0.25); color:#60a5fa;
+            display:flex; align-items:center; justify-content:center; font-weight:900; font-size:0.9rem; margin:0 auto 10px;
+        }
+        .how-step .title { font-size:0.85rem; font-weight:800; margin-bottom:6px; }
+        .how-step .desc { font-size:0.72rem; color:#cbd5e1; line-height:1.5; }
+
+        /* ── Transparency / money box ── */
+        .money-box {
+            background: linear-gradient(135deg,rgba(16,185,129,0.16),rgba(16,185,129,0.08));
+            border:1px solid rgba(16,185,129,0.32); border-radius:14px; padding:16px 20px;
+            font-size:0.82rem; line-height:1.6; color:#d1fae5; text-align:center; margin: 0 auto 40px; max-width: 720px;
+        }
+        .money-box strong { color:#ffffff; }
+
+        .partners-strip {
+            display:block; background:linear-gradient(135deg,rgba(37,99,235,0.2),rgba(139,92,246,0.2));
+            border:1px solid rgba(37,99,235,0.28); border-radius:14px; padding:18px 20px;
+            text-decoration:none; text-align:center; transition: all 0.2s; margin-bottom: 20px;
+        }
+        .partners-strip:hover { border-color:rgba(37,99,235,0.5); background:rgba(37,99,235,0.16); }
+        .partners-strip .label { font-size:0.68rem; color:#ffffff; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; }
+        .partners-strip .headline { font-size:1.05rem; font-weight:800; color:#ffffff; }
+        .partners-strip .sub { font-size:0.75rem; color:#60a5fa; margin-top:4px; font-weight:600; }
+
+        .org-band {
+            background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.12));
+            border:1px solid rgba(245,158,11,0.4); border-radius:16px; padding:24px;
+        }
+        .org-band .label { font-size:0.68rem; color:#fbbf24; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px; font-weight:800; }
+        .org-band h3 { font-size:1.15rem; font-weight:800; color:#ffffff; margin-bottom:8px; }
+        .org-band p { font-size:0.8rem; color:#fde68a; line-height:1.6; margin-bottom:14px; max-width: 620px; }
+        .org-band p strong { color:#ffffff; }
+        .org-band .cta-row { justify-content:flex-start; }
+
+        .final-cta { text-align:center; padding: 28px 20px; border-radius:18px; background:linear-gradient(135deg,rgba(37,99,235,0.18),rgba(16,185,129,0.14)); border:1px solid rgba(37,99,235,0.3); margin-bottom: 16px; }
+        .final-cta h2 { font-size:1.5rem; font-weight:900; margin-bottom:8px; }
+        .final-cta p { font-size:0.85rem; color:#cbd5e1; margin-bottom:20px; }
+
+        /* ── Forms / Auth modal (unchanged) ── */
         .tabs { display: flex; margin-bottom: 20px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
         .tab { flex: 1; padding: 10px; text-align: center; background: rgba(0,0,0,0.025); color: #64748b; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; border: none; }
         .tab.active { background: rgba(37,99,235,0.15); color: #2563eb; }
         .tab:hover:not(.active) { color: #94a3b8; }
-
         .auth-form { display: none; }
         .auth-form.active { display: block; }
-
         .form-group { margin-bottom: 14px; }
         .form-group label {
             display: block; font-size: 0.75rem; color: #94a3b8;
@@ -58,39 +158,10 @@
             outline: none; border-color: #2563eb; background: rgba(37,99,235,0.08);
         }
         .form-group input::placeholder { color: #64748b; }
-
-        .btn {
-            padding: 11px 20px; border: none; border-radius: 10px;
-            font-size: 0.88rem; font-weight: 700; cursor: pointer;
-            transition: all 0.3s; display: inline-flex;
-            align-items: center; justify-content: center; gap: 6px;
-        }
-        .btn-full { width: 100%; justify-content: center; }
-        .btn-primary { background: linear-gradient(135deg,#2563eb,#44a08d); color:#1e293b; }
-        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(37,99,235,0.4); }
-        .btn-outline { background:transparent; border:1px solid rgba(0,0,0,0.15); color:#ffffff; }
-        .btn-outline:hover { background:rgba(255,255,255,0.12); color:#ffffff; }
-        .btn-success { background: linear-gradient(135deg,#10b981,#27ae60); color:#1e293b; }
-        .btn-success:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(16,185,129,0.4); }
-
         .divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: #64748b; font-size: 0.78rem; }
         .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid rgba(0,0,0,0.06); }
-
         .error-msg { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #ef4444; margin-bottom: 12px; display: none; }
         .success-msg { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #10b981; margin-bottom: 12px; display: none; }
-
-        .features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-        .feature { background: rgba(37,99,235,0.16); border: 1px solid rgba(37,99,235,0.15); border-radius: 10px; padding: 12px; text-align: center; font-size: 0.72rem; color: #ffffff; }
-        .feature-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
-
-        .nav-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
-        .nav-bar .nav-links { display:flex; gap:8px; }
-
-        @media(max-width:500px) {
-            .features { grid-template-columns: 1fr 1fr; }
-            .card { padding: 20px; }
-            .nav-bar { flex-direction:column; gap:12px; }
-        }
 
         .spinner {
             width: 40px; height: 40px; border-radius: 50%;
@@ -107,16 +178,17 @@
             text-align: center; margin-bottom: 12px; display: none;
         }
         .footer-links {
-            text-align: center; margin-top: 24px; padding: 16px 0;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            font-size: 0.7rem; color: #ffffff;
+            text-align: center; margin-top: 32px; padding: 16px 0;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.7rem; color: #94a3b8;
         }
         .footer-links a {
-            color: #ffffff; text-decoration: none; margin: 0 8px;
+            color: #cbd5e1; text-decoration: none; margin: 0 8px;
             transition: color 0.3s; cursor: pointer;
         }
-        .footer-links a:hover { color: #2563eb; }
+        .footer-links a:hover { color: #60a5fa; }
         .footer-links .dot { color: #444; }
+
         .modal-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.8); z-index: 9999;
@@ -146,6 +218,7 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(37,99,235,0.3); border-radius: 4px; }
+
         .hero-slides,
         .hero-slide {
             position: fixed;
@@ -164,7 +237,15 @@
             position: fixed;
             inset: 0;
             z-index: -1;
-            background: rgba(0,0,0,0.45);
+            background: rgba(0,0,0,0.55);
+        }
+
+        @media(max-width:640px) {
+            .hero h1 { font-size: 1.7rem; }
+            .hero .sub { font-size: 0.92rem; }
+            .grid-3, .pain-grid, .how-grid { grid-template-columns: 1fr; }
+            .nav-bar { flex-direction: column; gap: 12px; margin-bottom: 32px; }
+            .card { padding: 18px; }
         }
     </style>
 </head>
@@ -182,86 +263,143 @@
                 <img src="/Logo.jpg" style="height:52px;width:auto;" alt="CourtQ Pro">
             </div>
             <div class="nav-links">
-                <button class="btn btn-outline" onclick="showAuthModal('login')" style="padding:6px 14px;font-size:0.78rem;">Log In</button>
-                <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:6px 14px;font-size:0.78rem;">Register Free</button>
+                <button class="btn btn-outline btn-sm" onclick="showAuthModal('login')">Log In</button>
+                <button class="btn btn-success btn-sm" onclick="showAuthModal('register')">Register Free</button>
             </div>
         </div>
 
-        <div style="text-align:center;margin-bottom:16px;">
-            <div style="font-size:0.95rem;color:#10b981;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">✅ 100% FREE for Venue Owners</div>
-            <h1 style="font-size:1.6rem;font-weight:900;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.55);line-height:1.3;margin-bottom:10px;letter-spacing:-1px;">Run your pickleball venue<br>like a pro</h1>
-            <p style="font-size:0.85rem;color:#ffffff;line-height:1.6;max-width:420px;margin:0 auto 14px;">
-                Online booking, court scheduling, Open Play rotation, live TV display, and tournament brackets — all in one dashboard.
+        <!-- ── HOOK ── -->
+        <div class="hero section">
+            <span class="eyebrow">🇵🇭 Built for pickleball venues in the Philippines</span>
+            <h1>Get your court booked online.<br><span>Free forever.</span></h1>
+            <p class="sub">
+                CourtQ Pro is the <strong>free booking platform</strong> that lets players book your courts online,
+                pay instantly via <strong>GCash or Maya</strong>, and keeps your schedule full — while you keep
+                <strong>100% of your rates</strong>.
             </p>
-            <div style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:12px 16px;margin:0 auto 16px;max-width:380px;text-align:left;font-size:0.78rem;">
-                <div style="font-weight:700;color:#10b981;margin-bottom:2px;">💡 How we make money:</div>
-                <div style="color:#ffffff;line-height:1.5;">You keep 100% of your rates. A <strong style="color:#60a5fa;">₱5/hr convenience fee</strong> is added to each online booking or ₱5/player for Open Play booking — charged to the player, not to you.</div>
+            <div class="cta-row">
+                <button class="btn btn-success btn-lg" onclick="showAuthModal('register')">🏟️ Register My Venue — Free</button>
+                <a class="btn btn-outline btn-lg" href="partners.html">🏓 I want to play — find a court</a>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-size:0.7rem;color:#ffffff;margin-bottom:16px;">
+            <div class="note">
+                Run Open Plays or tournaments? <a href="#" onclick="showAuthModal('organizer');return false;">Register as an Organizer →</a>
+            </div>
+            <div class="trust-row" style="margin-top:16px;">
                 <span>✅ No setup fee</span>
                 <span>✅ No monthly fee</span>
                 <span>✅ No commission</span>
-                <span>✅ No hidden charges</span>
-            </div>
-            <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
-                <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:10px 24px;font-size:0.9rem;">🏟️ Register as Venue Owner</button>
-                <button class="btn btn-primary" onclick="showAuthModal('organizer')" style="padding:10px 24px;font-size:0.9rem;">🎯 Register as Organizer / Club</button>
-                <button class="btn btn-outline" onclick="openDemoLeadForm()" style="padding:10px 20px;font-size:0.9rem;">📅 Book a Demo</button>
+                <span>✅ No contracts</span>
             </div>
         </div>
 
-        <div style="margin:0 0 20px;">
-            <a href="partners.html" style="display:block;background:linear-gradient(135deg,rgba(37,99,235,0.2) 0%,rgba(139,92,246,0.2) 100%);border:1px solid rgba(37,99,235,0.25);border-radius:14px;padding:18px 20px;text-decoration:none;text-align:center;transition:border-color 0.2s,background 0.2s;" onmouseover="this.style.borderColor='rgba(37,99,235,0.5)';this.style.background='rgba(37,99,235,0.12)'" onmouseout="this.style.borderColor='rgba(37,99,235,0.25)';this.style.background='linear-gradient(135deg,rgba(37,99,235,0.2) 0%,rgba(139,92,246,0.2) 100%)'">
-                <div style="font-size:0.68rem;color:#ffffff;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Trusted Across the Philippines</div>
-                <div style="font-size:1.1rem;font-weight:800;color:#ffffff;text-shadow:0 1px 4px rgba(0,0,0,0.5);">🏓 See Our Growing Community of Partners</div>
-                <div style="font-size:0.78rem;color:#60a5fa;margin-top:6px;font-weight:600;">View All Venues &amp; Organizers →</div>
-            </a>
+        <!-- ── TRANSPARENCY ── -->
+        <div class="money-box">
+            <strong>How CourtQ Pro is free:</strong> You keep 100% of your rates. A small <strong>₱5/hour convenience fee</strong>
+            is added to each online booking — <strong>charged to the player, never to you.</strong>
         </div>
 
-        <div style="font-size:0.72rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">All-in-One Platform</div>
-        <div class="features">
-            <div class="feature"><span class="feature-icon">🏟️</span>Court Management</div>
-            <div class="feature"><span class="feature-icon">📅</span>Online Booking</div>
-            <div class="feature"><span class="feature-icon">💳</span>POS &amp; Sales</div>
-            <div class="feature"><span class="feature-icon">🏆</span>Leaderboards</div>
-            <div class="feature"><span class="feature-icon">📺</span>Live TV Display</div>
-            <div class="feature"><span class="feature-icon">📱</span>Mobile Scoring</div>
-            <div class="feature"><span class="feature-icon">🔄</span>Open Play Engine</div>
-            <div class="feature"><span class="feature-icon">🎯</span>Tournament Engine</div>
-        </div>
+        <!-- ── SOCIAL PROOF ── -->
+        <a class="partners-strip" href="partners.html">
+            <div class="label">Trusted Across the Philippines</div>
+            <div class="headline">🏓 See Our Growing Community of Venue Partners</div>
+            <div class="sub">View all venues &amp; organizers powered by CourtQ Pro →</div>
+        </a>
 
-        <div style="margin-bottom:16px;">
-            <div style="font-size:0.72rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:12px;">How It Works</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                <div style="background:rgba(37,99,235,0.16);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);color:#60a5fa;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">1</div>
-                    <div style="font-size:0.78rem;font-weight:700;color:#ffffff;margin-bottom:4px;">Register Your Venue</div>
-                    <div style="font-size:0.68rem;color:#ffffff;line-height:1.4;">Sign up free. No credit card needed. No contracts.</div>
+        <!-- ── AGITATE ── -->
+        <div class="section">
+            <div class="section-label">Sound familiar?</div>
+            <div class="section-title">Running a court shouldn't feel like a full-time admin job</div>
+            <div class="pain-grid">
+                <div class="pain-card">
+                    <span class="icon">💬</span>
+                    <div class="title">Bookings lost in Messenger</div>
+                    <div class="desc">Players DM you, you juggle chat threads, and you double-book by accident. Every missed booking is lost income.</div>
                 </div>
-                <div style="background:rgba(37,99,235,0.16);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);color:#60a5fa;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">2</div>
-                    <div style="font-size:0.78rem;font-weight:700;color:#ffffff;margin-bottom:4px;">Set Up Your Dashboard</div>
-                    <div style="font-size:0.68rem;color:#ffffff;line-height:1.4;">Add courts, set rates, configure payments in minutes.</div>
+                <div class="pain-card">
+                    <span class="icon">🚫</span>
+                    <div class="title">No-shows &amp; empty courts</div>
+                    <div class="desc">No deposit, no reminder, no guarantee. Players don't show up and your prime court hours sit empty.</div>
                 </div>
-                <div style="background:rgba(37,99,235,0.16);border:1px solid rgba(37,99,235,0.15);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);color:#60a5fa;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;margin:0 auto 8px;">3</div>
-                    <div style="font-size:0.78rem;font-weight:700;color:#ffffff;margin-bottom:4px;">Start Accepting Bookings</div>
-                    <div style="font-size:0.68rem;color:#ffffff;line-height:1.4;">Players book online. You get paid. We add a ₱5/hr convenience fee.</div>
+                <div class="pain-card">
+                    <span class="icon">🧾</span>
+                    <div class="title">Cash &amp; GCash chaos</div>
+                    <div class="desc">Manual receipts, chasing payments, guessing who actually paid. You spend hours tracking money instead of growing.</div>
                 </div>
             </div>
         </div>
 
-        <div style="text-align:center;margin-bottom:16px;">
-            <div style="display:inline-block;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:14px 18px;font-size:0.78rem;line-height:1.6;">
-                <div style="font-weight:700;color:#10b981;margin-bottom:2px;">💰 100% Free for Venue Owners, Organizers & Clubs</div>
-                <div style="color:#ffffff;">No setup fee. No monthly fee. No commission. <strong style="color:#60a5fa;">Ever.</strong></div>
+        <!-- ── SOLUTION ── -->
+        <div class="section">
+            <div class="section-label">CourtQ Pro fixes all three</div>
+            <div class="section-title">Everything you need to run your venue</div>
+            <div class="grid-3">
+                <div class="feature-card"><span class="icon">📅</span><div class="name">Online Booking</div><div class="desc">Players book your courts 24/7 with real-time availability. No more Messenger juggling.</div></div>
+                <div class="feature-card"><span class="icon">💳</span><div class="name">Instant GCash / Maya</div><div class="desc">Players pay online when they book. You always know who's paid — no chasing.</div></div>
+                <div class="feature-card"><span class="icon">📺</span><div class="name">Live TV Display</div><div class="desc">Show the queue and live scores on a big screen at your venue. Pro experience, zero effort.</div></div>
+                <div class="feature-card"><span class="icon">🏟️</span><div class="name">Court Management</div><div class="desc">Add courts, set rates, block hours, and see your whole venue at a glance.</div></div>
+                <div class="feature-card"><span class="icon">🔄</span><div class="name">Open Play Engine</div><div class="desc">Run open play sessions, mix players automatically, and keep the rotation fair.</div></div>
+                <div class="feature-card"><span class="icon">🎯</span><div class="name">Tournament Engine</div><div class="desc">Run brackets and track standings — from casual tournaments to club events.</div></div>
             </div>
         </div>
 
-        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-            <button class="btn btn-success" onclick="showAuthModal('register')" style="padding:10px 24px;font-size:0.9rem;">🏟️ Register as Venue Owner</button>
-            <button class="btn btn-primary" onclick="showAuthModal('organizer')" style="padding:10px 24px;font-size:0.9rem;">🎯 Register as Organizer / Club</button>
-            <button class="btn btn-outline" onclick="showAuthModal('login')" style="padding:10px 20px;font-size:0.9rem;">🔑 Log In</button>
+        <!-- ── HOW IT WORKS ── -->
+        <div class="section">
+            <div class="section-label">Simple as 1-2-3</div>
+            <div class="section-title">Live and taking bookings in minutes</div>
+            <div class="how-grid">
+                <div class="how-step">
+                    <div class="num">1</div>
+                    <div class="title">Register Your Venue</div>
+                    <div class="desc">Sign up free. No credit card. No contracts. Takes 2 minutes.</div>
+                </div>
+                <div class="how-step">
+                    <div class="num">2</div>
+                    <div class="title">Set Up Your Dashboard</div>
+                    <div class="desc">Add your courts, set your rates, and connect GCash or Maya.</div>
+                </div>
+                <div class="how-step">
+                    <div class="num">3</div>
+                    <div class="title">Start Accepting Bookings</div>
+                    <div class="desc">Share your portal link. Players book &amp; pay online. You get paid.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ORGANIZERS (secondary audience) ── -->
+        <div class="section">
+            <div class="org-band">
+                <div class="label">💰 For organizers &amp; clubs</div>
+                <h3>Run Open Plays &amp; tournaments — and earn 20% on every fee</h3>
+                <p>
+                    Don't own a court? No problem. Organizers host Open Plays at their own venue <em>or</em> any partner venue.
+                    You keep 100% of your rates, and as an organizer you're <strong>automatically an affiliate</strong> —
+                    earning <strong>20%</strong> of the convenience fees from your own sessions plus every venue or organizer
+                    you refer. Payouts start at just <strong>₱200</strong> via GCash or Maya.
+                </p>
+                <div class="cta-row">
+                    <button class="btn btn-amber" onclick="showAuthModal('organizer')">🎯 Become an Organizer</button>
+                    <a class="btn btn-outline" href="affiliate.html">💳 Affiliate Program Details</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── FINAL CTA ── -->
+        <div class="final-cta">
+            <h2>Ready to fill your courts?</h2>
+            <p>Join the venues across the Philippines getting booked online every day — free, forever.</p>
+            <div class="cta-row">
+                <button class="btn btn-success btn-lg" onclick="showAuthModal('register')">🏟️ Register My Venue — Free</button>
+                <button class="btn btn-outline" onclick="openDemoLeadForm()">▶ Watch Demo Videos</button>
+            </div>
+        </div>
+
+        <div class="footer-links">
+            <a onclick="showLegal('about')">About</a><span class="dot"> · </span>
+            <a href="partners.html">Partners</a><span class="dot"> · </span>
+            <a onclick="showLegal('privacy')">Privacy</a><span class="dot"> · </span>
+            <a onclick="showLegal('terms')">Terms</a><span class="dot"> · </span>
+            <a onclick="showLegal('disclaimer')">Disclaimer</a><span class="dot"> · </span>
+            <a onclick="showLegal('contact')">Contact</a>
         </div>
 
         <!-- SETUP SCREEN: shown after signup while provisioning -->
@@ -275,7 +413,6 @@
         <!-- SUCCESS SCREEN -->
         <div class="card" id="successScreen" style="display:none;">
             <div style="text-align:center;padding:16px 0;">
-                <!-- WAITING STATE -->
                 <div id="waitingState">
                     <div style="font-size:3rem;margin-bottom:12px;">⏳</div>
                     <div style="font-size:1.2rem;font-weight:800;color:#f59e0b;margin-bottom:6px;">Waiting for Activation...</div>
@@ -297,7 +434,6 @@
                     </div>
                     <div style="font-size:0.78rem;color:#ffffff;">📧 We'll also send you an email once activated.<br>This page will update automatically.</div>
                 </div>
-                <!-- ACTIVATED STATE -->
                 <div id="activatedState" style="display:none;">
                     <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
                     <div style="font-size:1.2rem;font-weight:800;color:#10b981;margin-bottom:6px;">You're Live!</div>
@@ -314,15 +450,6 @@
             <div class="spinner"></div>
             <div style="margin-top:12px;color:#ffffff;font-size:0.9rem;" id="loadingMsg">Setting things up...</div>
         </div>
-
-        <div class="footer-links">
-            <a onclick="showLegal('about')">About</a><span class="dot"> · </span>
-            <a href="partners.html">Partners</a><span class="dot"> · </span>
-            <a onclick="showLegal('privacy')">Privacy</a><span class="dot"> · </span>
-            <a onclick="showLegal('terms')">Terms</a><span class="dot"> · </span>
-            <a onclick="showLegal('disclaimer')">Disclaimer</a><span class="dot"> · </span>
-            <a onclick="showLegal('contact')">Contact</a>
-        </div>
     </div>
 
     <!-- Demo Lead Modal -->
@@ -331,23 +458,30 @@
             <button class="modal-close" onclick="closeDemoLead()">✕</button>
             <div id="demoLeadContent">
                 <div id="demoLeadForm">
-                    <h2>📅 Book a Demo</h2>
-                    <p style="margin-bottom:16px;">We'll walk you through the platform. Leave your details and we'll reach out to schedule a personalized demo.</p>
+                    <h2>▶ Watch Demo Videos Now</h2>
+                    <p style="margin-bottom:16px;">Leave your details and we'll email you our video guides straight away — step-by-step walkthroughs on YouTube and our Facebook page.</p>
                     <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Juan dela Cruz"></div>
                     <div class="form-group"><label>Email *</label><input type="email" id="demoLeadEmail" placeholder="you@email.com"></div>
                     <div class="form-group"><label>Phone Number *</label><input type="tel" id="demoLeadPhone" placeholder="+63 912 345 6789"></div>
-                    <div class="form-group"><label>Preferred Schedule</label><input type="text" id="demoLeadSchedule" placeholder="e.g. Monday 2pm, or anytime this week"></div>
                     <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#94a3b8;margin-bottom:12px;cursor:pointer;">
                         <input type="checkbox" id="demoLeadConsent" style="margin-top:2px;width:auto;">
                         <span>I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>. I consent to receive email communications about CourtQ Pro updates and offers.</span>
                     </label>
                     <div id="demoLeadError" class="error-msg"></div>
-                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">📅 Book Demo</button>
+                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">▶ Watch Demo Videos Now</button>
                 </div>
                 <div id="demoLeadSuccess" style="display:none;text-align:center;padding:20px 0;">
-                    <div style="font-size:3rem;margin-bottom:12px;">✅</div>
-                    <h2>Demo request sent!</h2>
-                    <p style="color:#94a3b8;margin-top:8px;">We'll contact you shortly to schedule your walkthrough.</p>
+                    <div style="font-size:3rem;margin-bottom:12px;">📧</div>
+                    <h2>Check your email!</h2>
+                    <p style="color:#94a3b8;margin-top:8px;">We've sent you our video guides. Meanwhile, watch them here:</p>
+                    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+                        <a href="https://www.youtube.com/@CourtQPro" target="_blank" rel="noopener" style="text-decoration:none;">
+                            <button class="btn btn-primary btn-full">🎬 Watch on YouTube</button>
+                        </a>
+                        <a href="https://www.facebook.com/aiautomationexpert" target="_blank" rel="noopener" style="text-decoration:none;">
+                            <button class="btn btn-outline btn-full" style="color:#2563eb;">📘 Follow on Facebook</button>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -379,15 +513,45 @@
                 </div>
                 <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
                 <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">📅 Book a Demo</button>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">▶ Watch Demo Videos Now</button>
             </div>
 
             <div class="auth-form active" id="form-register">
+                <div style="font-size:1.15rem;font-weight:900;color:#2563eb;text-align:center;letter-spacing:1px;margin-bottom:14px;">SHOWCASE YOUR VENUE</div>
                 <div class="form-group"><label>Venue Name *</label><input type="text" id="registerVenue" placeholder="e.g. Riverside Pickleball"></div>
                 <div class="form-group"><label>Your Name *</label><input type="text" id="registerName" placeholder="e.g. Juan dela Cruz"></div>
                 <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
                 <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 912 345 6789"></div>
                 <div class="form-group"><label>Venue Address *</label><input type="text" id="registerAddress" placeholder="e.g. 123 Main St, Makati City"></div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Court Type</label><select id="registerCourtType"><option value="">Select type</option><option>Indoor</option><option>Outdoor</option><option>Covered (Semi-Indoor)</option><option>Indoor &amp; Outdoor</option></select></div>
+                    <div class="form-group"><label>Number of Courts</label><input type="number" id="registerCourtCount" min="1" max="20" placeholder="e.g. 3"></div>
+                </div>
+                <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="registerRate" min="0" placeholder="e.g. 300"></div>
+                <div class="form-group"><label>Operating Hours</label><input type="text" id="registerHours" placeholder="e.g. 8:00 AM - 10:00 PM, Daily"></div>
+                <div class="form-group"><label>Social Media</label><input type="text" id="registerSocial" placeholder="e.g. facebook.com/YourVenue or @yourvenue"></div>
+                <div class="form-group"><label>Pin Your Location on the Map</label>
+                    <div id="regMap" style="height:200px;border-radius:10px;border:1px solid rgba(0,0,0,0.1);"></div>
+                    <div style="font-size:0.68rem;color:#64748b;margin-top:4px;line-height:1.5;">📍 Click the map to drop a pin — this fills in the latitude &amp; longitude below.</div>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Latitude</label><input type="text" id="registerLat" placeholder="e.g. 14.5500"></div>
+                    <div class="form-group"><label>Longitude</label><input type="text" id="registerLng" placeholder="e.g. 121.0400"></div>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;"><label>Amenities</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenParking" style="width:auto;"> Parking</label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenNightLights" style="width:auto;"> Night Lights</label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenEquipment" style="width:auto;"> Equipment Rental</label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenShowerLocker" style="width:auto;"> Shower / Locker</label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenCafe" style="width:auto;"> Café / Food</label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenAc" style="width:auto;"> A/C</label>
+                    </div>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Logo (photo)</label><input type="file" id="registerLogoFile" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewRegImg(this,'registerLogoPreview')"><div id="registerLogoPreview" style="display:none;margin-top:6px;"><img style="max-width:100%;max-height:80px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div></div>
+                    <div class="form-group"><label>Venue Photo</label><input type="file" id="registerVenuePhoto" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewRegImg(this,'registerVenuePreview')"><div id="registerVenuePreview" style="display:none;margin-top:6px;"><img style="max-width:100%;max-height:80px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div></div>
+                </div>
                 <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
                 <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#94a3b8;line-height:1.5;">
                     <strong style="color:#10b981;">✅ Free for you.</strong> A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
@@ -397,12 +561,20 @@
                     <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>.</span>
                 </label>
                 <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
+                <div style="text-align:center;margin:10px 0;font-size:0.72rem;color:#94a3b8;">🎯 Don't own a court but run Open Plays or a group? <a href="#" onclick="switchTab('organizer');return false;" style="color:#8b5cf6;font-weight:700;">Register as an Organizer instead →</a></div>
                 <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">📅 Book a Demo</button>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">▶ Watch Demo Videos Now</button>
             </div>
 
             <div class="auth-form" id="form-organizer">
+                <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#334155;line-height:1.5;">
+                    <strong style="color:#8b5cf6;">🎯 What this account is for:</strong> You host Open Play sessions &amp; tournaments — at your own venue <em>or</em> any partner venue. Players register and pay online through your portal link. You don't need to own a court.
+                    <div style="margin-top:6px;">🏟️ Own or manage a court? <a href="#" onclick="switchTab('register');return false;" style="color:#2563eb;font-weight:700;">Register as a Venue Owner instead →</a></div>
+                </div>
+                <div style="font-size:1.15rem;font-weight:900;color:#8b5cf6;text-align:center;letter-spacing:1px;margin-bottom:14px;">SHOWCASE YOUR GROUP/CLUB</div>
                 <div class="form-group"><label>Group Name *</label><input type="text" id="orgBusinessName" placeholder="e.g. Manila Pickleball Club"></div>
+                <div class="form-group"><label>Be proud of your Group/Club — Add a Group Selfie <span style="font-weight:400;color:#64748b;">(this will show in your Booking Portal)</span></label><input type="file" id="orgSelfieFile" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewOrgSelfie(event)"></div>
+                <div id="orgSelfiePreview" style="display:none;margin-bottom:12px;"><img style="max-width:220px;max-height:130px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div>
                 <div class="form-group"><label>Your Name *</label><input type="text" id="orgName" placeholder="e.g. Juan dela Cruz"></div>
                 <div class="form-group"><label>Email *</label><input type="email" id="orgEmail" placeholder="you@email.com"></div>
                 <div class="form-group"><label>Mobile Number *</label><input type="tel" id="orgMobile" placeholder="+63 912 345 6789"></div>
@@ -415,6 +587,9 @@
                 <div class="form-group"><label>Password *</label><input type="password" id="orgPass" placeholder="At least 6 characters"></div>
                 <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#94a3b8;line-height:1.5;">
                     <strong style="color:#10b981;">✅ Free for organizers.</strong> A <strong style="color:#2563eb;">₱5/player fee</strong> is added to each Open Play booking — paid by the player. You keep 100% of your rates.
+                </div>
+                <div style="background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.35);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#92400e;line-height:1.5;">
+                    <strong style="color:#b45309;">💰 You automatically become an affiliate.</strong> Earn <strong style="color:#b45309;">20%</strong> of all convenience fees — from your own Open Plays <strong style="color:#b45309;">and</strong> every venue or organizer you refer via your unique link. Payouts start at just <strong style="color:#b45309;">₱200</strong>.
                 </div>
                 <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#94a3b8;margin-bottom:12px;cursor:pointer;">
                     <input type="checkbox" id="orgConsent" style="margin-top:2px;width:auto;">
@@ -432,6 +607,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         firebase.initializeApp(CQ_CONFIG.firebaseConfig);
         const db = firebase.firestore();
@@ -439,6 +615,15 @@
 
         // Capture referral code from URL
         const _referralCode = new URLSearchParams(window.location.search).get('ref') || '';
+
+        // Auto-open the Organizer registration form when coming from the affiliate apply button
+        if (new URLSearchParams(window.location.search).get('register') === 'organizer') {
+            showAuthModal('organizer');
+        }
+        // Auto-open the Venue Owner registration form (e.g. from the dashboard welcome modal escape hatch)
+        if (new URLSearchParams(window.location.search).get('register') === 'venue') {
+            showAuthModal('register');
+        }
 
         function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -520,6 +705,22 @@
             if (tabs[idx]) tabs[idx].classList.add('active');
             const form = document.getElementById('form-'+tab);
             if (form) form.classList.add('active');
+            if (tab === 'register') initRegisterMap();
+        }
+
+        let _regMap = null, _regMarker = null;
+        function initRegisterMap() {
+            const el = document.getElementById('regMap');
+            if (!el || _regMap || typeof L === 'undefined') return;
+            _regMap = L.map(el).setView([14.5995, 120.9842], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(_regMap);
+            _regMarker = L.marker([14.5995, 120.9842]).addTo(_regMap);
+            _regMap.on('click', function (e) {
+                _regMarker.setLatLng(e.latlng);
+                document.getElementById('registerLat').value = e.latlng.lat.toFixed(6);
+                document.getElementById('registerLng').value = e.latlng.lng.toFixed(6);
+            });
+            setTimeout(function(){ _regMap.invalidateSize(); }, 250);
         }
 
         function showLoading(msg) {
@@ -569,6 +770,16 @@
             }
         }
 
+        // Email a welcome banner + caption (for manual FB posting)
+        async function postWelcomeBanner(type, displayName, slug, logoUrl){
+            try{
+                const clean=displayName.replace(/^[\uD83C-\uDBFF\uDC00-\uDFFF\s]+/,'').trim()||displayName.trim();
+                const bannerUrl='https://res.cloudinary.com/'+CQ_CONFIG.cloudinaryCloud+'/image/upload/w_1200,h_628,f_auto,q_auto/l_text:Arial_64_bold:'+encodeURIComponent(clean)+',co_rgb:ffffff,g_center,y_80,w_900,c_fit/l_logo_courtq,w_180,h_120,g_north_west,x_40,y_25/templates/welcome_banner_v3.png';
+                const payload={type,displayName:clean,slug,logoUrl:logoUrl||'',bannerUrl,portalUrl:window.location.origin+'/portal.html?venue='+slug};
+                fetch(window.location.origin+'/api/welcome',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(e=>console.warn('welcome email failed:',e));
+            }catch(e){ console.warn('postWelcomeBanner failed:',e); }
+        }
+
         async function registerVenue() {
             hideMsgs();
             const venue = document.getElementById('registerVenue').value.trim();
@@ -576,8 +787,27 @@
             const email = document.getElementById('registerEmail').value.trim();
             const mobile = document.getElementById('registerMobile').value.trim();
             const address = document.getElementById('registerAddress').value.trim();
+            const courtType = document.getElementById('registerCourtType').value;
+            const courtCountRaw = parseInt(document.getElementById('registerCourtCount').value, 10);
+            const courtCount = Math.min(20, Math.max(1, courtCountRaw || 3));
+            const rateRaw = parseFloat(document.getElementById('registerRate').value);
+            const rate = (!isNaN(rateRaw) && rateRaw > 0) ? rateRaw : 300;
+            const operatingHours = document.getElementById('registerHours').value.trim();
+            const socialMedia = document.getElementById('registerSocial').value.trim();
+            const lat = document.getElementById('registerLat').value.trim();
+            const lng = document.getElementById('registerLng').value.trim();
+            const amenities = [];
+            if (document.getElementById('amenParking').checked) amenities.push('Parking');
+            if (document.getElementById('amenNightLights').checked) amenities.push('Night Lights');
+            if (document.getElementById('amenEquipment').checked) amenities.push('Equipment Rental');
+            if (document.getElementById('amenShowerLocker').checked) amenities.push('Shower / Locker');
+            if (document.getElementById('amenCafe').checked) amenities.push('Café / Food');
+            if (document.getElementById('amenAc').checked) amenities.push('A/C');
+            const logoFile = document.getElementById('registerLogoFile').files[0];
+            const photoFile = document.getElementById('registerVenuePhoto').files[0];
             const pass = document.getElementById('registerPass').value;
             if (!venue || !name || !email || !mobile || !address || !pass) { showError('Fill in all fields.'); return; }
+            if (!courtType) { showError('Please select a court type to showcase your venue.'); return; }
             if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
             if (!document.getElementById('registerConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
             hideError();
@@ -600,8 +830,32 @@
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
                 const p = { uid: cred.user.uid, email, name, venue, mobile };
                 document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('setupMsg').textContent = 'Setting up your venue...';
+                document.getElementById('setupMsg').textContent = 'Uploading your photos and setting up your venue...';
                 document.getElementById('setupScreen').style.display = 'block';
+                // Upload logo & venue photo to Cloudinary
+                let logoUrl = '', photoUrl = '';
+                try {
+                    if (logoFile) {
+                        const fd=new FormData();
+                        fd.append('file',logoFile);
+                        fd.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
+                        fd.append('public_id','venue_logos/'+cred.user.uid);
+                        const r=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:fd});
+                        const d=await r.json();
+                        if(d.secure_url) logoUrl=d.secure_url;
+                    }
+                } catch(e){ console.warn('Logo upload failed:',e); }
+                try {
+                    if (photoFile) {
+                        const fd=new FormData();
+                        fd.append('file',photoFile);
+                        fd.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
+                        fd.append('public_id','venue_photos/'+cred.user.uid);
+                        const r=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:fd});
+                        const d=await r.json();
+                        if(d.secure_url) photoUrl=d.secure_url;
+                    }
+                } catch(e){ console.warn('Venue photo upload failed:',e); }
                 // Directly provision the venue
                 const slug = p.venue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'venue';
                 let finalSlug = slug;
@@ -615,10 +869,10 @@
                 const venueId = db.collection('venues').doc().id;
                 const defaultCourts = [];
                 const colors = ['#2563eb','#e056a0','#10b981','#f59e0b','#ef4444','#8b5cf6','#1abc9c','#e67e22'];
-                for (let i = 1; i <= 3; i++) {
+                for (let i = 1; i <= courtCount; i++) {
                     defaultCourts.push({
-                        id:i, name:'Court '+i, location:'Main Area', surface:'Hard',
-                        env:'Outdoor', color:colors[(i-1)%colors.length], rate:300,
+                id:i, name:'Court '+i, location:'Main Area', surface:'Hard',
+                env:'Outdoor', color:colors[(i-1)%colors.length], rate: rate,
                         status:'available', players:[], startTime:null, gameType:null, desc:''
                     });
                 }
@@ -628,7 +882,10 @@
                     bookings: [], history: [], leaderboard: {}, sales: [],
                     nextId: 100, nextBId: 1,
                     status: 'active', mobile: p.mobile, ownerName: p.name, address: address,
-                    courtCount: 3,
+                    courtCount: courtCount,
+                    courtType: courtType, operatingHours: operatingHours, socialMedia: socialMedia,
+                    lat: lat, lng: lng, amenities: amenities, logoUrl: logoUrl, photoUrl: photoUrl,
+                    hourlyRate: rate,
                     paymentInfo:{gcash:{number:'',name:''},maya:{number:'',name:''}},
                     referralCode: _referralCode || ''
                 });
@@ -645,7 +902,7 @@
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
                             subject: 'Your Venue "' + p.venue + '" is now LIVE! ✅',
-                            body: '✅ Great news! Your venue "' + p.venue + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your venue dashboard. Bookmark this page for quick access.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n\ud83c\udfdf\ufe0f Add your courts\n💰 Set your rates\n🎮️ Upload your logo\n💳 Add payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
+                            body: '✅ Great news! Your venue "' + p.venue + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your venue dashboard. Bookmark this page for quick access.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n\ud83c\udfdf\ufe0f Add your courts\n💰 Set your rates\n🎮️ Upload your logo\n💳 Add payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119'
                         });
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
@@ -668,11 +925,12 @@
                         <div style="color:#94a3b8;">Owner:</div><div style="font-weight:600;">${escapeHtml(p.name)}</div>
                         <div style="color:#94a3b8;">Email:</div><div style="font-weight:600;">${escapeHtml(p.email)}</div>
                         <div style="color:#94a3b8;">Mobile:</div><div style="font-weight:600;">${escapeHtml(p.mobile)}</div>
-                        <div style="color:#94a3b8;">Courts:</div><div style="font-weight:600;">3</div>
+                        <div style="color:#94a3b8;">Courts:</div><div style="font-weight:600;">${courtCount}</div>
                         <div style="color:#94a3b8;">Plan:</div><div style="font-weight:600;color:#10b981;">✨ Free Forever</div>
                         <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#10b981;">✅ Active</div>
                     </div>`;
                 watchForActivation('venues', venueId, finalSlug, 'venue');
+                postWelcomeBanner('venue', p.venue, finalSlug, logoUrl);
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
                 showAuthModal('register');
@@ -684,6 +942,20 @@
             const file=e.target.files[0];
             if(!file) return;
             const div=document.getElementById('orgGovtIdPreview');
+            div.style.display='block';
+            div.querySelector('img').src=URL.createObjectURL(file);
+        }
+        function previewOrgSelfie(e){
+            const file=e.target.files[0];
+            if(!file) return;
+            const div=document.getElementById('orgSelfiePreview');
+            div.style.display='block';
+            div.querySelector('img').src=URL.createObjectURL(file);
+        }
+        function previewRegImg(input, previewId){
+            const file=input.files[0];
+            if(!file) return;
+            const div=document.getElementById(previewId);
             div.style.display='block';
             div.querySelector('img').src=URL.createObjectURL(file);
         }
@@ -730,6 +1002,20 @@
                     const d=await r.json();
                     if(d.secure_url) govtIdUrl=d.secure_url;
                 } catch(e){ console.warn('ID upload failed:',e); }
+                // Upload group selfie to Cloudinary
+                let selfieUrl = '';
+                const selfieFile = document.getElementById('orgSelfieFile').files[0];
+                try {
+                    if (selfieFile) {
+                        const fd=new FormData();
+                        fd.append('file',selfieFile);
+                        fd.append('upload_preset',CQ_CONFIG.cloudinaryPreset);
+                        fd.append('public_id','org_photos/'+cred.user.uid);
+                        const r=await fetch('https://api.cloudinary.com/v1_1/'+CQ_CONFIG.cloudinaryCloud+'/image/upload',{method:'POST',body:fd});
+                        const d=await r.json();
+                        if(d.secure_url) selfieUrl=d.secure_url;
+                    }
+                } catch(e){ console.warn('Selfie upload failed:',e); }
                 const p = { uid: cred.user.uid, email, name, businessName, mobile, govtIdType, govtId, govtIdUrl };
                 const slug = p.businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organizer';
                 let finalSlug = slug;
@@ -746,6 +1032,7 @@
                     slug: finalSlug, createdAt: Date.now(),
                     ownerName: p.name, mobile: p.mobile, email: p.email,
                     govtId: p.govtId, govtIdType: p.govtIdType, govtIdUrl: p.govtIdUrl,
+                    photoUrl: selfieUrl,
                     activated: true, courtCount: 4,
                     session: null, queue: [], soloQueue: [], scheduledSessions: [],
                     history: [], leaderboard: {}, sales: [],
@@ -755,6 +1042,14 @@
                 });
                 await db.collection('users').doc(p.uid).set({ email: p.email, name: p.name, organizerId, createdAt: Date.now(), mobile: p.mobile });
                 await db.collection('slugs').doc(finalSlug).set({ organizerId, type: 'organizer' });
+                // Every organizer is automatically an affiliate — 20% on their own Open Play fees + referred venues/organizers
+                const affCode = p.businessName.toLowerCase().replace(/[^a-z0-9]+/g,'').substring(0,8)+Math.random().toString(36).substring(2,5);
+                await db.collection('affiliates').add({
+                    name: p.businessName, email: p.email.toLowerCase(), mobile: p.mobile,
+                    code: affCode.toUpperCase(), status: 'active', commissionRate: 0.20,
+                    totalPaid: 0, createdAt: Date.now(), uid: p.uid, organizerId,
+                    isOrganizerAffiliate: true
+                });
                 const ackNum = 'CQO-' + Date.now().toString(36).toUpperCase();
                 try {
                     const cfg = await db.collection('config').doc('emailjs').get();
@@ -764,7 +1059,7 @@
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: p.email, to_name: p.name,
                             subject: 'Your Organizer "' + p.businessName + '" is now LIVE! ✅',
-                            body: '✅ Great news! Your organizer account "' + p.businessName + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your organizer dashboard.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n🎮️ Add your photo\n💳 Set payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0999 883 0291'
+                            body: '✅ Great news! Your organizer account "' + p.businessName + '" has been approved and is now active!\n\n━━━ LOG IN ━━━\n\nGo to https://www.courtqpro.online/\nClick the "Log In" tab and enter your email & password.\nYou\'ll be redirected to your organizer dashboard.\n\n━━━ NEXT STEPS ━━━\n\nOnce you\'re logged in, you\'ll see an onboarding checklist at the top of your dashboard. Follow each step to complete your setup:\n\n🎮️ Add your photo\n💳 Set payment details\n🏓 Schedule your first session\n🔗 Share your portal link with players\n\nThat\'s it — takes less than 5 minutes!\n\n━━━ VIDEO GUIDES ━━━\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\nClick the "?" button (❓) throughout your dashboard — each page has built-in tips.\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119'
                         });
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
@@ -776,7 +1071,7 @@
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('setupScreen').style.display = 'none';
                 document.getElementById('successSubtitle').innerHTML = 'Your organizer account is now LIVE! ✅<br>You can start hosting Open Play sessions immediately.';
-                document.getElementById('successSteps').innerHTML = '1. Log in with your email and password<br>2. You\'ll find an onboarding checklist in your dashboard<br>3. Set up your photo, payment details, and first session<br>4. A <strong style="color:#2563eb;">₱5/player fee</strong> is added to each Open Play booking — paid by the player, not by you';
+                document.getElementById('successSteps').innerHTML = '1. Log in with your email and password<br>2. You\'ll find an onboarding checklist in your dashboard<br>3. Set up your photo, payment details, and first session<br>4. A <strong style="color:#2563eb;">₱5/player fee</strong> is added to each Open Play booking — paid by the player, not by you<br>5. <strong style="color:#f59e0b;">💰 You\'re now an affiliate!</strong> Earn 20% of all convenience fees from your own Open Plays and every venue/organizer you refer — track it in <strong>Affiliate Financials</strong> (your Financials tab)';
                 document.getElementById('successScreen').style.display = 'block';
                 document.getElementById('ackContent').innerHTML = `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:0.78rem;">
@@ -789,6 +1084,7 @@
                         <div style="color:#94a3b8;">Status:</div><div style="font-weight:600;color:#10b981;">✅ Active</div>
                     </div>`;
                 watchForActivation('organizers', organizerId, finalSlug, 'organizer');
+                postWelcomeBanner('organizer', p.businessName, finalSlug, selfieUrl);
             } catch (e) {
                 document.getElementById('loadingScreen').style.display = 'none';
                 showAuthModal('organizer');
@@ -869,7 +1165,7 @@
             'maildrop.cc','maildu.de','maildx.com','maileater.com','mailexpire.com',
             'mailfa.tk','mailforspam.com','mailfree.ga','mailfree.gq','mailfs.com','mailguard.me',
             'mailgutter.com','mailhazard.com','mailhazard.us','mailhex.com','mailhook.com',
-            'mailhub.top','mailimate.com','mailin8r.com','mailincubator.com','mailinator.co.uk',
+            'mailhub.top','mailimate.com','mailin8r.com','mailinator.co.uk',
             'mailinator.com','mailinator.gq','mailinator.info','mailinator.net','mailinator.org',
             'mailinator.us','mailinator2.com','mailincloud.com','mailinterest.com','mailismagic.com',
             'mailjunk.org','mailmate.com','mailme.ga','mailme.gq','mailmetrash.com','mailmoat.com',
@@ -985,7 +1281,6 @@
             document.getElementById('demoLeadName').value = '';
             document.getElementById('demoLeadEmail').value = '';
             document.getElementById('demoLeadPhone').value = '';
-            document.getElementById('demoLeadSchedule').value = '';
             document.getElementById('demoLeadConsent').checked = false;
             document.getElementById('demoLeadModal').classList.add('active');
         }
@@ -998,7 +1293,6 @@
             const name = document.getElementById('demoLeadName').value.trim();
             const email = document.getElementById('demoLeadEmail').value.trim();
             const phone = document.getElementById('demoLeadPhone').value.trim();
-            const schedule = document.getElementById('demoLeadSchedule').value.trim();
             const errEl = document.getElementById('demoLeadError');
             errEl.style.display = 'none';
             if(!name || !email || !phone){ errEl.textContent = 'Fill in all required fields.'; errEl.style.display = 'block'; return; }
@@ -1018,9 +1312,26 @@
             try {
                 const docRef = db.collection('demoLeads').doc();
                 await docRef.set({
-                    name, email, phone, schedule: schedule || '', verified: true, source: 'book-demo',
+                    name, email, phone, verified: true, source: 'watch-videos',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                try {
+                    const cfg = await db.collection('config').doc('emailjs').get();
+                        if (cfg.exists) {
+                        const ej = cfg.data();
+                        emailjs.init(ej.publicKey);
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: email, to_name: name,
+                            subject: 'Your CourtQ Pro Video Guides 🎬',
+                            body: 'Hi ' + name + ',\n\nThanks for your interest in CourtQ Pro! Here are your video guides:\n\n🎬 YouTube: https://www.youtube.com/@CourtQPro\n📘 Facebook: https://www.facebook.com/aiautomationexpert\n\nYou can also watch them right now:\n▶ Watch on YouTube: https://www.youtube.com/@CourtQPro\n📘 Follow on Facebook: https://www.facebook.com/aiautomationexpert\n\n━━━ NEED HELP? ━━━\n\n📧 apexmindagency@gmail.com\n📱 0976 290 7119'
+                        });
+                        await emailjs.send(ej.serviceId, ej.templateAuto, {
+                            to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
+                            subject: 'New "Watch Demo Videos" Lead: ' + name,
+                            body: 'A new lead requested the demo video guides:\n\nName: ' + name + '\nEmail: ' + email + '\nPhone: ' + phone + '\n\nView it in the Dev Dashboard (Demo Leads).'
+                        });
+                    }
+                } catch(e) { console.warn('EmailJS demo guide send failed:', e); }
                 document.getElementById('demoLeadForm').style.display = 'none';
                 document.getElementById('demoLeadSuccess').style.display = 'block';
             } catch(e) {
@@ -1135,28 +1446,30 @@
                 about:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>About CourtQ Pro</h2>
                 <p>CourtQ Pro is a smart venue management platform built for the Filipino pickleball boom. We provide court booking, queue management, financial tracking, and AI-powered insights for pickleball and racket sports venues.</p>
                 <p>Our platform enables venue owners to manage bookings, track finances, and grow their business — all from a single dashboard. Players can discover venues, book courts online, and pay via GCash or Maya.</p>
-                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a><br>📱 0999 883 0291 (GCash / Maya)</p>`,
+                <p>Built with ❤️ for the Filipino pickleball community.<br>Business email: <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a><br>📱 0976 290 7119 (GCash / Maya)</p>`,
 
-                privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
-                <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details and payment account information. When you book a demo, we collect your name, email address, phone number, and preferred schedule.</p>
+privacy:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Privacy Policy</h2>
+                <p><strong>Information We Collect:</strong> When you create an account or make a booking, we collect your name, email address, phone number, and payment reference numbers. Venue owners provide business information including venue details, court type, hourly rates, operating hours, amenities, social media links, and map location. Venue owners may also upload a venue logo and venue photos, which are stored via Cloudinary. When you book a demo, we collect your name, email address, phone number, and preferred schedule.</p>
+                <p><strong>Venue Owner Privacy:</strong> The personal name of a venue owner is never displayed on the public booking portal. Only venue business information (venue name, address, photos, court details, rates, and hours) is shown to players.</p>
                 <p><strong>How We Use Your Information:</strong> To process bookings, manage court schedules, process payments via GCash/Maya, communicate booking status, and improve our services. Demo lead information (name and email) is used to provide demo access and may be used for email communications about CourtQ Pro updates, features, and offers. You can unsubscribe from marketing emails at any time by replying to any email or contacting us.</p>
                 <p><strong>Legal Basis (GDPR):</strong> We process your data based on your consent, which you give by checking the consent checkbox when signing up or requesting a demo. You may withdraw consent at any time.</p>
-                <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion. We retain booking data as needed for business operations and financial records.</p>
-                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly — GCash and Maya handle all financial transactions.</p>
+                <p><strong>Data Storage:</strong> Your data is stored securely in Firebase Firestore (Google Cloud). Venue photos and logos are stored via Cloudinary. Demo lead data is stored in a separate collection from venue accounts and is retained until you request deletion. We retain booking data as needed for business operations and financial records.</p>
+                <p><strong>Third-Party Services:</strong> We use Firebase (Google) for authentication and database hosting, and Cloudinary for storing venue images. Email communications are sent via EmailJS. Payment references are stored but we do not process payments directly - GCash and Maya handle all financial transactions.</p>
                 <p><strong>Your Rights:</strong> You may request access to, correction of, or deletion of your personal data by contacting us at <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a>. You may also unsubscribe from marketing emails at any time.</p>
                 <p><strong>Cookies:</strong> We use essential cookies for authentication. No tracking or advertising cookies are used.</p>
-                <p><em>Last updated: July 2026</em></p>`,
+                <p><em>Last updated: August 2026</em></p>`,
 
                 terms:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Terms of Service</h2>
                 <p><strong>Acceptance:</strong> By using CourtQ Pro, you agree to these terms. By checking the consent checkbox during sign-up or demo registration, you explicitly accept these terms and our Privacy Policy. If you do not agree, do not use the platform.</p>
-                <p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, pricing, and availability. You agree to honor all confirmed bookings made through the platform.</p>
+                <p><strong>Venue Owners:</strong> You are responsible for the accuracy of your venue information, court type, hourly rates, operating hours, amenities, map location, and photos. You agree to honor all confirmed bookings made through the platform. Showcasing a venue on the booking portal is optional and displays only business information; your personal name is never shown to players.</p>
                 <p><strong>Players &amp; Demo Users:</strong> You agree to provide accurate information when booking or requesting a demo. No-shows or repeated cancellations may result in restricted access at the venue's discretion.</p>
                 <p><strong>Communications:</strong> By providing your email, you consent to receive communications related to your account, bookings, and platform updates. Demo users may receive marketing communications and can unsubscribe at any time.</p>
                 <p><strong>Payments:</strong> All payments are processed externally via GCash or Maya. CourtQ Pro does not handle or store financial instrument details. Payment reference numbers are stored for verification purposes only.</p>
+                <p><strong>Venue Showcase Content:</strong> Venue owners grant CourtQ Pro a non-exclusive license to display venue photos, logos, and business details on the public booking portal for the purpose of enabling player discovery and bookings. You confirm you have the right to use and display any uploaded images.</p>
                 <p><strong>Prohibited Uses:</strong> You may not use the platform for any illegal purpose, to harass others, or to disrupt the service.</p>
                 <p><strong>Limitation of Liability:</strong> CourtQ Pro is provided "as is." We are not liable for disputes between venues and players, third-party payment issues, or any indirect damages arising from platform use.</p>
                 <p><strong>Changes:</strong> We reserve the right to update these terms. Continued use after changes constitutes acceptance.</p>
-                <p><em>Last updated: July 2026</em></p>`,
+                <p><em>Last updated: August 2026</em></p>`,
 
                 disclaimer:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Disclaimer</h2>
                 <p><strong>General:</strong> CourtQ Pro provides a platform connecting venue owners with players. We do not own, operate, or manage any of the listed venues.</p>
@@ -1167,7 +1480,7 @@
 
                 contact:`<button class="modal-close" onclick="closeLegal()">✕</button><h2>Contact Us</h2>
                 <p><strong>Business Email:</strong> <a href="mailto:apexmindagency@gmail.com" style="color:#2563eb;">apexmindagency@gmail.com</a></p>
-                <p><strong>Phone:</strong> 📱 0999 883 0291</p>
+                <p><strong>Phone:</strong> 📱 0976 290 7119</p>
                 <p><strong>Facebook:</strong> <a href="https://www.facebook.com/aiautomationexpert" target="_blank" style="color:#2563eb;">facebook.com/aiautomationexpert</a></p>
                 <p><strong>Developer:</strong> For technical support, feature requests, or bug reports, email the address above.</p>
                 <p><strong>Data Privacy Requests:</strong> For data access, correction, or deletion requests, please email us with the subject line "Data Privacy Request."</p>

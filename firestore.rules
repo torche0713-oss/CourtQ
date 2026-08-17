@@ -170,11 +170,11 @@ service cloud.firestore {
     }
 
     // ──────────────────────────────────────────
-    // org_invoices — dev full access, organizer can read own
+    // org_invoices — dev full access, organizer can read own + create own pending session invoices
     // ──────────────────────────────────────────
     match /org_invoices/{invId} {
       allow read: if isDev() || (isAuth() && resource.data.organizerId != null && getOrganizerDoc(resource.data.organizerId) != null && getOrganizerDoc(resource.data.organizerId).ownerId == request.auth.uid);
-      allow create: if isDev();
+      allow create: if isDev() || (isAuth() && request.resource.data.organizerId != null && getOrganizerDoc(request.resource.data.organizerId) != null && getOrganizerDoc(request.resource.data.organizerId).ownerId == request.auth.uid && request.resource.data.status == 'pending' && request.resource.data.paidAt == null);
       allow update: if isDev() || (isAuth() && resource.data.organizerId != null && getOrganizerDoc(resource.data.organizerId) != null && getOrganizerDoc(resource.data.organizerId).ownerId == request.auth.uid);
       allow delete: if isDev();
     }
@@ -184,7 +184,8 @@ service cloud.firestore {
     // ──────────────────────────────────────────
     match /affiliates/{docId} {
       allow read: if isDev() || isAuth();
-      allow create: if isDev();
+      // Create: dev, or an authenticated organizer auto-enrolling themselves as an affiliate
+      allow create: if isDev() || (isAuth() && request.resource.data.uid == request.auth.uid);
       allow update: if isDev() || (isAuth() && resource.data.uid == request.auth.uid);
       allow delete: if isDev();
     }
