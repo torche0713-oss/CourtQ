@@ -389,7 +389,7 @@
             <p>Join the venues across the Philippines getting booked online every day — free, forever.</p>
             <div class="cta-row">
                 <button class="btn btn-success btn-lg" onclick="showAuthModal('register')">🏟️ Register My Venue — Free</button>
-                <button class="btn btn-outline" onclick="openDemoLeadForm()">▶ Watch Demo Videos</button>
+                <button class="btn btn-outline" onclick="openDemoLeadForm()">▶ See How It Works</button>
             </div>
         </div>
 
@@ -458,7 +458,7 @@
             <button class="modal-close" onclick="closeDemoLead()">✕</button>
             <div id="demoLeadContent">
                 <div id="demoLeadForm">
-                    <h2>▶ Watch Demo Videos Now</h2>
+                    <h2>▶ See How CourtQ Pro Works</h2>
                     <p style="margin-bottom:16px;">Leave your details and we'll email you our video guides straight away — step-by-step walkthroughs on YouTube and our Facebook page.</p>
                     <div class="form-group"><label>Your Name *</label><input type="text" id="demoLeadName" placeholder="Juan dela Cruz"></div>
                     <div class="form-group"><label>Email *</label><input type="email" id="demoLeadEmail" placeholder="you@email.com"></div>
@@ -468,7 +468,7 @@
                         <span>I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>. I consent to receive email communications about CourtQ Pro updates and offers.</span>
                     </label>
                     <div id="demoLeadError" class="error-msg"></div>
-                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">▶ Watch Demo Videos Now</button>
+                    <button class="btn btn-primary btn-full" onclick="submitDemoLead()">▶ Get Free Demo Videos</button>
                 </div>
                 <div id="demoLeadSuccess" style="display:none;text-align:center;padding:20px 0;">
                     <div style="font-size:3rem;margin-bottom:12px;">📧</div>
@@ -513,57 +513,73 @@
                 </div>
                 <button class="btn btn-primary btn-full" onclick="login()">Log In</button>
                 <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">▶ Watch Demo Videos Now</button>
+                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">▶ See How It Works</button>
             </div>
 
             <div class="auth-form active" id="form-register">
-                <div style="font-size:1.15rem;font-weight:900;color:#2563eb;text-align:center;letter-spacing:1px;margin-bottom:14px;">SHOWCASE YOUR VENUE</div>
-                <div class="form-group"><label>Venue Name *</label><input type="text" id="registerVenue" placeholder="e.g. Riverside Pickleball"></div>
-                <div class="form-group"><label>Your Name *</label><input type="text" id="registerName" placeholder="e.g. Juan dela Cruz"></div>
-                <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
-                <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 912 345 6789"></div>
-                <div class="form-group"><label>Venue Address *</label><input type="text" id="registerAddress" placeholder="e.g. 123 Main St, Makati City"></div>
-                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label>Court Type</label><select id="registerCourtType"><option value="">Select type</option><option>Indoor</option><option>Outdoor</option><option>Covered (Semi-Indoor)</option><option>Indoor &amp; Outdoor</option></select></div>
-                    <div class="form-group"><label>Number of Courts</label><input type="number" id="registerCourtCount" min="1" max="20" placeholder="e.g. 3"></div>
+                <div style="font-size:1.15rem;font-weight:900;color:#2563eb;text-align:center;letter-spacing:1px;margin-bottom:6px;">SHOWCASE YOUR VENUE</div>
+                <div id="regStepIndicator" style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;">
+                    <div id="regDot1" style="width:32px;height:6px;border-radius:3px;background:#2563eb;transition:background 0.3s;"></div>
+                    <div id="regDot2" style="width:32px;height:6px;border-radius:3px;background:rgba(0,0,0,0.1);transition:background 0.3s;"></div>
                 </div>
-                <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="registerRate" min="0" placeholder="e.g. 300"></div>
-                <div class="form-group"><label>Operating Hours</label><input type="text" id="registerHours" placeholder="e.g. 8:00 AM - 10:00 PM, Daily"></div>
-                <div class="form-group"><label>Social Media</label><input type="text" id="registerSocial" placeholder="e.g. facebook.com/YourVenue or @yourvenue"></div>
-                <div class="form-group"><label>Pin Your Location on the Map</label>
-                    <div id="regMap" style="height:200px;border-radius:10px;border:1px solid rgba(0,0,0,0.1);"></div>
-                    <div style="font-size:0.68rem;color:#64748b;margin-top:4px;line-height:1.5;">📍 Click the map to drop a pin — this fills in the latitude &amp; longitude below.</div>
+
+                <div id="regStep1">
+                    <div style="font-size:0.72rem;color:#94a3b8;text-align:center;margin-bottom:12px;">Step 1 of 2 — Required info</div>
+                    <div class="form-group"><label>Venue Name *</label><input type="text" id="registerVenue" placeholder="e.g. Riverside Pickleball"></div>
+                    <div class="form-group"><label>Your Name *</label><input type="text" id="registerName" placeholder="e.g. Juan dela Cruz"></div>
+                    <div class="form-group"><label>Email *</label><input type="email" id="registerEmail" placeholder="you@email.com"></div>
+                    <div class="form-group"><label>Mobile Number *</label><input type="tel" id="registerMobile" placeholder="+63 912 345 6789"></div>
+                    <div class="form-group"><label>Venue Address *</label><input type="text" id="registerAddress" placeholder="e.g. 123 Main St, Makati City"></div>
+                    <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
+                    <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#94a3b8;line-height:1.5;">
+                        <strong style="color:#10b981;">✅ Free for you.</strong> A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
+                    </div>
+                    <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#94a3b8;margin-bottom:12px;cursor:pointer;">
+                        <input type="checkbox" id="registerConsent" style="margin-top:2px;width:auto;">
+                        <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>.</span>
+                    </label>
+                    <button class="btn btn-primary btn-full" onclick="goToRegStep2()">Next: Add Venue Details →</button>
+                    <div style="text-align:center;margin:10px 0;font-size:0.72rem;color:#94a3b8;">🎯 Don't own a court but run Open Plays or a group? <a href="#" onclick="switchTab('organizer');return false;" style="color:#8b5cf6;font-weight:700;">Register as an Organizer instead →</a></div>
+                    <div class="divider">or</div>
+                    <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">▶ See How It Works</button>
                 </div>
-                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label>Latitude</label><input type="text" id="registerLat" placeholder="e.g. 14.5500"></div>
-                    <div class="form-group"><label>Longitude</label><input type="text" id="registerLng" placeholder="e.g. 121.0400"></div>
-                </div>
-                <div class="form-group" style="margin-bottom:10px;"><label>Amenities</label>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">
-                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenParking" style="width:auto;"> Parking</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenNightLights" style="width:auto;"> Night Lights</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenEquipment" style="width:auto;"> Equipment Rental</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenShowerLocker" style="width:auto;"> Shower / Locker</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenCafe" style="width:auto;"> Café / Food</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenAc" style="width:auto;"> A/C</label>
+
+                <div id="regStep2" style="display:none;">
+                    <div style="font-size:0.72rem;color:#94a3b8;text-align:center;margin-bottom:12px;">Step 2 of 2 — Optional details (fill later in Settings)</div>
+                    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="form-group"><label>Court Type</label><select id="registerCourtType"><option value="">Select type</option><option>Indoor</option><option>Outdoor</option><option>Covered (Semi-Indoor)</option><option>Indoor &amp; Outdoor</option></select></div>
+                        <div class="form-group"><label>Number of Courts</label><input type="number" id="registerCourtCount" min="1" max="20" placeholder="e.g. 3"></div>
+                    </div>
+                    <div class="form-group"><label>Rate per Hour (₱)</label><input type="number" id="registerRate" min="0" placeholder="e.g. 300"></div>
+                    <div class="form-group"><label>Operating Hours</label><input type="text" id="registerHours" placeholder="e.g. 8:00 AM - 10:00 PM, Daily"></div>
+                    <div class="form-group"><label>Social Media</label><input type="text" id="registerSocial" placeholder="e.g. facebook.com/YourVenue or @yourvenue"></div>
+                    <div class="form-group"><label>Pin Your Location on the Map</label>
+                        <div id="regMap" style="height:200px;border-radius:10px;border:1px solid rgba(0,0,0,0.1);"></div>
+                        <div style="font-size:0.68rem;color:#64748b;margin-top:4px;line-height:1.5;">📍 Click the map to drop a pin — this fills in the latitude &amp; longitude below.</div>
+                    </div>
+                    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="form-group"><label>Latitude</label><input type="text" id="registerLat" placeholder="e.g. 14.5500"></div>
+                        <div class="form-group"><label>Longitude</label><input type="text" id="registerLng" placeholder="e.g. 121.0400"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:10px;"><label>Amenities</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenParking" style="width:auto;"> Parking</label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenNightLights" style="width:auto;"> Night Lights</label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenEquipment" style="width:auto;"> Equipment Rental</label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenShowerLocker" style="width:auto;"> Shower / Locker</label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenCafe" style="width:auto;"> Café / Food</label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#334155;cursor:pointer;"><input type="checkbox" id="amenAc" style="width:auto;"> A/C</label>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="form-group"><label>Logo (photo)</label><input type="file" id="registerLogoFile" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewRegImg(this,'registerLogoPreview')"><div id="registerLogoPreview" style="display:none;margin-top:6px;"><img style="max-width:100%;max-height:80px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div></div>
+                        <div class="form-group"><label>Venue Photo</label><input type="file" id="registerVenuePhoto" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewRegImg(this,'registerVenuePreview')"><div id="registerVenuePreview" style="display:none;margin-top:6px;"><img style="max-width:100%;max-height:80px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div></div>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-outline btn-full" style="color:#64748b;border-color:rgba(0,0,0,0.12);background:#fff;" onclick="goToRegStep1()">← Back</button>
+                        <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
                     </div>
                 </div>
-                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group"><label>Logo (photo)</label><input type="file" id="registerLogoFile" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewRegImg(this,'registerLogoPreview')"><div id="registerLogoPreview" style="display:none;margin-top:6px;"><img style="max-width:100%;max-height:80px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div></div>
-                    <div class="form-group"><label>Venue Photo</label><input type="file" id="registerVenuePhoto" accept="image/png,image/jpeg,image/webp" style="font-size:0.78rem;padding:4px 0;" onchange="previewRegImg(this,'registerVenuePreview')"><div id="registerVenuePreview" style="display:none;margin-top:6px;"><img style="max-width:100%;max-height:80px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);"></div></div>
-                </div>
-                <div class="form-group"><label>Password *</label><input type="password" id="registerPass" placeholder="At least 6 characters"></div>
-                <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:10px;margin-bottom:12px;font-size:0.72rem;color:#94a3b8;line-height:1.5;">
-                    <strong style="color:#10b981;">✅ Free for you.</strong> A <strong style="color:#2563eb;">₱5/hr convenience fee</strong> is added to each online booking — paid by the player. You keep 100% of your rates.
-                </div>
-                <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.72rem;color:#94a3b8;margin-bottom:12px;cursor:pointer;">
-                    <input type="checkbox" id="registerConsent" style="margin-top:2px;width:auto;">
-                    <span>By signing up, I agree to the <a href="#" onclick="showLegal('privacy');return false;" style="color:#2563eb;">Privacy Policy</a> and <a href="#" onclick="showLegal('terms');return false;" style="color:#2563eb;">Terms of Service</a>.</span>
-                </label>
-                <button class="btn btn-success btn-full" onclick="registerVenue()">Register for Free →</button>
-                <div style="text-align:center;margin:10px 0;font-size:0.72rem;color:#94a3b8;">🎯 Don't own a court but run Open Plays or a group? <a href="#" onclick="switchTab('organizer');return false;" style="color:#8b5cf6;font-weight:700;">Register as an Organizer instead →</a></div>
-                <div class="divider">or</div>
-                <button class="btn btn-outline btn-full" onclick="closeAuthModal();openDemoLeadForm()">▶ Watch Demo Videos Now</button>
             </div>
 
             <div class="auth-form" id="form-organizer">
@@ -806,8 +822,7 @@
             const logoFile = document.getElementById('registerLogoFile').files[0];
             const photoFile = document.getElementById('registerVenuePhoto').files[0];
             const pass = document.getElementById('registerPass').value;
-            if (!venue || !name || !email || !mobile || !address || !pass) { showError('Fill in all fields.'); return; }
-            if (!courtType) { showError('Please select a court type to showcase your venue.'); return; }
+            if (!venue || !name || !email || !mobile || !address || !pass) { showError('Fill in all required fields.'); return; }
             if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
             if (!document.getElementById('registerConsent').checked) { showError('You must agree to the Privacy Policy and Terms of Service.'); return; }
             hideError();
@@ -951,6 +966,30 @@
             const div=document.getElementById('orgSelfiePreview');
             div.style.display='block';
             div.querySelector('img').src=URL.createObjectURL(file);
+        }
+        function goToRegStep2(){
+            hideMsgs();
+            const venue=document.getElementById('registerVenue').value.trim();
+            const name=document.getElementById('registerName').value.trim();
+            const email=document.getElementById('registerEmail').value.trim();
+            const mobile=document.getElementById('registerMobile').value.trim();
+            const address=document.getElementById('registerAddress').value.trim();
+            const pass=document.getElementById('registerPass').value;
+            if(!venue||!name||!email||!mobile||!address||!pass){showError('Fill in all required fields.');return;}
+            if(pass.length<6){showError('Password must be at least 6 characters.');return;}
+            if(!document.getElementById('registerConsent').checked){showError('You must agree to the Privacy Policy and Terms of Service.');return;}
+            hideError();
+            document.getElementById('regStep1').style.display='none';
+            document.getElementById('regStep2').style.display='block';
+            document.getElementById('regDot1').style.background='rgba(0,0,0,0.1)';
+            document.getElementById('regDot2').style.background='#2563eb';
+            if(typeof initRegisterMap==='function' && !document.getElementById('regMap')._leaflet_id) initRegisterMap();
+        }
+        function goToRegStep1(){
+            document.getElementById('regStep2').style.display='none';
+            document.getElementById('regStep1').style.display='block';
+            document.getElementById('regDot1').style.background='#2563eb';
+            document.getElementById('regDot2').style.background='rgba(0,0,0,0.1)';
         }
         function previewRegImg(input, previewId){
             const file=input.files[0];
@@ -1327,8 +1366,8 @@
                         });
                         await emailjs.send(ej.serviceId, ej.templateAuto, {
                             to_email: 'apexmindagency@gmail.com', to_name: 'Apex Mind Agency',
-                            subject: 'New "Watch Demo Videos" Lead: ' + name,
-                            body: 'A new lead requested the demo video guides:\n\nName: ' + name + '\nEmail: ' + email + '\nPhone: ' + phone + '\n\nView it in the Dev Dashboard (Demo Leads).'
+                            subject: 'New "See How It Works" Lead: ' + name,
+                            body: 'A new lead requested demo video guides:\n\nName: ' + name + '\nEmail: ' + email + '\nPhone: ' + phone + '\n\nView it in the Dev Dashboard (Demo Leads).'
                         });
                     }
                 } catch(e) { console.warn('EmailJS demo guide send failed:', e); }

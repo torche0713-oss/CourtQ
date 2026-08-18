@@ -82,6 +82,19 @@
         .nav-tab:hover { color: #94a3b8; }
         .nav-tab.active { color: #2563eb; border-bottom-color: #2563eb; background: rgba(37,99,235,0.05); }
 
+        .nav-dropdown { position: relative; }
+        .nav-dropdown-menu {
+            display: none; position: absolute; top: 100%; left: 0; z-index: 300;
+            background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15); min-width: 180px; padding: 6px 0;
+        }
+        .nav-dropdown-menu.show { display: block; }
+        .nav-dropdown-menu a {
+            display: block; padding: 10px 16px; font-size: 0.82rem; font-weight: 600;
+            color: #1e293b; cursor: pointer; transition: background 0.2s;
+        }
+        .nav-dropdown-menu a:hover { background: rgba(37,99,235,0.08); color: #2563eb; }
+
         .page { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
         .page.active { display: block; }
 
@@ -562,22 +575,25 @@
         <span class="help-btn" id="bookingHelpBtn" onclick="showHelp('booking')" style="cursor:pointer;font-size:0.7rem;color:#64748b;border:1px solid #555;border-radius:50%;display:inline-block;width:16px;height:16px;text-align:center;line-height:16px;vertical-align:middle;margin-right:2px;">?</span>
         <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/tv-display.html?venue='+S.venueSlug).then(()=>showNotif('TV Display link copied!')).catch(()=>showNotif('Failed to copy'))">📺 Share TV Link</button>
         <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(window.location.origin+'/score.html?venue='+S.venueSlug).then(()=>showNotif('Mobile Scoring link copied!')).catch(()=>showNotif('Failed to copy'))">📱 Share Scoring Link</button>
-        <button class="btn btn-outline btn-sm" onclick="openSettings()" id="settingsBtn">⚙️ Settings</button>
-        <button class="btn btn-outline btn-sm" onclick="setGeminiKey()">🔮 AI</button>
-        <button class="btn btn-outline btn-sm" onclick="aiDailyBriefing()">📋 AI Briefing</button>
         <button class="btn btn-outline btn-sm" onclick="setLang(_cqLang==='en'?'ms':'en')" id="langToggle">EN / BM</button>
         <button class="btn btn-outline btn-sm" onclick="logout()" style="color:#ef4444;border-color:rgba(239,68,68,0.3);">🚪 Logout</button>
     </div>
 </header>
 
 <nav class="main-nav">
-    <button class="nav-tab active" id="dashboardBtn" onclick="showPage('dashboard',this)">📋 Dashboard</button>
+    <button class="nav-tab active" id="dashboardBtn" onclick="showPage('dashboard',this)">🏠 Home</button>
     <button class="nav-tab" id="openplayBtn" onclick="showPage('openplay',this)">🏓 Open Play</button>
-    <button class="nav-tab" onclick="showPage('financials',this)" id="financialsTab" title="Set an access code in Settings → Financials Access Code first">💰 Financials</button>
-    <button class="nav-tab" id="leaderboardBtn" onclick="showPage('leaderboard',this)">🏆 Leaderboard</button>
-    <button class="nav-tab" id="historyBtn" onclick="showPage('history',this)">📋 History</button>
-    <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev Dashboard</button>
-    <button class="nav-tab" id="tournamentsBtn" onclick="showPage('tournaments',this)">🏆 Tournaments</button>
+    <button class="nav-tab" id="settingsBtn" onclick="showPage('settings',this)">⚙️ Settings</button>
+    <div class="nav-dropdown" id="moreDropdown">
+        <button class="nav-tab" id="moreBtn" onclick="toggleMoreMenu()">📋 More ▾</button>
+        <div class="nav-dropdown-menu" id="moreMenu">
+            <a onclick="showPage('financials',null);closeMoreMenu();">💰 Financials</a>
+            <a onclick="showPage('tournaments',null);closeMoreMenu();">🏆 Tournaments</a>
+            <a onclick="showPage('leaderboard',null);closeMoreMenu();">🏆 Leaderboard</a>
+            <a onclick="showPage('history',null);closeMoreMenu();">📋 History</a>
+        </div>
+    </div>
+    <button class="nav-tab" onclick="showPage('dev',this)" id="devTabBtn" style="display:none;">💻 Dev</button>
 </nav>
 
 <!-- PENDING APPROVAL SCREEN (shown when venue/organizer is not activated) -->
@@ -843,6 +859,106 @@
         <div class="courts-manage-grid" id="courtsManageGrid"></div>
     </div>
 
+</div>
+
+<!-- SETTINGS PAGE -->
+<div class="page" id="page-settings">
+    <div class="card">
+        <div class="card-title"><span>⚙️ Settings</span></div>
+        <div style="margin-bottom:14px;">
+            <div style="font-weight:700;font-size:0.85rem;color:#2563eb;margin-bottom:10px;">📱 Payment Details (for customer reference)</div>
+            <div class="form-group"><label>GCash Number</label><input type="text" id="sGcashNum" placeholder="0123456789"></div>
+            <div class="form-group"><label>GCash Name</label><input type="text" id="sGcashName" placeholder="Juan dela Cruz"></div>
+            <div class="form-group"><label>Maya Number</label><input type="text" id="sMayaNum" placeholder="0123456789"></div>
+            <div class="form-group"><label>Maya Name</label><input type="text" id="sMayaName" placeholder="Juan dela Cruz"></div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div id="logoSectionLabel" style="font-weight:700;font-size:0.85rem;color:#6366f1;margin-bottom:10px;">🖼️ Venue Logo</div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="flex:1;min-width:200px;">
+                    <div class="form-group"><label>Upload Image</label><input type="file" id="sLogoFile" accept="image/png,image/jpeg,image/webp,image/gif" style="font-size:0.78rem;padding:4px 0;"></div>
+                    <button class="btn btn-primary btn-sm" onclick="uploadLogo()" id="uploadLogoBtn" style="margin-top:4px;">☁️ Upload</button>
+                    <span id="uploadLogoStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
+                </div>
+                <div style="text-align:center;">
+                    <img id="sLogoPreview" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.03);display:none;">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label>Or paste image URL</label><input type="url" id="sLogoUrl" placeholder="https://example.com/logo.png" oninput="previewLogoUrl()"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;">Upload a PNG, JPG, or WebP file. Max 2MB. Recommended: 200x200px or smaller.</div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div id="venuePhotoSectionLabel" style="font-weight:700;font-size:0.85rem;color:#0ea5e9;margin-bottom:10px;">📸 Venue Photo</div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <div style="flex:1;min-width:200px;">
+                    <div class="form-group"><label>Upload Image</label><input type="file" id="sVenuePhotoFile" accept="image/png,image/jpeg,image/webp,image/gif" style="font-size:0.78rem;padding:4px 0;"></div>
+                    <button class="btn btn-primary btn-sm" onclick="uploadVenuePhoto()" id="uploadVenuePhotoBtn" style="margin-top:4px;">☁️ Upload</button>
+                    <span id="uploadVenuePhotoStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
+                </div>
+                <div style="text-align:center;">
+                    <img id="sVenuePhotoPreview" style="width:120px;height:80px;object-fit:cover;border-radius:10px;border:2px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.03);display:none;">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label>Or paste image URL</label><input type="url" id="sVenuePhotoUrl" placeholder="https://example.com/venue.jpg" oninput="previewVenuePhotoUrl()"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;">Upload a PNG, JPG, or WebP file. Max 2MB. Recommended: 1200x800px or smaller. Shows at the top of your portal.</div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div style="font-weight:700;font-size:0.85rem;color:#10b981;margin-bottom:10px;">📍 Pin Your Location</div>
+            <div class="form-group"><label>Place / Address</label><input type="text" id="sVenueAddress" placeholder="e.g. 123 P. Dela Rosa St, Makati City"></div>
+            <div style="display:flex;gap:10px;">
+                <div class="form-group" style="flex:1;"><label>Latitude</label><input type="text" id="sLat" placeholder="e.g. 14.5547" inputmode="decimal"></div>
+                <div class="form-group" style="flex:1;"><label>Longitude</label><input type="text" id="sLng" placeholder="e.g. 121.0244" inputmode="decimal"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" type="button" onclick="useMyLocation()" style="margin-top:2px;">📍 Use My Current Location</button>
+            <span id="locStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
+            <div id="settingsMapWrap" style="margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,0.12);height:240px;position:relative;">
+                <div id="settingsMap" style="width:100%;height:100%;"></div>
+                <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:0.7rem;color:#fff;background:rgba(0,0,0,0.55);padding:4px 8px;pointer-events:none;">📌 Click anywhere on the map to drop a pin, or drag the pin to fine-tune</div>
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Pin your venue on the map, or tap "Use My Current Location". Coordinates fill automatically so players can find you.</div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div style="font-weight:700;font-size:0.85rem;color:#f59e0b;margin-bottom:10px;">🎉 Amenities</div>
+            <div class="form-group"><label>Amenities (comma separated)</label><input type="text" id="sAmenities" placeholder="e.g. Parking, Wifi, Aircon, Shower, Pro Shop"></div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div style="font-weight:700;font-size:0.85rem;color:#2563eb;margin-bottom:10px;">📱 Social Media</div>
+            <div class="form-row">
+                <div class="form-group"><label>Facebook</label><input type="url" id="sFb" placeholder="https://facebook.com/..."></div>
+                <div class="form-group"><label>Instagram</label><input type="url" id="sIg" placeholder="https://instagram.com/..."></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>TikTok</label><input type="url" id="sTt" placeholder="https://tiktok.com/@..."></div>
+                <div class="form-group"><label>Website</label><input type="url" id="sWeb" placeholder="https://..."></div>
+            </div>
+        </div>
+        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
+            <div style="font-weight:700;font-size:0.85rem;color:#f59e0b;margin-bottom:10px;">🔒 Financials Access Code</div>
+            <div class="form-group"><label>Set Access Code (4-6 digits)</label><input type="text" id="sAccessCode" placeholder="e.g. 1234" maxlength="6" inputmode="numeric"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;">Share this code with the venue owner to access the Financials page.</div>
+        </div>
+        <div id="staffSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);display:none;">
+            <div style="font-weight:700;font-size:0.85rem;color:#10b981;margin-bottom:10px;">👥 Staff Management</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="email" id="sStaffEmail" autocomplete="off" placeholder="staff@email.com" style="flex:1;padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;">
+                <button class="btn btn-primary btn-sm" onclick="addStaff()">📧 Invite</button>
+            </div>
+            <div id="staffList" style="font-size:0.85rem;"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Enter an email and click Invite — they'll receive an email with a link to create their account. Staff can access the dashboard but not Financials or Settings.</div>
+        </div>
+        <div id="ownerSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);display:none;">
+            <div style="font-weight:700;font-size:0.85rem;color:#ef4444;margin-bottom:10px;">👑 Co-Owners</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="email" id="sOwnerEmail" autocomplete="off" placeholder="coowner@email.com" style="flex:1;padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;">
+                <button class="btn btn-primary btn-sm" onclick="addOwner()">📧 Invite</button>
+            </div>
+            <div id="ownerList" style="font-size:0.85rem;"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Enter an email and click Invite — they'll receive an email with a link to create their account. Co-owners have full access — Financials, Settings, Confirmations, and all dashboard features.</div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+        </div>
+    </div>
 </div>
 
 <!-- FINANCIALS PAGE -->
@@ -1389,30 +1505,35 @@
                     <input type="radio" name="opMode" value="winnersSplit" onchange="onOpModeChange('winnersSplit')">
                     <span style="font-weight:600;font-size:0.82rem;">Winners Stay & Split</span>
                 </label>
-                <label style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+            </div>
+            <div id="sesModeInfo" style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
+            <div style="margin-top:8px;">
+                <a onclick="document.getElementById('advancedOpModes').style.display=document.getElementById('advancedOpModes').style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'▼ Hide Advanced':'▶ Show Advanced';" style="font-size:0.75rem;color:#8b5cf6;cursor:pointer;font-weight:600;">▶ Show Advanced</a>
+            </div>
+            <div id="advancedOpModes" style="display:none;margin-top:8px;">
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;margin-bottom:8px;">
                     <input type="radio" name="opMode" value="roundRobin" onchange="onOpModeChange('roundRobin')">
                     <span style="font-weight:600;font-size:0.82rem;">Round Robin</span>
                 </label>
-            </div>
-            <div id="sesModeInfo" style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
-            <div id="rrGameTypeRow" style="display:none;margin-top:8px;">
-                <label style="font-size:0.78rem;font-weight:600;color:#94a3b8;">Game Type</label>
-                <div style="display:flex;gap:8px;margin-top:4px;">
-                    <label style="display:flex;align-items:center;gap:6px;background:rgba(37,99,235,0.08);padding:6px 12px;border-radius:8px;cursor:pointer;flex:1;">
-                        <input type="radio" name="rrGameType" value="doubles" checked>
-                        <span style="font-weight:600;font-size:0.8rem;">Doubles (2v2)</span>
-                    </label>
-                    <label style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,0.08);padding:6px 12px;border-radius:8px;cursor:pointer;flex:1;">
-                        <input type="radio" name="rrGameType" value="singles">
-                        <span style="font-weight:600;font-size:0.8rem;">Singles (1v1)</span>
-                    </label>
+                <div id="rrGameTypeRow" style="display:none;margin-top:8px;">
+                    <label style="font-size:0.78rem;font-weight:600;color:#94a3b8;">Game Type</label>
+                    <div style="display:flex;gap:8px;margin-top:4px;">
+                        <label style="display:flex;align-items:center;gap:6px;background:rgba(37,99,235,0.08);padding:6px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                            <input type="radio" name="rrGameType" value="doubles" checked>
+                            <span style="font-weight:600;font-size:0.8rem;">Doubles (2v2)</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,0.08);padding:6px 12px;border-radius:8px;cursor:pointer;flex:1;">
+                            <input type="radio" name="rrGameType" value="singles">
+                            <span style="font-weight:600;font-size:0.8rem;">Singles (1v1)</span>
+                        </label>
+                    </div>
                 </div>
+                <label id="loopingLabel" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(99,102,241,0.08);border-radius:8px;cursor:pointer;">
+                    <input type="checkbox" id="sesLooping">
+                    <span style="font-weight:600;font-size:0.82rem;">Looping Mode</span>
+                    <span style="font-size:0.7rem;color:#94a3b8;">After game, all players go back to the queue</span>
+                </label>
             </div>
-            <label id="loopingLabel" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(99,102,241,0.08);border-radius:8px;cursor:pointer;">
-                <input type="checkbox" id="sesLooping">
-                <span style="font-weight:600;font-size:0.82rem;">🔄 Looping Mode</span>
-                <span style="font-size:0.7rem;color:#94a3b8;">After game, all players go back to the queue</span>
-            </label>
         </div>
         <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
             <div id="sesCourtCheckboxes" class="ses-court-grid"></div>
@@ -1465,17 +1586,22 @@
                     <input type="radio" name="schedOpMode" value="winnersSplit" onchange="document.getElementById('schedOpLoopRow').style.display='none'">
                     <span style="font-weight:600;font-size:0.82rem;">Winners Stay & Split</span>
                 </label>
-                <label style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;">
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
+            <div style="margin-top:8px;">
+                <a onclick="document.getElementById('advancedSchedOpModes').style.display=document.getElementById('advancedSchedOpModes').style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'▼ Hide Advanced':'▶ Show Advanced';" style="font-size:0.75rem;color:#8b5cf6;cursor:pointer;font-weight:600;">▶ Show Advanced</a>
+            </div>
+            <div id="advancedSchedOpModes" style="display:none;margin-top:8px;">
+                <label style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,0.08);padding:8px 12px;border-radius:8px;cursor:pointer;flex:1;margin-bottom:8px;">
                     <input type="radio" name="schedOpMode" value="roundRobin" onchange="document.getElementById('schedOpLoopRow').style.display='none'">
                     <span style="font-weight:600;font-size:0.82rem;">Round Robin</span>
                 </label>
+                <label id="schedOpLoopRow" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(99,102,241,0.08);border-radius:8px;cursor:pointer;">
+                    <input type="checkbox" id="schedOpLooping">
+                    <span style="font-weight:600;font-size:0.82rem;">Looping Mode</span>
+                    <span style="font-size:0.7rem;color:#94a3b8;">After game, all players go back to the queue</span>
+                </label>
             </div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Groups of 4 rotate in and out together on each timer.</div>
-            <label id="schedOpLoopRow" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:rgba(99,102,241,0.08);border-radius:8px;cursor:pointer;">
-                <input type="checkbox" id="schedOpLooping">
-                <span style="font-weight:600;font-size:0.82rem;">🔄 Looping Mode</span>
-                <span style="font-size:0.7rem;color:#94a3b8;">After game, all players go back to the queue</span>
-            </label>
         </div>
         <div class="form-group" style="margin-bottom:6px;"><label>Assign Courts</label>
             <div id="schedOpCourts" class="ses-court-grid"></div>
@@ -2112,17 +2238,17 @@ function isCourtComplete(c){
 function getOnboardingSteps(){
     if(IS_ORGANIZER){
         return [
-            {id:'logo', icon:'🖼️', label:'Add Your Group Selfie / Photo', tip:'Upload a selfie or photo in Settings — or use the one from signup', action:()=>openSettings(), done:()=>!!(S.photoUrl||S.logoUrl)},
-            {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info', action:()=>openSettings(), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
-            {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
+            {id:'logo', icon:'🖼️', label:'Add Your Group Selfie / Photo', tip:'Upload a selfie or photo in Settings — or use the one from signup', action:()=>showPage('settings',document.getElementById('settingsBtn')), done:()=>!!(S.photoUrl||S.logoUrl)},
+            {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info', action:()=>showPage('settings',document.getElementById('settingsBtn')), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
+            {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.getElementById('openplayBtn'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
             {id:'portal', icon:'🔗', label:'Publish Your Portal Link', tip:'Send to players so they can join', action:()=>publishPortalLink(), done:()=>!!S._portalShared},
         ];
     }
     return [
         {id:'courts', icon:'🏟️', label:'Review Your Courts & Rates', tip:'Your courts were created at registration — review or edit them', action:()=>showPage('dashboard',document.getElementById('dashboardBtn')), done:()=>(S.courts||[]).some(isCourtComplete)},
-        {id:'showcase', icon:'🖼️', label:'Review Your Venue Showcase', tip:'Check your logo, venue photo, hours, and amenities in Settings', action:()=>openSettings(), done:()=>!!S.logoUrl},
-        {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info so players can pay online', action:()=>openSettings(), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
-        {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.querySelector('.nav-tab'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
+        {id:'showcase', icon:'🖼️', label:'Review Your Venue Showcase', tip:'Check your logo, venue photo, hours, and amenities in Settings', action:()=>showPage('settings',document.getElementById('settingsBtn')), done:()=>!!S.logoUrl},
+        {id:'payment', icon:'💳', label:'Set Payment Details', tip:'Add your GCash or Maya info so players can pay online', action:()=>showPage('settings',document.getElementById('settingsBtn')), done:()=>(S.paymentInfo&&S.paymentInfo.gcash&&S.paymentInfo.gcash.number)||(S.paymentInfo&&S.paymentInfo.maya&&S.paymentInfo.maya.number)},
+        {id:'session', icon:'🏓', label:'Schedule Your First Session', tip:'Create an Open Play session', action:()=>{showPage('openplay',document.getElementById('openplayBtn'));setTimeout(()=>openScheduleOpModal(),300);}, done:()=>(S.scheduledSessions||[]).length>0},
         {id:'portal', icon:'🔗', label:'Publish Your Portal Link', tip:'Copy your booking link to share with players', action:()=>publishPortalLink(), done:()=>!!S._portalShared},
     ];
 }
@@ -2723,6 +2849,7 @@ function showPage(id,el){
     if(el) el.classList.add('active');
     const actions={
         dashboard:()=>{document.getElementById('tlDate').value=getTodayISO();renderConfirmations();renderBookingTimeline();renderConflicts();renderBookings();renderBookingCourtSelect();renderCourtsManage();},
+        settings:()=>{openSettings();},
         tournaments:()=>{backToTournamentList();},
         leaderboard:renderLeaderboard,
         history:renderHistory,
@@ -2748,6 +2875,20 @@ function showPage(id,el){
     };
     if(actions[id]) actions[id]();
 }
+
+// ===================== MORE DROPDOWN =====================
+function toggleMoreMenu(){
+    const menu=document.getElementById('moreMenu');
+    menu.classList.toggle('show');
+}
+function closeMoreMenu(){
+    const menu=document.getElementById('moreMenu');
+    if(menu) menu.classList.remove('show');
+}
+document.addEventListener('click',e=>{
+    const dd=document.getElementById('moreDropdown');
+    if(dd&&!dd.contains(e.target)) closeMoreMenu();
+});
 
 // ===================== COURT MANAGEMENT =====================
 function openAddCourtModal(){ document.getElementById('addCourtModal').classList.add('active'); }
@@ -4918,7 +5059,6 @@ function openSettings(){
     document.getElementById('sVenuePhotoFile').value='';
     renderStaffList();
     renderOwnerList();
-    document.getElementById('settingsModal').classList.add('active');
     initSettingsMap();
     checkInviteBadges();
 }
@@ -5075,7 +5215,7 @@ function saveSettings(){
         website:document.getElementById('sWeb').value.trim()
     };
     S.socialMedia=S.socials.facebook||S.socials.instagram||S.socials.tiktok||S.socials.website||'';
-    closeModal('settingsModal');saveState();showNotif('Settings saved!');
+    showNotif('Settings saved!');saveState();
 }
 let _settingsMap=null,_settingsMarker=null;
 const PH_DEFAULT=[14.5995,120.9842];
@@ -7580,7 +7720,6 @@ function initPresence(){
             // Hide owner-only UI for staff
             if (!IS_OWNER) {
                 document.getElementById('settingsBtn').style.display = 'none';
-                document.getElementById('financialsTab').style.display = 'none';
             }
             // Hide organizer-irrelevant tabs
             if (IS_ORGANIZER) {
@@ -7663,13 +7802,13 @@ function setupDevOnlyMode(){
     const bh=document.getElementById('bookingHelpBtn');
     if(bh) bh.style.display='none';
     // Keep only the Dev Dashboard nav tab
-    ['openplayBtn','dashboardBtn','leaderboardBtn','historyBtn','tournamentsBtn','financialsTab'].forEach(id=>{
+    ['openplayBtn','dashboardBtn','settingsBtn','moreDropdown'].forEach(id=>{
         const el=document.getElementById(id);
         if(el) el.style.display='none';
     });
     document.getElementById('devTabBtn').style.display='';
     // Hide venue pages and helpers
-    ['openplay','dashboard','leaderboard','history','tournaments','financials'].forEach(id=>{
+    ['openplay','dashboard','settings','leaderboard','history','tournaments','financials'].forEach(id=>{
         const el=document.getElementById('page-'+id);
         if(el) el.classList.remove('active');
     });
