@@ -1410,54 +1410,6 @@
     </div>
 </div>
 
-<!-- CONTRACT MODAL -->
-<div class="modal-overlay" id="contractModal">
-    <div class="modal" style="max-width:550px;">
-        <div class="modal-title">📝 Contract Details</div>
-        <input type="hidden" id="cVenueId">
-        <div class="form-group"><label>Venue Name</label><input type="text" id="cVenueName" placeholder="Venue name"></div>
-        <div class="form-group"><label>Owner Name</label><input type="text" id="cOwnerName" placeholder="Owner name"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="form-group"><label>Original # of Courts</label><input type="number" id="cOrigCourts" min="0"></div>
-            <div class="form-group"><label>Total Courts Today</label><input type="number" id="cTotalCourts" min="0"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="form-group"><label>Contract Start</label><input type="date" id="cStartDate"></div>
-            <div class="form-group"><label>Contract End</label><input type="date" id="cEndDate"></div>
-        </div>
-        <div class="form-group"><label>Monthly Retainer (₱)</label><input type="number" id="cMonthlyRetainer" min="0" step="100"></div>
-        <div class="modal-actions">
-            <button class="btn btn-primary" onclick="saveContract()">💾 Save Contract</button>
-            <button class="btn btn-outline" onclick="closeModal('contractModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- PAYMENT MODAL -->
-<div class="modal-overlay" id="paymentModal">
-    <div class="modal" style="max-width:450px;">
-        <div class="modal-title">💰 Add Payment</div>
-        <input type="hidden" id="pVenueId">
-        <div class="form-group"><label>Transaction Number</label><input type="text" id="pTxNo" placeholder="e.g. TXN-001"></div>
-        <div class="form-group"><label>Amount Due (₱)</label><input type="number" id="pAmount" min="0" step="100"></div>
-        <div class="form-group"><label>Due Date</label><input type="date" id="pDueDate"></div>
-        <div class="form-group"><label>Status</label>
-            <select id="pStatus" style="padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;width:100%;">
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-                <option value="cancelled">Cancelled</option>
-            </select>
-        </div>
-        <div class="form-group"><label>Paid At</label><input type="date" id="pPaidAt"></div>
-        <div class="form-group"><label>Notes</label><input type="text" id="pNotes" placeholder="Optional notes"></div>
-        <div class="modal-actions">
-            <button class="btn btn-primary" onclick="savePayment()">💾 Save Payment</button>
-            <button class="btn btn-outline" onclick="closeModal('paymentModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
 <!-- ONLINE BOOKING PORTAL -->
 <!-- MODALS -->
 <div class="modal-overlay" id="sessionModal">
@@ -5693,7 +5645,6 @@ function removeCost(idx){
 }
 
 // ===================== DEV DASHBOARD =====================
-let _devContracts = {};
 let _devVenues = [];
 async function renderDevDashboard(){
     document.getElementById('devVenuesList').innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading venues...</p></div>';
@@ -5751,19 +5702,8 @@ async function renderDevDashboard(){
                 organizers.push({slug:slugDoc.id,venueId,data:vData,name:vData.businessName||vData.name||'Unnamed',owner:o,totalPlayers,feeAccrued,sessions,online:vData.online===true,lastSeen:vData.lastSeen||0});
                 continue;
             }
-            if(vData.plan==='founding') {/* founding plan venue */}
-            const contractSnap=await db.collection('contracts').doc(venueId).get();
-            const contract=contractSnap.exists?contractSnap.data():null;
-            if(contract){_devContracts[venueId]=contract;}
             const totalCourts=(vData.courts||[]).length;
-            const origCourts=contract?contract.originalCourts:totalCourts;
-            const added=totalCourts-origCourts;
-            let dueAmt=0;
-            if(contract&&contract.payments){
-                const pendingPmts=contract.payments.filter(p=>p.status==='pending'||p.status==='unpaid');
-                dueAmt=pendingPmts.reduce((s,p)=>s+(p.amount||0),0);
-            }
-            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',data:vData,totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId],referralCode:vData.referralCode||'',online:vData.online===true,lastSeen:vData.lastSeen||0});
+            venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',data:vData,totalCourts,owner:ownerMap[venueId],referralCode:vData.referralCode||'',online:vData.online===true,lastSeen:vData.lastSeen||0});
         }
         _devVenues=venues;
         document.getElementById('devVenueCount').textContent=venues.length+organizers.length+pending.length;
@@ -5801,13 +5741,7 @@ async function renderDevDashboard(){
         }
         if(venues.length>0){
             html+=`<div style="font-size:0.75rem;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">✅ Active Venues (${venues.length})</div>`;
-            const now=new Date();
             venues.forEach(v=>{
-                const c=v.contract;
-                const isActive=c&&(!c.endDate||new Date(c.endDate)>=now);
-                const statusIcon=isActive?'🟢':c?'🔴':'⚪';
-                const statusLabel=isActive?'Active':c?'Expired':'No Contract';
-                const latestPmt=c&&c.payments&&c.payments.length>0?c.payments.reduce((a,b)=>new Date(a.dueDate||0)>new Date(b.dueDate||0)?a:b):null;
                 const o=v.owner||{};
                 const progress=calcOnboardingProgress(v.data||{},false);
                 const pLabeled=progress.steps.map(s=>`<span style="color:${s.done?'#10b981':'#ef4444'};font-size:0.68rem;">${s.done?'✅':'❌'} ${s.label}</span>`).join(' · ');
@@ -5815,29 +5749,18 @@ async function renderDevDashboard(){
                 html+=`<div style="background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;min-width:200px;">
-                            <div style="font-weight:700;">${statusIcon} ${escapeHtml(v.name)}</div>
+                            <div style="font-weight:700;">${escapeHtml(v.name)}</div>
                             <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">/${escapeHtml(v.slug)} · 📧 ${escapeHtml(o.email||'?')}${v.referralCode?` · 🤝 <span style="color:#10b981;font-weight:600;">${escapeHtml(v.referralCode)}</span>`:''}</div>
-                            ${c?`<div style="font-size:0.72rem;color:#94a3b8;">👤 ${escapeHtml(c.ownerName||o.name||'N/A')} · 🏟️ ${v.origCourts}→${v.totalCourts} (${v.added>=0?'+':''}${v.added})`:'<div style="font-size:0.72rem;color:#64748b;">No contract set up</div>'}
+                            <div style="font-size:0.72rem;color:#64748b;">🏟️ ${v.totalCourts} courts</div>
                             <div style="font-size:0.72rem;margin-top:4px;color:${progress.complete?'#10b981':'#f59e0b'};">Onboarding: ${progress.doneCount}/${progress.total} ${progress.complete?'✅ Complete':''}</div>
                             <div style="margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 8px;">${pLabeled}</div>
                             <div style="font-size:0.72rem;margin-top:2px;">${presenceHtml}</div>
                         </div>
-                        <div style="text-align:right;">
-                            ${c?`<div style="font-weight:800;color:#8b5cf6;">₱${(c.monthlyRetainer||0).toLocaleString()}/mo</div>
-                            <div style="font-size:0.7rem;color:#94a3b8;">${escapeHtml(c.startDate||'?')} → ${escapeHtml(c.endDate||'?')}</div>
-                            <div style="font-size:0.7rem;color:${v.dueAmt>0?'#ef4444':'#10b981'};">Due: ₱${v.dueAmt.toLocaleString()}</div>
-                            <div style="font-size:0.65rem;color:#64748b;">${statusLabel}</div>`:'<div style="font-size:0.7rem;color:#64748b;">${statusLabel}</div>'}
-                        </div>
                     </div>
                     <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-                        ${c?`<button class="btn btn-outline btn-sm" onclick="editContract('${v.venueId}')">✏️ Edit Contract</button>
-                        <button class="btn btn-outline btn-sm" onclick="addPayment('${v.venueId}')">💰 Add Payment</button>
-                        <button class="btn btn-outline btn-sm" onclick="viewPayments('${v.venueId}')">📋 Payments (${(c.payments||[]).length})</button>`:
-                        `<button class="btn btn-primary btn-sm" onclick="editContract('${v.venueId}')">➕ Create Contract</button>`}
                         ${o.email?`<button class="btn btn-outline btn-sm" onclick="sendReminder('${v.venueId}','${v.slug}','${o.email.replace(/'/g,"\\'")}','${(o.name||'Valued Partner').replace(/'/g,"\\'")}')">📧 Remind</button>`:''}
                         <button class="btn btn-danger btn-sm" onclick="deleteVenue('${v.venueId}','${v.slug}')">🗑️</button>
                     </div>
-                    ${latestPmt?`<div style="font-size:0.65rem;color:#64748b;margin-top:6px;border-top:1px solid rgba(0,0,0,0.04);padding-top:6px;">Last: ${escapeHtml(latestPmt.txNo||'N/A')} · ₱${(latestPmt.amount||0).toLocaleString()} · ${escapeHtml(latestPmt.status)}</div>`:''}
                 </div>`;
             });
         }
@@ -6258,7 +6181,6 @@ async function deleteVenue(venueId,slug){
         } catch(e){}
         await db.collection(isOrg?'organizers':'venues').doc(venueId).delete();
         await db.collection('slugs').doc(slug).delete();
-        try { await db.collection('contracts').doc(venueId).delete(); } catch(e){}
         try {
             const userSnap = await db.collection('users').where(isOrg?'organizerId':'venueId', '==', venueId).get();
             userSnap.forEach(doc => doc.ref.delete());
@@ -6283,42 +6205,6 @@ async function deleteVenue(venueId,slug){
     } catch(e){
         showNotif('Delete failed: '+e.message,'error');
     }
-}
-function editContract(venueId){
-    const c=_devContracts[venueId]||{};
-    document.getElementById('cVenueId').value=venueId;
-    document.getElementById('cVenueName').value=c.venueName||'';
-    document.getElementById('cOwnerName').value=c.ownerName||'';
-    document.getElementById('cOrigCourts').value=c.originalCourts||'';
-    document.getElementById('cTotalCourts').value=c.totalCourts||'';
-    document.getElementById('cStartDate').value=c.startDate||'';
-    document.getElementById('cEndDate').value=c.endDate||'';
-    document.getElementById('cMonthlyRetainer').value=c.monthlyRetainer||'';
-    document.getElementById('contractModal').classList.add('active');
-}
-async function saveContract(){
-    const venueId=document.getElementById('cVenueId').value;
-    if(!venueId){showNotif('Error: missing venue ID','error');return;}
-    const data={
-        venueName:document.getElementById('cVenueName').value.trim(),
-        ownerName:document.getElementById('cOwnerName').value.trim(),
-        originalCourts:parseInt(document.getElementById('cOrigCourts').value)||0,
-        totalCourts:parseInt(document.getElementById('cTotalCourts').value)||0,
-        startDate:document.getElementById('cStartDate').value,
-        endDate:document.getElementById('cEndDate').value,
-        monthlyRetainer:parseFloat(document.getElementById('cMonthlyRetainer').value)||0,
-        updatedAt:Date.now(),
-    };
-    const existing=_devContracts[venueId]||{};
-    data.payments=existing.payments||[];
-    if(!data.startDate&&!data.ownerName&&!data.monthlyRetainer){
-        if(!confirm('Save empty contract?'))return;
-    }
-    await db.collection('contracts').doc(venueId).set(data,{merge:true});
-    _devContracts[venueId]=data;
-    closeModal('contractModal');
-    renderDevDashboard();
-    showNotif('✅ Contract saved!');
 }
 async function invoiceOrgSession(organizerId,slug,sessionId){
     if(!confirm("Invoice this session's convenience fees?")) return;
@@ -6366,46 +6252,6 @@ async function viewOrgInvoices(organizerId,name){
     } catch(e){
         showNotif('Failed to load invoices: '+e.message,'error');
     }
-}
-function addPayment(venueId){
-    document.getElementById('pVenueId').value=venueId;
-    document.getElementById('pTxNo').value='';
-    document.getElementById('pAmount').value='';
-    document.getElementById('pDueDate').value=getTodayISO();
-    document.getElementById('pStatus').value='pending';
-    document.getElementById('pPaidAt').value='';
-    document.getElementById('pNotes').value='';
-    document.getElementById('paymentModal').classList.add('active');
-}
-async function savePayment(){
-    const venueId=document.getElementById('pVenueId').value;
-    if(!venueId){showNotif('Error: missing venue','error');return;}
-    const txNo=document.getElementById('pTxNo').value.trim();
-    if(!txNo){showNotif('Transaction number required!','error');return;}
-    const pmt={txNo,amount:parseFloat(document.getElementById('pAmount').value)||0,dueDate:document.getElementById('pDueDate').value,status:document.getElementById('pStatus').value,paidAt:document.getElementById('pPaidAt').value,notes:document.getElementById('pNotes').value.trim(),createdAt:Date.now()};
-    const contract=_devContracts[venueId]||{};
-    if(!contract.payments) contract.payments=[];
-    contract.payments.push(pmt);
-    await db.collection('contracts').doc(venueId).set({payments:contract.payments},{merge:true});
-    _devContracts[venueId]=contract;
-    closeModal('paymentModal');
-    renderDevDashboard();
-    showNotif('✅ Payment added!');
-}
-function viewPayments(venueId){
-    const c=_devContracts[venueId];
-    if(!c||!c.payments||c.payments.length===0){showNotif('No payments recorded.','error');return;}
-    document.getElementById('paymentsViewModal')?.remove();
-    let html='<div class="modal" style="max-width:600px;"><div class="modal-title">📋 Payment History</div><div style="max-height:400px;overflow-y:auto;">';
-    html+='<table style="width:100%;font-size:0.78rem;border-collapse:collapse;"><thead><tr style="color:#94a3b8;border-bottom:1px solid rgba(0,0,0,0.1);"><th style="padding:6px 8px;text-align:left;">Tx No</th><th style="padding:6px 8px;text-align:left;">Amount</th><th style="padding:6px 8px;text-align:left;">Due</th><th style="padding:6px 8px;text-align:left;">Status</th><th style="padding:6px 8px;text-align:left;">Paid</th></tr></thead><tbody>';
-    c.payments.sort((a,b)=>new Date(b.dueDate||0)-new Date(a.dueDate||0)).forEach(p=>{
-        const stColor=p.status==='paid'?'#10b981':p.status==='cancelled'?'#666':'#f59e0b';
-        html+=`<tr style="border-bottom:1px solid rgba(0,0,0,0.04);"><td style="padding:6px 8px;">${escapeHtml(p.txNo||'-')}</td><td style="padding:6px 8px;font-weight:700;">₱${(p.amount||0).toLocaleString()}</td><td style="padding:6px 8px;">${escapeHtml(p.dueDate||'-')}</td><td style="padding:6px 8px;color:${stColor};">${escapeHtml(p.status)}</td><td style="padding:6px 8px;">${escapeHtml(p.paidAt||'-')}</td></tr>`;
-    });
-    html+='</tbody></table></div><div class="modal-actions"><button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()">Close</button></div></div>';
-    const overlay=document.createElement('div');overlay.className='modal-overlay active';overlay.id='paymentsViewModal';overlay.innerHTML=html;
-    document.body.appendChild(overlay);
-    overlay.onclick=e=>{if(e.target===overlay) overlay.remove();};
 }
 function copyPortalLink(){
     const url = window.location.origin + '/' + S.venueSlug;
