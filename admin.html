@@ -1166,26 +1166,10 @@
     <div id="devContent">
         <div class="card">
             <div class="card-title"><span>💻 Dev Dashboard</span><button class="btn btn-primary btn-sm" onclick="refreshDevDashboard()">🔄 Refresh</button></div>
-            <div id="devSummary" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
-                <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:12px;padding:14px;text-align:center;">
+            <div id="devSummary" style="margin-bottom:16px;">
+                <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:12px;padding:14px;text-align:center;max-width:200px;">
                     <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Total Venues</div>
                     <div style="font-size:1.3rem;font-weight:800;color:#2563eb;margin-top:4px;" id="devVenueCount">0</div>
-                </div>
-                <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Active Contracts</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#f59e0b;margin-top:4px;" id="devActiveContracts">0</div>
-                </div>
-                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">🔥 Founding</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#ef4444;margin-top:4px;" id="devFoundingCount">0</div>
-                </div>
-                <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Monthly Retainers</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#8b5cf6;margin-top:4px;" id="devMonthlyTotal">₱0</div>
-                </div>
-                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:14px;text-align:center;">
-                    <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Total Due</div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#ef4444;margin-top:4px;" id="devTotalDue">₱0</div>
                 </div>
             </div>
             <div id="devVenuesList"></div>
@@ -5716,7 +5700,6 @@ async function renderDevDashboard(){
     try {
         const slugsSnap=await db.collection('slugs').get();
         const venues=[], pending=[];
-        let activeCount=0, monthlyTotal=0, dueTotal=0, foundingCount=0;
         const ownerMap={}; // venueId -> { email, name, mobile }
         const organizers=[];
         for(const slugDoc of slugsSnap.docs){
@@ -5768,10 +5751,10 @@ async function renderDevDashboard(){
                 organizers.push({slug:slugDoc.id,venueId,data:vData,name:vData.businessName||vData.name||'Unnamed',owner:o,totalPlayers,feeAccrued,sessions,online:vData.online===true,lastSeen:vData.lastSeen||0});
                 continue;
             }
-            if(vData.plan==='founding') foundingCount++;
+            if(vData.plan==='founding') {/* founding plan venue */}
             const contractSnap=await db.collection('contracts').doc(venueId).get();
             const contract=contractSnap.exists?contractSnap.data():null;
-            if(contract){_devContracts[venueId]=contract;activeCount++;monthlyTotal+=contract.monthlyRetainer||0;}
+            if(contract){_devContracts[venueId]=contract;}
             const totalCourts=(vData.courts||[]).length;
             const origCourts=contract?contract.originalCourts:totalCourts;
             const added=totalCourts-origCourts;
@@ -5780,15 +5763,10 @@ async function renderDevDashboard(){
                 const pendingPmts=contract.payments.filter(p=>p.status==='pending'||p.status==='unpaid');
                 dueAmt=pendingPmts.reduce((s,p)=>s+(p.amount||0),0);
             }
-            dueTotal+=dueAmt;
             venues.push({slug:slugDoc.id,venueId,name:vData.name||'Unnamed',data:vData,totalCourts,origCourts,added,contract,dueAmt,owner:ownerMap[venueId],referralCode:vData.referralCode||'',online:vData.online===true,lastSeen:vData.lastSeen||0});
         }
         _devVenues=venues;
         document.getElementById('devVenueCount').textContent=venues.length+organizers.length+pending.length;
-        document.getElementById('devActiveContracts').textContent=activeCount;
-        document.getElementById('devFoundingCount').textContent=foundingCount+'/50';
-        document.getElementById('devMonthlyTotal').textContent='₱'+monthlyTotal.toLocaleString();
-        document.getElementById('devTotalDue').textContent='₱'+dueTotal.toLocaleString();
 
         let html='';
         // PENDING section
