@@ -557,6 +557,12 @@
             .onboard-step { padding: 6px 10px; font-size: 0.72rem; }
             .onboard-steps { gap: 6px; }
         }
+        .spinner { width: 32px; height: 32px; border: 3px solid rgba(37,99,235,0.2); border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-msg { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; color: #ef4444; margin-bottom: 10px; display: none; }
+        .error-msg.active { display: block; }
+        .modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; transition: color 0.2s; }
+        .modal-close:hover { color: #1e293b; }
     </style>
 </head>
 <body>
@@ -982,10 +988,6 @@
                         <option value="month">This Month</option>
                     </select>
                     <button class="btn btn-outline btn-sm" onclick="aiFinancialInsights()">🔮 Insights</button>
-                    <span id="seedDemoArea" style="display:none;">
-                        <button class="btn btn-outline btn-sm" onclick="seedJuneData()" title="Add 19 dummy bookings + 6 expenses for June">🌱</button>
-                        <span style="font-size:0.65rem;color:#94a3b8;margin-left:4px;">Dummy data for testing</span>
-                    </span>
                     <button class="btn btn-outline btn-sm" onclick="lockFinancials()">🔒 Lock</button>
                 </div>
             </div>
@@ -1800,106 +1802,6 @@
 </div>
 </div>
 
-<div class="modal-overlay" id="settingsModal">
-    <div class="modal" style="max-width:500px;">
-        <div class="modal-title">⚙️ Settings</div>
-        <div style="margin-bottom:14px;">
-            <div style="font-weight:700;font-size:0.85rem;color:#2563eb;margin-bottom:10px;">📱 Payment Details (for customer reference)</div>
-            <div class="form-group"><label>GCash Number</label><input type="text" id="sGcashNum" placeholder="0123456789"></div>
-            <div class="form-group"><label>GCash Name</label><input type="text" id="sGcashName" placeholder="Juan dela Cruz"></div>
-            <div class="form-group"><label>Maya Number</label><input type="text" id="sMayaNum" placeholder="0123456789"></div>
-            <div class="form-group"><label>Maya Name</label><input type="text" id="sMayaName" placeholder="Juan dela Cruz"></div>
-        </div>
-        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
-            <div id="logoSectionLabel" style="font-weight:700;font-size:0.85rem;color:#6366f1;margin-bottom:10px;">🖼️ Venue Logo</div>
-            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                <div style="flex:1;min-width:200px;">
-                    <div class="form-group"><label>Upload Image</label><input type="file" id="sLogoFile" accept="image/png,image/jpeg,image/webp,image/gif" style="font-size:0.78rem;padding:4px 0;"></div>
-                    <button class="btn btn-primary btn-sm" onclick="uploadLogo()" id="uploadLogoBtn" style="margin-top:4px;">☁️ Upload</button>
-                    <span id="uploadLogoStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
-                </div>
-                <div style="text-align:center;">
-                    <img id="sLogoPreview" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.03);display:none;">
-                </div>
-            </div>
-            <div class="form-group" style="margin-top:8px;"><label>Or paste image URL</label><input type="url" id="sLogoUrl" placeholder="https://example.com/logo.png" oninput="previewLogoUrl()"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;">Upload a PNG, JPG, or WebP file. Max 2MB. Recommended: 200x200px or smaller.</div>
-        </div>
-        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
-            <div id="venuePhotoSectionLabel" style="font-weight:700;font-size:0.85rem;color:#0ea5e9;margin-bottom:10px;">📸 Venue Photo</div>
-            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                <div style="flex:1;min-width:200px;">
-                    <div class="form-group"><label>Upload Image</label><input type="file" id="sVenuePhotoFile" accept="image/png,image/jpeg,image/webp,image/gif" style="font-size:0.78rem;padding:4px 0;"></div>
-                    <button class="btn btn-primary btn-sm" onclick="uploadVenuePhoto()" id="uploadVenuePhotoBtn" style="margin-top:4px;">☁️ Upload</button>
-                    <span id="uploadVenuePhotoStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
-                </div>
-                <div style="text-align:center;">
-                    <img id="sVenuePhotoPreview" style="width:120px;height:80px;object-fit:cover;border-radius:10px;border:2px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.03);display:none;">
-                </div>
-            </div>
-            <div class="form-group" style="margin-top:8px;"><label>Or paste image URL</label><input type="url" id="sVenuePhotoUrl" placeholder="https://example.com/venue.jpg" oninput="previewVenuePhotoUrl()"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;">Upload a PNG, JPG, or WebP file. Max 2MB. Recommended: 1200x800px or smaller. Shows at the top of your portal.</div>
-        </div>
-        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
-            <div style="font-weight:700;font-size:0.85rem;color:#10b981;margin-bottom:10px;">📍 Pin Your Location</div>
-            <div class="form-group"><label>Place / Address</label><input type="text" id="sVenueAddress" placeholder="e.g. 123 P. Dela Rosa St, Makati City"></div>
-            <div style="display:flex;gap:10px;">
-                <div class="form-group" style="flex:1;"><label>Latitude</label><input type="text" id="sLat" placeholder="e.g. 14.5547" inputmode="decimal"></div>
-                <div class="form-group" style="flex:1;"><label>Longitude</label><input type="text" id="sLng" placeholder="e.g. 121.0244" inputmode="decimal"></div>
-            </div>
-            <button class="btn btn-primary btn-sm" type="button" onclick="useMyLocation()" style="margin-top:2px;">📍 Use My Current Location</button>
-            <span id="locStatus" style="font-size:0.72rem;color:#94a3b8;margin-left:8px;"></span>
-            <div id="settingsMapWrap" style="margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(0,0,0,0.12);height:240px;position:relative;">
-                <div id="settingsMap" style="width:100%;height:100%;"></div>
-                <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:0.7rem;color:#fff;background:rgba(0,0,0,0.55);padding:4px 8px;pointer-events:none;">📌 Click anywhere on the map to drop a pin, or drag the pin to fine-tune</div>
-            </div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Pin your venue on the map, or tap "Use My Current Location". Coordinates fill automatically so players can find you.</div>
-        </div>
-        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
-            <div style="font-weight:700;font-size:0.85rem;color:#f59e0b;margin-bottom:10px;">🎉 Amenities</div>
-            <div class="form-group"><label>Amenities (comma separated)</label><input type="text" id="sAmenities" placeholder="e.g. Parking, Wifi, Aircon, Shower, Pro Shop"></div>
-        </div>
-        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
-            <div style="font-weight:700;font-size:0.85rem;color:#2563eb;margin-bottom:10px;">📱 Social Media</div>
-            <div class="form-row">
-                <div class="form-group"><label>Facebook</label><input type="url" id="sFb" placeholder="https://facebook.com/..."></div>
-                <div class="form-group"><label>Instagram</label><input type="url" id="sIg" placeholder="https://instagram.com/..."></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>TikTok</label><input type="url" id="sTt" placeholder="https://tiktok.com/@..."></div>
-                <div class="form-group"><label>Website</label><input type="url" id="sWeb" placeholder="https://..."></div>
-            </div>
-        </div>
-        <div style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);">
-            <div style="font-weight:700;font-size:0.85rem;color:#f59e0b;margin-bottom:10px;">🔒 Financials Access Code</div>
-            <div class="form-group"><label>Set Access Code (4-6 digits)</label><input type="text" id="sAccessCode" placeholder="e.g. 1234" maxlength="6" inputmode="numeric"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;">Share this code with the venue owner to access the Financials page.</div>
-        </div>
-        <div id="staffSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);display:none;">
-            <div style="font-weight:700;font-size:0.85rem;color:#10b981;margin-bottom:10px;">👥 Staff Management</div>
-            <div style="display:flex;gap:6px;margin-bottom:8px;">
-                <input type="email" id="sStaffEmail" autocomplete="off" placeholder="staff@email.com" style="flex:1;padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;">
-                <button class="btn btn-primary btn-sm" onclick="addStaff()">📧 Invite</button>
-            </div>
-            <div id="staffList" style="font-size:0.85rem;"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Enter an email and click Invite — they'll receive an email with a link to create their account. Staff can access the dashboard but not Financials or Settings.</div>
-        </div>
-        <div id="ownerSection" style="margin-bottom:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);display:none;">
-            <div style="font-weight:700;font-size:0.85rem;color:#ef4444;margin-bottom:10px;">👑 Co-Owners</div>
-            <div style="display:flex;gap:6px;margin-bottom:8px;">
-                <input type="email" id="sOwnerEmail" autocomplete="off" placeholder="coowner@email.com" style="flex:1;padding:8px 12px;background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.12);border-radius:8px;color:#1e293b;font-size:0.85rem;">
-                <button class="btn btn-primary btn-sm" onclick="addOwner()">📧 Invite</button>
-            </div>
-            <div id="ownerList" style="font-size:0.85rem;"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Enter an email and click Invite — they'll receive an email with a link to create their account. Co-owners have full access — Financials, Settings, Confirmations, and all dashboard features.</div>
-        </div>
-        <div class="modal-actions">
-            <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
-            <button class="btn btn-outline" onclick="closeModal('settingsModal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
 <div class="modal-overlay" id="confirmModal">
     <div class="modal">
         <div class="modal-title" id="confirmTitle">⚠️ Confirm</div>
@@ -2046,7 +1948,6 @@ function timeToMin(t){ if(!t) return 0; const[h,m]=t.split(':').map(Number); ret
 function minToTime(m){ const h=Math.floor(m/60),mn=m%60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; }
 function nowMin(){ const n=phtNow(); return n.getHours()*60+n.getMinutes(); }
 function genId(){ return 'BK'+String(++S.nextBId).padStart(3,'0'); }
-function genRef(){ return '#'+Math.random().toString(36).substr(2,8).toUpperCase(); }
 function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function clearLiveScore(courtId){ if(!VENUE_ID) return; db.collection('liveScores').doc(VENUE_ID+'_'+courtId).delete().catch(()=>{}); }
 function showHelp(topic){
@@ -4196,15 +4097,6 @@ async function tryRoundRobinAutoAssign(){
     saveState();renderAll();
 }
 
-function setGeminiKey(){
-    const key = prompt('Paste your Gemini API Key (get one at https://aistudio.google.com/apikey):');
-    if (key && key.trim()) {
-        db.collection('config').doc('gemini').set({ apiKey: key.trim() });
-        GEMINI_API_KEY = key.trim();
-        showNotif('✅ Gemini API key saved to Firestore!','success');
-    }
-}
-
 async function aiSuggest(){
     if(S.queue.length===0){showNotif('Queue is empty!','error');return;}
     const avail=getOpenPlayCourts();
@@ -5814,75 +5706,6 @@ function removeCost(idx){
     saveState();
     renderFinancials();
     showNotif('Expense removed!');
-}
-function seedJuneData(){
-    if(!confirm('Add booming June data? Existing bookings/costs will be kept.'))return;
-    const j=(d,h=12,m=0)=>new Date(2026,5,d,h,m).getTime();
-    // Deterministic pseudo-random generator (same data every click)
-    let _sd=42;
-    function rnd(){_sd=(_sd*16807+0)%2147483647;return(_sd-1)/2147483646;}
-    function pick(a){return a[Math.floor(rnd()*a.length)];}
-    function rng(a,b){return Math.floor(rnd()*(b-a+1))+a;}
-    const first=['Maria','Juan','Ana','Pedro','Lisa','Mark','Sarah','Tom','Kate','Alex','Ryan','Emma','David','Nina','Chris','Bella','Jake','Zara','Carlo','Mia','Leo','Tina','Rico','Beth','Paul','Grace','Vince','Diana','Ben','Jill','Omar','Luna','Ralph','Ivy','Alan','Wena','Ed','Faye','Gelo','Hazel','Isko','Jane','Kenny','Mona','Pong','Rona','Dex','Joy','Sam','Pat','Ann','Mai','Kit','Tess','Vic','Rey','Dan','Mon','Kai','Ed'];
-    const last=['Santos','Cruz','Reyes','Lim','Tan','Go','Yap','Diaz','King','Ola','Yu','Roa','Vega','Pal','Soto','Qui','Mendez','Fernandez','Garcia','Sison','Villan','Lopez','Dimagiba','Ocampo','Kwan','Pineda','Ty','Rivera','Navarro','Aguilar','Chua','Ngo','Pascual','Martinez','Bautista','Ramos','Castillo','Torres','Gomez','David','Sy','Luna','Dizon','De Leon','Mercado','Velasco','Laurel','Cruz','Mendoza','Flores'];
-    const existingIds=new Set(S.bookings.map(b=>b.id));
-    let added=0,seedId=1;
-    // Constraint: no overlapping bookings on same court/day
-    // Each court has 16 time slots (6AM-midnight, staggered)
-    const slots=[{s:'06:00',p:1},{s:'07:00',p:1},{s:'08:00',p:1},{s:'09:00',p:0},{s:'10:00',p:0},{s:'11:00',p:0},{s:'14:00',p:0},{s:'15:00',p:0},{s:'16:00',p:0},{s:'17:00',p:1},{s:'18:00',p:1},{s:'19:00',p:1},{s:'20:00',p:1},{s:'21:00',p:1},{s:'22:00',p:1},{s:'23:00',p:1}];
-    // Build bookings: deterministic, evenly distributed across June
-    for(let day=1;day<=30;day++){
-        const dt=new Date(2026,5,day);
-        const wk=dt.getDay()===0||dt.getDay()===6;
-        for(let ci=1;ci<=3;ci++){
-            _sd=day*1000+ci*100+42; // deterministic seed per day/court
-            for(let si=0;si<slots.length;si++){
-                const hash=((day*137+ci*149+si*191)%251)/251;
-                const fill=slots[si].p?hash<0.72:wk?hash<0.42:hash<0.30;
-                if(!fill)continue;
-                seedId++;
-                const sh=parseInt(slots[si].s);const sm=parseInt(slots[si].s.slice(3));
-                const dur=rng(60,120);
-                const em=sh*60+sm+dur;
-                const eh=Math.floor(em/60);const eM=em%60;
-                if(eh>=24)continue;
-                const gt=pick(['singles','singles','doubles','doubles','doubles','private']);
-                const pm=pick(['GCash','GCash','Maya','Maya','Cash']);
-                const src=pick(['online','online','online','admin']);
-                const fn=pick(first),ln=pick(last);
-                const cust=fn+' '+ln;
-                const isPrime=slots[si].p;
-                const amt=isPrime?rng(500,800):rng(350,550);
-                const canc=rnd()<0.07;
-                const st=canc?'cancelled':'confirmed';
-                const ds='2026-06-'+String(day).padStart(2,'0');
-                const pl=gt==='doubles'||gt==='private'?pick(first)+', '+pick(first):'';
-                const bid='SEED'+String(seedId).padStart(3,'0');
-                if(existingIds.has(bid))continue;
-                const bo={id:bid,customer:cust,phone:'+63912'+rng(10000000,99999999),email:fn.toLowerCase()+'.'+ln.toLowerCase()+'@mail.com',courtId:ci,date:ds,startTime:slots[si].s,endTime:String(eh).padStart(2,'0')+':'+String(eM).padStart(2,'0'),duration:dur,gameType:gt,players:pl,amount:amt,paymentMethod:pm,status:st,notes:'',bookedAt:j(day,sh,sm),source:src};
-                S.bookings.push(bo);
-                if(st==='confirmed'){
-                    const cn=(S.courts.find(c=>c.id===ci)||{}).name||'';
-                    S.sales.push({id:bid,amount:amt,method:pm,customer:cust,court:cn,time:new Date(j(day,sh,sm)).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}),gameType:gt});
-                }
-                added++;
-            }
-        }
-    }
-    S.sales.forEach(s=>{const b=S.bookings.find(x=>x.id===s.id);if(b)s.court=(S.courts.find(c=>c.id===b.courtId)||{}).name||'';});
-    const costs=[{category:'Rent',amount:50000,desc:'Monthly rent (3 courts)',date:'2026-06-01',createdAt:j(1)},{category:'Utilities',amount:12000,desc:'Electric + Water (extended hours to midnight)',date:'2026-06-30',createdAt:j(30)},{category:'Wages',amount:35000,desc:'Staff salaries (dawn shifts + weekends)',date:'2026-06-30',createdAt:j(30)},{category:'Supplies',amount:5000,desc:'Paddles, balls, nets, lighting',date:'2026-06-10',createdAt:j(10)},{category:'Maintenance',amount:3000,desc:'Court cleaning & repairs',date:'2026-06-20',createdAt:j(20)}];
-    if(!S.costs) S.costs=[];
-    costs.forEach(c=>{S.costs.push(c);});
-    const batch=db.batch();
-    S.bookings.forEach(b=>batch.set(bkCol().doc(b.id),b));
-    batch.commit().catch(()=>{});
-    const maxBk=Math.max(...S.bookings.filter(b=>b.id.startsWith('BK')).map(b=>parseInt(b.id.replace('BK',''))||0),0);
-    S.nextBId=Math.max(maxBk,seedId)+50;
-    saveState();renderAll();
-    const conf=S.bookings.filter(b=>b.status==='confirmed').length;
-    const totalRev=S.sales.reduce((s,x)=>s+x.amount,0);
-    const totalCost=costs.reduce((s,x)=>s+x.amount,0);
-    showNotif('✅ Booming June seeded! '+conf+' confirmed bookings (~7% cancels), ₱'+(totalRev).toLocaleString()+' revenue, ₱'+(totalCost).toLocaleString()+' costs — net ₱'+(totalRev-totalCost).toLocaleString()+'. Courts packed 6AM-midnight!','success');
 }
 
 // ===================== DEV DASHBOARD =====================
@@ -7638,9 +7461,6 @@ function initPresence(){
         VENUE_OWNER_ID = data.ownerId;
 
         // Show seed (dummy data) button only in demo mode
-        if (VENUE_OWNER_ID === 'demo') {
-            document.getElementById('seedDemoArea').style.display = 'inline';
-        }
 
         // Load state
         PERSISTENT_KEYS.forEach(k => {
@@ -7724,8 +7544,8 @@ function initPresence(){
             // Hide organizer-irrelevant tabs
             if (IS_ORGANIZER) {
                 document.getElementById('dashboardBtn').style.display = 'none';
-                document.getElementById('tournamentsBtn').style.display = 'none';
-                document.getElementById('financialsTab').innerHTML = '💰 Affiliate Financials';
+                document.getElementById('tournamentsBtn') && (document.getElementById('tournamentsBtn').style.display = 'none');
+                document.getElementById('financialsTab') && (document.getElementById('financialsTab').innerHTML = '💰 Affiliate Financials');
             }
             // Check if venue/organizer is pending activation
             const isPending = IS_ORGANIZER ? (data.activated === false) : (data.status === 'pending');
